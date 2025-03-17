@@ -1,0 +1,108 @@
+/* D Express Checkout CSS */
+
+/* Sakrij originalna polja */
+.dexpress-hidden {
+    display: none !important;
+}
+
+/* Stilizacija jQuery UI Autocomplete */
+.ui-autocomplete {
+    max-height: 300px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    z-index: 1000;
+    border: 1px solid #aaa;
+    background: #fff;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+}
+
+.ui-autocomplete .ui-menu-item {
+    padding: 8px 10px;
+    cursor: pointer;
+    border-bottom: 1px solid #f2f2f2;
+}
+
+.ui-autocomplete .ui-menu-item:hover,
+.ui-autocomplete .ui-menu-item.ui-state-focus {
+    background: #f8f8f8;
+}
+
+/* Stilizacija Select2 */
+.select2-container--default .select2-selection--single {
+    height: 38px;
+    border-color: #ddd;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+    line-height: 36px;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 36px;
+}
+
+.select2-results__option {
+    padding: 8px 10px;
+}
+
+/* D Express opcije */
+.dexpress-options {
+    margin: 20px 0;
+    padding: 15px;
+    background: #f8f8f8;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.dexpress-options h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+/* Modal za izbor grada */
+.dexpress-modal {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.4);
+}
+
+.dexpress-modal-content {
+    background-color: #fefefe;
+    margin: 10% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 600px;
+    border-radius: 5px;
+}
+
+.dexpress-modal-close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.dexpress-modal-close:hover,
+.dexpress-modal-close:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .dexpress-modal-content {
+        width: 95%;
+        margin: 15% auto;
+    }
+}
