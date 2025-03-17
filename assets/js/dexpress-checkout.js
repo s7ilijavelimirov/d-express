@@ -19,6 +19,12 @@
                     DExpressCheckout.initStreetAutocomplete('shipping');
                 }, 300);
             });
+
+            // Inicijalizacija načina dostave (adresa ili paketomat)
+            this.initDeliveryTypeSelection();
+
+            // Provera validacije pre slanja forme
+            this.initCheckoutValidation();
         },
 
         // Inicijalizacija autocomplete za ulicu
@@ -34,32 +40,65 @@
 
             // Inicijalizacija jQuery UI autocomplete
             if ($street.length) {
-                // Inicijalizuj autocomplete za ulicu
-                // U funkciji initStreetAutocomplete, modifikuj autocomplete deo:
-
                 $street.autocomplete({
                     source: function (request, response) {
+                        if (request.term.length < 2) {
+                            return;
+                        }
+
                         $.ajax({
                             url: dexpressCheckout.ajaxUrl,
                             dataType: 'json',
                             data: {
                                 action: 'dexpress_search_streets',
-                                term: request.term
+                                term: request.term,
+                                nonce: dexpressCheckout.nonce
+                            },
+                            beforeSend: function () {
+                                $street.addClass('dexpress-loading');
                             },
                             success: function (data) {
-                                response(data);
+                                $street.removeClass('dexpress-loading');
+                                if (data.length === 0) {
+                                    response([{
+                                        label: dexpressCheckout.i18n.noResults,
+                                        value: request.term,
+                                        id: 'custom'
+                                    }]);
+                                } else {
+                                    response(data);
+                                }
+                            },
+                            error: function () {
+                                $street.removeClass('dexpress-loading');
+                                response([{
+                                    label: dexpressCheckout.i18n.noResults,
+                                    value: request.term,
+                                    id: 'custom'
+                                }]);
                             }
                         });
                     },
                     minLength: 2,
+                    delay: 500,
                     select: function (event, ui) {
                         // Postavi ID ulice
                         $streetId.val(ui.item.id);
-                        // Postavi samo ime ulice (bez grada) u polje
-                        $street.val(ui.item.value);
 
-                        // Učitaj gradove za izabranu ulicu
-                        self.loadCitiesForStreet(addressType, ui.item.id);
+                        // Ako je korisnički unos
+                        if (ui.item.id === 'custom') {
+                            // Samo sačuvaj unesenu vrednost
+                            $street.val(ui.item.value);
+
+                            // Prikaži modal za odabir grada
+                            self.showAllCitiesModal(addressType);
+                        } else {
+                            // Postavi samo ime ulice (bez grada) u polje
+                            $street.val(ui.item.value);
+
+                            // Učitaj gradove za izabranu ulicu
+                            self.loadCitiesForStreet(addressType, ui.item.id);
+                        }
 
                         // Fokusiraj polje za kućni broj
                         setTimeout(function () {
@@ -70,9 +109,14 @@
                     }
                 }).autocomplete("instance")._renderItem = function (ul, item) {
                     // Prilagođeni rendering za prikazivanje ulice sa gradom
-                    return $("<li>")
-                        .append("<div>" + item.label + "</div>")
-                        .appendTo(ul);
+                    var $item = $("<li>").append("<div>" + item.label + "</div>");
+
+                    // Dodaj klasu za stavku 'Nema rezultata'
+                    if (item.id === 'custom') {
+                        $item.addClass('ui-state-disabled');
+                    }
+
+                    return $item.appendTo(ul);
                 };
 
                 // Prati promene u polju za ulicu
@@ -87,6 +131,18 @@
                 // Prati promene u broju ulice i ažuriraj adresu
                 $number.on('input', function () {
                     self.updateAddressField(addressType);
+
+                    // Validacija kućnog broja - ne sme sadržati razmake
+                    var value = $(this).val();
+                    if (value.indexOf(' ') !== -1) {
+                        $(this).addClass('dexpress-error');
+                        if (!$(this).next('.dexpress-error-message').length) {
+                            $('<div class="dexpress-error-message">' + dexpressCheckout.i18n.numberNoSpaces + '</div>').insertAfter($(this));
+                        }
+                    } else {
+                        $(this).removeClass('dexpress-error');
+                        $(this).next('.dexpress-error-message').remove();
+                    }
                 });
             }
 
@@ -95,7 +151,15 @@
                 $city.select2({
                     placeholder: dexpressCheckout.i18n.selectCity,
                     allowClear: true,
-                    width: '100%'
+                    width: '100%',
+                    language: {
+                        noResults: function () {
+                            return dexpressCheckout.i18n.noResults;
+                        },
+                        searching: function () {
+                            return dexpressCheckout.i18n.searching;
+                        }
+                    }
                 });
 
                 // Prati promene u polju za grad
@@ -109,7 +173,7 @@
                     if (selectedId && selectedId !== 'other') {
                         self.loadCityData(addressType, selectedId);
                     } else if (selectedId === 'other') {
-                        self.showOtherCityModal(addressType);
+                        self.showAllCitiesModal(addressType);
                     }
 
                     // Ažuriraj adresu
@@ -130,15 +194,22 @@
             $city.html('<option value="">' + dexpressCheckout.i18n.firstEnterStreet + '</option>');
             $city.prop('disabled', true);
 
+            // Dodaj indikator učitavanja
+            var $wrapper = $city.parent();
+            $wrapper.addClass('dexpress-loading');
+
             // Učitaj gradove za izabranu ulicu
             $.ajax({
                 url: dexpressCheckout.ajaxUrl,
                 dataType: 'json',
                 data: {
                     action: 'dexpress_get_towns_for_street',
-                    street_id: streetId
+                    street_id: streetId,
+                    nonce: dexpressCheckout.nonce
                 },
                 success: function (response) {
+                    $wrapper.removeClass('dexpress-loading');
+
                     if (response.success && response.data.results) {
                         // Resetuj select
                         $city.empty();
@@ -159,12 +230,45 @@
                         $city.select2({
                             placeholder: dexpressCheckout.i18n.selectCity,
                             allowClear: true,
-                            width: '100%'
+                            width: '100%',
+                            language: {
+                                noResults: function () {
+                                    return dexpressCheckout.i18n.noResults;
+                                },
+                                searching: function () {
+                                    return dexpressCheckout.i18n.searching;
+                                }
+                            }
                         });
+                    } else {
+                        self.resetCityField(addressType);
                     }
                 },
                 error: function () {
+                    $wrapper.removeClass('dexpress-loading');
                     self.resetCityField(addressType);
+                }
+            });
+        },
+
+        // Učitavanje svih gradova (za modal)
+        loadAllCities: function (callback) {
+            $.ajax({
+                url: dexpressCheckout.ajaxUrl,
+                dataType: 'json',
+                data: {
+                    action: 'dexpress_get_all_towns',
+                    nonce: dexpressCheckout.nonce
+                },
+                success: function (response) {
+                    if (response.success && response.data.results) {
+                        callback(response.data.results);
+                    } else {
+                        callback([]);
+                    }
+                },
+                error: function () {
+                    callback([]);
                 }
             });
         },
@@ -181,11 +285,98 @@
         },
 
         // Prikazivanje modala za izbor drugih gradova
-        showOtherCityModal: function (addressType) {
-            // Ovde bi išla implementacija modala za izbor grada koji nije na listi
-            // Za jednostavnost u ovoj verziji ćemo samo resetovati polje
-            alert(dexpressCheckout.i18n.otherCity);
-            this.resetCityField(addressType);
+        showAllCitiesModal: function (addressType) {
+            var self = this;
+            var $cityId = $('#' + addressType + '_city_id');
+            var $city = $('#' + addressType + '_city');
+            var $postcode = $('#' + addressType + '_postcode');
+
+            // Prvo proveriti da li već postoji modal
+            var $modal = $('#dexpress-city-modal');
+            if ($modal.length === 0) {
+                // Kreiranje modala ako ne postoji
+                $modal = $('<div id="dexpress-city-modal" class="dexpress-modal">' +
+                    '<div class="dexpress-modal-content">' +
+                    '<span class="dexpress-modal-close">&times;</span>' +
+                    '<h3>' + dexpressCheckout.i18n.selectCity + '</h3>' +
+                    '<select id="dexpress-modal-city-select" style="width:100%;"></select>' +
+                    '<div class="dexpress-modal-actions" style="margin-top:15px;text-align:right;">' +
+                    '<button type="button" class="button button-primary dexpress-modal-confirm">' + dexpressCheckout.i18n.confirm + '</button>' +
+                    '</div>' +
+                    '</div>' +
+                    '</div>');
+                $('body').append($modal);
+
+                // Inicijalizacija select2 u modalu
+                var $modalSelect = $('#dexpress-modal-city-select');
+                $modalSelect.select2({
+                    placeholder: dexpressCheckout.i18n.selectCity,
+                    allowClear: true,
+                    width: '100%',
+                    language: {
+                        noResults: function () {
+                            return dexpressCheckout.i18n.noResults;
+                        },
+                        searching: function () {
+                            return dexpressCheckout.i18n.searching;
+                        }
+                    }
+                });
+
+                // Zatvaranje modala
+                $('.dexpress-modal-close').on('click', function () {
+                    $modal.hide();
+                });
+
+                // Klik izvan modala
+                $(window).on('click', function (event) {
+                    if ($(event.target).is($modal)) {
+                        $modal.hide();
+                    }
+                });
+
+                // Potvrda odabira
+                $('.dexpress-modal-confirm').on('click', function () {
+                    var selectedId = $modalSelect.val();
+                    var selectedText = $modalSelect.find('option:selected').text();
+                    var selectedPostcode = $modalSelect.find('option:selected').data('postcode') || '';
+
+                    if (selectedId) {
+                        // Ažuriranje polja za grad
+                        $cityId.val(selectedId);
+
+                        // Ažuriranje select-a za grad
+                        if ($city.find('option[value="' + selectedId + '"]').length === 0) {
+                            $city.append('<option value="' + selectedId + '" data-postcode="' + selectedPostcode + '">' + selectedText + '</option>');
+                        }
+                        $city.val(selectedId).trigger('change');
+
+                        // Postavljanje poštanskog broja
+                        $postcode.val(selectedPostcode);
+                    }
+
+                    $modal.hide();
+                });
+            }
+
+            // Učitavanje svih gradova
+            var $modalSelect = $('#dexpress-modal-city-select');
+            $modalSelect.empty().append('<option value="">' + dexpressCheckout.i18n.selectCity + '</option>');
+
+            $modal.find('.dexpress-modal-content').addClass('dexpress-loading');
+
+            this.loadAllCities(function (cities) {
+                $modal.find('.dexpress-modal-content').removeClass('dexpress-loading');
+
+                // Dodavanje gradova u select
+                $.each(cities, function (i, city) {
+                    $modalSelect.append('<option value="' + city.id + '" data-postcode="' + (city.postal_code || '') + '">' + city.text + '</option>');
+                });
+
+                // Resetovanje i prikazivanje
+                $modalSelect.val('').trigger('change');
+                $modal.show();
+            });
         },
 
         // Resetovanje polja za grad
@@ -206,7 +397,15 @@
             $city.select2({
                 placeholder: dexpressCheckout.i18n.firstEnterStreet,
                 allowClear: true,
-                width: '100%'
+                width: '100%',
+                language: {
+                    noResults: function () {
+                        return dexpressCheckout.i18n.noResults;
+                    },
+                    searching: function () {
+                        return dexpressCheckout.i18n.searching;
+                    }
+                }
             });
 
             // Onemogući polje
@@ -230,12 +429,149 @@
             }
         },
 
-        // Praćenje promene metode dostave
-        watchShippingMethod: function () {
+        // Inicijalizacija načina dostave
+        initDeliveryTypeSelection: function () {
             var self = this;
 
-            // Na svaku promenu checkout-a
-            $(document.body).on('updated_checkout', function () {
+            // Prati promene u načinu dostave
+            $('input[name="dexpress_delivery_type"]').on('change', function () {
+                var deliveryType = $('input[name="dexpress_delivery_type"]:checked').val();
+
+                if (deliveryType === 'address') {
+                    // Prikaži polja za adresu, sakrij polja za pickup
+                    $('.woocommerce-shipping-fields').show();
+                    $('.dexpress-pickup-wrapper').hide();
+                } else {
+                    // Sakrij polja za adresu, prikaži polja za pickup
+                    $('.woocommerce-shipping-fields').hide();
+                    $('.dexpress-pickup-wrapper').show();
+
+                    // Inicijalizuj select2 za gradove
+                    if ($('#dexpress_pickup_town').length) {
+                        $('#dexpress_pickup_town').select2({
+                            placeholder: dexpressCheckout.i18n.selectCity,
+                            allowClear: true,
+                            width: '100%',
+                            language: {
+                                noResults: function () {
+                                    return dexpressCheckout.i18n.noResults;
+                                },
+                                searching: function () {
+                                    return dexpressCheckout.i18n.searching;
+                                }
+                            }
+                        });
+
+                        // Kada se promeni grad, učitaj lokacije
+                        $('#dexpress_pickup_town').on('change', function () {
+                            var townId = $(this).val();
+                            if (townId) {
+                                self.loadPickupLocations(deliveryType, townId);
+                            } else {
+                                self.resetPickupLocationField();
+                            }
+                        });
+                    }
+
+                    if ($('#dexpress_pickup_location').length) {
+                        $('#dexpress_pickup_location').select2({
+                            placeholder: dexpressCheckout.i18n.selectLocation,
+                            allowClear: true,
+                            width: '100%'
+                        });
+                    }
+                }
+            });
+
+            // Okidanje događaja za inicijalno stanje
+            $('input[name="dexpress_delivery_type"]:checked').trigger('change');
+        },
+
+        // Učitavanje lokacija za preuzimanje
+        loadPickupLocations: function (type, townId) {
+            var self = this;
+            var $location = $('#dexpress_pickup_location');
+
+            // Resetuj polje za lokaciju
+            this.resetPickupLocationField();
+
+            // Dodaj indikator učitavanja
+            var $wrapper = $location.parent();
+            $wrapper.addClass('dexpress-loading');
+
+            // Učitaj lokacije za odabrani grad
+            $.ajax({
+                url: dexpressCheckout.ajaxUrl,
+                dataType: 'json',
+                data: {
+                    action: 'dexpress_get_pickup_locations',
+                    town_id: townId,
+                    type: type === 'shop' ? 'shop' : 'dispenser',
+                    nonce: dexpressCheckout.nonce
+                },
+                success: function (response) {
+                    $wrapper.removeClass('dexpress-loading');
+
+                    if (response.success && response.data.results) {
+                        // Resetuj select
+                        $location.empty();
+                        $location.append('<option value="">' + dexpressCheckout.i18n.selectLocation + '</option>');
+
+                        // Dodaj opcije za lokacije
+                        $.each(response.data.results, function (i, location) {
+                            $location.append('<option value="' + location.id + '">' + location.text + '</option>');
+                        });
+
+                        // Omogući select
+                        $location.prop('disabled', false);
+
+                        // Reinicijalizuj Select2
+                        if ($location.data('select2')) {
+                            $location.select2('destroy');
+                        }
+                        $location.select2({
+                            placeholder: dexpressCheckout.i18n.selectLocation,
+                            allowClear: true,
+                            width: '100%'
+                        });
+                    } else {
+                        self.resetPickupLocationField();
+                    }
+                },
+                error: function () {
+                    $wrapper.removeClass('dexpress-loading');
+                    self.resetPickupLocationField();
+                }
+            });
+        },
+
+        // Resetovanje polja za lokaciju
+        resetPickupLocationField: function () {
+            var $location = $('#dexpress_pickup_location');
+
+            // Resetuj polje za lokaciju
+            $location.empty().append('<option value="">' + dexpressCheckout.i18n.firstSelectTown + '</option>');
+
+            // Reinicijalizuj Select2
+            if ($location.data('select2')) {
+                $location.select2('destroy');
+            }
+            $location.select2({
+                placeholder: dexpressCheckout.i18n.firstSelectTown,
+                allowClear: true,
+                width: '100%'
+            });
+
+            // Onemogući polje
+            $location.prop('disabled', true);
+        },
+
+        // Inicijalizacija validacije checkout-a
+        initCheckoutValidation: function () {
+            var self = this;
+
+            // Validacija pre slanja forme
+            $('form.checkout').on('checkout_place_order', function () {
                 // Proveri da li je D Express dostava odabrana
                 var isDExpressSelected = false;
 
@@ -246,20 +582,117 @@
                     }
                 });
 
-                // Prikaži/sakrij D Express dodatne opcije
-                if (isDExpressSelected) {
-                    $('.dexpress-options').show();
-                } else {
-                    $('.dexpress-options').hide();
+                if (!isDExpressSelected) {
+                    return true; // Nije D Express dostava, nastavi normalno
                 }
 
-                // Reinicijalizuj autocomplete i select2
-                self.initStreetAutocomplete('billing');
+                // Proveri tip dostave
+                var deliveryType = $('input[name="dexpress_delivery_type"]:checked').val();
 
-                if ($('#ship-to-different-address-checkbox').is(':checked')) {
-                    self.initStreetAutocomplete('shipping');
+                if (deliveryType === 'address') {
+                    // Validacija dostave na adresu
+                    return self.validateAddressDelivery();
+                } else {
+                    // Validacija preuzimanja
+                    return self.validatePickupDelivery();
                 }
             });
+        },
+
+        // Validacija dostave na adresu
+        validateAddressDelivery: function () {
+            var isValid = true;
+            var addressType = $('#ship-to-different-address-checkbox').is(':checked') ? 'shipping' : 'billing';
+
+            // Provera ulice
+            var $street = $('#' + addressType + '_street');
+            var $streetId = $('#' + addressType + '_street_id');
+
+            if ($street.val() === '') {
+                this.showError($street, dexpressCheckout.i18n.enterStreet);
+                isValid = false;
+            } else if ($streetId.val() === '') {
+                this.showError($street, dexpressCheckout.i18n.selectStreet);
+                isValid = false;
+            }
+
+            // Provera kućnog broja
+            var $number = $('#' + addressType + '_number');
+
+            if ($number.val() === '') {
+                this.showError($number, dexpressCheckout.i18n.enterNumber);
+                isValid = false;
+            } else if ($number.val().indexOf(' ') !== -1) {
+                this.showError($number, dexpressCheckout.i18n.numberNoSpaces);
+                isValid = false;
+            }
+
+            // Provera grada
+            var $city = $('#' + addressType + '_city');
+            var $cityId = $('#' + addressType + '_city_id');
+
+            if ($city.val() === '') {
+                this.showError($city, dexpressCheckout.i18n.selectCity);
+                isValid = false;
+            } else if ($cityId.val() === '') {
+                this.showError($city, dexpressCheckout.i18n.selectCity);
+                isValid = false;
+            }
+
+            if (!isValid) {
+                $('html, body').animate({
+                    scrollTop: $('.dexpress-error').first().offset().top - 100
+                }, 500);
+            }
+
+            return isValid;
+        },
+
+        // Validacija preuzimanja
+        validatePickupDelivery: function () {
+            var isValid = true;
+
+            // Provera grada
+            var $town = $('#dexpress_pickup_town');
+
+            if ($town.val() === '') {
+                this.showError($town, dexpressCheckout.i18n.selectTown);
+                isValid = false;
+            }
+
+            // Provera lokacije
+            var $location = $('#dexpress_pickup_location');
+
+            if ($location.val() === '') {
+                this.showError($location, dexpressCheckout.i18n.selectLocation);
+                isValid = false;
+            }
+
+            if (!isValid) {
+                $('html, body').animate({
+                    scrollTop: $('.dexpress-error').first().offset().top - 100
+                }, 500);
+            }
+
+            return isValid;
+        },
+
+        // Prikazivanje greške za polje
+        showError: function ($field, message) {
+            // Dodaj klasu greške
+            $field.addClass('dexpress-error');
+
+            // Dodaj poruku o grešci ako ne postoji
+            if (!$field.next('.dexpress-error-message').length) {
+                $('<div class="dexpress-error-message">' + message + '</div>').insertAfter($field);
+            } else {
+                $field.next('.dexpress-error-message').text(message);
+            }
+
+            // Ako je select2, dodaj klasu i na kontejner
+            if ($field.data('select2')) {
+                $field.next('.select2-container').addClass('dexpress-error');
+            }
         }
     };
 

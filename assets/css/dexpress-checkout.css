@@ -1,17 +1,67 @@
-/* D Express Checkout CSS */
+/* D Express Frontend CSS */
 
-/* Sakrij originalna polja */
-.dexpress-hidden {
-    display: none !important;
+/* Opšti stilovi */
+.dexpress-loading {
+    position: relative;
 }
 
-/* Stilizacija jQuery UI Autocomplete */
+.dexpress-loading:after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.7) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="38" height="38" viewBox="0 0 38 38" stroke="%232271b1"><g fill="none" fill-rule="evenodd"><g transform="translate(1 1)" stroke-width="2"><circle stroke-opacity=".5" cx="18" cy="18" r="18"/><path d="M36 18c0-9.94-8.06-18-18-18" transform="rotate(332.092 18 18)"><animateTransform attributeName="transform" type="rotate" from="0 18 18" to="360 18 18" dur="1s" repeatCount="indefinite"/></path></g></g></svg>') no-repeat center center;
+    pointer-events: none;
+    z-index: 10;
+}
+
+/* Validacioni stilovi */
+.dexpress-error {
+    border-color: #b22222 !important;
+    background-color: #fff8f8 !important;
+}
+
+.dexpress-error-message {
+    color: #b22222;
+    margin-top: 5px;
+    font-size: 12px;
+    font-style: italic;
+}
+
+.select2-container--default .select2-selection--single.dexpress-error {
+    border-color: #b22222 !important;
+}
+
+/* Stilovi za dostavu */
+.dexpress-delivery-type-wrapper {
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #f8f8f8;
+    border-radius: 4px;
+}
+
+.dexpress-delivery-type-wrapper h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.dexpress-pickup-wrapper {
+    margin-top: 15px;
+    padding-left: 25px;
+}
+
+/* jQuery UI Autocomplete stilovi */
 .ui-autocomplete {
     max-height: 300px;
     overflow-y: auto;
     overflow-x: hidden;
-    z-index: 1000;
-    border: 1px solid #aaa;
+    z-index: 1000 !important;
+    border: 1px solid #ddd;
+    border-radius: 4px;
     background: #fff;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
 }
@@ -27,7 +77,12 @@
     background: #f8f8f8;
 }
 
-/* Stilizacija Select2 */
+.ui-autocomplete .ui-menu-item.ui-state-disabled {
+    opacity: 0.7;
+    font-style: italic;
+}
+
+/* Select2 stilovi */
 .select2-container--default .select2-selection--single {
     height: 38px;
     border-color: #ddd;
@@ -41,8 +96,63 @@
     height: 36px;
 }
 
-.select2-results__option {
+.select2-container--default .select2-results__option {
     padding: 8px 10px;
+}
+
+.select2-container--default .select2-search--dropdown .select2-search__field {
+    border-color: #ddd;
+    padding: 6px;
+}
+
+/* Modal stilovi */
+.dexpress-modal {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.4);
+}
+
+.dexpress-modal-content {
+    background-color: #fff;
+    margin: 10% auto;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    width: 80%;
+    max-width: 600px;
+    position: relative;
+}
+
+.dexpress-modal-close {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    color: #aaa;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.dexpress-modal-close:hover {
+    color: #333;
+}
+
+.dexpress-modal h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.dexpress-modal-actions {
+    margin-top: 20px;
+    text-align: right;
 }
 
 /* D Express opcije */
@@ -61,48 +171,33 @@
     font-weight: 600;
 }
 
-/* Modal za izbor grada */
-.dexpress-modal {
-    display: none;
-    position: fixed;
-    z-index: 9999;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    overflow: auto;
-    background-color: rgba(0,0,0,0.4);
+/* D Express tracking stil */
+.dexpress-tracking-info {
+    margin: 20px 0;
+    padding: 15px;
+    background: #f8f8f8;
+    border: 1px solid #ddd;
+    border-radius: 4px;
 }
 
-.dexpress-modal-content {
-    background-color: #fefefe;
-    margin: 10% auto;
-    padding: 20px;
-    border: 1px solid #888;
-    width: 80%;
-    max-width: 600px;
-    border-radius: 5px;
-}
-
-.dexpress-modal-close {
-    color: #aaa;
-    float: right;
-    font-size: 28px;
+.dexpress-tracking-number {
     font-weight: bold;
-    cursor: pointer;
+    font-size: 16px;
+    color: #2271b1;
 }
 
-.dexpress-modal-close:hover,
-.dexpress-modal-close:focus {
-    color: black;
-    text-decoration: none;
-    cursor: pointer;
+.dexpress-tracking-button {
+    margin-top: 10px;
 }
 
-/* Responsive */
+/* Responsivni dizajn */
 @media (max-width: 768px) {
     .dexpress-modal-content {
         width: 95%;
         margin: 15% auto;
+    }
+    
+    .dexpress-pickup-wrapper {
+        padding-left: 0;
     }
 }

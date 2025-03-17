@@ -175,6 +175,10 @@ class D_Express_WooCommerce
         // Inicijalizacija CRON zadataka
         $this->init_cron_jobs();
 
+        // Inicijalizacija checkout klase
+        $checkout = new D_Express_Checkout();
+        $checkout->init();
+
         // Inicijalizacija admin klasa
         if (is_admin()) {
             $admin = new D_Express_Admin();
@@ -188,10 +192,6 @@ class D_Express_WooCommerce
         // Inicijalizacija order handlera
         $order_handler = new D_Express_Order_Handler();
         $order_handler->init();
-
-        // Inicijalizacija checkout klase
-        $checkout = new D_Express_Checkout();
-        $checkout->init();
     }
 
     /**
