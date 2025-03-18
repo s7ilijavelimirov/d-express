@@ -192,6 +192,9 @@ function dexpress_process_notification_callback($notification_id)
 
         // Ažuriranje statusa narudžbine ako je potrebno
         update_order_status_from_shipment_status($shipment->order_id, $notification->status_id, $status_desc);
+
+        // Šaljemo email obaveštenje
+        dexpress_send_status_notification($shipment->id, $notification->status_id, $status_desc);
     }
 
     // Označavanje notifikacije kao obrađene
@@ -275,7 +278,7 @@ function dexpress_send_status_notification($shipment_id, $status_code, $status_n
         dexpress_send_failed_email($email_data);
     } else {
         // Pošaljite email o promeni statusa
-        //dexpress_send_status_change_email($email_data);
+        dexpress_send_status_change_email($email_data);
     }
 }
 
@@ -340,5 +343,40 @@ function dexpress_send_failed_email($data)
     // Dodajte napomenu na narudžbinu
     $order->add_order_note(
         sprintf(__('Email o neuspeloj isporuci pošiljke #%s je poslat kupcu.', 'd-express-woo'), $data['tracking_number'])
+    );
+}
+/**
+ * Email za promenu statusa pošiljke
+ */
+function dexpress_send_status_change_email($data)
+{
+    $order = $data['order'];
+
+    // Priprema mailer objekta
+    $mailer = WC()->mailer();
+
+    // Priprema email naslova i recipijenta
+    $email_subject = sprintf(__('Status Vaše pošiljke #%s je promenjen', 'd-express-woo'), $data['tracking_number']);
+    $email_recipient = $order->get_billing_email();
+
+    // Generišite HTML sadržaj koristeći dobar WooCommerce šablon
+    ob_start();
+    include DEXPRESS_WOO_PLUGIN_DIR . 'templates/emails/shipment-status-change.php';
+    $email_content = ob_get_clean();
+
+    // Wrap email u WooCommerce šablon
+    $email_content = $mailer->wrap_message($email_subject, $email_content);
+
+    // Pošaljite email
+    $headers = array('Content-Type: text/html; charset=UTF-8');
+    $mailer->send($email_recipient, $email_subject, $email_content, $headers);
+
+    // Dodajte napomenu na narudžbinu
+    $order->add_order_note(
+        sprintf(
+            __('Email o promeni statusa pošiljke #%s je poslat kupcu. Novi status: %s', 'd-express-woo'),
+            $data['tracking_number'],
+            $data['status_name']
+        )
     );
 }
