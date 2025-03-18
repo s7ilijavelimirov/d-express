@@ -132,7 +132,8 @@ class D_Express_Admin
         $return_doc = get_option('dexpress_return_doc', '0');
         $default_content = get_option('dexpress_default_content', __('Roba iz web prodavnice', 'd-express-woo'));
         $webhook_secret = get_option('dexpress_webhook_secret', wp_generate_password(32, false));
-
+        // Dodajte ovo u deo gde se inicijalizuju opcije
+        $buyout_account = get_option('dexpress_buyout_account', '');
         // Dobijanje WooCommerce statusa narudžbina
         $order_statuses = wc_get_order_statuses();
 
@@ -387,6 +388,18 @@ class D_Express_Admin
                                 <p class="description"><?php _e('Telefon kontakt osobe (u formatu 381xxxxxxxxx).', 'd-express-woo'); ?></p>
                             </td>
                         </tr>
+                        <tr>
+                            <th scope="row">
+                                <label for="dexpress_buyout_account"><?php _e('Broj računa za otkupninu', 'd-express-woo'); ?></label>
+                            </th>
+                            <td>
+                                <input type="text" id="dexpress_buyout_account" name="dexpress_buyout_account"
+                                    value="<?php echo esc_attr(get_option('dexpress_buyout_account', '')); ?>"
+                                    class="regular-text"
+                                    placeholder="XXX-XXXXXXXXXX-XX">
+                                <p class="description"><?php _e('Broj računa na koji će D Express uplaćivati iznose prikupljene pouzećem. Format: XXX-XXXXXXXXXX-XX (npr. 160-0000000000-00).', 'd-express-woo'); ?></p>
+                            </td>
+                        </tr>
                     </table>
                 </div>
 
@@ -604,6 +617,24 @@ class D_Express_Admin
 
         // Dodajemo u save_settings() metodu
         $clean_uninstall = isset($_POST['dexpress_clean_uninstall']) ? 'yes' : 'no';
+        // U save_settings() metodi, dodajte ovo u spisak opcija koje se čuvaju
+        $buyout_account = isset($_POST['dexpress_buyout_account']) ? sanitize_text_field($_POST['dexpress_buyout_account']) : '';
+
+        if (!empty($buyout_account)) {
+            $api = new D_Express_API();
+            $buyout_account = $api->format_bank_account($buyout_account);
+
+            // Dodatna validacija formata
+            if (!preg_match('/^\d{3}-\d{10}-\d{2}$/', $buyout_account)) {
+                // Ako format nije dobar, dodajte obaveštenje
+                add_settings_error(
+                    'dexpress_settings',
+                    'invalid_buyout_account',
+                    __('Broj računa za otkupninu mora biti u formatu XXX-XXXXXXXXXX-XX.', 'd-express-woo'),
+                    'error'
+                );
+            }
+        }
         // Webhook podešavanja
         $webhook_secret = isset($_POST['dexpress_webhook_secret']) ? sanitize_text_field($_POST['dexpress_webhook_secret']) : wp_generate_password(32, false);
 
@@ -621,6 +652,7 @@ class D_Express_Admin
         update_option('dexpress_auto_create_shipment', $auto_create_shipment);
         update_option('dexpress_auto_create_on_status', $auto_create_on_status);
         update_option('dexpress_sender_name', $sender_name);
+        update_option('dexpress_buyout_account', $buyout_account);
         update_option('dexpress_sender_address', $sender_address);
         update_option('dexpress_sender_address_num', $sender_address_num);
         update_option('dexpress_sender_town_id', $sender_town_id);
@@ -642,15 +674,21 @@ class D_Express_Admin
      */
     public function render_shipments_page()
     {
-        echo '<div class="wrap">';
-        echo '<h1>' . __('D Express Pošiljke', 'd-express-woo') . '</h1>';
-        echo '<p>' . __('Pregled svih D Express pošiljki.', 'd-express-woo') . '</p>';
+        if (class_exists('D_Express_Shipments_List')) {
+            // Pozovite funkciju koja će prikazati listu pošiljki
+            dexpress_shipments_list();
+        } else {
+            // Prikažite obaveštenje ako klasa ne postoji
+            echo '<div class="wrap">';
+            echo '<h1>' . __('D Express Pošiljke', 'd-express-woo') . '</h1>';
+            echo '<p>' . __('Pregled svih D Express pošiljki.', 'd-express-woo') . '</p>';
 
-        echo '<div class="notice notice-info">';
-        echo '<p>' . __('Osnovni plugin je aktiviran. Ovu stranicu će zameniti kompletna stranica za pregled pošiljki u potpunoj implementaciji.', 'd-express-woo') . '</p>';
-        echo '</div>';
+            echo '<div class="notice notice-info">';
+            echo '<p>' . __('Kompletna stranica za pregled pošiljki još nije implementirana.', 'd-express-woo') . '</p>';
+            echo '</div>';
 
-        echo '</div>';
+            echo '</div>';
+        }
     }
 
     /**
@@ -764,12 +802,41 @@ class D_Express_Admin
     /**
      * Obrada akcije kreiranja pošiljke
      */
+    /**
+     * Obrada akcije kreiranja pošiljke
+     */
     public function process_create_shipment_action($order)
     {
-        // Ovde će biti implementirana kompletna logika kreiranja pošiljke
-        $order->add_order_note(__('D Express pošiljka će biti implementirana u potpunoj verziji plugin-a.', 'd-express-woo'));
-    }
+        // Provera da li je narudžbina već ima kreiranu pošiljku
+        global $wpdb;
+        $existing = $wpdb->get_var($wpdb->prepare(
+            "SELECT id FROM {$wpdb->prefix}dexpress_shipments WHERE order_id = %d",
+            $order->get_id()
+        ));
 
+        if ($existing) {
+            $order->add_order_note(__('D Express pošiljka već postoji za ovu narudžbinu.', 'd-express-woo'));
+            return;
+        }
+
+        // Kreiranje instance Order Handler klase
+        $order_handler = new D_Express_Order_Handler();
+
+        // Kreiranje pošiljke
+        $result = $order_handler->create_shipment($order);
+
+        if (is_wp_error($result)) {
+            $order->add_order_note(sprintf(
+                __('Greška pri kreiranju D Express pošiljke: %s', 'd-express-woo'),
+                $result->get_error_message()
+            ));
+        } else {
+            $order->add_order_note(sprintf(
+                __('D Express pošiljka uspešno kreirana. ID: %s', 'd-express-woo'),
+                $result
+            ));
+        }
+    }
     /**
      * Dodavanje kolone za praćenje u listi narudžbina
      */

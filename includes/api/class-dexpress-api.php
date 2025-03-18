@@ -587,7 +587,27 @@ class D_Express_API
         // Format: ORDER-{order_id}-{timestamp}
         return dexpress_generate_reference($order_id);
     }
+    /**
+     * Formatira broj računa za otkupninu
+     * 
+     * @param string $account_number Neobrađeni broj računa
+     * @return string Pravilno formatiran broj računa
+     */
+    public function format_bank_account($account_number)
+    {
+        // Ukloni sve osim brojeva
+        $digits_only = preg_replace('/[^0-9]/', '', $account_number);
 
+        // Ako imamo 15 cifara (3 banke + 10 broja + 2 kontrolna), formatiraj
+        if (strlen($digits_only) === 15) {
+            return substr($digits_only, 0, 3) . '-' .
+                substr($digits_only, 3, 10) . '-' .
+                substr($digits_only, 13, 2);
+        }
+
+        // Vrati original ako već ima crtice ili ne možemo formatirati
+        return $account_number;
+    }
     /**
      * Generiše jedinstveni kod paketa
      */
@@ -603,6 +623,42 @@ class D_Express_API
     {
         if (!$order instanceof WC_Order) {
             return new WP_Error('invalid_order', __('Nevažeća narudžbina', 'd-express-woo'));
+        }
+
+        // Odredite koji tip adrese koristiti
+        $address_type = $order->has_shipping_address() ? 'shipping' : 'billing';
+
+        // Dohvatite meta podatke za adresu
+        $street = $order->get_meta("_{$address_type}_street", true);
+        $number = $order->get_meta("_{$address_type}_number", true);
+        $city_id = $order->get_meta("_{$address_type}_city_id", true);
+
+        dexpress_log("Using address type: {$address_type}", 'debug');
+        dexpress_log("Street: {$street}, Number: {$number}, City ID: {$city_id}", 'debug');
+
+        // Prepoznavanje metode plaćanja
+        $payment_method = $order->get_payment_method();
+        $is_cod = ($payment_method === 'cod' || $payment_method === 'bacs' || $payment_method === 'cheque');
+
+        dexpress_log("Payment method: {$payment_method}, Is COD: " . ($is_cod ? 'Yes' : 'No'), 'debug');
+
+        // Postavke za otkupninu
+        $buyout_amount = 0;
+        $buyout_account = get_option('dexpress_buyout_account', '');
+        if (!empty($buyout_account)) {
+            $buyout_account = $this->format_bank_account($buyout_account);
+        }
+
+        // Ako je pouzeće i imamo račun, koristimo otkupninu
+        if ($is_cod) {
+            if (!empty($buyout_account)) {
+                $buyout_amount = dexpress_convert_price_to_para($order->get_total());
+                dexpress_log("Using BuyOut: {$buyout_amount}, Account: {$buyout_account}", 'debug');
+            } else {
+                dexpress_log("WARNING: COD payment method, but no BuyOutAccount defined!", 'warning');
+                // Postavljamo na 0 da izbegnemo API grešku
+                $buyout_amount = 0;
+            }
         }
 
         // Osnovni podaci o pošiljci
@@ -626,11 +682,11 @@ class D_Express_API
             'PuCName' => get_option('dexpress_sender_contact_name', ''),
             'PuCPhone' => get_option('dexpress_sender_contact_phone', ''),
 
-            // Podaci o primaocu
+            // Podaci o primaocu - poboljšano sa proverama za prazne vrednosti
             'RName' => $order->get_shipping_first_name() . ' ' . $order->get_shipping_last_name(),
-            'RAddress' => $order->get_meta('_shipping_street', true),
-            'RAddressNum' => $order->get_meta('_shipping_street_num', true),
-            'RTownID' => intval($order->get_meta('_shipping_town_id', true)),
+            'RAddress' => !empty($street) ? $street : $order->get_shipping_address_1(),
+            'RAddressNum' => !empty($number) ? $number : '1', // Podrazumevana vrednost ako je prazno
+            'RTownID' => !empty($city_id) ? (int)$city_id : 100001, // Osigurajte da je ID grada validan
             'RCName' => $order->get_shipping_first_name() . ' ' . $order->get_shipping_last_name(),
             'RCPhone' => $this->format_phone_number($order->get_billing_phone()),
 
@@ -648,14 +704,21 @@ class D_Express_API
             'ReferenceID' => $this->generate_reference_id($order->get_id()),
             'ReturnDoc' => intval(get_option('dexpress_return_doc', 0)),
 
-            // Otkupnina ako je potrebno
-            'BuyOut' => $this->get_buyout_amount($order),
+            // Otkupnina - postavljeno na osnovu metode plaćanja
+            'BuyOut' => $buyout_amount,
             'BuyOutFor' => intval(get_option('dexpress_buyout_for', 0)),
-            'BuyOutAccount' => get_option('dexpress_buyout_account', ''),
+            'BuyOutAccount' => ($buyout_amount > 0) ? $buyout_account : '',
         );
 
         // Dodavanje paketa
         $shipment_data['PackageList'] = $this->prepare_packages_for_order($order);
+
+        // Dodatno logiranje za debugiranje
+        dexpress_log("Final BuyOut amount: " . $shipment_data['BuyOut'], 'debug');
+        dexpress_log("Final BuyOutAccount: " . $shipment_data['BuyOutAccount'], 'debug');
+        dexpress_log("Final RAddressNum: " . $shipment_data['RAddressNum'], 'debug');
+        dexpress_log("Final RTownID: " . $shipment_data['RTownID'], 'debug');
+
         // Omogućavanje filtiranja podataka za dodatna prilagođavanja
         return apply_filters('dexpress_prepare_shipment_data', $shipment_data, $order);
     }
