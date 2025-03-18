@@ -80,6 +80,9 @@ class D_Express_WooCommerce
             require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/admin/dexpress-admin-ajax.php'; // Dodaj ovu liniju
             // U glavnoj datoteci plugina ili u funkciji za uključivanje zavisnosti
             include_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/admin/class-dexpress-shipments-list.php';
+            require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/admin/class-dexpress-reports.php';
+            require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/admin/class-dexpress-dashboard-widget.php';
+            
         }
 
         // WooCommerce integracija klase
