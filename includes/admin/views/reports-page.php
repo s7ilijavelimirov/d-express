@@ -4,16 +4,16 @@ defined('ABSPATH') || exit;
 
 <div class="wrap">
     <h1 class="wp-heading-inline"><?php _e('D Express Izveštaji', 'd-express-woo'); ?></h1>
-    
+
     <div class="dexpress-reports-filters">
         <form method="get" action="">
             <input type="hidden" name="page" value="dexpress-reports">
-            
+
             <div class="dexpress-date-range">
                 <label for="date-range"><?php _e('Period:', 'd-express-woo'); ?></label>
                 <input type="text" id="date-range" name="date_range" class="regular-text" />
             </div>
-            
+
             <div class="dexpress-status-filter">
                 <label for="status"><?php _e('Status:', 'd-express-woo'); ?></label>
                 <select id="status" name="status">
@@ -22,35 +22,35 @@ defined('ABSPATH') || exit;
                     // Dohvatanje svih statusa
                     global $wpdb;
                     $statuses = $wpdb->get_results("SELECT id, name FROM {$wpdb->prefix}dexpress_statuses_index ORDER BY id");
-                    
+
                     foreach ($statuses as $status) {
                         echo '<option value="' . esc_attr($status->id) . '">' . esc_html($status->name) . '</option>';
                     }
                     ?>
                 </select>
             </div>
-            
+
             <button type="submit" class="button button-primary"><?php _e('Filtriraj', 'd-express-woo'); ?></button>
-            
+
             <a href="<?php echo esc_url(wp_nonce_url(add_query_arg(array('export' => 'csv'), admin_url('admin.php?page=dexpress-reports')), 'dexpress_export_csv')); ?>" class="button button-secondary"><?php _e('Izvezi CSV', 'd-express-woo'); ?></a>
         </form>
     </div>
-    
+
     <div class="dexpress-reports-grid">
         <div class="dexpress-report-card">
             <h2><?php _e('Pošiljke po statusima', 'd-express-woo'); ?></h2>
             <canvas id="statusChart" height="250"></canvas>
         </div>
-        
+
         <div class="dexpress-report-card">
             <h2><?php _e('Pošiljke po datumima', 'd-express-woo'); ?></h2>
             <canvas id="dateChart" height="250"></canvas>
         </div>
     </div>
-    
+
     <div class="dexpress-reports-summary">
         <h2><?php _e('Sumarni podaci', 'd-express-woo'); ?></h2>
-        
+
         <table class="widefat">
             <thead>
                 <tr>
@@ -63,12 +63,12 @@ defined('ABSPATH') || exit;
                 <?php
                 $total_shipments = 0;
                 $status_data = array();
-                
+
                 foreach ($status_stats as $stat) {
                     $total_shipments += $stat->count;
                     $status_data[$stat->status_code] = $stat->count;
                 }
-                
+
                 if ($total_shipments > 0) {
                     foreach ($status_stats as $stat) {
                         $percentage = round(($stat->count / $total_shipments) * 100, 2);
@@ -95,47 +95,87 @@ defined('ABSPATH') || exit;
 </div>
 
 <style>
+    /* Dodajte ovo u vaš <style> tag */
+    .dexpress-report-card {
+        height: 350px !important;
+        max-height: 350px !important;
+        overflow: hidden !important;
+    }
+
+    .dexpress-report-card canvas,
+    canvas.chartjs-render-monitor {
+        height: 280px !important;
+        max-height: 280px !important;
+        min-height: 280px !important;
+    }
+
+    /* Specificiranje globalnih stilova za Chart.js */
+    canvas {
+        height: 280px !important;
+    }
+
     .dexpress-reports-filters {
         margin: 20px 0;
         padding: 15px;
         background: #fff;
         border: 1px solid #e5e5e5;
-        box-shadow: 0 1px 1px rgba(0,0,0,.04);
+        box-shadow: 0 1px 1px rgba(0, 0, 0, .04);
     }
-    
+
     .dexpress-reports-filters form {
         display: flex;
         align-items: center;
         flex-wrap: wrap;
         gap: 15px;
     }
-    
-    .dexpress-date-range, .dexpress-status-filter {
+
+    .dexpress-date-range,
+    .dexpress-status-filter {
         display: flex;
         align-items: center;
         gap: 8px;
     }
-    
+
     .dexpress-reports-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
         gap: 20px;
         margin: 20px 0;
     }
-    
+
     .dexpress-report-card {
         background: #fff;
         border: 1px solid #e5e5e5;
-        box-shadow: 0 1px 1px rgba(0,0,0,.04);
+        box-shadow: 0 1px 1px rgba(0, 0, 0, .04);
         padding: 20px;
+        position: relative;
+        min-height: 350px;
+        /* Fiksirajte minimalnu visinu */
+        display: flex;
+        flex-direction: column;
     }
-    
-    .dexpress-reports-summary {
-        background: #fff;
-        border: 1px solid #e5e5e5;
-        box-shadow: 0 1px 1px rgba(0,0,0,.04);
-        padding: 20px;
-        margin: 20px 0;
+
+    .dexpress-report-card h2 {
+        margin-top: 0;
+        margin-bottom: 15px;
+    }
+
+    .dexpress-report-card canvas {
+        flex: 1;
+        width: 100% !important;
+        height: 280px !important;
+        /* Fiksirajte visinu canvasa */
+    }
+
+    /* Poboljšanja za mobilni prikaz */
+    @media screen and (max-width: 782px) {
+        .dexpress-reports-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .dexpress-report-card {
+            min-height: 300px;
+        }
     }
 </style>
 
@@ -159,7 +199,7 @@ defined('ABSPATH') || exit;
                 customRangeLabel: dexpressReports.i18n.customRange
             }
         });
-        
+
         // Inicijalizacija grafikona za statuse
         var statusCtx = document.getElementById('statusChart').getContext('2d');
         var statusChart = new Chart(statusCtx, {
@@ -192,7 +232,7 @@ defined('ABSPATH') || exit;
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: false,
+                maintainAspectRatio: false, // Ovo je važno!
                 plugins: {
                     legend: {
                         position: 'right'
@@ -200,7 +240,7 @@ defined('ABSPATH') || exit;
                 }
             }
         });
-        
+
         // Inicijalizacija grafikona za datume
         var dateCtx = document.getElementById('dateChart').getContext('2d');
         var dateChart = new Chart(dateCtx, {
@@ -223,7 +263,7 @@ defined('ABSPATH') || exit;
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: false,
+                maintainAspectRatio: false, // Ovo je važno!
                 scales: {
                     y: {
                         beginAtZero: true,
