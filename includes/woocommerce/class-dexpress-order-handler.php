@@ -360,7 +360,7 @@ class D_Express_Order_Handler
 
             // Logovanje podataka ako je test mode aktivan
             if (dexpress_is_test_mode()) {
-                dexpress_log('Kreiranje pošiljke. Podaci: ' . print_r($shipment_data, true));
+                dexpress_log('Kreiranje pošiljke. Podaci(TEST): ' . print_r($shipment_data, true));
             }
 
             // Logujemo ključne podatke za debugging bez obzira na test mode

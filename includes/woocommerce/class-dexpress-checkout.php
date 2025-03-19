@@ -54,6 +54,15 @@ class D_Express_Checkout
                 'class'       => ['form-row-wide', 'dexpress-number'],
                 'priority'    => 55,
             ],
+            // Novo polje - Dodatne informacije o adresi
+            'address_desc' => [
+                'type'        => 'text',
+                'label'       => __('Dodatne informacije o adresi', 'd-express-woo'),
+                'placeholder' => __('Npr: sprat 3, stan 24, interfon 24', 'd-express-woo'),
+                'required'    => false,
+                'class'       => ['form-row-wide', 'dexpress-address-desc'],
+                'priority'    => 56,
+            ],
             'city' => [
                 'type'        => 'text',
                 'label'       => __('Grad', 'd-express-woo'),
@@ -61,7 +70,7 @@ class D_Express_Checkout
                 'required'    => true,
                 'class'       => ['form-row-wide', 'dexpress-city'],
                 'priority'    => 60,
-                'custom_attributes' => ['readonly' => 'readonly'], // Dodajemo readonly atribut
+                'custom_attributes' => ['readonly' => 'readonly'],
             ],
             'city_id' => [
                 'type'     => 'hidden',
@@ -130,7 +139,7 @@ class D_Express_Checkout
         $debug_info = "Order ID: " . $order_id . "\n";
 
         foreach ($address_types as $type) {
-            foreach (['street', 'street_id', 'number', 'city', 'city_id', 'postcode'] as $key) {
+            foreach (['street', 'street_id', 'number', 'address_desc', 'city', 'city_id', 'postcode'] as $key) {
                 $field_name = "{$type}_{$key}";
                 if (isset($_POST[$field_name])) {
                     $value = sanitize_text_field($_POST[$field_name]);
@@ -154,29 +163,7 @@ class D_Express_Checkout
 
         dexpress_log($debug_info, 'debug');
     }
-    /**
-     * Validacija podataka pre slanja API zahteva
-     * 
-     * @param array $data Podaci za API
-     * @return bool|WP_Error True ako su podaci validni, WP_Error u suprotnom
-     */
-    private function validate_shipment_data($data)
-    {
-        $required_fields = ['RAddress', 'RAddressNum', 'RTownID'];
 
-        foreach ($required_fields as $field) {
-            if (empty($data[$field])) {
-                return new WP_Error('missing_field', "Polje {$field} je obavezno");
-            }
-        }
-
-        // Dodatne validacije
-        if (!empty($data['RTownID']) && ($data['RTownID'] < 100000 || $data['RTownID'] > 10000000)) {
-            return new WP_Error('invalid_town_id', 'ID grada mora biti između 100000 i 10000000');
-        }
-
-        return true;
-    }
     /**
      * AJAX: Pretraga ulica
      */

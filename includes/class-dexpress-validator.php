@@ -5,7 +5,6 @@
  */
 class D_Express_Validator
 {
-
     /**
      * Validira telefonski broj
      * 
@@ -77,12 +76,48 @@ class D_Express_Validator
 
     /**
      * Validira bankovni račun
+     * 
+     * Poboljšana validacija koja podržava različite formate računa, ali obezbeđuje 
+     * da račun ima osnovni format XXX-XXXXXXXXX-XX sa fleksibilnim brojem cifara u srednjem delu
      */
     public static function validate_bank_account($account)
     {
-        // Format: XXX-XXXXXXXXXX-XX 
-        $pattern = '/^\d{3}-\d{10}-\d{2}$/';
-        return preg_match($pattern, $account) && strlen($account) <= 20;
+        // Uklonimo sve razmake prvo
+        $account = trim($account);
+        
+        // Proverimo osnovni format (cifre i crtice)
+        if (!preg_match('/^[\d\-]+$/', $account)) {
+            return false;
+        }
+        
+        // Proverimo dužinu (prema API dokumentaciji, maksimalna dužina je 20)
+        if (strlen($account) > 20) {
+            return false;
+        }
+        
+        // Proverimo osnovni format (X-X-X) gde je X niz cifara
+        $parts = explode('-', $account);
+        if (count($parts) !== 3) {
+            return false;
+        }
+        
+        // Prvi deo bi trebao biti 3 cifre (npr. 170, 160, 200...)
+        if (!preg_match('/^\d{1,3}$/', $parts[0])) {
+            return false;
+        }
+        
+        // Poslednji deo bi trebao biti 2 cifre (kontrolni broj)
+        if (!preg_match('/^\d{1,2}$/', $parts[2])) {
+            return false;
+        }
+        
+        // Srednji deo može biti različite dužine, ali mora biti samo cifre
+        if (!preg_match('/^\d+$/', $parts[1])) {
+            return false;
+        }
+        
+        // Sve provere su prošle
+        return true;
     }
 
     /**
@@ -95,6 +130,9 @@ class D_Express_Validator
 
     /**
      * Validira kompletne podatke shipment-a
+     * 
+     * @param array $data Podaci za validaciju
+     * @return true|array True ako su podaci validni, niz grešaka ako nisu
      */
     public static function validate_shipment_data($data)
     {
@@ -157,8 +195,10 @@ class D_Express_Validator
 
         // Validacija otkupnine i bankovnog računa
         if (!empty($data['BuyOut']) && $data['BuyOut'] > 0) {
-            if (empty($data['BuyOutAccount']) || !self::validate_bank_account($data['BuyOutAccount'])) {
-                $errors[] = "Ako je definisana otkupnina, BuyOutAccount mora biti ispravnog formata";
+            if (empty($data['BuyOutAccount'])) {
+                $errors[] = "Za otkupninu (BuyOut) je obavezan bankovni račun";
+            } elseif (!self::validate_bank_account($data['BuyOutAccount'])) {
+                $errors[] = "Neispravan format bankovnog računa. Format treba biti XXX-YYYYYYYYY-ZZ gde je X poziv na broj, Y broj računa, Z kontrolni broj.";
             }
         }
 

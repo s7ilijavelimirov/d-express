@@ -700,7 +700,8 @@ class D_Express_API
 
         // Odredite koji tip adrese koristiti
         $address_type = $order->has_shipping_address() ? 'shipping' : 'billing';
-
+        $address_desc = $order->get_meta("_{$address_type}_address_desc", true);
+        $delivery_note = $order->get_customer_note();
         // Dohvatite meta podatke za adresu
         $street = $order->get_meta("_{$address_type}_street", true);
         $number = $order->get_meta("_{$address_type}_number", true);
@@ -811,10 +812,11 @@ class D_Express_API
             'RName' => $order->get_shipping_first_name() . ' ' . $order->get_shipping_last_name(),
             'RAddress' => $street,
             'RAddressNum' => $number,
+            'RAddressDesc' => $address_desc,
             'RTownID' => (int)$city_id,
             'RCName' => $order->get_shipping_first_name() . ' ' . $order->get_shipping_last_name(),
             'RCPhone' => $phone,
-
+            'Note' => $delivery_note,
             // Tip pošiljke i plaćanje
             'DlTypeID' => intval(get_option('dexpress_shipment_type', 2)),
             'PaymentBy' => intval(get_option('dexpress_payment_by', 0)),
