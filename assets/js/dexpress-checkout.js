@@ -5,7 +5,8 @@
         init: function () {
             this.initStreetAutocomplete('billing');
             this.initStreetAutocomplete('shipping');
-
+            this.initPhoneFormatter();
+            this.watchShippingMethod();
             // Praćenje "Dostavi na drugu adresu" checkbox-a
             $('#ship-to-different-address-checkbox').on('change', function () {
                 setTimeout(function () {
@@ -158,7 +159,82 @@
                 self.updateStandardAddressField(addressType);
             });
         },
+        // Dodaj ovu novu metodu
+        initPhoneFormatter: function () {
+            $('input[name="billing_phone"]').on('input', function () {
+                var phoneValue = $(this).val().replace(/\D/g, ''); // Ukloni sve osim brojeva
 
+                // Automatski dodaj 381 prefiks ako nema
+                if (phoneValue.length > 0 && !phoneValue.startsWith('381')) {
+                    // Ako počinje sa 0, zameni ga sa 381
+                    if (phoneValue.startsWith('0')) {
+                        phoneValue = '381' + phoneValue.substring(1);
+                    } else {
+                        phoneValue = '381' + phoneValue;
+                    }
+                }
+
+                // Ograniči na maksimalno 12-13 cifara
+                if (phoneValue.length > 13) {
+                    phoneValue = phoneValue.substring(0, 13);
+                }
+
+                $(this).val(phoneValue);
+            });
+
+            // Dodaj pomoćni tekst za telefon
+            if ($('input[name="billing_phone"]').length && !$('input[name="billing_phone"]').next('.phone-format-hint').length) {
+                $('<span class="phone-format-hint" style="font-size: 0.85em; color: #767676;">Format: 381xxxxxxxxx (bez razmaka i crtica)</span>')
+                    .insertAfter($('input[name="billing_phone"]'));
+            }
+        },
+        // Nova metoda za praćenje metode dostave
+        watchShippingMethod: function () {
+            var self = this;
+
+            // Inicijalno proveri
+            self.updatePhoneRequirement();
+
+            // Prati promene
+            $(document.body).on('updated_checkout', function () {
+                self.updatePhoneRequirement();
+            });
+
+            // Prati promene metode dostave
+            $(document).on('change', 'input.shipping_method', function () {
+                self.updatePhoneRequirement();
+            });
+        },
+
+        // Ažuriramo oznaku obaveznog polja za telefon na osnovu izbora dostave
+        updatePhoneRequirement: function () {
+            var isDExpressShipping = false;
+            $('.shipping_method:checked').each(function () {
+                if ($(this).val().indexOf('dexpress') !== -1) {
+                    isDExpressShipping = true;
+                    return false;
+                }
+            });
+
+            var $phoneLabel = $('label[for="billing_phone"]');
+            var $phoneField = $('#billing_phone');
+
+            if (isDExpressShipping) {
+                // Dodaj oznaku obaveznog polja
+                if ($phoneLabel.find('.optional').length) {
+                    $phoneLabel.find('.optional').remove();
+                    $phoneLabel.append('<abbr class="required" title="required">*</abbr>');
+                }
+                $phoneField.attr('required', 'required');
+            } else {
+                // Vrati na opciono
+                if ($phoneLabel.find('.required').length) {
+                    $phoneLabel.find('.required').remove();
+                    $phoneLabel.append('<span class="optional">(optional)</span>');
+                }
+                $phoneField.removeAttr('required');
+            }
+        },
         initCheckoutValidation: function () {
             $('form.checkout').on('checkout_place_order', function () {
                 var addressType = $('#ship-to-different-address-checkbox').is(':checked') ? 'shipping' : 'billing';
@@ -169,7 +245,29 @@
                 var $number = $('#' + addressType + '_number');
                 var $city = $('#' + addressType + '_city');
                 var $cityId = $('#' + addressType + '_city_id');
+                var $phone = $('input[name="billing_phone"]');
 
+                // Validacija telefona - proveravamo da li je D-Express dostava izabrana
+                var isDExpressShipping = false;
+                $('.shipping_method:checked').each(function () {
+                    if ($(this).val().indexOf('dexpress') !== -1) {
+                        isDExpressShipping = true;
+                        return false; // prekida each petlju
+                    }
+                });
+
+                // Validacija telefona samo ako je D-Express izabran
+                if (isDExpressShipping) {
+                    var phoneValue = $phone.val().trim();
+                    // Za D-Express dostavu, telefon je OBAVEZAN
+                    if (!phoneValue) {
+                        isValid = DExpressCheckout.showFieldError($phone, 'Telefon je obavezan za D Express dostavu');
+                    } else if (!(/^(381[1-9][0-9]{7,8}|38167[0-9]{6,8})$/.test(phoneValue))) {
+                        isValid = DExpressCheckout.showFieldError($phone, 'Telefon mora biti u formatu 381xxxxxxxxx');
+                    }
+                }
+
+                // Ostale validacije...
                 if (!$street.val()) {
                     isValid = DExpressCheckout.showFieldError($street, dexpressCheckout.i18n.enterStreet);
                 } else if (!$streetId.val()) {

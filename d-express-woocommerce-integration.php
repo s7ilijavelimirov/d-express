@@ -74,6 +74,9 @@ class D_Express_WooCommerce
         // Klase za bazu podataka
         require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/db/class-dexpress-db.php';
 
+        // Validator
+        require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/class-dexpress-validator.php';
+
         // Admin klase
         if (is_admin()) {
             require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/admin/class-dexpress-admin.php';
@@ -82,7 +85,6 @@ class D_Express_WooCommerce
             include_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/admin/class-dexpress-shipments-list.php';
             require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/admin/class-dexpress-reports.php';
             require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/admin/class-dexpress-dashboard-widget.php';
-            
         }
 
         // WooCommerce integracija klase

@@ -323,7 +323,18 @@ class D_Express_Order_Handler
                 dexpress_log('[SHIPPING] Nedostaju API kredencijali za narudžbinu #' . $order->get_id(), 'error');
                 return new WP_Error('missing_credentials', __('Nedostaju API kredencijali. Molimo podesite API kredencijale u podešavanjima.', 'd-express-woo'));
             }
+            // Prvo proverimo adresu ako je opcija uključena
+            if (get_option('dexpress_validate_address', 'yes') === 'yes') {
+                dexpress_log('[SHIPPING] Proveravam adresu za narudžbinu #' . $order->get_id(), 'debug');
+                $address_check = $api->validate_order_address($order);
 
+                if (is_wp_error($address_check)) {
+                    dexpress_log('[SHIPPING] Greška pri proveri adrese: ' . $address_check->get_error_message(), 'error');
+                    return $address_check;
+                }
+
+                dexpress_log('[SHIPPING] Adresa validirana uspešno', 'debug');
+            }
             // Dobijanje podataka za pošiljku iz narudžbine
             dexpress_log('[SHIPPING] Priprema podataka za narudžbinu #' . $order->get_id(), 'debug');
             $shipment_data = $api->prepare_shipment_data_from_order($order);
@@ -332,7 +343,9 @@ class D_Express_Order_Handler
                 dexpress_log('[SHIPPING] Greška pri pripremi podataka: ' . $shipment_data->get_error_message(), 'error');
                 return $shipment_data;
             }
-
+            if (dexpress_is_test_mode()) {
+                dexpress_log('Kreiranje pošiljke. Podaci: ' . print_r($shipment_data, true));
+            }
             // Generisanje referentnog ID-a ako nije postavljen
             if (empty($shipment_data['ReferenceID'])) {
                 $shipment_data['ReferenceID'] = $api->generate_reference_id($order->get_id());
@@ -549,7 +562,7 @@ class D_Express_Order_Handler
             return;
         }
 
-        // Samo za email-ove o dovršenim narudžbinama
+        // Samo za email-ove o dovršenim narudžbinama ili procesuiranim
         if ($email->id !== 'customer_completed_order' && $email->id !== 'customer_processing_order') {
             return;
         }

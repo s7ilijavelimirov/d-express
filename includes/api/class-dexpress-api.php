@@ -7,7 +7,6 @@
  */
 
 defined('ABSPATH') || exit;
-
 class D_Express_API
 {
     /**
@@ -184,12 +183,81 @@ class D_Express_API
 
     /**
      * Provera adrese
+     * 
+     * @param array $address_data Podaci adrese
+     * @return array|WP_Error Odgovor API-ja ili greška
      */
     public function check_address($address_data)
     {
         return $this->api_request('data/checkaddress', 'POST', $address_data);
     }
+    /**
+     * Priprema podatke za proveru adrese iz WooCommerce narudžbine
+     * 
+     * @param WC_Order $order WooCommerce narudžbina
+     * @return array Podaci za proveru adrese
+     */
+    public function prepare_address_check_data($order)
+    {
+        if (!$order instanceof WC_Order) {
+            return new WP_Error('invalid_order', __('Nevažeća narudžbina', 'd-express-woo'));
+        }
 
+        // Odredite koji tip adrese koristiti
+        $address_type = $order->has_shipping_address() ? 'shipping' : 'billing';
+
+        // Dohvatite meta podatke za adresu
+        $street = $order->get_meta("_{$address_type}_street", true);
+        $number = $order->get_meta("_{$address_type}_number", true);
+        $city_id = $order->get_meta("_{$address_type}_city_id", true);
+
+        // Formatiranje telefonskog broja
+        $phone = D_Express_Validator::format_phone($order->get_billing_phone());
+
+        // Priprema podataka za proveru
+        $check_data = array(
+            'RName' => $order->get_shipping_first_name() . ' ' . $order->get_shipping_last_name(),
+            'RAddress' => !empty($street) ? $street : $order->get_shipping_address_1(),
+            'RAddressNum' => !empty($number) ? $number : 'bb',
+            'RTownID' => !empty($city_id) ? (int)$city_id : 100001,
+            'RCName' => $order->get_shipping_first_name() . ' ' . $order->get_shipping_last_name(),
+            'RCPhone' => $phone
+        );
+
+        return $check_data;
+    }
+    /**
+     * Provera adrese pre kreiranja pošiljke
+     * 
+     * @param WC_Order $order WooCommerce narudžbina
+     * @return bool|WP_Error True ako je adresa validna, WP_Error u suprotnom
+     */
+    public function validate_order_address($order)
+    {
+        $address_data = $this->prepare_address_check_data($order);
+
+        if (is_wp_error($address_data)) {
+            return $address_data;
+        }
+
+        dexpress_log("Checking address: " . print_r($address_data, true), 'debug');
+
+        $response = $this->check_address($address_data);
+
+        if (is_wp_error($response)) {
+            dexpress_log("Address check failed: " . $response->get_error_message(), 'error');
+            return $response;
+        }
+
+        dexpress_log("Address check response: " . print_r($response, true), 'debug');
+
+        // Provera odgovora (struktura odgovora zavisi od implementacije API-ja)
+        if (isset($response['IsValid']) && $response['IsValid'] === false) {
+            return new WP_Error('invalid_address', isset($response['Message']) ? $response['Message'] : __('Adresa nije validna', 'd-express-woo'));
+        }
+
+        return true;
+    }
     /**
      * Kreiranje pošiljke
      */
@@ -641,29 +709,81 @@ class D_Express_API
         dexpress_log("Using address type: {$address_type}", 'debug');
         dexpress_log("Street: {$street}, Number: {$number}, City ID: {$city_id}", 'debug');
 
-        // Prepoznavanje metode plaćanja
-        $payment_method = $order->get_payment_method();
-        $is_cod = ($payment_method === 'cod' || $payment_method === 'bacs' || $payment_method === 'cheque');
-
-        dexpress_log("Payment method: {$payment_method}, Is COD: " . ($is_cod ? 'Yes' : 'No'), 'debug');
 
         // Postavke za otkupninu
         $buyout_amount = 0;
         $buyout_account = get_option('dexpress_buyout_account', '');
+        // Prepoznavanje metode plaćanja
+        $payment_method = $order->get_payment_method();
+        $is_cod = ($payment_method === 'cod' || $payment_method === 'bacs' || $payment_method === 'cheque');
+        dexpress_log("Payment method: {$payment_method}, Is COD: " . ($is_cod ? 'Yes' : 'No'), 'debug');
+
+
+
         if (!empty($buyout_account)) {
             $buyout_account = $this->format_bank_account($buyout_account);
         }
 
         // Ako je pouzeće i imamo račun, koristimo otkupninu
         if ($is_cod) {
-            if (!empty($buyout_account)) {
+            if (!empty($buyout_account) && D_Express_Validator::validate_bank_account($buyout_account)) {
+                // Validni bankovni račun, možemo koristiti otkupninu
                 $buyout_amount = dexpress_convert_price_to_para($order->get_total());
                 dexpress_log("Using BuyOut: {$buyout_amount}, Account: {$buyout_account}", 'debug');
             } else {
-                dexpress_log("WARNING: COD payment method, but no BuyOutAccount defined!", 'warning');
-                // Postavljamo na 0 da izbegnemo API grešku
+                // Nema validnog bankovnog računa - upozorenje
+                dexpress_log("WARNING: COD payment method, but no valid BuyOutAccount defined, using 0 BuyOut", 'warning');
+
+                // Kod odluke:
+                // 1. Postavi otkupninu na 0 (bez naplate)
                 $buyout_amount = 0;
+
+                // ILI
+                // 2. Pravimo grešku ako je firma odlučila da je otkupnina obavezna
+                if (get_option('dexpress_require_buyout_account', 'no') === 'yes') {
+                    return new WP_Error(
+                        'missing_buyout_account',
+                        __('Za pouzeće je obavezan validan bankovni račun. Podesite ga u D Express podešavanjima.', 'd-express-woo')
+                    );
+                }
             }
+        }
+
+        // Formatiranje telefonskog broja prema API zahtevima
+        $phone = D_Express_Validator::format_phone($order->get_billing_phone());
+        if (!D_Express_Validator::validate_phone($phone)) {
+            dexpress_log("WARNING: Invalid phone format: {$phone}", 'warning');
+            $phone = '38160000000'; // Default phone ako je format neispravan
+        }
+
+        // Validacija adrese primaoca
+        if (empty($street) || !D_Express_Validator::validate_name($street)) {
+            dexpress_log("WARNING: Invalid street name: {$street}", 'warning');
+            $street = substr($order->get_shipping_address_1(), 0, 50); // Fallback na shipping adresu
+        }
+
+        if (empty($number) || !D_Express_Validator::validate_address_number($number)) {
+            dexpress_log("WARNING: Invalid address number: {$number}", 'warning');
+            $number = "bb"; // Default vrednost ako je format neispravan
+        }
+
+        if (empty($city_id) || !D_Express_Validator::validate_town_id($city_id)) {
+            dexpress_log("WARNING: Invalid town ID: {$city_id}", 'warning');
+            $city_id = 100001; // Default vrednost
+        }
+
+        // Pripremanje sadržaja pošiljke
+        $content = get_option('dexpress_default_content', __('Roba iz web prodavnice', 'd-express-woo'));
+        if (!D_Express_Validator::validate_content($content)) {
+            dexpress_log("WARNING: Invalid content description: {$content}", 'warning');
+            $content = "Roba"; // Default vrednost
+        }
+
+        // Kreiranje reference
+        $reference_id = $this->generate_reference_id($order->get_id());
+        if (!D_Express_Validator::validate_reference($reference_id)) {
+            dexpress_log("WARNING: Invalid reference ID: {$reference_id}", 'warning');
+            $reference_id = "ORDER-" . $order->get_id(); // Pojednostavljena referenca
         }
 
         // Osnovni podaci o pošiljci
@@ -676,7 +796,7 @@ class D_Express_API
             'CAddressNum' => get_option('dexpress_sender_address_num', ''),
             'CTownID' => intval(get_option('dexpress_sender_town_id', 0)),
             'CCName' => get_option('dexpress_sender_contact_name', ''),
-            'CCPhone' => get_option('dexpress_sender_contact_phone', ''),
+            'CCPhone' => D_Express_Validator::format_phone(get_option('dexpress_sender_contact_phone', '')),
 
             // Podaci o pošiljaocu (isto kao klijent)
             'PuClientID' => $this->client_id,
@@ -685,15 +805,15 @@ class D_Express_API
             'PuAddressNum' => get_option('dexpress_sender_address_num', ''),
             'PuTownID' => intval(get_option('dexpress_sender_town_id', 0)),
             'PuCName' => get_option('dexpress_sender_contact_name', ''),
-            'PuCPhone' => get_option('dexpress_sender_contact_phone', ''),
+            'PuCPhone' => D_Express_Validator::format_phone(get_option('dexpress_sender_contact_phone', '')),
 
-            // Podaci o primaocu - poboljšano sa proverama za prazne vrednosti
+            // Podaci o primaocu - sa validiranim vrednostima
             'RName' => $order->get_shipping_first_name() . ' ' . $order->get_shipping_last_name(),
-            'RAddress' => !empty($street) ? $street : $order->get_shipping_address_1(),
-            'RAddressNum' => !empty($number) ? $number : '1', // Podrazumevana vrednost ako je prazno
-            'RTownID' => !empty($city_id) ? (int)$city_id : 100001, // Osigurajte da je ID grada validan
+            'RAddress' => $street,
+            'RAddressNum' => $number,
+            'RTownID' => (int)$city_id,
             'RCName' => $order->get_shipping_first_name() . ' ' . $order->get_shipping_last_name(),
-            'RCPhone' => $this->format_phone_number($order->get_billing_phone()),
+            'RCPhone' => $phone,
 
             // Tip pošiljke i plaćanje
             'DlTypeID' => intval(get_option('dexpress_shipment_type', 2)),
@@ -702,17 +822,20 @@ class D_Express_API
 
             // Vrednost i masa
             'Value' => dexpress_convert_price_to_para($order->get_total()),
-            'Content' => get_option('dexpress_default_content', __('Roba iz web prodavnice', 'd-express-woo')),
+            'Content' => $content,
             'Mass' => $this->calculate_order_weight($order),
 
             // Reference i opcije
-            'ReferenceID' => $this->generate_reference_id($order->get_id()),
+            'ReferenceID' => $reference_id,
             'ReturnDoc' => intval(get_option('dexpress_return_doc', 0)),
 
             // Otkupnina - postavljeno na osnovu metode plaćanja
             'BuyOut' => $buyout_amount,
             'BuyOutFor' => intval(get_option('dexpress_buyout_for', 0)),
             'BuyOutAccount' => ($buyout_amount > 0) ? $buyout_account : '',
+
+            // SelfDropOff - nova opcija
+            'SelfDropOff' => intval(get_option('dexpress_self_drop_off', 0)),
         );
 
         // Dodavanje paketa
@@ -723,6 +846,13 @@ class D_Express_API
         dexpress_log("Final BuyOutAccount: " . $shipment_data['BuyOutAccount'], 'debug');
         dexpress_log("Final RAddressNum: " . $shipment_data['RAddressNum'], 'debug');
         dexpress_log("Final RTownID: " . $shipment_data['RTownID'], 'debug');
+
+        // Validacija kompletnih podataka za slanje
+        $validation = D_Express_Validator::validate_shipment_data($shipment_data);
+        if ($validation !== true) {
+            dexpress_log("SHIPMENT DATA VALIDATION FAILED: " . implode(", ", $validation), 'error');
+            // Ovde odlučujemo da li da odbacimo slanje ili nastavimo uprkos upozorenjima
+        }
 
         // Omogućavanje filtiranja podataka za dodatna prilagođavanja
         return apply_filters('dexpress_prepare_shipment_data', $shipment_data, $order);

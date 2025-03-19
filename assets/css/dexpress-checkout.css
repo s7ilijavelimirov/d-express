@@ -86,3 +86,10 @@
 }
 
 
+/* Pomoćni tekst za telefon */
+.phone-format-hint {
+    display: block;
+    font-size: 0.85em;
+    color: #767676;
+    margin-top: 3px;
+}

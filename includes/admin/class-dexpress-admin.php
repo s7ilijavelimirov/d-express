@@ -285,6 +285,16 @@ class D_Express_Admin
                     <table class="form-table">
                         <tr>
                             <th scope="row">
+                                <label for="dexpress_validate_address"><?php _e('Validacija adrese', 'd-express-woo'); ?></label>
+                            </th>
+                            <td>
+                                <input type="checkbox" id="dexpress_validate_address" name="dexpress_validate_address"
+                                    value="yes" <?php checked(get_option('dexpress_validate_address', 'yes'), 'yes'); ?>>
+                                <p class="description"><?php _e('Proveri validnost adrese pre kreiranja pošiljke putem D Express API-ja', 'd-express-woo'); ?></p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">
                                 <label for="dexpress_auto_create_shipment"><?php _e('Automatsko kreiranje', 'd-express-woo'); ?></label>
                             </th>
                             <td>
@@ -386,6 +396,18 @@ class D_Express_Admin
                                 <input type="text" id="dexpress_sender_contact_phone" name="dexpress_sender_contact_phone"
                                     value="<?php echo esc_attr($sender_contact_phone); ?>" class="regular-text">
                                 <p class="description"><?php _e('Telefon kontakt osobe (u formatu 381xxxxxxxxx).', 'd-express-woo'); ?></p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">
+                                <label for="dexpress_require_buyout_account"><?php _e('Obavezan račun za otkupninu', 'd-express-woo'); ?></label>
+                            </th>
+                            <td>
+                                <input type="checkbox" id="dexpress_require_buyout_account" name="dexpress_require_buyout_account"
+                                    value="yes" <?php checked(get_option('dexpress_require_buyout_account', 'no'), 'yes'); ?>>
+                                <p class="description">
+                                    <?php _e('Spreči kreiranje pošiljki sa pouzećem ako bankovni račun nije podešen', 'd-express-woo'); ?>
+                                </p>
                             </td>
                         </tr>
                         <tr>
@@ -635,6 +657,7 @@ class D_Express_Admin
                 );
             }
         }
+        $require_buyout_account = isset($_POST['dexpress_require_buyout_account']) ? 'yes' : 'no';
         // Webhook podešavanja
         $webhook_secret = isset($_POST['dexpress_webhook_secret']) ? sanitize_text_field($_POST['dexpress_webhook_secret']) : wp_generate_password(32, false);
 
@@ -664,7 +687,9 @@ class D_Express_Admin
         update_option('dexpress_return_doc', $return_doc);
         update_option('dexpress_default_content', $default_content);
         update_option('dexpress_webhook_secret', $webhook_secret);
+        update_option('dexpress_require_buyout_account', $require_buyout_account);
         update_option('dexpress_clean_uninstall', $clean_uninstall);
+        
         // Redirekcija nazad na stranicu podešavanja sa porukom o uspehu
         wp_redirect(add_query_arg('settings-updated', 'true', admin_url('admin.php?page=dexpress-settings')));
         exit;
