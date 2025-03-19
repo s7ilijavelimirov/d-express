@@ -240,10 +240,8 @@ function dexpress_get_order_status_options()
 function dexpress_get_shipment_types()
 {
     return array(
-        1 => __('Ekspres', 'd-express-woo'),
-        2 => __('Regularna', 'd-express-woo'),
-        3 => __('Danas za danas', 'd-express-woo'),
-        4 => __('Danas za sutra', 'd-express-woo'),
+        1 => __('Hitna isporuka (za danas)', 'd-express-woo'),
+        2 => __('Redovna isporuka', 'd-express-woo')
     );
 }
 

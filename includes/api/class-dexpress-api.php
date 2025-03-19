@@ -701,7 +701,28 @@ class D_Express_API
         // Odredite koji tip adrese koristiti
         $address_type = $order->has_shipping_address() ? 'shipping' : 'billing';
         $address_desc = $order->get_meta("_{$address_type}_address_desc", true);
-        $delivery_note = $order->get_customer_note();
+        $delivery_note = $order->get_customer_note(); // Dobavljanje beleške kupca
+
+        if (!empty($delivery_note)) {
+            // 1. Uklanja sve nedozvoljene karaktere (samo dozvoljeni ostaju)
+            $clean_note = preg_replace('/[^a-zžćčđšA-ZĐŠĆŽČ:,._0-9\-\s]/u', '', $delivery_note);
+
+            // 2. Uklanja višestruke razmake
+            $clean_note = preg_replace('/\s+/', ' ', $clean_note);
+
+            // 3. Uklanja razmak na početku i kraju
+            $clean_note = trim($clean_note);
+
+            // 4. Osigurava da se tačka (.) ne nalazi na početku
+            $clean_note = preg_replace('/^\./', '', $clean_note);
+
+            // 5. Ograničava dužinu na 150 karaktera
+            if (mb_strlen($clean_note, 'UTF-8') > 150) {
+                $clean_note = mb_substr($clean_note, 0, 150, 'UTF-8');
+            }
+
+            $delivery_note = $clean_note; // Sačuvaj filtriranu vrednost
+        }
         // Dohvatite meta podatke za adresu
         $street = $order->get_meta("_{$address_type}_street", true);
         $number = $order->get_meta("_{$address_type}_number", true);

@@ -84,38 +84,38 @@ class D_Express_Validator
     {
         // Uklonimo sve razmake prvo
         $account = trim($account);
-        
+
         // Proverimo osnovni format (cifre i crtice)
         if (!preg_match('/^[\d\-]+$/', $account)) {
             return false;
         }
-        
+
         // Proverimo dužinu (prema API dokumentaciji, maksimalna dužina je 20)
         if (strlen($account) > 20) {
             return false;
         }
-        
+
         // Proverimo osnovni format (X-X-X) gde je X niz cifara
         $parts = explode('-', $account);
         if (count($parts) !== 3) {
             return false;
         }
-        
+
         // Prvi deo bi trebao biti 3 cifre (npr. 170, 160, 200...)
         if (!preg_match('/^\d{1,3}$/', $parts[0])) {
             return false;
         }
-        
+
         // Poslednji deo bi trebao biti 2 cifre (kontrolni broj)
         if (!preg_match('/^\d{1,2}$/', $parts[2])) {
             return false;
         }
-        
+
         // Srednji deo može biti različite dužine, ali mora biti samo cifre
         if (!preg_match('/^\d+$/', $parts[1])) {
             return false;
         }
-        
+
         // Sve provere su prošle
         return true;
     }
@@ -127,7 +127,11 @@ class D_Express_Validator
     {
         return is_numeric($town_id) && $town_id >= 100000 && $town_id <= 10000000;
     }
-
+    public static function validate_note($note)
+    {
+        $pattern = '/^([\-a-zžćčđšA-ZĐŠĆŽČ:,._0-9]+\.?)( [\-a-zžćčđšA-ZĐŠĆŽČ:,._0-9]+\.?)*$/u';
+        return empty($note) || preg_match($pattern, $note);
+    }
     /**
      * Validira kompletne podatke shipment-a
      * 

@@ -689,7 +689,7 @@ class D_Express_Admin
         update_option('dexpress_webhook_secret', $webhook_secret);
         update_option('dexpress_require_buyout_account', $require_buyout_account);
         update_option('dexpress_clean_uninstall', $clean_uninstall);
-        
+
         // Redirekcija nazad na stranicu podešavanja sa porukom o uspehu
         wp_redirect(add_query_arg('settings-updated', 'true', admin_url('admin.php?page=dexpress-settings')));
         exit;
