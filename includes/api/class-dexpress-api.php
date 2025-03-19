@@ -585,7 +585,12 @@ class D_Express_API
     public function generate_reference_id($order_id)
     {
         // Format: ORDER-{order_id}-{timestamp}
-        return dexpress_generate_reference($order_id);
+        $reference = dexpress_generate_reference($order_id);
+
+        // Provera usklađenosti s API formatom
+        // ^([\-\#\$a-zžćčđšA-ZĐŠĆŽČ_0-9,:;\+\(\)\/\.]+)( [\-\#\$a-zžćčđšA-ZĐŠĆŽČ_0-9,:;\+\(\)\/\.]+)*$
+
+        return $reference;
     }
     /**
      * Formatira broj računa za otkupninu
@@ -790,6 +795,11 @@ class D_Express_API
                 // Inače samo dodati 381 na početak
                 $phone = '381' . $phone;
             }
+        }
+
+        // Trebalo bi dodati validaciju prema regularnom izrazu iz API dokumentacije
+        if (!preg_match('/^(381[1-9][0-9]{7,8}|38167[0-9]{6,8})$/', $phone)) {
+            // Ovde treba odlučiti šta uraditi ako format nije ispravан
         }
 
         return $phone;
