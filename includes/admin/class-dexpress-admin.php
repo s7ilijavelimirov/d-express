@@ -602,10 +602,63 @@ class D_Express_Admin
         <?php
     }
     /**
+     * Poboljšana validacija bankovnog računa
+     * 
+     * @param string $account_number Broj bankovnog računa
+     * @return string Formatirani broj računa ili prazan string ako je nevalidan
+     */
+    private function validate_and_format_bank_account($account_number)
+    {
+        // Uklanjamo sve osim brojeva i crtice
+        $account_number = preg_replace('/[^0-9\-]/', '', $account_number);
+
+        // Ako je prazan string, vraćamo prazan string
+        if (empty($account_number)) {
+            return '';
+        }
+
+        // Ako su crtice već postavljene, proveravamo format
+        if (strpos($account_number, '-') !== false) {
+            $parts = explode('-', $account_number);
+
+            // Ako nemamo 3 dela, pokušavamo da formatiramo
+            if (count($parts) !== 3) {
+                // Uklanjamo sve crtice i formatiramo ispočetka
+                $account_number = str_replace('-', '', $account_number);
+            } else {
+                // Proveravamo da li delovi imaju ispravan broj cifara
+                if (strlen($parts[0]) === 3 && strlen($parts[2]) === 2) {
+                    return $account_number; // Već je dobro formatiran
+                }
+
+                // Uklanjamo sve crtice i formatiramo ispočetka
+                $account_number = str_replace('-', '', $account_number);
+            }
+        }
+
+        // Uklonili smo sve crtice, sada pokušavamo da formatiramo
+        $digits_only = preg_replace('/[^0-9]/', '', $account_number);
+
+        // Proveravamo da li imamo dovoljno cifara (minimalno 12-15 cifara)
+        if (strlen($digits_only) < 12 || strlen($digits_only) > 18) {
+            return ''; // Nevažeći broj računa
+        }
+
+        // Formatiramo broj računa u standardnom formatu 3-10-2 (ili više u srednjem delu)
+        return substr($digits_only, 0, 3) . '-' .
+            substr($digits_only, 3, strlen($digits_only) - 5) . '-' .
+            substr($digits_only, -2);
+    }
+    /**
      * Čuvanje podešavanja
      */
     private function save_settings()
     {
+        // Provera nonce-a još jednom za sigurnost
+        if (!isset($_POST['_wpnonce']) || !wp_verify_nonce($_POST['_wpnonce'], 'dexpress_settings_nonce')) {
+            wp_die(__('Sigurnosna provera nije uspela.', 'd-express-woo'));
+        }
+
         // API podešavanja
         $api_username = isset($_POST['dexpress_api_username']) ? sanitize_text_field($_POST['dexpress_api_username']) : '';
         $api_password = isset($_POST['dexpress_api_password']) ? sanitize_text_field($_POST['dexpress_api_password']) : '';
@@ -621,6 +674,7 @@ class D_Express_Admin
         // Automatsko kreiranje pošiljki
         $auto_create_shipment = isset($_POST['dexpress_auto_create_shipment']) ? 'yes' : 'no';
         $auto_create_on_status = isset($_POST['dexpress_auto_create_on_status']) ? sanitize_text_field($_POST['dexpress_auto_create_on_status']) : 'processing';
+        $validate_address = isset($_POST['dexpress_validate_address']) ? 'yes' : 'no';
 
         // Podaci pošiljaoca
         $sender_name = isset($_POST['dexpress_sender_name']) ? sanitize_text_field($_POST['dexpress_sender_name']) : '';
@@ -637,27 +691,27 @@ class D_Express_Admin
         $return_doc = isset($_POST['dexpress_return_doc']) ? sanitize_text_field($_POST['dexpress_return_doc']) : '0';
         $default_content = isset($_POST['dexpress_default_content']) ? sanitize_text_field($_POST['dexpress_default_content']) : __('Roba iz web prodavnice', 'd-express-woo');
 
-        // Dodajemo u save_settings() metodu
+        // Clean Uninstall opcija
         $clean_uninstall = isset($_POST['dexpress_clean_uninstall']) ? 'yes' : 'no';
-        // U save_settings() metodi, dodajte ovo u spisak opcija koje se čuvaju
+
+        // Validacija i formatiranje bankovnog računa
         $buyout_account = isset($_POST['dexpress_buyout_account']) ? sanitize_text_field($_POST['dexpress_buyout_account']) : '';
+        $buyout_account = $this->validate_and_format_bank_account($buyout_account);
 
-        if (!empty($buyout_account)) {
-            $api = new D_Express_API();
-            $buyout_account = $api->format_bank_account($buyout_account);
-
-            // Dodatna validacija formata
-            if (!preg_match('/^\d{3}-\d{10}-\d{2}$/', $buyout_account)) {
-                // Ako format nije dobar, dodajte obaveštenje
-                add_settings_error(
-                    'dexpress_settings',
-                    'invalid_buyout_account',
-                    __('Broj računa za otkupninu mora biti u formatu XXX-XXXXXXXXXX-XX.', 'd-express-woo'),
-                    'error'
-                );
-            }
+        // Provera validnosti bankovnog računa ako nije prazan
+        if (!empty($buyout_account) && !preg_match('/^\d{3}-\d{8,13}-\d{2}$/', $buyout_account)) {
+            // Ako format nije dobar, dodajemo obaveštenje
+            add_settings_error(
+                'dexpress_settings',
+                'invalid_buyout_account',
+                __('Broj računa za otkupninu mora biti u formatu XXX-XXXXXXXXXX-XX.', 'd-express-woo'),
+                'error'
+            );
+            // Ali i dalje čuvamo vrednost koju je korisnik uneo
         }
+
         $require_buyout_account = isset($_POST['dexpress_require_buyout_account']) ? 'yes' : 'no';
+
         // Webhook podešavanja
         $webhook_secret = isset($_POST['dexpress_webhook_secret']) ? sanitize_text_field($_POST['dexpress_webhook_secret']) : wp_generate_password(32, false);
 
@@ -674,6 +728,7 @@ class D_Express_Admin
         update_option('dexpress_code_range_end', $code_range_end);
         update_option('dexpress_auto_create_shipment', $auto_create_shipment);
         update_option('dexpress_auto_create_on_status', $auto_create_on_status);
+        update_option('dexpress_validate_address', $validate_address);
         update_option('dexpress_sender_name', $sender_name);
         update_option('dexpress_buyout_account', $buyout_account);
         update_option('dexpress_sender_address', $sender_address);
@@ -689,6 +744,11 @@ class D_Express_Admin
         update_option('dexpress_webhook_secret', $webhook_secret);
         update_option('dexpress_require_buyout_account', $require_buyout_account);
         update_option('dexpress_clean_uninstall', $clean_uninstall);
+
+        // Beležimo u log da su podešavanja ažurirana
+        if ($enable_logging === 'yes') {
+            dexpress_log('Podešavanja su ažurirana od strane korisnika ID: ' . get_current_user_id(), 'info');
+        }
 
         // Redirekcija nazad na stranicu podešavanja sa porukom o uspehu
         wp_redirect(add_query_arg('settings-updated', 'true', admin_url('admin.php?page=dexpress-settings')));
@@ -734,12 +794,15 @@ class D_Express_Admin
     /**
      * Render metabox-a na stranici narudžbine
      */
-    /**
-     * Render metabox-a na stranici narudžbine
-     */
     public function render_order_metabox($post)
     {
         $order_id = $post->ID;
+        $order = wc_get_order($order_id);
+
+        if (!$order) {
+            echo '<p>' . __('Narudžbina nije pronađena.', 'd-express-woo') . '</p>';
+            return;
+        }
 
         // Proveri da li već postoji pošiljka
         global $wpdb;
@@ -750,68 +813,118 @@ class D_Express_Admin
 
         // Ako pošiljka postoji, prikaži detalje i link za štampu
         if ($shipment) {
+            // Dobijanje statusa ako postoji
+            $status_text = '';
+            if (!empty($shipment->status_code)) {
+                $status_class = ($shipment->status_code == '130') ? 'dexpress-status-delivered' : (($shipment->status_code == '131') ? 'dexpress-status-failed' : 'dexpress-status-transit');
+                $status_text = '<span class="dexpress-status-badge ' . $status_class . '">' .
+                    esc_html(dexpress_get_status_name($shipment->status_code)) . '</span>';
+            }
+
             echo '<div class="dexpress-shipment-details">';
-            echo '<p><strong>Tracking broj:</strong> ' . esc_html($shipment->tracking_number) . '</p>';
-            echo '<p><strong>Reference ID:</strong> ' . esc_html($shipment->reference_id) . '</p>';
+
+            // Prikazujemo datum kreiranja
+            echo '<p><strong>' . __('Kreirano:', 'd-express-woo') . '</strong> ' .
+                date_i18n(get_option('date_format'), strtotime($shipment->created_at)) . '</p>';
+
+            // Prikazujemo Tracking broj sa linkom za praćenje
+            echo '<p><strong>' . __('Tracking broj:', 'd-express-woo') . '</strong> ';
+            if ($shipment->is_test) {
+                echo esc_html($shipment->tracking_number) . ' <span class="description">(' . __('Test', 'd-express-woo') . ')</span>';
+            } else {
+                echo '<a href="https://www.dexpress.rs/TrackingParcel?trackingNumber=' .
+                    esc_attr($shipment->tracking_number) . '" target="_blank" class="dexpress-tracking-link">' .
+                    esc_html($shipment->tracking_number) . '</a>';
+            }
+            echo '</p>';
+
+            // Prikazujemo Reference ID
+            echo '<p><strong>' . __('Reference ID:', 'd-express-woo') . '</strong> ' . esc_html($shipment->reference_id) . '</p>';
+
+            // Prikazujemo status ako postoji
+            if (!empty($status_text)) {
+                echo '<p><strong>' . __('Status:', 'd-express-woo') . '</strong> ' . $status_text . '</p>';
+            }
 
             // Link za preuzimanje nalepnice
             $nonce = wp_create_nonce('dexpress-download-label');
             $label_url = admin_url('admin-ajax.php?action=dexpress_download_label&shipment_id=' . $shipment->id . '&nonce=' . $nonce);
 
-            echo '<p><a href="' . esc_url($label_url) . '" class="button button-primary" target="_blank">Preuzmi nalepnicu</a></p>';
+            echo '<p><a href="' . esc_url($label_url) . '" class="button button-primary" target="_blank">' .
+                __('Preuzmi nalepnicu', 'd-express-woo') . '</a></p>';
+
             echo '</div>';
         } else {
+            // Provera da li je izabrana D Express dostava
+            $has_dexpress_shipping = false;
+            foreach ($order->get_shipping_methods() as $shipping_method) {
+                if (strpos($shipping_method->get_method_id(), 'dexpress') !== false) {
+                    $has_dexpress_shipping = true;
+                    break;
+                }
+            }
+
             // Pošiljka ne postoji, prikaži dugme za kreiranje
+            echo '<div class="dexpress-create-shipment">';
+
+            if (!$has_dexpress_shipping) {
+                echo '<p class="description">' . __('Ova narudžbina nema D Express dostavu.', 'd-express-woo') . '</p>';
+            } else {
+                echo '<p>' . __('Još uvek nema pošiljke za ovu narudžbinu.', 'd-express-woo') . '</p>';
+
+                // Dugme za kreiranje pošiljke
+                echo '<button type="button" class="button button-primary" id="dexpress-create-shipment-btn" 
+                  data-order-id="' . esc_attr($order_id) . '">' .
+                    __('Kreiraj D Express pošiljku', 'd-express-woo') . '</button>';
+
+                echo '<div id="dexpress-response" style="margin-top: 10px;"></div>';
+
+                // JavaScript za AJAX funkcionalnost
         ?>
-            <div class="dexpress-create-shipment">
-                <p>Još uvek nema pošiljke za ovu narudžbinu.</p>
-                <button type="button" class="button button-primary" id="dexpress-create-shipment-btn" data-order-id="<?php echo esc_attr($order_id); ?>">
-                    Kreiraj D Express pošiljku
-                </button>
-                <div id="dexpress-response" style="margin-top: 10px;"></div>
-            </div>
+                <script>
+                    jQuery(document).ready(function($) {
+                        $('#dexpress-create-shipment-btn').on('click', function() {
+                            var btn = $(this);
+                            var order_id = btn.data('order-id');
+                            var response_div = $('#dexpress-response');
 
-            <script>
-                jQuery(document).ready(function($) {
-                    $('#dexpress-create-shipment-btn').on('click', function() {
-                        var btn = $(this);
-                        var order_id = btn.data('order-id');
-                        var response_div = $('#dexpress-response');
+                            btn.prop('disabled', true).text('<?php _e('Kreiranje...', 'd-express-woo'); ?>');
+                            response_div.html('');
 
-                        btn.prop('disabled', true).text('Kreiranje...');
-                        response_div.html('');
+                            $.ajax({
+                                url: ajaxurl,
+                                type: 'POST',
+                                data: {
+                                    action: 'dexpress_create_shipment',
+                                    order_id: order_id,
+                                    nonce: '<?php echo wp_create_nonce('dexpress-admin-nonce'); ?>'
+                                },
+                                success: function(response) {
+                                    btn.prop('disabled', false).text('<?php _e('Kreiraj D Express pošiljku', 'd-express-woo'); ?>');
 
-                        $.ajax({
-                            url: ajaxurl,
-                            type: 'POST',
-                            data: {
-                                action: 'dexpress_create_shipment',
-                                order_id: order_id,
-                                nonce: '<?php echo wp_create_nonce('dexpress-admin-nonce'); ?>'
-                            },
-                            success: function(response) {
-                                btn.prop('disabled', false).text('Kreiraj D Express pošiljku');
+                                    if (response.success) {
+                                        response_div.html('<div class="notice notice-success inline"><p>' + response.data.message + '</p></div>');
 
-                                if (response.success) {
-                                    response_div.html('<div class="notice notice-success inline"><p>' + response.data.message + '</p></div>');
-
-                                    // Ako želimo da osvežimo stranicu
-                                    setTimeout(function() {
-                                        location.reload();
-                                    }, 1500);
-                                } else {
-                                    response_div.html('<div class="notice notice-error inline"><p>' + response.data.message + '</p></div>');
+                                        // Osvežavanje stranice nakon uspešnog kreiranja
+                                        setTimeout(function() {
+                                            location.reload();
+                                        }, 1500);
+                                    } else {
+                                        response_div.html('<div class="notice notice-error inline"><p>' + response.data.message + '</p></div>');
+                                    }
+                                },
+                                error: function() {
+                                    btn.prop('disabled', false).text('<?php _e('Kreiraj D Express pošiljku', 'd-express-woo'); ?>');
+                                    response_div.html('<div class="notice notice-error inline"><p><?php _e('Došlo je do greške. Molimo pokušajte ponovo.', 'd-express-woo'); ?></p></div>');
                                 }
-                            },
-                            error: function() {
-                                btn.prop('disabled', false).text('Kreiraj D Express pošiljku');
-                                response_div.html('<div class="notice notice-error inline"><p>Došlo je do greške. Molimo pokušajte ponovo.</p></div>');
-                            }
+                            });
                         });
                     });
-                });
-            </script>
+                </script>
 <?php
+            }
+
+            echo '</div>';
         }
     }
 
@@ -886,8 +999,29 @@ class D_Express_Admin
     public function show_order_tracking_column_data($column, $order_id)
     {
         if ($column === 'dexpress_tracking') {
-            // Ovde će biti prikazani podaci o praćenju pošiljke
-            echo '<span>-</span>';
+            global $wpdb;
+
+            // Dobijamo podatke o pošiljci iz baze
+            $shipment = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM {$wpdb->prefix}dexpress_shipments WHERE order_id = %d",
+                $order_id
+            ));
+
+            if ($shipment) {
+                // Prikazujemo tracking broj i status ako postoji
+                echo '<a href="https://www.dexpress.rs/TrackingParcel?trackingNumber=' . esc_attr($shipment->tracking_number) . '" 
+                    target="_blank" class="dexpress-tracking-number">' .
+                    esc_html($shipment->tracking_number) . '</a>';
+
+                if (!empty($shipment->status_code)) {
+                    $status_class = ($shipment->status_code == '130') ? 'dexpress-status-delivered' : (($shipment->status_code == '131') ? 'dexpress-status-failed' : 'dexpress-status-transit');
+
+                    echo '<br><span class="dexpress-status-badge ' . $status_class . '">' .
+                        esc_html(dexpress_get_status_name($shipment->status_code)) . '</span>';
+                }
+            } else {
+                echo '<span class="dexpress-no-shipment">-</span>';
+            }
         }
     }
     /**
@@ -979,12 +1113,24 @@ class D_Express_Admin
 
         if (!is_wp_error($result)) {
             // Uspešna konekcija
+
+            // Beležimo rezultat u log ako je logovanje uključeno
+            if (get_option('dexpress_enable_logging', 'no') === 'yes') {
+                dexpress_log('Test konekcije uspešan. Dobijeno ' . (is_array($result) ? count($result) : 0) . ' statusa.', 'info');
+            }
+
             wp_redirect(add_query_arg(array(
                 'page' => 'dexpress-settings',
                 'connection-test' => 'success',
             ), admin_url('admin.php')));
         } else {
             // Greška pri konekciji
+
+            // Beležimo grešku u log
+            if (get_option('dexpress_enable_logging', 'no') === 'yes') {
+                dexpress_log('Test konekcije neuspešan: ' . $result->get_error_message(), 'error');
+            }
+
             wp_redirect(add_query_arg(array(
                 'page' => 'dexpress-settings',
                 'connection-test' => 'error',

@@ -297,6 +297,7 @@ class D_Express_Shipments_List extends WP_List_Table
     public function column_status_code($item)
     {
         $status_code = $item['status_code'];
+
         $status_name = dexpress_get_status_name($status_code);
 
         $status_classes = [
@@ -305,7 +306,7 @@ class D_Express_Shipments_List extends WP_List_Table
         ];
 
         $class = isset($status_classes[$status_code]) ? $status_classes[$status_code] : 'dexpress-status-transit';
-
+        
         return sprintf(
             '<span class="dexpress-status-badge %s">%s</span>',
             $class,
