@@ -252,13 +252,48 @@ class D_Express_WooCommerce
     /**
      * Registracija REST API ruta za webhook
      */
+    /**
+     * Registracija REST API ruta za webhook
+     */
     public function register_rest_routes()
     {
-        register_rest_route('dexpress-woo/v1', '/notify', array(
+        register_rest_route('dexpress-woo/v1', '/notify', [
             'methods' => 'POST',
-            'callback' => array(new D_Express_Webhook_Handler(), 'handle_notify'),
-            'permission_callback' => array(new D_Express_Webhook_Handler(), 'check_permission'),
-        ));
+            'callback' => [new D_Express_Webhook_Handler(), 'handle_notify'],
+            'permission_callback' => [new D_Express_Webhook_Handler(), 'check_permission'],
+            'args' => [
+                'cc' => [
+                    'required' => true,
+                    'type' => 'string',
+                    'description' => 'Webhook passcode',
+                ],
+                'nID' => [
+                    'required' => true,
+                    'type' => 'string',
+                    'description' => 'Notification ID',
+                ],
+                'code' => [
+                    'required' => true,
+                    'type' => 'string',
+                    'description' => 'Shipment code',
+                ],
+                'rID' => [
+                    'required' => true,
+                    'type' => 'string',
+                    'description' => 'Reference ID',
+                ],
+                'sID' => [
+                    'required' => true,
+                    'type' => 'string',
+                    'description' => 'Status ID',
+                ],
+                'dt' => [
+                    'required' => true,
+                    'type' => 'string',
+                    'description' => 'Date time in format yyyyMMddHHmmss',
+                ],
+            ],
+        ]);
     }
 
     /**

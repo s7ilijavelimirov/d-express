@@ -506,6 +506,18 @@ class D_Express_Admin
                     <table class="form-table">
                         <tr>
                             <th scope="row">
+                                <label for="dexpress_allowed_webhook_ips"><?php _e('Dozvoljene IP adrese', 'd-express-woo'); ?></label>
+                            </th>
+                            <td>
+                                <input type="text" id="dexpress_allowed_webhook_ips" name="dexpress_allowed_webhook_ips"
+                                    value="<?php echo esc_attr(get_option('dexpress_allowed_webhook_ips', '')); ?>" class="regular-text">
+                                <p class="description">
+                                    <?php _e('Lista dozvoljenih IP adresa za webhook, razdvojenih zarezima. Ostavite prazno da dozvolite sve IP adrese.', 'd-express-woo'); ?>
+                                </p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">
                                 <label for="dexpress_webhook_url"><?php _e('Webhook URL', 'd-express-woo'); ?></label>
                             </th>
                             <td>

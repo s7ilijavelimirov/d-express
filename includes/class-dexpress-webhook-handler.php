@@ -10,22 +10,107 @@ defined('ABSPATH') || exit;
 
 class D_Express_Webhook_Handler
 {
-
     /**
      * Provera dozvole za pristup webhook-u
+     * 
+     * @param WP_REST_Request $request Trenutni request
+     * @return bool|WP_Error True ako je dozvoljeno, WP_Error ako nije
      */
-    public function check_permission()
+    public function check_permission(WP_REST_Request $request)
     {
-        // Ova metoda uvek vraća true jer ćemo sigurnosnu proveru raditi u handle_notify metodi
+        // 1. Provera webhook_secret parametra
+        $data = $request->get_json_params();
+        
+        if (!isset($data['cc']) || empty($data['cc'])) {
+            dexpress_log('Webhook pristup odbijen: Nedostaje passcode (cc)', 'error');
+            return new WP_Error(
+                'invalid_request', 
+                __('Neispravan zahtev: Nedostaje passcode', 'd-express-woo'),
+                ['status' => 403]
+            );
+        }
+        
+        $webhook_secret = get_option('dexpress_webhook_secret', '');
+        
+        if (empty($webhook_secret) || $data['cc'] !== $webhook_secret) {
+            dexpress_log('Webhook pristup odbijen: Neispravan passcode', 'error');
+            return new WP_Error(
+                'invalid_credentials', 
+                __('Neispravan passcode', 'd-express-woo'),
+                ['status' => 403]
+            );
+        }
+        
+        // 2. Dodatna validacija IP adrese (opciono)
+        $allowed_ips = $this->get_allowed_ips();
+        $remote_ip = $this->get_client_ip();
+        
+        if (!empty($allowed_ips) && !in_array($remote_ip, $allowed_ips)) {
+            dexpress_log('Webhook pristup odbijen: Neovlašćena IP adresa: ' . $remote_ip, 'error');
+            return new WP_Error(
+                'unauthorized_ip', 
+                __('Neovlašćena IP adresa', 'd-express-woo'),
+                ['status' => 403]
+            );
+        }
+        
+        // Sve provere su prošle
         return true;
+    }
+    
+    /**
+     * Dobijanje liste dozvoljenih IP adresa
+     * 
+     * @return array Lista dozvoljenih IP adresa
+     */
+    private function get_allowed_ips()
+    {
+        // Implementiraj opciju za čuvanje i definisanje dozvoljenih IP adresa
+        // Za sad koristimo praznu listu što znači da su sve IP adrese dozvoljene
+        $allowed_ips = get_option('dexpress_allowed_webhook_ips', '');
+        
+        if (empty($allowed_ips)) {
+            return []; // Sve IP adrese su dozvoljene ako nema definisanih
+        }
+        
+        return array_map('trim', explode(',', $allowed_ips));
+    }
+    
+    /**
+     * Dobijanje IP adrese klijenta
+     * 
+     * @return string IP adresa klijenta
+     */
+    private function get_client_ip()
+    {
+        // Dobijanje stvarne IP adrese klijenta i iza proxy-ja
+        if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+            $ip_array = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
+            $ip = trim($ip_array[0]);
+        } elseif (!empty($_SERVER['HTTP_CLIENT_IP'])) {
+            $ip = $_SERVER['HTTP_CLIENT_IP'];
+        } else {
+            $ip = $_SERVER['REMOTE_ADDR'];
+        }
+        
+        return $ip;
     }
 
     /**
      * Obrada webhook notifikacije
+     * 
+     * @param WP_REST_Request $request Request objekat
+     * @return WP_REST_Response Odgovor
      */
     public function handle_notify(WP_REST_Request $request)
     {
         global $wpdb;
+        
+        // Validacija zahteva 
+        $permission_check = $this->check_permission($request);
+        if (is_wp_error($permission_check)) {
+            return new WP_REST_Response('ERROR: ' . $permission_check->get_error_message(), 403);
+        }
 
         // Logovanje dolazećih podataka (samo u test modu)
         if (dexpress_is_test_mode()) {
@@ -40,24 +125,28 @@ class D_Express_Webhook_Handler
             !isset($data['cc']) || !isset($data['nID']) || !isset($data['code']) ||
             !isset($data['rID']) || !isset($data['sID']) || !isset($data['dt'])
         ) {
+            dexpress_log('Webhook: Nedostaju obavezni parametri', 'error');
             return new WP_REST_Response('ERROR: Invalid data structure', 400);
         }
-
-        // Provera passcode-a
-        $webhook_secret = get_option('dexpress_webhook_secret', '');
-        if (empty($webhook_secret) || $data['cc'] !== $webhook_secret) {
-            return new WP_REST_Response('ERROR: Invalid passcode', 403);
+        
+        // Validacija tipova podataka
+        if (!is_string($data['nID']) || !is_string($data['code']) || !is_string($data['rID'])) {
+            dexpress_log('Webhook: Neispravni tipovi podataka', 'error');
+            return new WP_REST_Response('ERROR: Invalid data types', 400);
         }
 
         // Provera da li već imamo ovaj nID (duplikat)
         $table_name = $wpdb->prefix . 'dexpress_statuses';
+        $notification_id = $wpdb->_real_escape($data['nID']);
+        
         $existing_notification = $wpdb->get_var($wpdb->prepare(
             "SELECT id FROM $table_name WHERE notification_id = %s",
-            $data['nID']
+            $notification_id
         ));
 
         if ($existing_notification) {
             // Ako je duplikat, vraćamo OK (prema specifikaciji API-ja)
+            dexpress_log('Webhook: Duplikat notifikacije ' . $notification_id, 'info');
             return new WP_REST_Response('OK', 200);
         }
 
@@ -65,19 +154,30 @@ class D_Express_Webhook_Handler
             // Ubacivanje u bazu podataka
             $status_date = $this->format_date($data['dt']);
 
+            $status_data = [
+                'notification_id' => $notification_id,
+                'shipment_code' => $wpdb->_real_escape($data['code']),
+                'reference_id' => $wpdb->_real_escape($data['rID']),
+                'status_id' => $wpdb->_real_escape($data['sID']),
+                'status_date' => $status_date,
+                'raw_data' => json_encode($data),
+                'is_processed' => 0,
+                'created_at' => current_time('mysql')
+            ];
+
             $inserted = $wpdb->insert(
                 $table_name,
-                array(
-                    'notification_id' => $data['nID'],
-                    'shipment_code' => $data['code'],
-                    'reference_id' => $data['rID'],
-                    'status_id' => $data['sID'],
-                    'status_date' => $status_date,
-                    'raw_data' => json_encode($data),
-                    'is_processed' => 0,
-                    'created_at' => current_time('mysql')
-                ),
-                array('%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s')
+                $status_data,
+                [
+                    '%s', // notification_id
+                    '%s', // shipment_code
+                    '%s', // reference_id
+                    '%s', // status_id
+                    '%s', // status_date
+                    '%s', // raw_data
+                    '%d', // is_processed
+                    '%s', // created_at
+                ]
             );
 
             if ($inserted === false) {
@@ -85,8 +185,11 @@ class D_Express_Webhook_Handler
                 return new WP_REST_Response('ERROR: Database error', 500);
             }
 
+            $insert_id = $wpdb->insert_id;
+            dexpress_log('Webhook: Uspešno upisana notifikacija ' . $notification_id . ' (ID: ' . $insert_id . ')', 'info');
+
             // Pozivanje asinhronog procesa za obradu notifikacije (ne blokiramo odgovor)
-            $this->schedule_notification_processing($wpdb->insert_id);
+            $this->schedule_notification_processing($insert_id);
 
             return new WP_REST_Response('OK', 200);
         } catch (Exception $e) {
@@ -97,12 +200,16 @@ class D_Express_Webhook_Handler
 
     /**
      * Formatiranje datuma iz D Express formata u MySQL format
+     * 
+     * @param string $date_string Datum u D Express formatu
+     * @return string Datum u MySQL formatu
      */
     private function format_date($date_string)
     {
         // Format iz D Express-a: yyyyMMddHHmmss
         // Format za MySQL: Y-m-d H:i:s
-        if (strlen($date_string) !== 14) {
+        if (!is_string($date_string) || strlen($date_string) !== 14 || !ctype_digit($date_string)) {
+            dexpress_log('Webhook: Neispravan format datuma: ' . $date_string, 'warning');
             return current_time('mysql');
         }
 
@@ -113,22 +220,43 @@ class D_Express_Webhook_Handler
         $minute = substr($date_string, 10, 2);
         $second = substr($date_string, 12, 2);
 
+        // Validacija delova datuma
+        if (
+            !checkdate((int)$month, (int)$day, (int)$year) || 
+            (int)$hour > 23 || (int)$minute > 59 || (int)$second > 59
+        ) {
+            dexpress_log('Webhook: Nevalidan datum nakon parsiranja: ' . $date_string, 'warning');
+            return current_time('mysql');
+        }
+
         return "$year-$month-$day $hour:$minute:$second";
     }
 
     /**
      * Zakazivanje asinhrone obrade notifikacije
+     * 
+     * @param int $notification_id ID notifikacije
      */
     private function schedule_notification_processing($notification_id)
     {
         // Koristimo WordPress Cron za asinhronu obradu
-        if (!wp_next_scheduled('dexpress_process_notification', array($notification_id))) {
-            wp_schedule_single_event(time(), 'dexpress_process_notification', array($notification_id));
+        if (!wp_next_scheduled('dexpress_process_notification', [$notification_id])) {
+            $scheduled = wp_schedule_single_event(
+                time() + 5, // Dodajemo malo odlaganja da se REST odgovor vrati pre obrade
+                'dexpress_process_notification', 
+                [$notification_id]
+            );
+            
+            if (!$scheduled) {
+                dexpress_log('Webhook: Greška pri zakazivanju obrade notifikacije ID: ' . $notification_id, 'error');
+            }
         }
     }
 
     /**
      * Logovanje webhook zahteva (samo u test modu)
+     * 
+     * @param WP_REST_Request $request Request objekat
      */
     private function log_webhook_request($request)
     {
@@ -141,13 +269,13 @@ class D_Express_Webhook_Handler
         }
 
         // Dobijanje podataka za logovanje
-        $data = array(
+        $data = [
             'time' => current_time('mysql'),
-            'ip' => $_SERVER['REMOTE_ADDR'],
+            'ip' => $this->get_client_ip(),
             'method' => $request->get_method(),
-            'headers' => $request->get_headers(),
+            'headers' => $this->sanitize_headers($request->get_headers()),
             'params' => $request->get_json_params()
-        );
+        ];
 
         // Pisanje u log fajl
         file_put_contents(
@@ -156,227 +284,24 @@ class D_Express_Webhook_Handler
             FILE_APPEND
         );
     }
-}
-
-/**
- * Obrada notifikacije (pozvana asinhrono preko WP Cron-a)
- */
-function dexpress_process_notification_callback($notification_id)
-{
-    global $wpdb;
-    $db = new D_Express_DB();
-
-    // Dobijanje notifikacije iz baze
-    $table_name = $wpdb->prefix . 'dexpress_statuses';
-    $notification = $wpdb->get_row($wpdb->prepare(
-        "SELECT * FROM $table_name WHERE id = %d",
-        $notification_id
-    ));
-
-    if (!$notification) {
-        return;
+    
+    /**
+     * Sanitizacija header-a za logovanje
+     * 
+     * @param array $headers HTTP headeri
+     * @return array Sanitizovani headeri
+     */
+    private function sanitize_headers($headers) 
+    {
+        // Uklanjamo osetljive informacije iz headera
+        $sensitive_headers = ['authorization', 'cookie', 'php-auth-user', 'php-auth-pw'];
+        
+        foreach ($sensitive_headers as $header) {
+            if (isset($headers[$header])) {
+                $headers[$header] = '[REDACTED]';
+            }
+        }
+        
+        return $headers;
     }
-
-    // Pronalaženje pošiljke na osnovu reference_id
-    $shipment = $db->get_shipment_by_reference($notification->reference_id);
-
-    if (!$shipment) {
-        // Alternativno, pokušaj pronalaženja po shipment_code
-        $shipment = $db->get_shipment_by_shipment_id($notification->shipment_code);
-    }
-
-    if ($shipment) {
-        // Ažuriranje statusa pošiljke
-        $status_desc = dexpress_format_status($notification->status_id);
-        $db->update_shipment_status($shipment->shipment_id, $notification->status_id, $status_desc);
-
-        // Ažuriranje statusa narudžbine ako je potrebno
-        update_order_status_from_shipment_status($shipment->order_id, $notification->status_id, $status_desc);
-
-        // Šaljemo email obaveštenje
-        dexpress_send_status_notification($shipment->id, $notification->status_id, $status_desc);
-    }
-
-    // Označavanje notifikacije kao obrađene
-    $db->mark_status_as_processed($notification_id);
-}
-
-// Registracija callback funkcije za cron
-add_action('dexpress_process_notification', 'dexpress_process_notification_callback');
-
-/**
- * Ažuriranje statusa narudžbine na osnovu statusa pošiljke
- */
-function update_order_status_from_shipment_status($order_id, $status_id, $status_desc)
-{
-    $order = wc_get_order($order_id);
-
-    if (!$order) {
-        return;
-    }
-
-    // Mapiranje statusa pošiljke na statuse narudžbine
-    $status_mapping = apply_filters('dexpress_status_mapping', array(
-        '130' => 'completed', // Isporučeno - Kompletno završeno
-        '131' => 'failed',    // Neisporučeno - Neuspešno
-    ));
-
-    if (isset($status_mapping[$status_id]) && $order->get_status() !== $status_mapping[$status_id]) {
-        // Ažuriranje statusa narudžbine
-        $order->update_status(
-            $status_mapping[$status_id],
-            sprintf(__('Status ažuriran od strane D Express: %s', 'd-express-woo'), $status_desc)
-        );
-    }
-
-    // Dodavanje napomene o statusu pošiljke
-    $order->add_order_note(
-        sprintf(__('D Express status pošiljke: %s', 'd-express-woo'), $status_desc)
-    );
-}
-/**
- * Implementacija email obaveštenja pri promeni statusa
- *
- * @param int $shipment_id ID pošiljke
- * @param string $status_code Kod statusa
- * @param string $status_name Naziv statusa
- */
-function dexpress_send_status_notification($shipment_id, $status_code, $status_name)
-{
-    global $wpdb;
-
-    // Dobavite podatke o pošiljci
-    $shipment = $wpdb->get_row($wpdb->prepare(
-        "SELECT * FROM {$wpdb->prefix}dexpress_shipments WHERE id = %d",
-        $shipment_id
-    ));
-
-    if (!$shipment) return;
-
-    // Dobavite narudžbinu
-    $order = wc_get_order($shipment->order_id);
-    if (!$order) return;
-
-    // Standardni podaci za email
-    $email_data = array(
-        'order' => $order,
-        'shipment' => $shipment,
-        'tracking_number' => $shipment->tracking_number,
-        'reference_id' => $shipment->reference_id,
-        'status_code' => $status_code,
-        'status_name' => $status_name,
-        'shipment_date' => $shipment->created_at,
-        'is_test' => (bool) $shipment->is_test
-    );
-
-    // Odaberite email šablon na osnovu statusa
-    if ($status_code == '130') { // Isporučeno
-        // Pošaljite email o isporuci
-        dexpress_send_delivered_email($email_data);
-    } elseif ($status_code == '131') { // Neisporučeno
-        // Pošaljite email o neuspeloj isporuci
-        dexpress_send_failed_email($email_data);
-    } else {
-        // Pošaljite email o promeni statusa
-        dexpress_send_status_change_email($email_data);
-    }
-}
-
-/**
- * Email za isporučenu pošiljku
- */
-function dexpress_send_delivered_email($data)
-{
-    $order = $data['order'];
-
-    // Priprema mailer objekta
-    $mailer = WC()->mailer();
-
-    // Priprema email naslova i recipijenta
-    $email_subject = sprintf(__('Vaša pošiljka #%s je isporučena', 'd-express-woo'), $data['tracking_number']);
-    $email_recipient = $order->get_billing_email();
-
-    // Generišite HTML sadržaj koristeći dobar WooCommerce šablon
-    ob_start();
-    include DEXPRESS_WOO_PLUGIN_DIR . 'templates/emails/shipment-delivered.php';
-    $email_content = ob_get_clean();
-
-    // Wrap email u WooCommerce šablon
-    $email_content = $mailer->wrap_message($email_subject, $email_content);
-
-    // Pošaljite email
-    $headers = array('Content-Type: text/html; charset=UTF-8');
-    $mailer->send($email_recipient, $email_subject, $email_content, $headers);
-
-    // Dodajte napomenu na narudžbinu
-    $order->add_order_note(
-        sprintf(__('Email o isporuci pošiljke #%s je poslat kupcu.', 'd-express-woo'), $data['tracking_number'])
-    );
-}
-
-/**
- * Email za neisporučenu pošiljku
- */
-function dexpress_send_failed_email($data)
-{
-    $order = $data['order'];
-
-    // Priprema mailer objekta
-    $mailer = WC()->mailer();
-
-    // Priprema email naslova i recipijenta
-    $email_subject = sprintf(__('Problem sa isporukom Vaše pošiljke #%s', 'd-express-woo'), $data['tracking_number']);
-    $email_recipient = $order->get_billing_email();
-
-    // Generišite HTML sadržaj koristeći dobar WooCommerce šablon
-    ob_start();
-    include DEXPRESS_WOO_PLUGIN_DIR . 'templates/emails/shipment-failed.php';
-    $email_content = ob_get_clean();
-
-    // Wrap email u WooCommerce šablon
-    $email_content = $mailer->wrap_message($email_subject, $email_content);
-
-    // Pošaljite email
-    $headers = array('Content-Type: text/html; charset=UTF-8');
-    $mailer->send($email_recipient, $email_subject, $email_content, $headers);
-
-    // Dodajte napomenu na narudžbinu
-    $order->add_order_note(
-        sprintf(__('Email o neuspeloj isporuci pošiljke #%s je poslat kupcu.', 'd-express-woo'), $data['tracking_number'])
-    );
-}
-/**
- * Email za promenu statusa pošiljke
- */
-function dexpress_send_status_change_email($data)
-{
-    $order = $data['order'];
-
-    // Priprema mailer objekta
-    $mailer = WC()->mailer();
-
-    // Priprema email naslova i recipijenta
-    $email_subject = sprintf(__('Status Vaše pošiljke #%s je promenjen', 'd-express-woo'), $data['tracking_number']);
-    $email_recipient = $order->get_billing_email();
-
-    // Generišite HTML sadržaj koristeći dobar WooCommerce šablon
-    ob_start();
-    include DEXPRESS_WOO_PLUGIN_DIR . 'templates/emails/shipment-status-change.php';
-    $email_content = ob_get_clean();
-
-    // Wrap email u WooCommerce šablon
-    $email_content = $mailer->wrap_message($email_subject, $email_content);
-
-    // Pošaljite email
-    $headers = array('Content-Type: text/html; charset=UTF-8');
-    $mailer->send($email_recipient, $email_subject, $email_content, $headers);
-
-    // Dodajte napomenu na narudžbinu
-    $order->add_order_note(
-        sprintf(
-            __('Email o promeni statusa pošiljke #%s je poslat kupcu. Novi status: %s', 'd-express-woo'),
-            $data['tracking_number'],
-            $data['status_name']
-        )
-    );
 }
