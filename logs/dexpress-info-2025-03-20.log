@@ -1,0 +1,99 @@
+[2025-03-20 09:33:36] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/checkaddress
+[2025-03-20 09:33:36] Kreiranje pošiljke. Podaci: Array
+(
+    [CClientID] => UK16967
+    [CName] => s7Code DOO
+    [CAddress] => Bulevar Cara Lazara
+    [CAddressNum] => 106
+    [CTownID] => 802158
+    [CCName] => Ilija Velemirov
+    [CCPhone] => 381603995503
+    [PuClientID] => UK16967
+    [PuName] => s7Code DOO
+    [PuAddress] => Bulevar Cara Lazara
+    [PuAddressNum] => 106
+    [PuTownID] => 802158
+    [PuCName] => Ilija Velemirov
+    [PuCPhone] => 381603995503
+    [RName] => Ilija Velemirov
+    [RAddress] => Cara Dušana
+    [RAddressNum] => 45
+    [RAddressDesc] => 123
+    [RTownID] => 701408
+    [RCName] => Ilija Velemirov
+    [RCPhone] => 38160000000
+    [Note] => 
+    [DlTypeID] => 1
+    [PaymentBy] => 1
+    [PaymentType] => 2
+    [Value] => 51800
+    [Content] => Dokumenta
+    [Mass] => 100
+    [ReferenceID] => ORDER-740-1742463216
+    [ReturnDoc] => 0
+    [BuyOut] => 51800
+    [BuyOutFor] => 0
+    [BuyOutAccount] => 170-0010364556000-77
+    [SelfDropOff] => 0
+    [PackageList] => Array
+        (
+            [0] => Array
+                (
+                    [Code] => TT0000000039
+                    [Mass] => 100
+                )
+
+        )
+
+)
+
+[2025-03-20 09:33:36] Kreiranje pošiljke. Podaci(TEST): Array
+(
+    [CClientID] => UK16967
+    [CName] => s7Code DOO
+    [CAddress] => Bulevar Cara Lazara
+    [CAddressNum] => 106
+    [CTownID] => 802158
+    [CCName] => Ilija Velemirov
+    [CCPhone] => 381603995503
+    [PuClientID] => UK16967
+    [PuName] => s7Code DOO
+    [PuAddress] => Bulevar Cara Lazara
+    [PuAddressNum] => 106
+    [PuTownID] => 802158
+    [PuCName] => Ilija Velemirov
+    [PuCPhone] => 381603995503
+    [RName] => Ilija Velemirov
+    [RAddress] => Cara Dušana
+    [RAddressNum] => 45
+    [RAddressDesc] => 123
+    [RTownID] => 701408
+    [RCName] => Ilija Velemirov
+    [RCPhone] => 38160000000
+    [Note] => 
+    [DlTypeID] => 1
+    [PaymentBy] => 1
+    [PaymentType] => 2
+    [Value] => 51800
+    [Content] => Dokumenta
+    [Mass] => 100
+    [ReferenceID] => ORDER-740-1742463216
+    [ReturnDoc] => 0
+    [BuyOut] => 51800
+    [BuyOutFor] => 0
+    [BuyOutAccount] => 170-0010364556000-77
+    [SelfDropOff] => 0
+    [PackageList] => Array
+        (
+            [0] => Array
+                (
+                    [Code] => TT0000000039
+                    [Mass] => 100
+                )
+
+        )
+
+)
+
+[2025-03-20 09:33:36] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/addshipment
+[2025-03-20 09:33:36] API Odgovor: TEST

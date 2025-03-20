@@ -18,46 +18,23 @@ class D_Express_Webhook_Handler
      */
     public function check_permission(WP_REST_Request $request)
     {
-        // 1. Provera webhook_secret parametra
         $data = $request->get_json_params();
-        
-        if (!isset($data['cc']) || empty($data['cc'])) {
-            dexpress_log('Webhook pristup odbijen: Nedostaje passcode (cc)', 'error');
-            return new WP_Error(
-                'invalid_request', 
-                __('Neispravan zahtev: Nedostaje passcode', 'd-express-woo'),
-                ['status' => 403]
-            );
+
+        if (!isset($data['cc']) || $data['cc'] !== get_option('dexpress_webhook_secret')) {
+            return new WP_Error('invalid_request', 'Invalid webhook secret', ['status' => 403]);
         }
-        
-        $webhook_secret = get_option('dexpress_webhook_secret', '');
-        
-        if (empty($webhook_secret) || $data['cc'] !== $webhook_secret) {
-            dexpress_log('Webhook pristup odbijen: Neispravan passcode', 'error');
-            return new WP_Error(
-                'invalid_credentials', 
-                __('Neispravan passcode', 'd-express-woo'),
-                ['status' => 403]
-            );
+
+        // Osnovna provera obaveznih parametara
+        $required_params = ['nID', 'code', 'rID', 'sID', 'dt'];
+        foreach ($required_params as $param) {
+            if (!isset($data[$param])) {
+                return new WP_Error('invalid_request', "Missing parameter: {$param}", ['status' => 400]);
+            }
         }
-        
-        // 2. Dodatna validacija IP adrese (opciono)
-        $allowed_ips = $this->get_allowed_ips();
-        $remote_ip = $this->get_client_ip();
-        
-        if (!empty($allowed_ips) && !in_array($remote_ip, $allowed_ips)) {
-            dexpress_log('Webhook pristup odbijen: Neovlašćena IP adresa: ' . $remote_ip, 'error');
-            return new WP_Error(
-                'unauthorized_ip', 
-                __('Neovlašćena IP adresa', 'd-express-woo'),
-                ['status' => 403]
-            );
-        }
-        
-        // Sve provere su prošle
+
         return true;
     }
-    
+
     /**
      * Dobijanje liste dozvoljenih IP adresa
      * 
@@ -68,14 +45,14 @@ class D_Express_Webhook_Handler
         // Implementiraj opciju za čuvanje i definisanje dozvoljenih IP adresa
         // Za sad koristimo praznu listu što znači da su sve IP adrese dozvoljene
         $allowed_ips = get_option('dexpress_allowed_webhook_ips', '');
-        
+
         if (empty($allowed_ips)) {
             return []; // Sve IP adrese su dozvoljene ako nema definisanih
         }
-        
+
         return array_map('trim', explode(',', $allowed_ips));
     }
-    
+
     /**
      * Dobijanje IP adrese klijenta
      * 
@@ -92,7 +69,7 @@ class D_Express_Webhook_Handler
         } else {
             $ip = $_SERVER['REMOTE_ADDR'];
         }
-        
+
         return $ip;
     }
 
@@ -105,7 +82,7 @@ class D_Express_Webhook_Handler
     public function handle_notify(WP_REST_Request $request)
     {
         global $wpdb;
-        
+
         // Validacija zahteva 
         $permission_check = $this->check_permission($request);
         if (is_wp_error($permission_check)) {
@@ -128,7 +105,7 @@ class D_Express_Webhook_Handler
             dexpress_log('Webhook: Nedostaju obavezni parametri', 'error');
             return new WP_REST_Response('ERROR: Invalid data structure', 400);
         }
-        
+
         // Validacija tipova podataka
         if (!is_string($data['nID']) || !is_string($data['code']) || !is_string($data['rID'])) {
             dexpress_log('Webhook: Neispravni tipovi podataka', 'error');
@@ -138,7 +115,7 @@ class D_Express_Webhook_Handler
         // Provera da li već imamo ovaj nID (duplikat)
         $table_name = $wpdb->prefix . 'dexpress_statuses';
         $notification_id = $wpdb->_real_escape($data['nID']);
-        
+
         $existing_notification = $wpdb->get_var($wpdb->prepare(
             "SELECT id FROM $table_name WHERE notification_id = %s",
             $notification_id
@@ -222,7 +199,7 @@ class D_Express_Webhook_Handler
 
         // Validacija delova datuma
         if (
-            !checkdate((int)$month, (int)$day, (int)$year) || 
+            !checkdate((int)$month, (int)$day, (int)$year) ||
             (int)$hour > 23 || (int)$minute > 59 || (int)$second > 59
         ) {
             dexpress_log('Webhook: Nevalidan datum nakon parsiranja: ' . $date_string, 'warning');
@@ -243,10 +220,10 @@ class D_Express_Webhook_Handler
         if (!wp_next_scheduled('dexpress_process_notification', [$notification_id])) {
             $scheduled = wp_schedule_single_event(
                 time() + 5, // Dodajemo malo odlaganja da se REST odgovor vrati pre obrade
-                'dexpress_process_notification', 
+                'dexpress_process_notification',
                 [$notification_id]
             );
-            
+
             if (!$scheduled) {
                 dexpress_log('Webhook: Greška pri zakazivanju obrade notifikacije ID: ' . $notification_id, 'error');
             }
@@ -284,24 +261,24 @@ class D_Express_Webhook_Handler
             FILE_APPEND
         );
     }
-    
+
     /**
      * Sanitizacija header-a za logovanje
      * 
      * @param array $headers HTTP headeri
      * @return array Sanitizovani headeri
      */
-    private function sanitize_headers($headers) 
+    private function sanitize_headers($headers)
     {
         // Uklanjamo osetljive informacije iz headera
         $sensitive_headers = ['authorization', 'cookie', 'php-auth-user', 'php-auth-pw'];
-        
+
         foreach ($sensitive_headers as $header) {
             if (isset($headers[$header])) {
                 $headers[$header] = '[REDACTED]';
             }
         }
-        
+
         return $headers;
     }
 }

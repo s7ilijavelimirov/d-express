@@ -12,7 +12,7 @@ class D_Express_Validator
      */
     public static function validate_phone($phone)
     {
-        $pattern = '/^(381[1-9][0-9]{7,8}|38167[0-9]{6,8})$/';
+        $pattern = '/^(3816[0-9][0-9]{6,8}|381[1-9][0-9]{7,8})$/';
         return preg_match($pattern, $phone);
     }
 
@@ -43,7 +43,8 @@ class D_Express_Validator
      */
     public static function validate_name($name)
     {
-        $pattern = '/^([\-a-zžćčđšA-ZĐŠĆŽČ_0-9\.]+)( [\-a-zžćčđšA-ZĐŠĆŽČ_0-9\.]+)*$/';
+        $name = trim($name);
+        $pattern = '/^[\-\#\$a-zžćčđšA-ZĐŠĆŽČ_0-9,:;\+\(\)\/\.]+( [\-\#\$a-zžćčđšA-ZĐŠĆŽČ_0-9,:;\+\(\)\/\.]+)*$/';
         return preg_match($pattern, $name) && strlen($name) <= 50;
     }
 
@@ -150,28 +151,28 @@ class D_Express_Validator
         // Validacija imena
         foreach (['CName', 'PuName', 'RName'] as $field) {
             if (empty($data[$field]) || !self::validate_name($data[$field])) {
-                $errors[] = "Neispravan format za polje {$field}";
+                $errors[] = "Neispravan format imena za polje {$field}";
             }
         }
 
         // Validacija adresa
         foreach (['CAddress', 'PuAddress', 'RAddress'] as $field) {
             if (empty($data[$field]) || !self::validate_name($data[$field])) {
-                $errors[] = "Neispravan format za polje {$field}";
+                $errors[] = "Neispravan format adrese za polje {$field}";
             }
         }
 
         // Validacija brojeva adresa
         foreach (['CAddressNum', 'PuAddressNum', 'RAddressNum'] as $field) {
             if (empty($data[$field]) || !self::validate_address_number($data[$field])) {
-                $errors[] = "Neispravan format za polje {$field}";
+                $errors[] = "Neispravan format broja adrese za polje {$field}";
             }
         }
 
         // Validacija ID-jeva gradova
         foreach (['CTownID', 'PuTownID', 'RTownID'] as $field) {
             if (empty($data[$field]) || !self::validate_town_id($data[$field])) {
-                $errors[] = "Neispravan format za polje {$field}";
+                $errors[] = "Neispravan format ID-a grada za polje {$field}";
             }
         }
 
@@ -196,8 +197,10 @@ class D_Express_Validator
         if (empty($data['Mass']) || !is_numeric($data['Mass']) || $data['Mass'] <= 0 || $data['Mass'] > 10000000) {
             $errors[] = "Neispravan format za Mass";
         }
-
         // Validacija otkupnine i bankovnog računa
+        if (!empty($data['BuyOut']) && (!is_numeric($data['BuyOut']) || $data['BuyOut'] <= 0)) {
+            $errors[] = "Neispravan format za BuyOut";
+        }
         if (!empty($data['BuyOut']) && $data['BuyOut'] > 0) {
             if (empty($data['BuyOutAccount'])) {
                 $errors[] = "Za otkupninu (BuyOut) je obavezan bankovni račun";
