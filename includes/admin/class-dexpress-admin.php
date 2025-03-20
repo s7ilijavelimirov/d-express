@@ -16,6 +16,7 @@ class D_Express_Admin
      */
     public function init()
     {
+           error_log('D_Express_Admin::init called from ' . debug_backtrace()[0]['file'] . ' line ' . debug_backtrace()[0]['line']);
         // Dodavanje admin menija
         add_action('admin_menu', array($this, 'add_admin_menu'));
 
@@ -42,7 +43,14 @@ class D_Express_Admin
      */
     public function add_admin_menu()
     {
+        static $added = false;
+        if ($added) {
+            error_log('D_Express_Admin::add_admin_menu prevented duplicate call');
+            return;
+        }
+        $added = true;
         
+        error_log('D_Express_Admin::add_admin_menu called');
         add_submenu_page(
             'woocommerce',
             __('D Express', 'd-express-woo'),

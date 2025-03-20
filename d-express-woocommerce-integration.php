@@ -199,9 +199,9 @@ class D_Express_WooCommerce
         $tracking = new D_Express_Tracking();
         $tracking->init();
 
-        // Inicijalizacija order handlera
-        $order_handler = new D_Express_Order_Handler();
-        $order_handler->init();
+        // // Inicijalizacija order handlera
+        // $order_handler = new D_Express_Order_Handler();
+        // $order_handler->init();
     }
     // /**
     //  * Vraća instancu Order Handler-a
