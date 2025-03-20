@@ -150,7 +150,7 @@ class D_Express_Shipment_Service
 
             // Hook za dodatne akcije nakon kreiranja pošiljke
             do_action('dexpress_after_shipment_created', $insert_id, $order);
-
+            $this->send_tracking_email($insert_id, $order);
             return $insert_id;
         } catch (Exception $e) {
             dexpress_log('[SHIPPING] Exception pri kreiranju pošiljke: ' . $e->getMessage(), 'error');
@@ -210,7 +210,41 @@ class D_Express_Shipment_Service
     {
         add_action('wp_ajax_dexpress_create_shipment', array($this, 'ajax_create_shipment'));
     }
+    // Dodaj u klasu D_Express_Shipment_Service
+    private function send_tracking_email($shipment_id, $order)
+    {
+        $mailer = WC()->mailer();
+        $shipment = $this->db->get_shipment($shipment_id);
 
+        if (!$shipment) {
+            return;
+        }
+
+        // Dobavljanje emaila kupca
+        $recipient = $order->get_billing_email();
+
+        // Naslov emaila
+        $subject = sprintf(__('Praćenje pošiljke za narudžbinu #%s', 'd-express-woo'), $order->get_order_number());
+        $email_heading = $subject; // Dodajemo email_heading varijablu
+
+        // Popuni podatke za šablon
+        $tracking_number = $shipment->tracking_number;
+        $reference_id = $shipment->reference_id;
+        $shipment_date = $shipment->created_at;
+        $is_test = $shipment->is_test;
+
+        // Kreiramo email objekat
+        $email = new WC_Email(); // Dodajemo email objekat
+
+        // Učitavanje sadržaja emaila iz šablona
+        ob_start();
+        include DEXPRESS_WOO_PLUGIN_DIR . 'templates/emails/shipment-created.php';
+        $email_content = ob_get_clean();
+
+        // Slanje emaila
+        $headers = "Content-Type: text/html\r\n";
+        $mailer->send($recipient, $subject, $email_content, $headers);
+    }
     /**
      * AJAX handler za kreiranje pošiljke
      */

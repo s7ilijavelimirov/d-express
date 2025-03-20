@@ -63,7 +63,40 @@ class D_Express_Tracking
      */
     public function tracking_page_content()
     {
+        // Dobavljanje trenutnog korisnika
+        $user_id = get_current_user_id();
+
+        // Dobavljanje poslednjih pošiljki za korisnika
+        global $wpdb;
+        $customer_orders = wc_get_orders(array(
+            'customer_id' => $user_id,
+            'limit' => -1  // Dobavi sve narudžbine
+        ));
+
+        $order_ids = array_map(function ($order) {
+            return $order->get_id();
+        }, $customer_orders);
+
+        // Modifikujemo ovu liniju - uzimamo SVE pošiljke a ne samo jednu
+        $shipments = array();
+        if (!empty($order_ids)) {
+            $shipments = $wpdb->get_results("
+                SELECT * FROM {$wpdb->prefix}dexpress_shipments 
+                WHERE order_id IN (" . implode(',', array_map('intval', $order_ids)) . ")
+                ORDER BY created_at DESC
+            ");
+        }
+
+        // Uzimamo prvu kao aktivni shipment ako postoji
+        $shipment = !empty($shipments) ? $shipments[0] : null;
+
+        // Uključi šablon i proslijedi podatke
         include DEXPRESS_WOO_PLUGIN_DIR . 'templates/myaccount/tracking.php';
+
+        // Ako imamo više pošiljki, prikazujemo tabelu sa svim pošiljkama
+        if (count($shipments) > 1) {
+            $this->display_user_shipments();
+        }
     }
 
     /**
