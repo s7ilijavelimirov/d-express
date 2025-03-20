@@ -29,7 +29,7 @@ defined('ABSPATH') || exit;
 
 <p style="margin-top: 20px;">
     <?php _e('Možete pratiti status Vaše pošiljke na D Express sajtu koristeći sledeći link:', 'd-express-woo'); ?><br>
-    <a href="https://www.dexpress.rs/TrackingParcel?trackingNumber=<?php echo esc_attr($tracking_number); ?>" style="display: inline-block; margin-top: 10px; padding: 8px 15px; background-color: #0073aa; color: white; text-decoration: none; border-radius: 3px;">
+    <a href="https://www.dexpress.rs/rs/pracenje-posiljaka/<?php echo esc_attr($tracking_number); ?>" style="display: inline-block; margin-top: 10px; padding: 8px 15px; background-color: #0073aa; color: white; text-decoration: none; border-radius: 3px;">
         <?php _e('Prati pošiljku', 'd-express-woo'); ?>
     </a>
 </p>

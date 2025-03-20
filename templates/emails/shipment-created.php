@@ -34,7 +34,7 @@ do_action('woocommerce_email_header', $email_heading, $email);
 <?php else: ?>
     <p>
         <?php _e('Možete pratiti vašu pošiljku klikom na sledeći link:', 'd-express-woo'); ?><br>
-        <a href="<?php echo esc_url('https://www.dexpress.rs/TrackingParcel?trackingNumber=' . $tracking_number); ?>" target="_blank">
+        <a href="<?php echo esc_url('https://www.dexpress.rs/rs/pracenje-posiljaka/' . $tracking_number); ?>" target="_blank">
             <?php _e('Prati pošiljku', 'd-express-woo'); ?>
         </a>
     </p>

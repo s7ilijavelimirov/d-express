@@ -1,0 +1,166 @@
+[2025-03-20 13:22:55] Order ID: 746
+billing_street: Arsenija Čarnojevića
+billing_street_id: 19445
+billing_number: 12
+billing_address_desc: 3
+billing_city: Kragujevac
+billing_city_id: 718980
+billing_postcode: 34000
+billing_address_1: Arsenija Čarnojevića 12
+shipping_street: 
+shipping_street_id: 
+shipping_number: 
+shipping_address_desc: 
+shipping_city: Ostružnica
+shipping_city_id: 
+shipping_postcode: 11251
+
+[2025-03-20 13:22:55] Checkout order processed: 746
+[2025-03-20 13:22:55] Has D Express shipping: Yes
+[2025-03-20 13:22:55] Automatic shipment creation is disabled or status does not match. Auto create: Disabled, Current status: pending, Required status: processing
+[2025-03-20 13:23:36] [SHIPPING] Započinjem kreiranje pošiljke za narudžbinu #746
+[2025-03-20 13:23:36] [SHIPPING] Proveravam adresu za narudžbinu #746
+[2025-03-20 13:23:36] Checking address: Array
+(
+    [RName] => Ilija Velemirov
+    [RAddress] => Arsenija Čarnojevića
+    [RAddressNum] => 12
+    [RTownID] => 718980
+    [RCName] => Ilija Velemirov
+    [RCPhone] => 381603995503
+)
+
+[2025-03-20 13:23:36] Address check response: TEST
+[2025-03-20 13:23:36] [SHIPPING] Adresa validirana uspešno
+[2025-03-20 13:23:36] [SHIPPING] Priprema podataka za narudžbinu #746
+[2025-03-20 13:23:36] Using address type: shipping
+[2025-03-20 13:23:36] Street: Arsenija Čarnojevića, Number: 12, City ID: 718980
+[2025-03-20 13:23:36] Payment method: cod, Is COD: Yes
+[2025-03-20 13:23:36] Using BuyOut: 51800, Account: 170-0010364556000-77
+[2025-03-20 13:23:36] Final BuyOut amount: 51800
+[2025-03-20 13:23:36] Final BuyOutAccount: 170-0010364556000-77
+[2025-03-20 13:23:36] Final RAddressNum: 12
+[2025-03-20 13:23:36] Final RTownID: 718980
+[2025-03-20 13:23:36] [SHIPPING] Šaljem zahtev ka D-Express API-ju
+[2025-03-20 13:23:36] [SHIPPING] API odgovor primljen uspešno
+[2025-03-20 13:23:36] [SHIPPING] Tracking broj: TT0000000045, Shipment ID: TT0000000045
+[2025-03-20 13:23:36] [SHIPPING] Čuvanje pošiljke u bazu podataka
+[2025-03-20 13:23:36] [SHIPPING] Pošiljka uspešno kreirana sa ID: 45
+[2025-03-20 14:08:16] Order ID: 747
+billing_street: Nikole Francuskog
+billing_street_id: 22508
+billing_number: 45
+billing_address_desc: 123
+billing_city: Kikinda
+billing_city_id: 802158
+billing_postcode: 23300
+billing_address_1: Nikole Francuskog 45
+shipping_street: Cara Dušana
+shipping_street_id: 6287
+shipping_number: 45
+shipping_address_desc: 123
+shipping_city: Aranđelovac
+shipping_city_id: 701408
+shipping_postcode: 34300
+shipping_address_1: Cara Dušana 45
+
+[2025-03-20 14:08:16] Checkout order processed: 747
+[2025-03-20 14:08:16] Has D Express shipping: Yes
+[2025-03-20 14:08:16] Automatic shipment creation is disabled or status does not match. Auto create: Disabled, Current status: pending, Required status: processing
+[2025-03-20 14:08:37] [SHIPPING] Započinjem kreiranje pošiljke za narudžbinu #747
+[2025-03-20 14:08:37] [SHIPPING] Proveravam adresu za narudžbinu #747
+[2025-03-20 14:08:37] Checking address: Array
+(
+    [RName] => Ilija Velemirov
+    [RAddress] => Nikole Francuskog
+    [RAddressNum] => 45
+    [RTownID] => 802158
+    [RCName] => Ilija Velemirov
+    [RCPhone] => 381613995503
+)
+
+[2025-03-20 14:08:38] Address check response: TEST
+[2025-03-20 14:08:38] [SHIPPING] Adresa validirana uspešno
+[2025-03-20 14:08:38] [SHIPPING] Priprema podataka za narudžbinu #747
+[2025-03-20 14:08:38] Using address type: shipping
+[2025-03-20 14:08:38] Street: Nikole Francuskog, Number: 45, City ID: 802158
+[2025-03-20 14:08:38] Payment method: cod, Is COD: Yes
+[2025-03-20 14:08:38] Using BuyOut: 51800, Account: 170-0010364556000-77
+[2025-03-20 14:08:38] Final BuyOut amount: 51800
+[2025-03-20 14:08:38] Final BuyOutAccount: 170-0010364556000-77
+[2025-03-20 14:08:38] Final RAddressNum: 45
+[2025-03-20 14:08:38] Final RTownID: 802158
+[2025-03-20 14:08:38] [SHIPPING] Šaljem zahtev ka D-Express API-ju
+[2025-03-20 14:08:38] [SHIPPING] API odgovor primljen uspešno
+[2025-03-20 14:08:38] [SHIPPING] Tracking broj: TT0000000046, Shipment ID: TT0000000046
+[2025-03-20 14:08:38] [SHIPPING] Čuvanje pošiljke u bazu podataka
+[2025-03-20 14:08:38] [SHIPPING] Pošiljka uspešno kreirana sa ID: 46
+[2025-03-20 14:24:56] Order ID: 748
+billing_street: Nikole Francuskog
+billing_street_id: 22508
+billing_number: 45
+billing_address_desc: 123
+billing_city: Kikinda
+billing_city_id: 802158
+billing_postcode: 23300
+billing_address_1: Nikole Francuskog 45
+shipping_street: NOT SET
+shipping_street_id: NOT SET
+shipping_number: NOT SET
+shipping_address_desc: NOT SET
+shipping_city: NOT SET
+shipping_city_id: NOT SET
+shipping_postcode: NOT SET
+
+[2025-03-20 14:24:56] Checkout order processed: 748
+[2025-03-20 14:24:56] Has D Express shipping: No
+[2025-03-20 14:25:37] Order ID: 749
+billing_street: Nikole Francuskog
+billing_street_id: 22508
+billing_number: 45
+billing_address_desc: 123
+billing_city: Kikinda
+billing_city_id: 802158
+billing_postcode: 23300
+billing_address_1: Nikole Francuskog 45
+shipping_street: Nikole Francuskog
+shipping_street_id: 22508
+shipping_number: 45
+shipping_address_desc: 123
+shipping_city: Kikinda
+shipping_city_id: 802158
+shipping_postcode: 23300
+shipping_address_1: Nikole Francuskog 45
+
+[2025-03-20 14:25:38] Checkout order processed: 749
+[2025-03-20 14:25:38] Has D Express shipping: Yes
+[2025-03-20 14:25:38] Auto-creating shipment for order: 749 (Test mode: Yes)
+[2025-03-20 14:25:38] [SHIPPING] Započinjem kreiranje pošiljke za narudžbinu #749
+[2025-03-20 14:25:38] [SHIPPING] Proveravam adresu za narudžbinu #749
+[2025-03-20 14:25:38] Checking address: Array
+(
+    [RName] => Ilija Velemirov
+    [RAddress] => Nikole Francuskog
+    [RAddressNum] => 45
+    [RTownID] => 802158
+    [RCName] => Ilija Velemirov
+    [RCPhone] => 381613995503
+)
+
+[2025-03-20 14:25:38] Address check response: TEST
+[2025-03-20 14:25:38] [SHIPPING] Adresa validirana uspešno
+[2025-03-20 14:25:38] [SHIPPING] Priprema podataka za narudžbinu #749
+[2025-03-20 14:25:38] Using address type: shipping
+[2025-03-20 14:25:38] Street: Nikole Francuskog, Number: 45, City ID: 802158
+[2025-03-20 14:25:38] Payment method: cod, Is COD: Yes
+[2025-03-20 14:25:38] Using BuyOut: 55500, Account: 170-0010364556000-77
+[2025-03-20 14:25:38] Final BuyOut amount: 55500
+[2025-03-20 14:25:38] Final BuyOutAccount: 170-0010364556000-77
+[2025-03-20 14:25:38] Final RAddressNum: 45
+[2025-03-20 14:25:38] Final RTownID: 802158
+[2025-03-20 14:25:38] [SHIPPING] Šaljem zahtev ka D-Express API-ju
+[2025-03-20 14:25:38] [SHIPPING] API odgovor primljen uspešno
+[2025-03-20 14:25:38] [SHIPPING] Tracking broj: TT0000000047, Shipment ID: TT0000000047
+[2025-03-20 14:25:38] [SHIPPING] Čuvanje pošiljke u bazu podataka
+[2025-03-20 14:25:38] [SHIPPING] Pošiljka uspešno kreirana sa ID: 47
+[2025-03-20 14:25:39] Shipment created successfully, ID: 47

@@ -264,7 +264,7 @@ class D_Express_Shipments_List extends WP_List_Table
             );
         } else {
             return sprintf(
-                '<a href="https://www.dexpress.rs/TrackingParcel?trackingNumber=%s" target="_blank" class="dexpress-tracking-number">%s</a>',
+                '<a href="https://www.dexpress.rs/rs/pracenje-posiljaka/%s" target="_blank" class="dexpress-tracking-number">%s</a>',
                 $item['tracking_number'],
                 $item['tracking_number']
             );

@@ -95,7 +95,7 @@ if (!empty($atts['tracking_number'])) {
                                     html += '<p>' + '<?php _e('Još uvek nema informacija o statusu ove pošiljke.', 'd-express-woo'); ?>' + '</p>';
                                 }
 
-                                html += '<p><a href="https://www.dexpress.rs/TrackingParcel?trackingNumber=' + data.tracking_number + '" class="button" target="_blank"><?php _e('Prati na D Express sajtu', 'd-express-woo'); ?></a></p>';
+                                html += '<p><a href="https://www.dexpress.rs/rs/pracenje-posiljaka/' + data.tracking_number + '" class="button" target="_blank"><?php _e('Prati na D Express sajtu', 'd-express-woo'); ?></a></p>';
 
                                 html += '</div>';
 

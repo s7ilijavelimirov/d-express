@@ -46,7 +46,7 @@ if (!defined('ABSPATH')) {
     <?php else: ?>
         <p>
             <?php _e('Možete pratiti status vaše pošiljke klikom na link ispod:', 'd-express-woo'); ?><br>
-            <a href="https://www.dexpress.rs/TrackingParcel?trackingNumber=<?php echo esc_attr($shipment->tracking_number); ?>" style="display: inline-block; font-weight: normal; padding: 8px 15px; margin: 10px 0; text-decoration: none; background-color: #7f54b3; color: #ffffff; border-radius: 3px;"><?php _e('Prati pošiljku online', 'd-express-woo'); ?></a>
+            <a href="https://www.dexpress.rs/rs/pracenje-posiljaka/<?php echo esc_attr($shipment->tracking_number); ?>" style="display: inline-block; font-weight: normal; padding: 8px 15px; margin: 10px 0; text-decoration: none; background-color: #7f54b3; color: #ffffff; border-radius: 3px;"><?php _e('Prati pošiljku online', 'd-express-woo'); ?></a>
         </p>
     <?php endif; ?>
     

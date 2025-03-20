@@ -10,7 +10,7 @@ defined('ABSPATH') || exit;
 
 class D_Express_Admin
 {
-
+    private $admin_nonce;
     /**
      * Inicijalizacija admin funkcionalnosti
      */
@@ -37,20 +37,22 @@ class D_Express_Admin
         add_filter('manage_edit-shop_order_columns', array($this, 'add_order_tracking_column'));
         add_action('manage_shop_order_posts_custom_column', array($this, 'show_order_tracking_column_data'), 10, 2);
     }
-
+    public function __construct()
+    {
+        $this->admin_nonce = wp_create_nonce('dexpress-admin-nonce');
+    }
     /**
      * Dodavanje admin menija
      */
     public function add_admin_menu()
     {
+        // Koristimo statičku promenljivu da sprečimo duplo dodavanje
         static $added = false;
         if ($added) {
-            error_log('D_Express_Admin::add_admin_menu prevented duplicate call');
             return;
         }
         $added = true;
 
-        error_log('D_Express_Admin::add_admin_menu called');
         add_submenu_page(
             'woocommerce',
             __('D Express', 'd-express-woo'),
@@ -98,7 +100,7 @@ class D_Express_Admin
 
             wp_localize_script('dexpress-admin-js', 'dexpressAdmin', array(
                 'ajaxUrl' => admin_url('admin-ajax.php'),
-                'nonce' => wp_create_nonce('dexpress-admin-nonce'),
+                'nonce' => $this->admin_nonce,
                 'i18n' => array(
                     'confirmDelete' => __('Da li ste sigurni da želite da obrišete ovu pošiljku?', 'd-express-woo'),
                     'error' => __('Došlo je do greške. Molimo pokušajte ponovo.', 'd-express-woo'),
@@ -802,6 +804,7 @@ class D_Express_Admin
      */
     public function add_order_metabox()
     {
+        // Za klasični način čuvanja porudžbina (post_type)
         add_meta_box(
             'dexpress_order_metabox',
             __('D Express Pošiljka', 'd-express-woo'),
@@ -810,20 +813,42 @@ class D_Express_Admin
             'side',
             'default'
         );
+
+        // Za HPOS način čuvanja porudžbina (ako je omogućen)
+        if (
+            class_exists('\Automattic\WooCommerce\Internal\DataStores\Orders\CustomOrdersTableController') &&
+            wc_get_container()->get(\Automattic\WooCommerce\Internal\DataStores\Orders\CustomOrdersTableController::class)->custom_orders_table_usage_is_enabled()
+        ) {
+            add_meta_box(
+                'dexpress_order_metabox',
+                __('D Express Pošiljka', 'd-express-woo'),
+                array($this, 'render_order_metabox'),
+                wc_get_page_screen_id('shop-order'),
+                'side',
+                'default'
+            );
+        }
     }
+
+    /**
+     * Render metabox-a na stranici narudžbine
+     */
 
     /**
      * Render metabox-a na stranici narudžbine
      */
     public function render_order_metabox($post)
     {
-        $order_id = $post->ID;
-        $order = wc_get_order($order_id);
+        // Get the order object directly using wc_get_order()
+        $order = wc_get_order($post->ID);
 
         if (!$order) {
             echo '<p>' . __('Narudžbina nije pronađena.', 'd-express-woo') . '</p>';
             return;
         }
+
+        // Now use $order->get_id() to get the order ID
+        $order_id = $order->get_id();
 
         // Proveri da li već postoji pošiljka
         global $wpdb;
@@ -853,7 +878,7 @@ class D_Express_Admin
             if ($shipment->is_test) {
                 echo esc_html($shipment->tracking_number) . ' <span class="description">(' . __('Test', 'd-express-woo') . ')</span>';
             } else {
-                echo '<a href="https://www.dexpress.rs/TrackingParcel?trackingNumber=' .
+                echo '<a href="https://www.dexpress.rs/rs/pracenje-posiljaka/' .
                     esc_attr($shipment->tracking_number) . '" target="_blank" class="dexpress-tracking-link">' .
                     esc_html($shipment->tracking_number) . '</a>';
             }
@@ -869,7 +894,8 @@ class D_Express_Admin
 
             // Link za preuzimanje nalepnice
             $nonce = wp_create_nonce('dexpress-download-label');
-            $label_url = admin_url('admin-ajax.php?action=dexpress_download_label&shipment_id=' . $shipment->id . '&nonce=' . $nonce);
+            // Ispravka ovde: Koristimo $shipment->shipment_id umesto $shipment->id
+            $label_url = admin_url('admin-ajax.php?action=dexpress_download_label&shipment_id=' . $shipment->shipment_id . '&nonce=' . $nonce);
 
             echo '<p><a href="' . esc_url($label_url) . '" class="button button-primary" target="_blank">' .
                 __('Preuzmi nalepnicu', 'd-express-woo') . '</a></p>';
@@ -895,7 +921,7 @@ class D_Express_Admin
 
                 // Dugme za kreiranje pošiljke
                 echo '<button type="button" class="button button-primary" id="dexpress-create-shipment-btn" 
-                  data-order-id="' . esc_attr($order_id) . '">' .
+               data-order-id="' . esc_attr($order_id) . '">' .
                     __('Kreiraj D Express pošiljku', 'd-express-woo') . '</button>';
 
                 echo '<div id="dexpress-response" style="margin-top: 10px;"></div>';
@@ -918,7 +944,7 @@ class D_Express_Admin
                                 data: {
                                     action: 'dexpress_create_shipment',
                                     order_id: order_id,
-                                    nonce: '<?php echo wp_create_nonce('dexpress-admin-nonce'); ?>'
+                                    nonce: '<?php echo $this->admin_nonce; ?>'
                                 },
                                 success: function(response) {
                                     btn.prop('disabled', false).text('<?php _e('Kreiraj D Express pošiljku', 'd-express-woo'); ?>');
@@ -948,6 +974,9 @@ class D_Express_Admin
             echo '</div>';
         }
     }
+
+
+
 
     /**
      * Dodavanje akcija za narudžbine
@@ -1025,7 +1054,7 @@ class D_Express_Admin
 
             if ($shipment) {
                 // Prikazujemo tracking broj i status ako postoji
-                echo '<a href="https://www.dexpress.rs/TrackingParcel?trackingNumber=' . esc_attr($shipment->tracking_number) . '" 
+                echo '<a href="https://www.dexpress.rs/rs/pracenje-posiljaka/' . esc_attr($shipment->tracking_number) . '" 
                     target="_blank" class="dexpress-tracking-number">' .
                     esc_html($shipment->tracking_number) . '</a>';
 

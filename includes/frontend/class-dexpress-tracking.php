@@ -158,7 +158,7 @@ class D_Express_Tracking
         // Dugme za direktan link na D Express sajt
         if (!$shipment->is_test) {
             echo '<p>';
-            echo '<a href="https://www.dexpress.rs/TrackingParcel?trackingNumber=' . esc_attr($shipment->tracking_number) . '" class="button" target="_blank">';
+            echo '<a href="https://www.dexpress.rs/rs/pracenje-posiljaka/' . esc_attr($shipment->tracking_number) . '" class="button" target="_blank">';
             echo __('Prati na D Express sajtu', 'd-express-woo');
             echo '</a>';
             echo '</p>';

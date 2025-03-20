@@ -33,7 +33,7 @@ wp_nonce_field('dexpress_meta_box', 'dexpress_meta_box_nonce');
                     <span class="dexpress-tracking-number"><?php echo esc_html($shipment->tracking_number); ?></span>
                     <span class="description"><?php _e('(Test mode)', 'd-express-woo'); ?></span>
                 <?php else: ?>
-                    <a href="https://www.dexpress.rs/TrackingParcel?trackingNumber=<?php echo esc_attr($shipment->tracking_number); ?>"
+                    <a href="https://www.dexpress.rs/rs/pracenje-posiljaka/<?php echo esc_attr($shipment->tracking_number); ?>"
                         target="_blank" class="dexpress-tracking-number">
                         <?php echo esc_html($shipment->tracking_number); ?>
                     </a>

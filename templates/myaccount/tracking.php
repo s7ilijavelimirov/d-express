@@ -26,7 +26,7 @@ defined('ABSPATH') || exit;
             <p><em><?php esc_html_e('Ovo je test pošiljka i ne može se pratiti na zvaničnom sajtu.', 'd-express-woo'); ?></em></p>
         <?php else: ?>
             <p>
-                <a href="https://www.dexpress.rs/TrackingParcel?trackingNumber=<?php echo esc_attr($shipment->tracking_number); ?>" target="_blank" class="button">
+                <a href="https://www.dexpress.rs/rs/pracenje-posiljaka/<?php echo esc_attr($shipment->tracking_number); ?>" target="_blank" class="button">
                     <?php esc_html_e('Prati pošiljku online', 'd-express-woo'); ?>
                 </a>
             </p>

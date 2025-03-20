@@ -28,7 +28,7 @@ if ($shipment->is_test) {
     echo __('Ovo je test pošiljka i ne može se pratiti na zvaničnom sajtu.', 'd-express-woo') . "\n\n";
 } else {
     echo __('Možete pratiti status vaše pošiljke na sledećem linku:', 'd-express-woo') . "\n";
-    echo 'https://www.dexpress.rs/TrackingParcel?trackingNumber=' . $shipment->tracking_number . "\n\n";
+    echo 'https://www.dexpress.rs/rs/pracenje-posiljaka/' . $shipment->tracking_number . "\n\n";
 }
 
 echo __('Očekivano vreme isporuke je 1-3 radna dana.', 'd-express-woo') . "\n";
