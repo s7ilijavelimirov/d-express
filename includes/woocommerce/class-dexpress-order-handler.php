@@ -70,9 +70,9 @@ class D_Express_Order_Handler
         $auto_create_status = get_option('dexpress_auto_create_on_status', 'processing');
 
         // Kreiranje pošiljke samo ako je automatsko kreiranje omogućeno i status odgovara
-        // ili ako je u test modu i automatsko kreiranje je omogućeno
-        if ($auto_create_enabled && ($order->get_status() === $auto_create_status || dexpress_is_test_mode())) {
-            dexpress_log('Auto-creating shipment for order: ' . $order_id . ' (Test mode: ' . (dexpress_is_test_mode() ? 'Yes' : 'No') . ')', 'debug');
+        // Izbaci "ili ako je u test modu", to je verovatno izazivalo problem
+        if ($auto_create_enabled && $order->get_status() === $auto_create_status) {
+            dexpress_log('Auto-creating shipment for order: ' . $order_id, 'debug');
 
             // Koristimo već instanciranu service klasu
             $result = $this->shipment_service->create_shipment($order);

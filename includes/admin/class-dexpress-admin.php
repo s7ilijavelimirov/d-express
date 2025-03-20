@@ -837,17 +837,24 @@ class D_Express_Admin
     /**
      * Render metabox-a na stranici narudžbine
      */
-    public function render_order_metabox($post)
+    public function render_order_metabox($post_or_order) // ← Promeni ime parametra ovde
     {
-        // Get the order object directly using wc_get_order()
-        $order = wc_get_order($post->ID);
+        // Provera da li je prosleđen WP_Post ili WC_Order
+        if (is_a($post_or_order, 'WP_Post')) {
+            $order = wc_get_order($post_or_order->ID);
+        } else {
+            $order = $post_or_order;
+        }
 
         if (!$order) {
             echo '<p>' . __('Narudžbina nije pronađena.', 'd-express-woo') . '</p>';
             return;
         }
 
-        // Now use $order->get_id() to get the order ID
+        // Koristimo get_id() metodu za dobijanje ID-a narudžbine
+        $order_id = $order->get_id();
+
+        // Koristimo get_id() metodu za dobijanje ID-a narudžbine
         $order_id = $order->get_id();
 
         // Proveri da li već postoji pošiljka

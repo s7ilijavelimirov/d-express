@@ -31,6 +31,7 @@ class D_Express_Shipment_Service
 
         $this->register_hooks();
         $this->register_ajax_handlers();
+        add_action('dexpress_after_shipment_created', array($this, 'send_tracking_email'), 10, 2);
     }
     public function register_hooks()
     {
@@ -107,13 +108,28 @@ class D_Express_Shipment_Service
             dexpress_log('[SHIPPING] Tracking broj: ' . $tracking_number . ', Shipment ID: ' . $shipment_id, 'debug');
 
             // Dodavanje napomene u narudžbinu
-            $order->add_order_note(
-                sprintf(
-                    __('D Express pošiljka je kreirana. Tracking broj: %s, Reference ID: %s', 'd-express-woo'),
-                    $tracking_number,
-                    $shipment_data['ReferenceID']
-                )
+            $note = sprintf(
+                __('D Express pošiljka je kreirana. Tracking broj: %s, Reference ID: %s', 'd-express-woo'),
+                $tracking_number,
+                $shipment_data['ReferenceID']
             );
+
+            // Dobavi postojeće komentare
+            $order_notes = wc_get_order_notes(['order_id' => $order->get_id()]);
+            $note_exists = false;
+
+            // Proveri da li napomena već postoji
+            foreach ($order_notes as $order_note) {
+                if (strpos($order_note->content, $tracking_number) !== false) {
+                    $note_exists = true;
+                    break;
+                }
+            }
+
+            // Dodaj napomenu samo ako ne postoji
+            if (!$note_exists) {
+                $order->add_order_note($note);
+            }
 
             // Čuvanje podataka o pošiljci u bazi
             dexpress_log('[SHIPPING] Čuvanje pošiljke u bazu podataka', 'debug');
@@ -156,7 +172,6 @@ class D_Express_Shipment_Service
 
             // Hook za dodatne akcije nakon kreiranja pošiljke
             do_action('dexpress_after_shipment_created', $insert_id, $order);
-            $this->send_tracking_email($insert_id, $order);
             return $insert_id;
         } catch (Exception $e) {
             dexpress_log('[SHIPPING] Exception pri kreiranju pošiljke: ' . $e->getMessage(), 'error');
@@ -348,15 +363,26 @@ class D_Express_Shipment_Service
 
         // Provera da li je novi status onaj koji je postavljen za automatsko kreiranje pošiljke
         $auto_create_status = get_option('dexpress_auto_create_on_status', 'processing');
-
         if ($to_status !== $auto_create_status) {
             return;
         }
 
         // Provera da li pošiljka već postoji
         $existing = $this->db->get_shipment_by_order_id($order_id);
-
         if ($existing) {
+            return;
+        }
+
+        // Provera da li je izabrana D Express dostava
+        $has_dexpress_shipping = false;
+        foreach ($order->get_shipping_methods() as $shipping_method) {
+            if (strpos($shipping_method->get_method_id(), 'dexpress') !== false) {
+                $has_dexpress_shipping = true;
+                break;
+            }
+        }
+
+        if (!$has_dexpress_shipping) {
             return;
         }
 
@@ -371,7 +397,7 @@ class D_Express_Shipment_Service
         add_action('wp_ajax_dexpress_create_shipment', array($this, 'ajax_create_shipment'));
     }
     // Dodaj u klasu D_Express_Shipment_Service
-    private function send_tracking_email($shipment_id, $order)
+    public function send_tracking_email($shipment_id, $order)
     {
         $mailer = WC()->mailer();
         $shipment = $this->db->get_shipment($shipment_id);
