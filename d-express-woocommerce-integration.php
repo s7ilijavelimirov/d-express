@@ -198,21 +198,14 @@ class D_Express_WooCommerce
         // Inicijalizacija frontend klasa
         $tracking = new D_Express_Tracking();
         $tracking->init();
+
+        $order_handler = new D_Express_Order_Handler();
+        $order_handler->init();
+
+        $shipment_service = new D_Express_Shipment_Service();
+        $shipment_service->register_ajax_handlers();
     }
-    // /**
-    //  * Vraća instancu Order Handler-a
-    //  */
-    public function get_order_handler()
-    {
-        static $order_handler = null;
-    
-        if ($order_handler === null) {
-            $order_handler = new D_Express_Order_Handler();
-            $order_handler->init(); // Dodajte ovu liniju da se inicijalizuje prilikom prvog poziva
-        }
-    
-        return $order_handler;
-    }
+
     /**
      * Inicijalizacija CRON zadataka
      */
@@ -342,7 +335,6 @@ class D_Express_WooCommerce
             ) .
             '</p></div>';
     }
-
 }
 
 // Inicijalizacija glavnog plugin objekta

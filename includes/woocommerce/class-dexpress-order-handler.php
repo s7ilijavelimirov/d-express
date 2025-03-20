@@ -19,10 +19,10 @@ class D_Express_Order_Handler
         $shipment_service = new D_Express_Shipment_Service();
 
         // Dodavanje akcije za automatsko kreiranje pošiljke kada se promeni status narudžbine
-       // add_action('woocommerce_order_status_changed', array($shipment_service, 'maybe_create_shipment_on_status_change'), 10, 4);
+        // add_action('woocommerce_order_status_changed', array($shipment_service, 'maybe_create_shipment_on_status_change'), 10, 4);
 
         // Dodavanje meta box-a za opcije D Express pošiljke
-        add_action('add_meta_boxes', array($this, 'add_dexpress_meta_box'));
+        // add_action('add_meta_boxes', array($this, 'add_dexpress_meta_box'));
 
         // Čuvanje D Express opcija pri čuvanju narudžbine
         add_action('woocommerce_process_shop_order_meta', array($this, 'save_dexpress_meta_box'), 10, 1);
@@ -31,14 +31,13 @@ class D_Express_Order_Handler
         add_action('wp_ajax_dexpress_get_label', array($this, 'ajax_get_label'));
 
         // Dodavanje kolone za tracking u admin listi narudžbina
-        add_filter('manage_edit-shop_order_columns', array($this, 'add_tracking_column'));
-        add_action('manage_shop_order_posts_custom_column', array($this, 'show_tracking_column_content'), 10, 2);
+
+
 
         // Dodavanje tracking informacija u email sa narudžbinom
-        add_action('woocommerce_email_after_order_table', array($this, 'add_tracking_to_emails'), 10, 4);
+
 
         // Dodavanje tracking informacija na stranicu detalja narudžbine
-        add_action('woocommerce_order_details_after_order_table', array($this, 'add_tracking_to_order_page'));
 
         // Kreiranje pošiljke nakon završetka narudžbine
         add_action('woocommerce_checkout_order_processed', array($this, 'process_checkout_order'), 10, 3);
@@ -100,55 +99,9 @@ class D_Express_Order_Handler
     /**
      * Dodavanje meta box-a za D Express opcije
      */
-    public function add_dexpress_meta_box()
-    {
-        add_meta_box(
-            'dexpress_shipping',
-            __('D Express Dostava', 'd-express-woo'),
-            array($this, 'render_dexpress_meta_box'),
-            'shop_order',
-            'side',
-            'high'
-        );
-    }
 
-    /**
-     * Prikaz meta box-a za D Express opcije
-     * 
-     * @param WP_Post $post Post objekat
-     */
-    public function render_dexpress_meta_box($post)
-    {
-        $order = wc_get_order($post->ID);
 
-        if (!$order) {
-            return;
-        }
 
-        // Provera da li je odabrana D Express dostava
-        $shipping_methods = $order->get_shipping_methods();
-        $has_dexpress = false;
-
-        foreach ($shipping_methods as $method) {
-            if (strpos($method->get_method_id(), 'dexpress') !== false) {
-                $has_dexpress = true;
-                break;
-            }
-        }
-
-        // Dobijanje podataka o pošiljci
-        global $wpdb;
-        $shipment = $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM {$wpdb->prefix}dexpress_shipments WHERE order_id = %d",
-            $order->get_id()
-        ));
-
-        // Provera da li je narudžbina plaćena
-        $is_paid = $order->is_paid() || $order->get_payment_method() === 'cod';
-
-        // Render template-a
-        include DEXPRESS_WOO_PLUGIN_DIR . 'includes/admin/views/order-metabox.php';
-    }
 
     /**
      * Čuvanje D Express opcija pri čuvanju narudžbine
@@ -235,26 +188,8 @@ class D_Express_Order_Handler
         ));
     }
 
-    /**
-     * Dodavanje kolone za tracking u admin listi narudžbina
-     * 
-     * @param array $columns Postojeće kolone
-     * @return array Modifikovane kolone
-     */
-    public function add_tracking_column($columns)
-    {
-        $new_columns = array();
 
-        foreach ($columns as $column_id => $column_name) {
-            $new_columns[$column_id] = $column_name;
 
-            if ($column_id === 'order_status') {
-                $new_columns['dexpress_tracking'] = __('D Express', 'd-express-woo');
-            }
-        }
-
-        return $new_columns;
-    }
 
     /**
      * Prikaz sadržaja u koloni za tracking
