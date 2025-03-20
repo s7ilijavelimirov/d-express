@@ -43,9 +43,6 @@ class D_Express_Tracking
         add_rewrite_endpoint('dexpress-tracking', EP_ROOT | EP_PAGES);
     }
 
-    /**
-     * Dodavanje stavke menija u My Account
-     */
     public function add_tracking_menu_item($items)
     {
         // Dodavanje nakon narudžbina
@@ -61,32 +58,12 @@ class D_Express_Tracking
 
         return $new_items;
     }
-
     /**
      * Sadržaj stranice za praćenje
      */
     public function tracking_page_content()
     {
-        $tracking_number = isset($_GET['tracking_number']) ? sanitize_text_field($_GET['tracking_number']) : '';
-
-        // Prikaz forme za unos tracking broja
-        echo '<h2>' . __('Praćenje D Express pošiljke', 'd-express-woo') . '</h2>';
-
-        echo '<form class="dexpress-tracking-form" method="get">';
-        echo '<p>' . __('Unesite tracking broj vaše pošiljke:', 'd-express-woo') . '</p>';
-        echo '<p class="form-row">';
-        echo '<input type="text" name="tracking_number" value="' . esc_attr($tracking_number) . '" class="input-text" placeholder="' . esc_attr__('npr. DE123456789', 'd-express-woo') . '" />';
-        echo '<button type="submit" class="button">' . __('Prati pošiljku', 'd-express-woo') . '</button>';
-        echo '</p>';
-        echo '</form>';
-
-        // Ako je unet tracking broj, prikaži rezultate
-        if (!empty($tracking_number)) {
-            $this->display_tracking_results($tracking_number);
-        }
-
-        // Prikaži korisnikove prethodne pošiljke
-        $this->display_user_shipments();
+        include DEXPRESS_WOO_PLUGIN_DIR . 'templates/myaccount/tracking.php';
     }
 
     /**

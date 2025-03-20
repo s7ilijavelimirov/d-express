@@ -13,31 +13,17 @@ class D_Express_Order_Handler
     /**
      * Inicijalizacija order handlera
      */
+    // Promenite ovo:
     public function init()
     {
         // Kreiranje instance servisne klase
         $shipment_service = new D_Express_Shipment_Service();
-
-        // Dodavanje akcije za automatsko kreiranje pošiljke kada se promeni status narudžbine
-        // add_action('woocommerce_order_status_changed', array($shipment_service, 'maybe_create_shipment_on_status_change'), 10, 4);
-
-        // Dodavanje meta box-a za opcije D Express pošiljke
-        // add_action('add_meta_boxes', array($this, 'add_dexpress_meta_box'));
 
         // Čuvanje D Express opcija pri čuvanju narudžbine
         add_action('woocommerce_process_shop_order_meta', array($this, 'save_dexpress_meta_box'), 10, 1);
 
         // AJAX akcija za preuzimanje nalepnice
         add_action('wp_ajax_dexpress_get_label', array($this, 'ajax_get_label'));
-
-        // Dodavanje kolone za tracking u admin listi narudžbina
-
-
-
-        // Dodavanje tracking informacija u email sa narudžbinom
-
-
-        // Dodavanje tracking informacija na stranicu detalja narudžbine
 
         // Kreiranje pošiljke nakon završetka narudžbine
         add_action('woocommerce_checkout_order_processed', array($this, 'process_checkout_order'), 10, 3);
@@ -186,141 +172,5 @@ class D_Express_Order_Handler
             'message' => __('Nalepnica uspešno generisana.', 'd-express-woo'),
             'url' => $label_url
         ));
-    }
-
-
-
-
-    /**
-     * Prikaz sadržaja u koloni za tracking
-     * 
-     * @param string $column Naziv kolone
-     * @param int $order_id ID narudžbine
-     */
-    public function show_tracking_column_content($column, $order_id)
-    {
-        if ($column === 'dexpress_tracking') {
-            // Dobijanje podataka o pošiljci
-            global $wpdb;
-            $shipment = $wpdb->get_row($wpdb->prepare(
-                "SELECT * FROM {$wpdb->prefix}dexpress_shipments WHERE order_id = %d",
-                $order_id
-            ));
-
-            if ($shipment) {
-                echo '<mark class="order-status"><span>' . esc_html($shipment->tracking_number) . '</span></mark>';
-            } else {
-                echo '<span class="na">&ndash;</span>';
-            }
-        }
-    }
-
-    /**
-     * Dodavanje tracking informacija u email sa narudžbinom
-     * 
-     * @param WC_Order $order Narudžbina
-     * @param bool $sent_to_admin Da li se email šalje adminu
-     * @param bool $plain_text Da li je email u plain text formatu
-     * @param WC_Email $email Email objekat
-     */
-    public function add_tracking_to_emails($order, $sent_to_admin, $plain_text, $email)
-    {
-        // Samo za email-ove koji se šalju kupcima
-        if ($sent_to_admin || !is_a($order, 'WC_Order')) {
-            return;
-        }
-
-        // Samo za email-ove o dovršenim narudžbinama ili procesuiranim
-        if ($email->id !== 'customer_completed_order' && $email->id !== 'customer_processing_order') {
-            return;
-        }
-
-        // Dobijanje podataka o pošiljci
-        global $wpdb;
-        $shipment = $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM {$wpdb->prefix}dexpress_shipments WHERE order_id = %d",
-            $order->get_id()
-        ));
-
-        if (!$shipment) {
-            return;
-        }
-
-        // Prikaz informacija o praćenju
-        if ($plain_text) {
-            include DEXPRESS_WOO_PLUGIN_DIR . 'templates/emails/plain/tracking-info.php';
-        } else {
-            include DEXPRESS_WOO_PLUGIN_DIR . 'templates/emails/tracking-info.php';
-        }
-    }
-
-    /**
-     * Dodavanje tracking informacija na stranicu detalja narudžbine
-     * 
-     * @param WC_Order $order Narudžbina
-     */
-    public function add_tracking_to_order_page($order)
-    {
-        // Dobijanje podataka o pošiljci
-        global $wpdb;
-        $shipment = $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM {$wpdb->prefix}dexpress_shipments WHERE order_id = %d",
-            $order->get_id()
-        ));
-
-        if (!$shipment) {
-            return;
-        }
-
-        include DEXPRESS_WOO_PLUGIN_DIR . 'templates/myaccount/tracking.php';
-    }
-
-    /**
-     * Vraća HTML sa detaljima pošiljke za AJAX odgovor
-     * 
-     * @param int $shipment_id ID pošiljke
-     * @return string HTML
-     */
-    private function get_shipment_details_html($shipment_id)
-    {
-        global $wpdb;
-        $shipment = $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM {$wpdb->prefix}dexpress_shipments WHERE id = %d",
-            $shipment_id
-        ));
-
-        if (!$shipment) {
-            return '';
-        }
-
-        ob_start();
-?>
-        <div class="dexpress-shipment-details">
-            <p>
-                <strong><?php _e('Tracking broj:', 'd-express-woo'); ?></strong>
-                <?php echo esc_html($shipment->tracking_number); ?>
-            </p>
-            <p>
-                <strong><?php _e('Reference ID:', 'd-express-woo'); ?></strong>
-                <?php echo esc_html($shipment->reference_id); ?>
-            </p>
-            <p>
-                <strong><?php _e('Kreirano:', 'd-express-woo'); ?></strong>
-                <?php echo esc_html($shipment->created_at); ?>
-            </p>
-            <?php if ($shipment->status_code): ?>
-                <p>
-                    <strong><?php _e('Status:', 'd-express-woo'); ?></strong>
-                    <?php echo esc_html(dexpress_get_status_name($shipment->status_code)); ?>
-                </p>
-            <?php endif; ?>
-            <p>
-                <a href="<?php echo esc_url(admin_url('admin-ajax.php?action=dexpress_download_label&shipment_id=' . $shipment->id . '&nonce=' . wp_create_nonce('dexpress-download-label'))); ?>" class="button button-primary" target="_blank">
-                    <?php _e('Preuzmi nalepnicu', 'd-express-woo'); ?>
-                </a>
-            </p>
-        </div>
-<?php
-        return ob_get_clean();
     }
 }
