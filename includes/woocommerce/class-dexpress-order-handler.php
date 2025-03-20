@@ -15,8 +15,11 @@ class D_Express_Order_Handler
      */
     public function init()
     {
+        // Kreiranje instance servisne klase
+        $shipment_service = new D_Express_Shipment_Service();
+
         // Dodavanje akcije za automatsko kreiranje pošiljke kada se promeni status narudžbine
-        add_action('woocommerce_order_status_changed', array($this, 'maybe_create_shipment_on_status_change'), 10, 4);
+        add_action('woocommerce_order_status_changed', array($shipment_service, 'maybe_create_shipment_on_status_change'), 10, 4);
 
         // Dodavanje meta box-a za opcije D Express pošiljke
         add_action('add_meta_boxes', array($this, 'add_dexpress_meta_box'));
@@ -82,7 +85,8 @@ class D_Express_Order_Handler
         // ili ako je u test modu i automatsko kreiranje je omogućeno
         if ($auto_create_enabled && ($order->get_status() === $auto_create_status || dexpress_is_test_mode())) {
             dexpress_log('Auto-creating shipment for order: ' . $order_id . ' (Test mode: ' . (dexpress_is_test_mode() ? 'Yes' : 'No') . ')', 'debug');
-            $result = $this->create_shipment($order);
+            $shipment_service = new D_Express_Shipment_Service();
+            $result = $shipment_service->create_shipment($order);
 
             if (is_wp_error($result)) {
                 dexpress_log('Failed to create shipment: ' . $result->get_error_message(), 'error');
@@ -131,7 +135,8 @@ class D_Express_Order_Handler
         }
 
         // Kreiranje pošiljke
-        $this->create_shipment($order);
+        $shipment_service = new D_Express_Shipment_Service();
+        $shipment_service->create_shipment($order);
     }
 
     /**
@@ -224,9 +229,6 @@ class D_Express_Order_Handler
     /**
      * AJAX akcija za kreiranje pošiljke
      */
-    /**
-     * AJAX handler za kreiranje pošiljke
-     */
     public function ajax_create_shipment()
     {
         // Provera nonce-a
@@ -259,24 +261,9 @@ class D_Express_Order_Handler
             ));
         }
 
-        // Provera da li pošiljka već postoji
-        global $wpdb;
-        $existing = $wpdb->get_var($wpdb->prepare(
-            "SELECT id FROM {$wpdb->prefix}dexpress_shipments WHERE order_id = %d",
-            $order_id
-        ));
-
-        if ($existing) {
-            wp_send_json_error(array(
-                'message' => __('Pošiljka već postoji za ovu narudžbinu.', 'd-express-woo')
-            ));
-        }
-
-        // Kreiranje instance Order Handler klase
-        $order_handler = new D_Express_Order_Handler();
-
-        // Kreiranje pošiljke
-        $result = $order_handler->create_shipment($order);
+        // Korišćenje servisne klase
+        $shipment_service = new D_Express_Shipment_Service();
+        $result = $shipment_service->create_shipment($order);
 
         if (is_wp_error($result)) {
             wp_send_json_error(array(
@@ -289,168 +276,29 @@ class D_Express_Order_Handler
             ));
         }
     }
-
     /**
-     * Kreiranje D Express pošiljke
-     * 
-     * @param WC_Order $order WooCommerce narudžbina
-     * @return int|WP_Error ID pošiljke ili WP_Error
+     * Obrada akcije kreiranja pošiljke
      */
-    public function create_shipment($order)
+    public function process_create_shipment_action($order)
     {
-        try {
-            global $wpdb;
+        // Kreiranje servisne klase
+        $shipment_service = new D_Express_Shipment_Service();
 
-            // Početni log za kreiranje pošiljke
-            dexpress_log('[SHIPPING] Započinjem kreiranje pošiljke za narudžbinu #' . $order->get_id(), 'debug');
+        // Kreiranje pošiljke
+        $result = $shipment_service->create_shipment($order);
 
-            // Provera da li pošiljka već postoji
-            $existing = $wpdb->get_var($wpdb->prepare(
-                "SELECT id FROM {$wpdb->prefix}dexpress_shipments WHERE order_id = %d",
-                $order->get_id()
+        if (is_wp_error($result)) {
+            $order->add_order_note(sprintf(
+                __('Greška pri kreiranju D Express pošiljke: %s', 'd-express-woo'),
+                $result->get_error_message()
             ));
-
-            if ($existing) {
-                dexpress_log('[SHIPPING] Pošiljka već postoji za narudžbinu #' . $order->get_id(), 'debug');
-                return new WP_Error('shipment_exists', __('Pošiljka već postoji za ovu narudžbinu.', 'd-express-woo'));
-            }
-
-            // Kreiranje instance API klase
-            $api = new D_Express_API();
-
-            // Provera da li su postavljeni API kredencijali
-            if (!$api->has_credentials()) {
-                dexpress_log('[SHIPPING] Nedostaju API kredencijali za narudžbinu #' . $order->get_id(), 'error');
-                return new WP_Error('missing_credentials', __('Nedostaju API kredencijali. Molimo podesite API kredencijale u podešavanjima.', 'd-express-woo'));
-            }
-            // Prvo proverimo adresu ako je opcija uključena
-            if (get_option('dexpress_validate_address', 'yes') === 'yes') {
-                dexpress_log('[SHIPPING] Proveravam adresu za narudžbinu #' . $order->get_id(), 'debug');
-                $address_check = $api->validate_order_address($order);
-
-                if (is_wp_error($address_check)) {
-                    dexpress_log('[SHIPPING] Greška pri proveri adrese: ' . $address_check->get_error_message(), 'error');
-                    return $address_check;
-                }
-
-                dexpress_log('[SHIPPING] Adresa validirana uspešno', 'debug');
-            }
-            // Dobijanje podataka za pošiljku iz narudžbine
-            dexpress_log('[SHIPPING] Priprema podataka za narudžbinu #' . $order->get_id(), 'debug');
-            $shipment_data = $api->prepare_shipment_data_from_order($order);
-
-            if (is_wp_error($shipment_data)) {
-                dexpress_log('[SHIPPING] Greška pri pripremi podataka: ' . $shipment_data->get_error_message(), 'error');
-                return $shipment_data;
-            }
-            if (dexpress_is_test_mode()) {
-                dexpress_log('Kreiranje pošiljke. Podaci: ' . print_r($shipment_data, true));
-            }
-            // Generisanje referentnog ID-a ako nije postavljen
-            if (empty($shipment_data['ReferenceID'])) {
-                $shipment_data['ReferenceID'] = $api->generate_reference_id($order->get_id());
-                dexpress_log('[SHIPPING] Generisan Reference ID: ' . $shipment_data['ReferenceID'], 'debug');
-            }
-
-            // Generisanje koda paketa ako nije postavljen
-            if (empty($shipment_data['PackageList'][0]['Code'])) {
-                $shipment_data['PackageList'][0]['Code'] = $api->generate_package_code();
-                dexpress_log('[SHIPPING] Generisan kod paketa: ' . $shipment_data['PackageList'][0]['Code'], 'debug');
-            }
-
-            // Logovanje podataka ako je test mode aktivan
-            if (dexpress_is_test_mode()) {
-                dexpress_log('Kreiranje pošiljke. Podaci(TEST): ' . print_r($shipment_data, true));
-            }
-
-            // Logujemo ključne podatke za debugging bez obzira na test mode
-            dexpress_log('[SHIPPING] Ključni podaci za slanje: RAddress=' . $shipment_data['RAddress'] .
-                ', RAddressNum=' . $shipment_data['RAddressNum'] .
-                ', RTownID=' . $shipment_data['RTownID'] .
-                ', BuyOut=' . $shipment_data['BuyOut'] .
-                ', BuyOutAccount=' . $shipment_data['BuyOutAccount'], 'debug');
-
-            // Kreiranje pošiljke preko API-ja
-            dexpress_log('[SHIPPING] Šaljem zahtev ka D-Express API-ju', 'debug');
-            $response = $api->add_shipment($shipment_data);
-
-            if (is_wp_error($response)) {
-                dexpress_log('[SHIPPING] Greška pri kreiranju pošiljke: ' . $response->get_error_message(), 'error');
-                return $response;
-            }
-
-            // Logovanje odgovora ako je test mode aktivan
-            if (dexpress_is_test_mode()) {
-                dexpress_log('API Odgovor: ' . print_r($response, true));
-            }
-
-            dexpress_log('[SHIPPING] API odgovor primljen uspešno', 'debug');
-
-            // Kreiranje tracking broja ako nije vraćen iz API-ja
-            $tracking_number = isset($response['TrackingNumber']) ? $response['TrackingNumber'] : $shipment_data['PackageList'][0]['Code'];
-            $shipment_id = isset($response['ShipmentID']) ? $response['ShipmentID'] : $tracking_number;
-
-            dexpress_log('[SHIPPING] Tracking broj: ' . $tracking_number . ', Shipment ID: ' . $shipment_id, 'debug');
-
-            // Dodavanje napomene u narudžbinu
-            $order->add_order_note(
-                sprintf(
-                    __('D Express pošiljka je kreirana. Tracking broj: %s, Reference ID: %s', 'd-express-woo'),
-                    $tracking_number,
-                    $shipment_data['ReferenceID']
-                )
-            );
-
-            // Čuvanje podataka o pošiljci u bazi
-            dexpress_log('[SHIPPING] Čuvanje pošiljke u bazu podataka', 'debug');
-            $result = $wpdb->insert(
-                $wpdb->prefix . 'dexpress_shipments',
-                array(
-                    'order_id' => $order->get_id(),
-                    'shipment_id' => $shipment_id,
-                    'tracking_number' => $tracking_number,
-                    'reference_id' => $shipment_data['ReferenceID'],
-                    'created_at' => current_time('mysql'),
-                    'updated_at' => current_time('mysql'),
-                    'shipment_data' => json_encode($response),
-                    'is_test' => dexpress_is_test_mode() ? 1 : 0
-                ),
-                array('%d', '%s', '%s', '%s', '%s', '%s', '%s', '%d')
-            );
-
-            if ($result === false) {
-                dexpress_log('[SHIPPING] Greška pri upisu pošiljke u bazu: ' . $wpdb->last_error, 'error');
-                return new WP_Error('db_error', __('Greška pri upisu pošiljke u bazu.', 'd-express-woo'));
-            }
-
-            $insert_id = $wpdb->insert_id;
-
-            // Čuvanje paketa
-            if (isset($shipment_data['PackageList']) && is_array($shipment_data['PackageList'])) {
-                foreach ($shipment_data['PackageList'] as $package) {
-                    $mass = isset($package['Mass']) ? $package['Mass'] : $shipment_data['Mass'];
-
-                    $wpdb->insert(
-                        $wpdb->prefix . 'dexpress_packages',
-                        array(
-                            'shipment_id' => $insert_id,
-                            'package_code' => $package['Code'],
-                            'mass' => $mass,
-                            'created_at' => current_time('mysql')
-                        ),
-                        array('%d', '%s', '%d', '%s')
-                    );
-                }
-            }
-
-            dexpress_log('[SHIPPING] Pošiljka uspešno kreirana sa ID: ' . $insert_id, 'debug');
-            return $insert_id;
-        } catch (Exception $e) {
-            dexpress_log('[SHIPPING] Exception pri kreiranju pošiljke: ' . $e->getMessage(), 'error');
-            return new WP_Error('exception', $e->getMessage());
+        } else {
+            $order->add_order_note(sprintf(
+                __('D Express pošiljka uspešno kreirana. ID: %s', 'd-express-woo'),
+                $result
+            ));
         }
     }
-
     /**
      * AJAX akcija za preuzimanje nalepnice
      */

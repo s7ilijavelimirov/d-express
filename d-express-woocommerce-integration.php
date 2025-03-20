@@ -87,6 +87,9 @@ class D_Express_WooCommerce
             require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/admin/class-dexpress-dashboard-widget.php';
         }
 
+        // Servisne klase
+        require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/services/class-dexpress-shipment-service.php';
+
         // WooCommerce integracija klase
         require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/woocommerce/class-dexpress-shipping-method.php';
         require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/woocommerce/class-dexpress-order-handler.php';
@@ -200,7 +203,19 @@ class D_Express_WooCommerce
         $order_handler = new D_Express_Order_Handler();
         $order_handler->init();
     }
+    // /**
+    //  * Vraća instancu Order Handler-a
+    //  */
+    public function get_order_handler()
+    {
+        static $order_handler = null;
 
+        if ($order_handler === null) {
+            $order_handler = new D_Express_Order_Handler();
+        }
+
+        return $order_handler;
+    }
     /**
      * Inicijalizacija CRON zadataka
      */
@@ -330,6 +345,7 @@ class D_Express_WooCommerce
             ) .
             '</p></div>';
     }
+
 }
 
 // Inicijalizacija glavnog plugin objekta
