@@ -1,0 +1,105 @@
+[2025-03-20 11:15:45] Order ID: 742
+billing_street: Cara Dušana
+billing_street_id: 6287
+billing_number: 45
+billing_address_desc: 123
+billing_city: Aranđelovac
+billing_city_id: 701408
+billing_postcode: 34300
+billing_address_1: Cara Dušana 45
+shipping_street: Cara Dušana
+shipping_street_id: 6287
+shipping_number: 45
+shipping_address_desc: 123
+shipping_city: Aranđelovac
+shipping_city_id: 701408
+shipping_postcode: 34300
+shipping_address_1: Cara Dušana 45
+
+[2025-03-20 11:16:13] [SHIPPING] Započinjem kreiranje pošiljke za narudžbinu #742
+[2025-03-20 11:16:13] [SHIPPING] Proveravam adresu za narudžbinu #742
+[2025-03-20 11:16:13] Checking address: Array
+(
+    [RName] => Ilija Velemirov
+    [RAddress] => Cara Dušana
+    [RAddressNum] => 45
+    [RTownID] => 701408
+    [RCName] => Ilija Velemirov
+    [RCPhone] => 381603995503
+)
+
+[2025-03-20 11:16:14] Address check response: TEST
+[2025-03-20 11:16:14] [SHIPPING] Adresa validirana uspešno
+[2025-03-20 11:16:14] [SHIPPING] Priprema podataka za narudžbinu #742
+[2025-03-20 11:16:14] Using address type: shipping
+[2025-03-20 11:16:14] Street: Cara Dušana, Number: 45, City ID: 701408
+[2025-03-20 11:16:14] Payment method: cod, Is COD: Yes
+[2025-03-20 11:16:14] Using BuyOut: 51800, Account: 170-0010364556000-77
+[2025-03-20 11:16:14] Final BuyOut amount: 51800
+[2025-03-20 11:16:14] Final BuyOutAccount: 170-0010364556000-77
+[2025-03-20 11:16:14] Final RAddressNum: 45
+[2025-03-20 11:16:14] Final RTownID: 701408
+[2025-03-20 11:16:14] [SHIPPING] Šaljem zahtev ka D-Express API-ju
+[2025-03-20 11:16:14] [SHIPPING] API odgovor primljen uspešno
+[2025-03-20 11:16:14] [SHIPPING] Tracking broj: TT0000000041, Shipment ID: TT0000000041
+[2025-03-20 11:16:14] [SHIPPING] Čuvanje pošiljke u bazu podataka
+[2025-03-20 11:16:14] [SHIPPING] Pošiljka uspešno kreirana sa ID: 41
+[2025-03-20 11:19:00] Order ID: 743
+billing_street: Cara Dušana
+billing_street_id: 6287
+billing_number: 45
+billing_address_desc: 123
+billing_city: Aranđelovac
+billing_city_id: 701408
+billing_postcode: 34300
+billing_address_1: Cara Dušana 45
+shipping_street: Cara Dušana
+shipping_street_id: 6287
+shipping_number: 45
+shipping_address_desc: 123
+shipping_city: Aranđelovac
+shipping_city_id: 701408
+shipping_postcode: 34300
+shipping_address_1: Cara Dušana 45
+
+[2025-03-20 11:19:32] [SHIPPING] Započinjem kreiranje pošiljke za narudžbinu #743
+[2025-03-20 11:19:32] [SHIPPING] Proveravam adresu za narudžbinu #743
+[2025-03-20 11:19:32] Checking address: Array
+(
+    [RName] => Ilija Velemirov
+    [RAddress] => Cara Dušana
+    [RAddressNum] => 45
+    [RTownID] => 701408
+    [RCName] => Ilija Velemirov
+    [RCPhone] => 3816033
+)
+
+[2025-03-20 11:19:32] Address check response: Array
+(
+    [Message] => The request is invalid.
+    [ModelState] => Array
+        (
+            [addressPoint.RCPhone] => Array
+                (
+                    [0] => The field RCPhone must match the regular expression '^(381[1-9][0-9]{7,8}|38167[0-9]{6,8})$'.
+                )
+
+        )
+
+)
+
+[2025-03-20 11:19:32] [SHIPPING] Adresa validirana uspešno
+[2025-03-20 11:19:32] [SHIPPING] Priprema podataka za narudžbinu #743
+[2025-03-20 11:19:32] Using address type: shipping
+[2025-03-20 11:19:32] Street: Cara Dušana, Number: 45, City ID: 701408
+[2025-03-20 11:19:32] Payment method: cod, Is COD: Yes
+[2025-03-20 11:19:32] Using BuyOut: 51800, Account: 170-0010364556000-77
+[2025-03-20 11:19:32] Final BuyOut amount: 51800
+[2025-03-20 11:19:32] Final BuyOutAccount: 170-0010364556000-77
+[2025-03-20 11:19:32] Final RAddressNum: 45
+[2025-03-20 11:19:32] Final RTownID: 701408
+[2025-03-20 11:19:32] [SHIPPING] Šaljem zahtev ka D-Express API-ju
+[2025-03-20 11:19:33] [SHIPPING] API odgovor primljen uspešno
+[2025-03-20 11:19:33] [SHIPPING] Tracking broj: TT0000000042, Shipment ID: TT0000000042
+[2025-03-20 11:19:33] [SHIPPING] Čuvanje pošiljke u bazu podataka
+[2025-03-20 11:19:33] [SHIPPING] Pošiljka uspešno kreirana sa ID: 42

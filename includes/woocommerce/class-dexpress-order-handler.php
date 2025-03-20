@@ -19,16 +19,13 @@ class D_Express_Order_Handler
         $shipment_service = new D_Express_Shipment_Service();
 
         // Dodavanje akcije za automatsko kreiranje pošiljke kada se promeni status narudžbine
-        add_action('woocommerce_order_status_changed', array($shipment_service, 'maybe_create_shipment_on_status_change'), 10, 4);
+       // add_action('woocommerce_order_status_changed', array($shipment_service, 'maybe_create_shipment_on_status_change'), 10, 4);
 
         // Dodavanje meta box-a za opcije D Express pošiljke
         add_action('add_meta_boxes', array($this, 'add_dexpress_meta_box'));
 
         // Čuvanje D Express opcija pri čuvanju narudžbine
         add_action('woocommerce_process_shop_order_meta', array($this, 'save_dexpress_meta_box'), 10, 1);
-
-        // AJAX akcija za kreiranje pošiljke
-        add_action('wp_ajax_dexpress_create_shipment', array($this, 'ajax_create_shipment'));
 
         // AJAX akcija za preuzimanje nalepnice
         add_action('wp_ajax_dexpress_get_label', array($this, 'ajax_get_label'));
@@ -100,45 +97,6 @@ class D_Express_Order_Handler
                 ', Required status: ' . $auto_create_status, 'debug');
         }
     }
-
-    /**
-     * Proverava da li treba kreirati pošiljku pri promeni statusa narudžbine
-     * 
-     * @param int $order_id ID narudžbine
-     * @param string $from_status Prethodni status
-     * @param string $to_status Novi status
-     * @param WC_Order $order WooCommerce narudžbina
-     */
-    public function maybe_create_shipment_on_status_change($order_id, $from_status, $to_status, $order)
-    {
-        // Provera da li je automatsko kreiranje pošiljke omogućeno
-        if (get_option('dexpress_auto_create_shipment', 'no') !== 'yes') {
-            return;
-        }
-
-        // Provera da li je novi status onaj koji je postavljen za automatsko kreiranje pošiljke
-        $auto_create_status = get_option('dexpress_auto_create_on_status', 'processing');
-
-        if ($to_status !== $auto_create_status) {
-            return;
-        }
-
-        // Provera da li pošiljka već postoji
-        global $wpdb;
-        $existing = $wpdb->get_var($wpdb->prepare(
-            "SELECT id FROM {$wpdb->prefix}dexpress_shipments WHERE order_id = %d",
-            $order_id
-        ));
-
-        if ($existing) {
-            return;
-        }
-
-        // Kreiranje pošiljke
-        $shipment_service = new D_Express_Shipment_Service();
-        $shipment_service->create_shipment($order);
-    }
-
     /**
      * Dodavanje meta box-a za D Express opcije
      */
@@ -226,79 +184,6 @@ class D_Express_Order_Handler
         }
     }
 
-    /**
-     * AJAX akcija za kreiranje pošiljke
-     */
-    public function ajax_create_shipment()
-    {
-        // Provera nonce-a
-        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'dexpress-admin-nonce')) {
-            wp_send_json_error(array(
-                'message' => __('Sigurnosna provera nije uspela.', 'd-express-woo')
-            ));
-        }
-
-        // Provera dozvola
-        if (!current_user_can('manage_woocommerce')) {
-            wp_send_json_error(array(
-                'message' => __('Nemate dozvolu za ovu akciju.', 'd-express-woo')
-            ));
-        }
-
-        // Provera ID-a narudžbine
-        if (!isset($_POST['order_id']) || empty($_POST['order_id'])) {
-            wp_send_json_error(array(
-                'message' => __('ID narudžbine je obavezan.', 'd-express-woo')
-            ));
-        }
-
-        $order_id = intval($_POST['order_id']);
-        $order = wc_get_order($order_id);
-
-        if (!$order) {
-            wp_send_json_error(array(
-                'message' => __('Narudžbina nije pronađena.', 'd-express-woo')
-            ));
-        }
-
-        // Korišćenje servisne klase
-        $shipment_service = new D_Express_Shipment_Service();
-        $result = $shipment_service->create_shipment($order);
-
-        if (is_wp_error($result)) {
-            wp_send_json_error(array(
-                'message' => $result->get_error_message()
-            ));
-        } else {
-            wp_send_json_success(array(
-                'message' => __('Pošiljka je uspešno kreirana.', 'd-express-woo'),
-                'shipment_id' => $result
-            ));
-        }
-    }
-    /**
-     * Obrada akcije kreiranja pošiljke
-     */
-    public function process_create_shipment_action($order)
-    {
-        // Kreiranje servisne klase
-        $shipment_service = new D_Express_Shipment_Service();
-
-        // Kreiranje pošiljke
-        $result = $shipment_service->create_shipment($order);
-
-        if (is_wp_error($result)) {
-            $order->add_order_note(sprintf(
-                __('Greška pri kreiranju D Express pošiljke: %s', 'd-express-woo'),
-                $result->get_error_message()
-            ));
-        } else {
-            $order->add_order_note(sprintf(
-                __('D Express pošiljka uspešno kreirana. ID: %s', 'd-express-woo'),
-                $result
-            ));
-        }
-    }
     /**
      * AJAX akcija za preuzimanje nalepnice
      */

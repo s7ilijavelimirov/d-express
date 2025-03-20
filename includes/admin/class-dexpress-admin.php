@@ -16,7 +16,7 @@ class D_Express_Admin
      */
     public function init()
     {
-           error_log('D_Express_Admin::init called from ' . debug_backtrace()[0]['file'] . ' line ' . debug_backtrace()[0]['line']);
+
         // Dodavanje admin menija
         add_action('admin_menu', array($this, 'add_admin_menu'));
 
@@ -49,7 +49,7 @@ class D_Express_Admin
             return;
         }
         $added = true;
-        
+
         error_log('D_Express_Admin::add_admin_menu called');
         add_submenu_page(
             'woocommerce',
@@ -961,9 +961,6 @@ class D_Express_Admin
     /**
      * Obrada akcije kreiranja pošiljke
      */
-    /**
-     * Obrada akcije kreiranja pošiljke
-     */
     public function process_create_shipment_action($order)
     {
         // Provera da li je narudžbina već ima kreiranu pošiljku
@@ -978,11 +975,9 @@ class D_Express_Admin
             return;
         }
 
-        // Kreiranje instance Order Handler klase
-        $order_handler = new D_Express_Order_Handler();
-
-        // Kreiranje pošiljke
-        $result = $order_handler->create_shipment($order);
+        // Koristi shipment service umesto order handlera
+        $shipment_service = new D_Express_Shipment_Service();
+        $result = $shipment_service->create_shipment($order);
 
         if (is_wp_error($result)) {
             $order->add_order_note(sprintf(

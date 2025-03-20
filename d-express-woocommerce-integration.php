@@ -198,10 +198,6 @@ class D_Express_WooCommerce
         // Inicijalizacija frontend klasa
         $tracking = new D_Express_Tracking();
         $tracking->init();
-
-        // // Inicijalizacija order handlera
-        // $order_handler = new D_Express_Order_Handler();
-        // $order_handler->init();
     }
     // /**
     //  * Vraća instancu Order Handler-a
@@ -209,11 +205,12 @@ class D_Express_WooCommerce
     public function get_order_handler()
     {
         static $order_handler = null;
-
+    
         if ($order_handler === null) {
             $order_handler = new D_Express_Order_Handler();
+            $order_handler->init(); // Dodajte ovu liniju da se inicijalizuje prilikom prvog poziva
         }
-
+    
         return $order_handler;
     }
     /**
