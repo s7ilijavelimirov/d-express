@@ -698,6 +698,25 @@ class D_Express_API
             return new WP_Error('invalid_order', __('Nevažeća narudžbina', 'd-express-woo'));
         }
 
+        $order_id = $order->get_id();
+
+        // Dohvatamo sačuvani API format telefona ako postoji
+        $phone = get_post_meta($order_id, '_billing_phone_api_format', true);
+
+        // Ako ne postoji sačuvan API format, koristi standardni format
+        if (empty($phone)) {
+            $phone = D_Express_Validator::format_phone($order->get_billing_phone());
+            dexpress_log("Using standard phone format conversion: {$phone}", 'debug');
+        } else {
+            dexpress_log("Using saved API phone format: {$phone}", 'debug');
+        }
+
+        // Validacija telefonskog broja
+        if (!D_Express_Validator::validate_phone($phone)) {
+            dexpress_log("WARNING: Invalid phone format: {$phone}", 'warning');
+            $phone = '38160000000'; // Default phone ako je format neispravan
+        }
+
         // Odredite koji tip adrese koristiti
         $address_type = $order->has_shipping_address() ? 'shipping' : 'billing';
         $address_desc = $order->get_meta("_{$address_type}_address_desc", true);
@@ -723,6 +742,7 @@ class D_Express_API
 
             $delivery_note = $clean_note; // Sačuvaj filtriranu vrednost
         }
+
         // Dohvatite meta podatke za adresu
         $street = $order->get_meta("_{$address_type}_street", true);
         $number = $order->get_meta("_{$address_type}_number", true);
@@ -735,12 +755,11 @@ class D_Express_API
         // Postavke za otkupninu
         $buyout_amount = 0;
         $buyout_account = get_option('dexpress_buyout_account', '');
+
         // Prepoznavanje metode plaćanja
         $payment_method = $order->get_payment_method();
         $is_cod = ($payment_method === 'cod' || $payment_method === 'bacs' || $payment_method === 'cheque');
         dexpress_log("Payment method: {$payment_method}, Is COD: " . ($is_cod ? 'Yes' : 'No'), 'debug');
-
-
 
         if (!empty($buyout_account)) {
             $buyout_account = $this->format_bank_account($buyout_account);
@@ -769,13 +788,6 @@ class D_Express_API
                     );
                 }
             }
-        }
-
-        // Formatiranje telefonskog broja prema API zahtevima
-        $phone = D_Express_Validator::format_phone($order->get_billing_phone());
-        if (!D_Express_Validator::validate_phone($phone)) {
-            dexpress_log("WARNING: Invalid phone format: {$phone}", 'warning');
-            $phone = '38160000000'; // Default phone ako je format neispravan
         }
 
         // Validacija adrese primaoca
@@ -869,6 +881,7 @@ class D_Express_API
         dexpress_log("Final BuyOutAccount: " . $shipment_data['BuyOutAccount'], 'debug');
         dexpress_log("Final RAddressNum: " . $shipment_data['RAddressNum'], 'debug');
         dexpress_log("Final RTownID: " . $shipment_data['RTownID'], 'debug');
+        dexpress_log("Final RCPhone: " . $shipment_data['RCPhone'], 'debug');
 
         // Validacija kompletnih podataka za slanje
         $validation = D_Express_Validator::validate_shipment_data($shipment_data);

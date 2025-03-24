@@ -7,7 +7,7 @@
             this.initStreetAutocomplete('shipping');
             this.initPhoneFormatter();
             this.watchShippingMethod();
-            
+
             // Praćenje "Dostavi na drugu adresu" checkbox-a
             $('#ship-to-different-address-checkbox').on('change', function () {
                 setTimeout(function () {
@@ -86,17 +86,27 @@
                     self.resetCityFields(addressType);
                 }
             });
-
             // Kućni broj validacija i sinhronizacija
             $number.on('input', function () {
+                // Osnovna validacija za razmake (može biti proširena)
                 if ($(this).val().includes(' ')) {
                     $(this).addClass('dexpress-error');
                     if (!$(this).next('.dexpress-error-message').length) {
                         $('<div class="dexpress-error-message">' + dexpressCheckout.i18n.numberNoSpaces + '</div>').insertAfter($(this));
                     }
                 } else {
-                    $(this).removeClass('dexpress-error');
-                    $(this).next('.dexpress-error-message').remove();
+                    // D Express API validacija za broj
+                    var addrNumberPattern = /^((bb|BB|b\.b\.|B\.B\.)(\/[-a-zžćčđšA-ZĐŠĆŽČ_0-9]+)*|(\d(-\d){0,1}[a-zžćčđšA-ZĐŠĆŽČ_0-9]{0,2})+(\/[-a-zžćčđšA-ZĐŠĆŽČ_0-9]+)*)$/;
+
+                    if (!addrNumberPattern.test($(this).val())) {
+                        $(this).addClass('dexpress-error');
+                        if (!$(this).next('.dexpress-error-message').length) {
+                            $('<div class="dexpress-error-message">Format: broj, bb, ili broj/broj</div>').insertAfter($(this));
+                        }
+                    } else {
+                        $(this).removeClass('dexpress-error');
+                        $(this).next('.dexpress-error-message').remove();
+                    }
                 }
 
                 // Ažuriranje standardnog address_1 polja
@@ -126,7 +136,7 @@
 
             this.updateStandardAddressField(addressType);
         },
-        
+
         resetCityFields: function (addressType) {
             var $city = $('#' + addressType + '_city');
             var $cityId = $('#' + addressType + '_city_id');
@@ -159,57 +169,105 @@
                 self.updateStandardAddressField(addressType);
             });
         },
-        
+
         initPhoneFormatter: function () {
+            var self = this;
             var $phone = $('#billing_phone');
-            
-            // Dodaj pomoćni tekst za telefon ako već ne postoji
-            if ($phone.length && !$phone.parent().find('.phone-format-hint').length) {
-                $('<span class="phone-format-hint">Format: +381 ili 0 na početku</span>')
-                    .insertAfter($phone);
+
+            // Dodajemo prefiks i container
+            if ($phone.length && !$phone.parent().hasClass('phone-prefix-container')) {
+                $phone.wrap('<div class="phone-prefix-container"></div>');
+                $('<span class="phone-prefix">+381</span>').insertBefore($phone);
+                $phone.addClass('phone-with-prefix');
+
+                // Dodaj pomoćni tekst ako već ne postoji
+                if (!$phone.parent().find('.phone-format-hint').length) {
+                    $('<span class="phone-format-hint">Format: +381 6X XXX XXXX</span>')
+                        .insertAfter($phone);
+                }
             }
-            
-            // Formatiranje pri napuštanju polja
-            $phone.on('blur', function() {
-                var currentValue = $(this).val().trim();
-                if (currentValue) {
-                    // Formatiranje telefona u preporučeni format
-                    var phoneDigits = currentValue.replace(/\D/g, '');
-                    
-                    // Ako počinje sa 0, zameni sa +381
-                    if (phoneDigits.startsWith('0')) {
-                        $(this).val('+381' + phoneDigits.substring(1));
-                    }
-                    // Ako ne počinje sa +381 ili 381, dodaj +381
-                    else if (!currentValue.startsWith('+381') && !phoneDigits.startsWith('381')) {
-                        $(this).val('+381' + phoneDigits);
-                    }
-                    // Ako počinje sa 381 bez +, dodaj +
-                    else if (phoneDigits.startsWith('381') && !currentValue.startsWith('+')) {
-                        $(this).val('+' + phoneDigits);
-                    }
+
+            // Pre-formatiramo postojeći broj
+            self.formatPhoneNumber($phone);
+
+            // Kada korisnik kucka
+            $phone.on('input', function () {
+                var input = $(this);
+                var value = input.val();
+
+                // Uklonimo eventualnu grešku dok korisnik kuca
+                input.removeClass('woocommerce-invalid');
+                input.parent().find('.phone-validation-error').remove();
+
+                // Makni +381 ako ga je korisnik uneo iako već imamo prefiks
+                if (value.startsWith('+381')) {
+                    value = value.substring(4);
+                    input.val(value);
+                } else if (value.startsWith('381')) {
+                    value = value.substring(3);
+                    input.val(value);
+                } else if (value.startsWith('0')) {
+                    // Ako korisnik unese 0 na početku, ukloni je
+                    value = value.substring(1);
+                    input.val(value);
                 }
             });
-            
-            // Ukloni grešku kad korisnik počne da kuca
-            $phone.on('input', function() {
-                $(this).removeClass('woocommerce-invalid woocommerce-invalid-required-field');
-                $(this).parent().find('.woocommerce-error').remove();
+
+            // Validacija pri gubitku fokusa
+            $phone.on('blur', function () {
+                self.validatePhoneField($(this));
             });
         },
-        
+        formatPhoneNumber: function ($phone) {
+            var value = $phone.val().trim();
+
+            // Ako već imamo prefiks +381, uklonimo ga iz vrednosti polja
+            // jer imamo vizuelni prefiks
+            if (value.startsWith('+381')) {
+                value = value.substring(4);
+            } else if (value.startsWith('381')) {
+                value = value.substring(3);
+            } else if (value.startsWith('0')) {
+                value = value.substring(1);
+            }
+
+            $phone.val(value);
+        },
+        validatePhoneField: function ($phone) {
+            var value = $phone.val().trim();
+            var fullNumber = '+381' + value;
+
+            // Validacija prema D Express API formatu
+            // API zahteva 381 + 8-9 cifara sa prvom cifrom 6-9
+            var pattern = /^\+381[6-9][0-9]{7,8}$/;
+
+            if (!pattern.test(fullNumber)) {
+                $phone.addClass('woocommerce-invalid');
+
+                // Dodaj poruku o grešci ako već ne postoji
+                if ($phone.parent().find('.phone-validation-error').length === 0) {
+                    $('<div class="phone-validation-error woocommerce-error">Telefon mora biti u formatu +381 6x xxx xxxx</div>')
+                        .insertAfter($phone);
+                }
+                return false;
+            } else {
+                $phone.removeClass('woocommerce-invalid');
+                $phone.parent().find('.phone-validation-error').remove();
+                return true;
+            }
+        },
         // Funkcija koja proverava da li je izabrana D-Express dostava
-        isDExpressSelected: function() {
+        isDExpressSelected: function () {
             var isDExpressShipping = false;
-            $('.shipping_method:checked, .shipping_method:hidden').each(function() {
+            $('.shipping_method:checked, .shipping_method:hidden').each(function () {
                 if ($(this).val() && $(this).val().indexOf('dexpress') !== -1) {
                     isDExpressShipping = true;
-                    return false; 
+                    return false;
                 }
             });
             return isDExpressShipping;
         },
-        
+
         watchShippingMethod: function () {
             var self = this;
 
@@ -242,6 +300,22 @@
                     }
                 }
                 $phoneField.attr('required', 'required');
+
+                // Osiguraj da telefon ima prefiks +381
+                var currentValue = $phoneField.val().trim();
+                if (!currentValue) {
+                    $phoneField.val('+381');
+                } else if (!currentValue.startsWith('+381')) {
+                    // Normalizuj broj
+                    var digits = currentValue.replace(/\D/g, '');
+                    if (digits.startsWith('0')) {
+                        $phoneField.val('+381' + digits.substring(1));
+                    } else if (digits.startsWith('381')) {
+                        $phoneField.val('+' + digits);
+                    } else {
+                        $phoneField.val('+381' + digits);
+                    }
+                }
             } else {
                 // Vrati na opciono
                 if ($phoneLabel.find('.required').length) {
@@ -251,21 +325,21 @@
                     }
                 }
                 $phoneField.removeAttr('required');
-                
+
                 // Ukloni grešku ako D-Express nije izabran
                 $phoneField.removeClass('woocommerce-invalid woocommerce-invalid-required-field');
                 $phoneField.parent().find('.woocommerce-error').remove();
             }
         },
-        
+
         initCheckoutValidation: function () {
             var self = this;
-            
+
             // Validacija prilikom podnošenja forme
             $(document).on('checkout_place_order', function () {
                 var addressType = $('#ship-to-different-address-checkbox').is(':checked') ? 'shipping' : 'billing';
                 var isValid = true;
-                
+
                 // Samo validiraj D-Express polja ako je D-Express dostava izabrana
                 if (self.isDExpressSelected()) {
                     var $street = $('#' + addressType + '_street');
@@ -274,7 +348,7 @@
                     var $city = $('#' + addressType + '_city');
                     var $cityId = $('#' + addressType + '_city_id');
                     var $phone = $('#billing_phone');
-                    
+
                     // Validacija telefona
                     var phoneValue = $phone.val().trim();
                     if (!phoneValue) {
@@ -282,23 +356,10 @@
                     } else {
                         // Formatiranje telefona za API
                         var phoneDigits = phoneValue.replace(/\D/g, '');
-                        
-                        // Ako počinje sa 0, zameniti sa 381
-                        if (phoneDigits.startsWith('0')) {
-                            phoneDigits = '381' + phoneDigits.substring(1);
-                        } 
-                        // Ako je sa +381, ukloniti +
-                        else if (phoneValue.startsWith('+381')) {
-                            phoneDigits = '381' + phoneDigits.substring(4);
-                        }
-                        // Ako ne počinje sa 381, dodaj ga
-                        else if (!phoneDigits.startsWith('381')) {
-                            phoneDigits = '381' + phoneDigits;
-                        }
-                        
+
                         // Validacija API formata
-                        if (!/^(381[1-9][0-9]{7,8})$/.test(phoneDigits)) {
-                            isValid = self.showFieldError($phone, 'Telefon mora počinjati sa +381 ili 0 i imati 8-9 cifara nakon pozivnog broja');
+                        if (!/^(381[6-9][0-9]{7,8})$/.test(phoneDigits)) {
+                            isValid = self.showFieldError($phone, 'Broj telefona mora biti u formatu +381 6x xxx xxxx (9-10 cifara ukupno)');
                         } else {
                             // Kreiranje hidden polja za API format telefona
                             if (!$('#dexpress_api_phone').length) {
@@ -308,26 +369,32 @@
                             $('#dexpress_api_phone').val(phoneDigits);
                         }
                     }
-                    
+
                     // Validacija ulice
                     if (!$street.val()) {
                         isValid = self.showFieldError($street, dexpressCheckout.i18n.enterStreet);
                     } else if (!$streetId.val()) {
                         isValid = self.showFieldError($street, dexpressCheckout.i18n.selectStreet);
                     }
-                    
+
                     // Validacija kućnog broja
                     if (!$number.val()) {
                         isValid = self.showFieldError($number, dexpressCheckout.i18n.enterNumber);
                     } else if ($number.val().includes(' ')) {
                         isValid = self.showFieldError($number, dexpressCheckout.i18n.numberNoSpaces);
+                    } else {
+                        // Validacija prema D Express API formatu
+                        var addrNumberPattern = /^((bb|BB|b\.b\.|B\.B\.)(\/[-a-zžćčđšA-ZĐŠĆŽČ_0-9]+)*|(\d(-\d){0,1}[a-zžćčđšA-ZĐŠĆŽČ_0-9]{0,2})+(\/[-a-zžćčđšA-ZĐŠĆŽČ_0-9]+)*)$/;
+                        if (!addrNumberPattern.test($number.val())) {
+                            isValid = self.showFieldError($number, 'Format kućnog broja nije validan. Npr: 12, bb, 15a, 23/4');
+                        }
                     }
-                    
+
                     // Validacija grada
                     if (!$city.val() || !$cityId.val()) {
                         isValid = self.showFieldError($city, dexpressCheckout.i18n.selectCity);
                     }
-                    
+
                     if (!isValid) {
                         $('html, body').animate({
                             scrollTop: $('.dexpress-error, .woocommerce-invalid').first().offset().top - 100
@@ -335,14 +402,13 @@
                         return false;
                     }
                 }
-                
+
                 return true;
             });
         },
-
         showFieldError: function ($field, message) {
             $field.addClass('dexpress-error woocommerce-invalid woocommerce-invalid-required-field');
-            
+
             // Ako je telefonsko polje, koristi WooCommerce stil greške
             if ($field.attr('id') === 'billing_phone') {
                 if ($field.parent().find('.woocommerce-error').length === 0) {
@@ -357,7 +423,7 @@
                     $field.next('.dexpress-error-message').text(message);
                 }
             }
-            
+
             return false;
         }
     };

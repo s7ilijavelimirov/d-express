@@ -24,18 +24,20 @@ class D_Express_Validator
         // Ukloni sve osim brojeva
         $phone = preg_replace('/[^0-9]/', '', $phone);
 
-        // Dodaj prefiks 381 ako ne postoji
-        if (substr($phone, 0, 3) !== '381') {
-            // Ako počinje sa 0, zameniti 0 sa 381
-            if (substr($phone, 0, 1) === '0') {
-                $phone = '381' . substr($phone, 1);
-            } else {
-                // Inače samo dodati 381 na početak
-                $phone = '381' . $phone;
-            }
+        // Ukloni +381 ili 381 sa početka ako postoji
+        if (substr($phone, 0, 4) === '+381') {
+            $phone = substr($phone, 4);
+        } elseif (substr($phone, 0, 3) === '381') {
+            $phone = substr($phone, 3);
         }
 
-        return $phone;
+        // Ukloni vodeću nulu ako postoji
+        if (substr($phone, 0, 1) === '0') {
+            $phone = substr($phone, 1);
+        }
+
+        // Dodaj prefiks 381
+        return '381' . $phone;
     }
 
     /**

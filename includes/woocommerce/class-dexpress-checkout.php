@@ -93,7 +93,11 @@ class D_Express_Checkout
                 $fields[$type]["{$type}_{$key}"] = $field;
             }
         }
-
+        if (isset($fields['billing']['billing_phone'])) {
+            $fields['billing']['billing_phone']['custom_attributes']['data-validate'] = 'phone';
+            $fields['billing']['billing_phone']['custom_attributes']['pattern'] = '\\+381[6-9][0-9]{7,8}';
+            $fields['billing']['billing_phone']['placeholder'] = __('Npr: +381 60 123 4567', 'd-express-woo');
+        }
         // Ne sakrivamo standardna polja, već samo postavljamo stilove da se ne prikazuju,
         // ali primaju podatke za ispravno čuvanje
         $hide_fields = ['address_1', 'address_2'];
@@ -128,6 +132,34 @@ class D_Express_Checkout
         if (empty($_POST[$address_type . '_postcode'])) {
             wc_add_notice(__('Poštanski broj je obavezan.', 'd-express-woo'), 'error');
         }
+
+        // Validacija telefona samo ako je D Express dostava
+        $is_dexpress = false;
+        foreach ($_POST['shipping_method'] as $method) {
+            if (strpos($method, 'dexpress') !== false) {
+                $is_dexpress = true;
+                break;
+            }
+        }
+
+        if ($is_dexpress) {
+            $phone = isset($_POST['billing_phone']) ? sanitize_text_field($_POST['billing_phone']) : '';
+
+            // Ukloni +381 sa početka ako postoji
+            if (strpos($phone, '+381') === 0) {
+                $phone = substr($phone, 4);
+            } elseif (strpos($phone, '381') === 0) {
+                $phone = substr($phone, 3);
+            }
+
+            // Formatiranje telefona za API
+            $api_phone = '381' . $phone;
+
+            // Provera formata telefona za API
+            if (!preg_match('/^381[6-9][0-9]{7,8}$/', $api_phone)) {
+                wc_add_notice(__('Telefon mora biti u formatu +381 6x xxx xxxx', 'd-express-woo'), 'error');
+            }
+        }
     }
 
     /**
@@ -159,6 +191,24 @@ class D_Express_Checkout
                 update_post_meta($order_id, "_{$type}_address_1", $street . ' ' . $number);
                 $debug_info .= "{$type}_address_1: {$street} {$number}\n";
             }
+        }
+
+        // Čuvanje telefona u API formatu
+        if (isset($_POST['billing_phone'])) {
+            $phone = sanitize_text_field($_POST['billing_phone']);
+
+            // Ukloni +381 sa početka ako postoji
+            if (strpos($phone, '+381') === 0) {
+                $phone = substr($phone, 4);
+            } elseif (strpos($phone, '381') === 0) {
+                $phone = substr($phone, 3);
+            }
+
+            // Sačuvaj broj sa prefiksom za API (bez +)
+            $api_phone = '381' . $phone;
+            update_post_meta($order_id, '_billing_phone_api_format', $api_phone);
+
+            $debug_info .= "API phone format: {$api_phone}\n";
         }
 
         dexpress_log($debug_info, 'debug');

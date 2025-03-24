@@ -32,6 +32,8 @@ class D_Express_Label_Generator
     /**
      * AJAX akcija za preuzimanje nalepnice
      */
+    // U includes/api/class-dexpress-label-generator.php, izmeni ajax_download_label funkciju:
+
     public function ajax_download_label()
     {
         // Provera nonce-a
@@ -49,13 +51,15 @@ class D_Express_Label_Generator
             wp_die(__('ID pošiljke je obavezan.', 'd-express-woo'));
         }
 
-        $shipment_id = intval($_GET['shipment_id']);
+        $shipment_id = sanitize_text_field($_GET['shipment_id']);
 
-        // Dobijanje podataka o pošiljci
+        // Dobijanje podataka o pošiljci - proširi pretragu na više kolona
         global $wpdb;
         $shipment = $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM {$wpdb->prefix}dexpress_shipments WHERE id = %d OR shipment_id = %s",
-            $shipment_id, $shipment_id
+            "SELECT * FROM {$wpdb->prefix}dexpress_shipments WHERE id = %d OR shipment_id = %s OR tracking_number = %s",
+            intval($shipment_id),
+            $shipment_id,
+            $shipment_id
         ));
 
         if (!$shipment) {
