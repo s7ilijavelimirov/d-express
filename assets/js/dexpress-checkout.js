@@ -180,11 +180,9 @@
                 $('<span class="phone-prefix">+381</span>').insertBefore($phone);
                 $phone.addClass('phone-with-prefix');
 
-                // Dodaj pomoćni tekst ako već ne postoji
-                if (!$phone.parent().find('.phone-format-hint').length) {
-                    $('<span class="phone-format-hint">Format: +381 6X XXX XXXX</span>')
-                        .insertAfter($phone);
-                }
+                // Dodaj pomoćni tekst
+                $('<span class="phone-format-hint">Format: +381 6X XXX XXXX</span>')
+                    .insertAfter($phone);
             }
 
             // Pre-formatiramo postojeći broj
@@ -195,7 +193,7 @@
                 var input = $(this);
                 var value = input.val();
 
-                // Uklonimo eventualnu grešku dok korisnik kuca
+                // Ukloni greške dok korisnik kuca
                 input.removeClass('woocommerce-invalid');
                 input.parent().find('.phone-validation-error').remove();
 
@@ -218,11 +216,11 @@
                 self.validatePhoneField($(this));
             });
         },
+
         formatPhoneNumber: function ($phone) {
             var value = $phone.val().trim();
 
             // Ako već imamo prefiks +381, uklonimo ga iz vrednosti polja
-            // jer imamo vizuelni prefiks
             if (value.startsWith('+381')) {
                 value = value.substring(4);
             } else if (value.startsWith('381')) {
@@ -233,18 +231,18 @@
 
             $phone.val(value);
         },
+
         validatePhoneField: function ($phone) {
             var value = $phone.val().trim();
             var fullNumber = '+381' + value;
 
             // Validacija prema D Express API formatu
-            // API zahteva 381 + 8-9 cifara sa prvom cifrom 6-9
             var pattern = /^\+381[6-9][0-9]{7,8}$/;
 
             if (!pattern.test(fullNumber)) {
                 $phone.addClass('woocommerce-invalid');
 
-                // Dodaj poruku o grešci ako već ne postoji
+                // Dodaj poruku o grešci
                 if ($phone.parent().find('.phone-validation-error').length === 0) {
                     $('<div class="phone-validation-error woocommerce-error">Telefon mora biti u formatu +381 6x xxx xxxx</div>')
                         .insertAfter($phone);
@@ -292,7 +290,6 @@
             var $phoneField = $('#billing_phone');
 
             if (isDExpressShipping) {
-                // Dodaj oznaku obaveznog polja
                 if ($phoneLabel.find('.optional').length) {
                     $phoneLabel.find('.optional').remove();
                     if ($phoneLabel.find('.required').length === 0) {
@@ -300,24 +297,7 @@
                     }
                 }
                 $phoneField.attr('required', 'required');
-
-                // Osiguraj da telefon ima prefiks +381
-                var currentValue = $phoneField.val().trim();
-                if (!currentValue) {
-                    $phoneField.val('+381');
-                } else if (!currentValue.startsWith('+381')) {
-                    // Normalizuj broj
-                    var digits = currentValue.replace(/\D/g, '');
-                    if (digits.startsWith('0')) {
-                        $phoneField.val('+381' + digits.substring(1));
-                    } else if (digits.startsWith('381')) {
-                        $phoneField.val('+' + digits);
-                    } else {
-                        $phoneField.val('+381' + digits);
-                    }
-                }
             } else {
-                // Vrati na opciono
                 if ($phoneLabel.find('.required').length) {
                     $phoneLabel.find('.required').remove();
                     if ($phoneLabel.find('.optional').length === 0) {
@@ -327,11 +307,10 @@
                 $phoneField.removeAttr('required');
 
                 // Ukloni grešku ako D-Express nije izabran
-                $phoneField.removeClass('woocommerce-invalid woocommerce-invalid-required-field');
+                $phoneField.removeClass('woocommerce-invalid');
                 $phoneField.parent().find('.woocommerce-error').remove();
             }
         },
-
         initCheckoutValidation: function () {
             var self = this;
 

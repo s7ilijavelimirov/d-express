@@ -119,19 +119,23 @@
     border-radius: 3px;
     font-size: 0.9em;
 }
+
 .phone-prefix-container {
     position: relative;
     display: inline-block;
     width: 100%;
 }
+
 /* Stil za input kada je neispravan */
 .woocommerce-invalid {
     border-color: #b22222 !important;
 }
+
 .phone-with-prefix {
-    padding-left: 45px !important; /* Dovoljno prostora za +381 */
+    padding-left: 45px !important;
+    /* Dovoljno prostora za +381 */
 }
-/* Stil za prefiks telefona */
+
 .phone-prefix {
     position: absolute;
     left: 8px;
@@ -139,5 +143,13 @@
     font-weight: bold;
     color: #555;
     z-index: 100;
-    pointer-events: none; /* Da ne ometa fokus na input polju */
+    pointer-events: none;
+    /* Da ne ometa fokus na input polju */
+}
+
+.phone-format-hint {
+    display: block;
+    font-size: 0.857em;
+    color: #767676;
+    margin-top: 3px;
 }

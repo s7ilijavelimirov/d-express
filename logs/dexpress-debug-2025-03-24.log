@@ -1,0 +1,101 @@
+[2025-03-24 09:46:45] Order ID: 759
+billing_street: Bulevar Nikole Pašića
+billing_street_id: 9344
+billing_number: 15
+billing_address_desc: 
+billing_city: Kruševac
+billing_city_id: 721107
+billing_postcode: 37000
+billing_address_1: Bulevar Nikole Pašića 15
+shipping_street: 
+shipping_street_id: 
+shipping_number: 
+shipping_address_desc: 
+shipping_city: 
+shipping_city_id: 
+shipping_postcode: 
+
+[2025-03-24 09:46:46] Checkout order processed: 759
+[2025-03-24 09:46:46] Has D Express shipping: Yes
+[2025-03-24 09:46:46] Automatic shipment creation is disabled or status does not match. Auto create: Enabled, Current status: pending, Required status: processing
+[2025-03-24 09:47:39] [SHIPPING] Započinjem kreiranje pošiljke za narudžbinu #759
+[2025-03-24 09:47:39] [SHIPPING] Proveravam adresu za narudžbinu #759
+[2025-03-24 09:47:39] Checking address: Array
+(
+    [RName] => Ilija Velemirov
+    [RAddress] => Bulevar Nikole Pašića
+    [RAddressNum] => 15
+    [RTownID] => 721107
+    [RCName] => Ilija Velemirov
+    [RCPhone] => 381691995503
+)
+
+[2025-03-24 09:47:39] Address check response: TEST
+[2025-03-24 09:47:39] [SHIPPING] Adresa validirana uspešno
+[2025-03-24 09:47:39] [SHIPPING] Priprema podataka za narudžbinu #759
+[2025-03-24 09:47:39] Using saved API phone format: 381691995503
+[2025-03-24 09:47:39] Using address type: shipping
+[2025-03-24 09:47:39] Street: Bulevar Nikole Pašića, Number: 15, City ID: 721107
+[2025-03-24 09:47:39] Payment method: bacs, Is COD: Yes
+[2025-03-24 09:47:39] Using BuyOut: 51800, Account: 170-0010364556000-77
+[2025-03-24 09:47:39] Final BuyOut amount: 51800
+[2025-03-24 09:47:39] Final BuyOutAccount: 170-0010364556000-77
+[2025-03-24 09:47:39] Final RAddressNum: 15
+[2025-03-24 09:47:39] Final RTownID: 721107
+[2025-03-24 09:47:39] Final RCPhone: 381691995503
+[2025-03-24 09:47:39] [SHIPPING] Šaljem zahtev ka D-Express API-ju
+[2025-03-24 09:47:39] [SHIPPING] API odgovor primljen uspešno
+[2025-03-24 09:47:39] [SHIPPING] Tracking broj: TT0000000054, Shipment ID: TT0000000054
+[2025-03-24 09:47:39] [SHIPPING] Čuvanje pošiljke u bazu podataka
+[2025-03-24 09:47:39] [SHIPPING] Pošiljka uspešno kreirana sa ID: 54
+[2025-03-24 09:50:21] Order ID: 760
+billing_street: Gagarinova
+billing_street_id: 23784
+billing_number: 10G
+billing_address_desc: 38 10ti sprat
+billing_city: Novi Sad
+billing_city_id: 802824
+billing_postcode: 21000
+billing_address_1: Gagarinova 10G
+shipping_street: Bulevar Nikole Pašića
+shipping_street_id: 9344
+shipping_number: 15
+shipping_address_desc: 23
+shipping_city: Kruševac
+shipping_city_id: 721107
+shipping_postcode: 37000
+shipping_address_1: Bulevar Nikole Pašića 15
+
+[2025-03-24 09:50:22] Checkout order processed: 760
+[2025-03-24 09:50:22] Has D Express shipping: Yes
+[2025-03-24 09:50:22] Automatic shipment creation is disabled or status does not match. Auto create: Enabled, Current status: pending, Required status: processing
+[2025-03-24 09:50:25] [SHIPPING] Započinjem kreiranje pošiljke za narudžbinu #760
+[2025-03-24 09:50:25] [SHIPPING] Proveravam adresu za narudžbinu #760
+[2025-03-24 09:50:25] Checking address: Array
+(
+    [RName] => Ilija Velemirov
+    [RAddress] => Bulevar Nikole Pašića
+    [RAddressNum] => 15
+    [RTownID] => 721107
+    [RCName] => Ilija Velemirov
+    [RCPhone] => 381603995503
+)
+
+[2025-03-24 09:50:25] Address check response: TEST
+[2025-03-24 09:50:25] [SHIPPING] Adresa validirana uspešno
+[2025-03-24 09:50:25] [SHIPPING] Priprema podataka za narudžbinu #760
+[2025-03-24 09:50:25] Using saved API phone format: 381603995503
+[2025-03-24 09:50:25] Using address type: shipping
+[2025-03-24 09:50:25] Street: Bulevar Nikole Pašića, Number: 15, City ID: 721107
+[2025-03-24 09:50:25] Payment method: cod, Is COD: Yes
+[2025-03-24 09:50:25] Using BuyOut: 51800, Account: 170-0010364556000-77
+[2025-03-24 09:50:25] Final BuyOut amount: 51800
+[2025-03-24 09:50:25] Final BuyOutAccount: 170-0010364556000-77
+[2025-03-24 09:50:25] Final RAddressNum: 15
+[2025-03-24 09:50:25] Final RTownID: 721107
+[2025-03-24 09:50:25] Final RCPhone: 381603995503
+[2025-03-24 09:50:25] [SHIPPING] Šaljem zahtev ka D-Express API-ju
+[2025-03-24 09:50:25] [SHIPPING] API odgovor primljen uspešno
+[2025-03-24 09:50:25] [SHIPPING] Tracking broj: TT0000000055, Shipment ID: TT0000000055
+[2025-03-24 09:50:25] [SHIPPING] Čuvanje pošiljke u bazu podataka
+[2025-03-24 09:50:25] [SHIPPING] Pošiljka uspešno kreirana sa ID: 55

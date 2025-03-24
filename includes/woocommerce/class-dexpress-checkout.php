@@ -145,14 +145,13 @@ class D_Express_Checkout
         if ($is_dexpress) {
             $phone = isset($_POST['billing_phone']) ? sanitize_text_field($_POST['billing_phone']) : '';
 
-            // Ukloni +381 sa početka ako postoji
+            // Formatiranje telefona za API
             if (strpos($phone, '+381') === 0) {
                 $phone = substr($phone, 4);
             } elseif (strpos($phone, '381') === 0) {
                 $phone = substr($phone, 3);
             }
 
-            // Formatiranje telefona za API
             $api_phone = '381' . $phone;
 
             // Provera formata telefona za API
@@ -207,8 +206,6 @@ class D_Express_Checkout
             // Sačuvaj broj sa prefiksom za API (bez +)
             $api_phone = '381' . $phone;
             update_post_meta($order_id, '_billing_phone_api_format', $api_phone);
-
-            $debug_info .= "API phone format: {$api_phone}\n";
         }
 
         dexpress_log($debug_info, 'debug');
