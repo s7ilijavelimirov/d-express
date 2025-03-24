@@ -27,8 +27,107 @@ class D_Express_Label_Generator
         // Registracija AJAX akcija
         add_action('wp_ajax_dexpress_download_label', array($this, 'ajax_download_label'));
         add_action('wp_ajax_dexpress_generate_label', array($this, 'ajax_generate_label'));
-    }
 
+        add_action('wp_ajax_dexpress_bulk_print_labels', array($this, 'ajax_bulk_print_labels'));
+    }
+    /**
+     * AJAX akcija za masovno štampanje nalepnica
+     */
+    public function ajax_bulk_print_labels()
+    {
+        // Provera nonce-a
+        if (!isset($_GET['_wpnonce']) || !wp_verify_nonce($_GET['_wpnonce'], 'dexpress-bulk-print')) {
+            wp_die(__('Sigurnosna provera nije uspela.', 'd-express-woo'));
+        }
+
+        // Provera dozvola
+        if (!current_user_can('manage_woocommerce')) {
+            wp_die(__('Nemate dozvolu za ovu akciju.', 'd-express-woo'));
+        }
+
+        // Provera ID-jeva pošiljki
+        if (!isset($_GET['shipment_ids']) || empty($_GET['shipment_ids'])) {
+            wp_die(__('Nisu odabrane pošiljke za štampanje.', 'd-express-woo'));
+        }
+
+        $shipment_ids = explode(',', sanitize_text_field($_GET['shipment_ids']));
+        $shipment_ids = array_map('intval', $shipment_ids);
+
+        if (empty($shipment_ids)) {
+            wp_die(__('Nisu odabrane pošiljke za štampanje.', 'd-express-woo'));
+        }
+
+        // Dobavljanje podataka o pošiljkama
+        global $wpdb;
+        $placeholders = implode(',', array_fill(0, count($shipment_ids), '%d'));
+
+        $shipments = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT * FROM {$wpdb->prefix}dexpress_shipments WHERE id IN ($placeholders)",
+                $shipment_ids
+            )
+        );
+
+        if (empty($shipments)) {
+            wp_die(__('Pošiljke nisu pronađene.', 'd-express-woo'));
+        }
+
+        // Početak HTML-a za nalepnice
+        echo '<!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <title>D Express - Nalepnice</title>
+        <style>
+            @page {
+                size: A6 portrait;
+                margin: 0;
+            }
+            body {
+                font-family: Arial, sans-serif;
+                margin: 0;
+                padding: 0;
+            }
+            .page-break {
+                page-break-after: always;
+                height: 0;
+                display: block;
+            }
+            .no-print {
+                margin: 20px;
+            }
+            @media print {
+                .no-print {
+                    display: none;
+                }
+            }
+        </style>
+        <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    </head>
+    <body>
+        <div class="no-print">
+            <h1>' . __('Nalepnice za pošiljke', 'd-express-woo') . '</h1>
+            <p>' . sprintf(__('Ukupno %d nalepnica za štampanje.', 'd-express-woo'), count($shipments)) . '</p>
+            <button onclick="window.print()" style="padding: 10px 20px; font-size: 16px; cursor: pointer;">' . __('Štampaj sve nalepnice', 'd-express-woo') . '</button>
+        </div>';
+
+        // Generisanje nalepnica za svaku pošiljku
+        foreach ($shipments as $index => $shipment) {
+            $order = wc_get_order($shipment->order_id);
+
+            if ($order) {
+                echo $this->generate_dexpress_label_html($shipment);
+
+                // Dodavanje page break-a između nalepnica, osim za poslednju
+                if ($index < count($shipments) - 1) {
+                    echo '<div class="page-break"></div>';
+                }
+            }
+        }
+
+        echo '</body></html>';
+        exit;
+    }
     /**
      * AJAX akcija za preuzimanje nalepnice
      */

@@ -38,7 +38,23 @@ if (isset($_GET['synced']) && !empty($_GET['synced'])) {
 
     echo '<div class="notice notice-success is-dismissible"><p>' . esc_html($message) . '</p></div>';
 }
+if (isset($_POST['action']) && $_POST['action'] === 'print' && isset($_POST['shipment'])) {
+    $shipment_ids = array_map('intval', $_POST['shipment']);
 
+    if (!empty($shipment_ids)) {
+        // Kreiraj URL za štampu i preusmeri
+        $print_url = add_query_arg(
+            array(
+                'action' => 'dexpress_bulk_print_labels',
+                'shipment_ids' => implode(',', $shipment_ids),
+                '_wpnonce' => wp_create_nonce('dexpress-bulk-print')
+            ),
+            admin_url('admin-ajax.php')
+        );
+
+        echo '<script>window.open("' . esc_url($print_url) . '", "_blank");</script>';
+    }
+}
 // Kreiranje i prikaz liste pošiljki
 $shipments_list = new D_Express_Shipments_List();
 $shipments_list->prepare_items();
@@ -51,7 +67,7 @@ $shipments_list->prepare_items();
 
     <hr class="wp-header-end">
 
-    <form id="dexpress-shipments-filter" method="get">
+    <form id="dexpress-shipments-filter" method="post">
         <input type="hidden" name="page" value="<?php echo esc_attr($_REQUEST['page']); ?>" />
 
         <?php $shipments_list->search_box(__('Pretraži pošiljke', 'd-express-woo'), 'dexpress-search'); ?>
@@ -59,10 +75,15 @@ $shipments_list->prepare_items();
     </form>
 </div>
 
+<div class="dexpress-bulk-actions" style="margin-top: 10px;">
+    <button type="button" id="dexpress-bulk-print" class="button button-primary"><?php _e('Štampaj odabrane nalepnice', 'd-express-woo'); ?></button>
+    <button type="button" id="dexpress-bulk-delete" class="button"><?php _e('Obriši odabrane pošiljke', 'd-express-woo'); ?></button>
+</div>
+
 <script type="text/javascript">
     jQuery(document).ready(function($) {
         // Bulk print akcija
-        $('.dexpress-print-bulk').on('click', function(e) {
+        $('#dexpress-bulk-print').on('click', function(e) {
             e.preventDefault();
 
             var selectedShipments = [];
@@ -75,12 +96,15 @@ $shipments_list->prepare_items();
                 return;
             }
 
-            var printUrl = '<?php echo admin_url('admin.php?page=dexpress-print-labels&shipment_ids='); ?>' + selectedShipments.join(',') + '&_wpnonce=<?php echo wp_create_nonce('dexpress-bulk-print'); ?>';
+            var printUrl = '<?php echo admin_url('admin-ajax.php?action=dexpress_bulk_print_labels&shipment_ids='); ?>' +
+                selectedShipments.join(',') +
+                '&_wpnonce=<?php echo wp_create_nonce('dexpress-bulk-print'); ?>';
+
             window.open(printUrl, '_blank');
         });
 
         // Bulk delete akcija
-        $('.dexpress-delete-bulk').on('click', function(e) {
+        $('#dexpress-bulk-delete').on('click', function(e) {
             e.preventDefault();
 
             var selectedShipments = [];
@@ -94,7 +118,9 @@ $shipments_list->prepare_items();
             }
 
             if (confirm('<?php _e('Da li ste sigurni da želite da obrišete odabrane pošiljke?', 'd-express-woo'); ?>')) {
+                // Dodaj hidden polje za akciju
                 $('#dexpress-shipments-filter').append('<input type="hidden" name="action" value="delete" />');
+                // Pošalji formu
                 $('#dexpress-shipments-filter').submit();
             }
         });

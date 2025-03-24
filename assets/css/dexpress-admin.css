@@ -79,11 +79,30 @@
     padding: 20px;
     background: #fff;
     border: 1px solid #e5e5e5;
-    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+    box-shadow: 0 1px 1px rgba(0, 0, 0, .04);
 }
 
 .dexpress-settings-section h2 {
     margin-top: 0;
     padding-bottom: 10px;
     border-bottom: 1px solid #eee;
+}
+
+/* Stil za bulk aksije */
+.dexpress-bulk-actions {
+    margin: 10px 0;
+}
+
+.dexpress-bulk-actions button {
+    margin-right: 10px;
+}
+
+/* Stil za checkboxe u tabeli */
+.dexpress-shipments-table .check-column {
+    width: 2em;
+    text-align: center;
+}
+
+.dexpress-shipments-table .check-column input {
+    margin-left: 8px;
 }

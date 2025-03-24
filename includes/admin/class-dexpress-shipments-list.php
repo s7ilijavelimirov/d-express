@@ -306,7 +306,7 @@ class D_Express_Shipments_List extends WP_List_Table
         ];
 
         $class = isset($status_classes[$status_code]) ? $status_classes[$status_code] : 'dexpress-status-transit';
-        
+
         return sprintf(
             '<span class="dexpress-status-badge %s">%s</span>',
             $class,
@@ -414,6 +414,9 @@ function dexpress_shipments_list()
 /**
  * Obrada bulk akcija
  */
+/**
+ * Obrada bulk akcija
+ */
 function dexpress_process_bulk_actions()
 {
     $shipments_list = new D_Express_Shipments_List();
@@ -437,13 +440,16 @@ function dexpress_process_bulk_actions()
         // Kreiraj nonce
         $nonce = wp_create_nonce('dexpress-bulk-print');
 
-        // Redirektuj na stranicu za štampanje
-        wp_redirect(add_query_arg([
-            'page'         => 'dexpress-print-labels',
+        // Kreiraj URL za AJAX akciju za štampanje nalepnica
+        $print_url = add_query_arg([
+            'action'       => 'dexpress_bulk_print_labels',
             'shipment_ids' => implode(',', $shipment_ids),
             '_wpnonce'     => $nonce
-        ], admin_url('admin.php')));
-        exit;
+        ], admin_url('admin-ajax.php'));
+
+        // Otvaranje URL-a u novom prozoru pomoću JavaScripta
+        echo '<script>window.open("' . esc_url($print_url) . '", "_blank");</script>';
+        return;
     }
 
     // Obrada akcije "delete"

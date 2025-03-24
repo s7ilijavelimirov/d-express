@@ -386,8 +386,19 @@ class D_Express_Shipment_Service
             return;
         }
 
+        // Provera da li je već poslat email za ovu narudžbinu
+        $email_sent = get_post_meta($order_id, '_dexpress_tracking_email_sent', true);
+        if ($email_sent) {
+            return;
+        }
+
         // Kreiranje pošiljke
-        $this->create_shipment($order);
+        $result = $this->create_shipment($order);
+
+        // Postavljanje da je email poslat
+        if (!is_wp_error($result)) {
+            update_post_meta($order_id, '_dexpress_tracking_email_sent', 'yes');
+        }
     }
     /**
      * Registruje AJAX handler za kreiranje pošiljke
@@ -399,6 +410,12 @@ class D_Express_Shipment_Service
     // Dodaj u klasu D_Express_Shipment_Service
     public function send_tracking_email($shipment_id, $order)
     {
+        // Provera da li je već poslat email
+        $email_sent = get_post_meta($order->get_id(), '_dexpress_tracking_email_sent', true);
+        if ($email_sent) {
+            return;
+        }
+
         $mailer = WC()->mailer();
         $shipment = $this->db->get_shipment($shipment_id);
 
@@ -411,7 +428,7 @@ class D_Express_Shipment_Service
 
         // Naslov emaila
         $subject = sprintf(__('Praćenje pošiljke za narudžbinu #%s', 'd-express-woo'), $order->get_order_number());
-        $email_heading = $subject; // Dodajemo email_heading varijablu
+        $email_heading = $subject;
 
         // Popuni podatke za šablon
         $tracking_number = $shipment->tracking_number;
@@ -420,7 +437,7 @@ class D_Express_Shipment_Service
         $is_test = $shipment->is_test;
 
         // Kreiramo email objekat
-        $email = new WC_Email(); // Dodajemo email objekat
+        $email = new WC_Email();
 
         // Učitavanje sadržaja emaila iz šablona
         ob_start();
@@ -430,6 +447,9 @@ class D_Express_Shipment_Service
         // Slanje emaila
         $headers = "Content-Type: text/html\r\n";
         $mailer->send($recipient, $subject, $email_content, $headers);
+
+        // Označava da je email poslat
+        update_post_meta($order->get_id(), '_dexpress_tracking_email_sent', 'yes');
     }
     /**
      * AJAX handler za kreiranje pošiljke
