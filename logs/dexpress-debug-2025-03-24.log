@@ -149,3 +149,53 @@ shipping_postcode: 37000
 [2025-03-24 10:42:00] [SHIPPING] Tracking broj: TT0000000056, Shipment ID: TT0000000056
 [2025-03-24 10:42:00] [SHIPPING] Čuvanje pošiljke u bazu podataka
 [2025-03-24 10:42:00] [SHIPPING] Pošiljka uspešno kreirana sa ID: 56
+[2025-03-24 12:12:46] Order ID: 762
+billing_street: Petefi Šandora
+billing_street_id: 22518
+billing_number: 23
+billing_address_desc: Dodatne informacije o ADRESI
+billing_city: Kikinda
+billing_city_id: 802158
+billing_postcode: 23300
+billing_address_1: Petefi Šandora 23
+shipping_street: 
+shipping_street_id: 
+shipping_number: 
+shipping_address_desc: 
+shipping_city: Leskovac
+shipping_city_id: 
+shipping_postcode: 16000
+
+[2025-03-24 12:12:47] Checkout order processed: 762
+[2025-03-24 12:12:47] Has D Express shipping: Yes
+[2025-03-24 12:12:47] Automatic shipment creation is disabled or status does not match. Auto create: Enabled, Current status: pending, Required status: processing
+[2025-03-24 12:12:49] [SHIPPING] Započinjem kreiranje pošiljke za narudžbinu #762
+[2025-03-24 12:12:49] [SHIPPING] Proveravam adresu za narudžbinu #762
+[2025-03-24 12:12:49] Checking address: Array
+(
+    [RName] => Igort Igorijevic
+    [RAddress] => Petefi Šandora
+    [RAddressNum] => 23
+    [RTownID] => 802158
+    [RCName] => Igort Igorijevic
+    [RCPhone] => 381603995503
+)
+
+[2025-03-24 12:12:49] Address check response: TEST
+[2025-03-24 12:12:49] [SHIPPING] Adresa validirana uspešno
+[2025-03-24 12:12:49] [SHIPPING] Priprema podataka za narudžbinu #762
+[2025-03-24 12:12:49] Using saved API phone format: 381603995503
+[2025-03-24 12:12:49] Using address type: shipping
+[2025-03-24 12:12:49] Street: Petefi Šandora, Number: 23, City ID: 802158
+[2025-03-24 12:12:49] Payment method: cod, Is COD: Yes
+[2025-03-24 12:12:49] Using BuyOut: 51800, Account: 170-0010364556000-77
+[2025-03-24 12:12:49] Final BuyOut amount: 51800
+[2025-03-24 12:12:49] Final BuyOutAccount: 170-0010364556000-77
+[2025-03-24 12:12:49] Final RAddressNum: 23
+[2025-03-24 12:12:49] Final RTownID: 802158
+[2025-03-24 12:12:49] Final RCPhone: 381603995503
+[2025-03-24 12:12:49] [SHIPPING] Šaljem zahtev ka D-Express API-ju
+[2025-03-24 12:12:49] [SHIPPING] API odgovor primljen uspešno
+[2025-03-24 12:12:49] [SHIPPING] Tracking broj: TT0000000057, Shipment ID: TT0000000057
+[2025-03-24 12:12:49] [SHIPPING] Čuvanje pošiljke u bazu podataka
+[2025-03-24 12:12:49] [SHIPPING] Pošiljka uspešno kreirana sa ID: 57

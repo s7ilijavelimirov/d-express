@@ -33,10 +33,13 @@ class D_Express_Label_Generator
     /**
      * AJAX akcija za masovno štampanje nalepnica
      */
+    /**
+     * AJAX akcija za masovno štampanje nalepnica
+     */
     public function ajax_bulk_print_labels()
     {
         // Provera nonce-a
-        if (!isset($_GET['_wpnonce']) || !wp_verify_nonce($_GET['_wpnonce'], 'dexpress-bulk-print')) {
+        if (!isset($_REQUEST['_wpnonce']) || !wp_verify_nonce($_REQUEST['_wpnonce'], 'dexpress-bulk-print')) {
             wp_die(__('Sigurnosna provera nije uspela.', 'd-express-woo'));
         }
 
@@ -46,11 +49,11 @@ class D_Express_Label_Generator
         }
 
         // Provera ID-jeva pošiljki
-        if (!isset($_GET['shipment_ids']) || empty($_GET['shipment_ids'])) {
+        if (!isset($_REQUEST['shipment_ids']) || empty($_REQUEST['shipment_ids'])) {
             wp_die(__('Nisu odabrane pošiljke za štampanje.', 'd-express-woo'));
         }
 
-        $shipment_ids = explode(',', sanitize_text_field($_GET['shipment_ids']));
+        $shipment_ids = explode(',', sanitize_text_field($_REQUEST['shipment_ids']));
         $shipment_ids = array_map('intval', $shipment_ids);
 
         if (empty($shipment_ids)) {
@@ -74,31 +77,184 @@ class D_Express_Label_Generator
 
         // Početak HTML-a za nalepnice
         echo '<!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="UTF-8">
-        <title>D Express - Nalepnice</title>
-        <style>
-            @page {
-                size: A6 portrait;
-                margin: 0;
-            }
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>D Express - Nalepnice</title>
+            <style>
+                /* Osnovna podešavanja */
             body {
                 font-family: Arial, sans-serif;
                 margin: 0;
                 padding: 0;
+                background-color: #f4f4f4;
             }
-            .page-break {
-                page-break-after: always;
-                height: 0;
-                display: block;
+            
+            /* Stilovi za štampanje */
+            @page {
+                size: A4; /* Standardni A4 format */
+                margin: 0.5cm; /* Manji margin za više nalepnica */
             }
+            
+            /* Kontejner za štampanje */
+            .print-container {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: space-around;
+                max-width: 21cm; /* A4 širina */
+                margin: 0 auto;
+            }
+            
+            /* Pojedinačna nalepnica */
+            .label-container {
+                width: 10cm; /* Oko pola A4 papira širine */
+                height: 14cm; /* Oko trećine A4 papira visine */
+                margin: 0.2cm;
+                border: 1px solid #000;
+                page-break-inside: avoid; /* Sprečava prelom nalepnica */
+                background-color: #fff;
+                position: relative;
+                padding: 0.2cm;
+                box-sizing: border-box;
+            }
+            
+            /* Kontrolni deo koji se ne štampa */
             .no-print {
-                margin: 20px;
+                text-align: center;
+                background-color: #f8f8f8;
+                padding: 20px;
+                border-radius: 5px;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+                max-width: 600px;
+                margin: 20px auto;
             }
+            
+            .print-button {
+                background-color: #2271b1;
+                color: white;
+                border: none;
+                padding: 12px 24px;
+                font-size: 16px;
+                cursor: pointer;
+                border-radius: 4px;
+                margin-top: 15px;
+            }
+            
+            .print-button:hover {
+                background-color: #135e96;
+            }
+            
+            .shipment-count {
+                font-size: 16px;
+                margin: 10px 0 20px;
+            }
+            
+            /* Elementi nalepnice */
+            .header {
+                padding: 3px;
+                font-size: 8px;
+                text-align: left;
+                border-bottom: 1px solid #eee;
+            }
+            
+            .package-info {
+                position: absolute;
+                top: 3px;
+                right: 5px;
+                font-weight: bold;
+                font-size: 12px;
+            }
+            
+            .barcode-container {
+                text-align: center;
+                padding: 5px 0;
+            }
+            
+            .barcode {
+                height: 40px;
+                margin: 0 auto;
+            }
+            
+            .tracking-number {
+                font-size: 12px;
+                font-weight: bold;
+                text-align: center;
+                margin-top: 3px;
+            }
+            
+            .sender-info {
+                padding: 3px;
+                font-size: 9px;
+                border-bottom: 1px solid #eee;
+            }
+            
+            .recipient-info {
+                padding: 3px;
+                text-align: center;
+            }
+            
+            .recipient-title {
+                margin-bottom: 2px;
+                font-size: 10px;
+            }
+            
+            .recipient-name {
+                font-size: 14px;
+                font-weight: bold;
+            }
+            
+            .recipient-address {
+                font-size: 12px;
+                font-weight: bold;
+                margin-top: 2px;
+            }
+            
+            .recipient-city {
+                font-size: 12px;
+                font-weight: bold;
+                margin-top: 2px;
+            }
+            
+            .recipient-phone {
+                font-size: 12px;
+                font-weight: bold;
+                margin-top: 2px;
+            }
+            
+            .shipment-details {
+                padding: 3px;
+                font-size: 8px;
+            }
+            
+            .detail-row {
+                margin-bottom: 2px;
+            }
+            
+            .detail-label {
+                font-weight: normal;
+                display: inline-block;
+                width: 100px;
+            }
+            
+            .footer {
+                padding: 3px;
+                width: 100%;
+                box-sizing: border-box;
+                text-align: center;
+                font-size: 8px;
+                border-top: 1px solid #eee;
+                margin-top: 5px;
+            }
+            
             @media print {
+                body {
+                    background-color: white;
+                }
                 .no-print {
                     display: none;
+                }
+                .print-container {
+                    width: 100%;
                 }
             }
         </style>
@@ -106,27 +262,144 @@ class D_Express_Label_Generator
     </head>
     <body>
         <div class="no-print">
-            <h1>' . __('Nalepnice za pošiljke', 'd-express-woo') . '</h1>
-            <p>' . sprintf(__('Ukupno %d nalepnica za štampanje.', 'd-express-woo'), count($shipments)) . '</p>
-            <button onclick="window.print()" style="padding: 10px 20px; font-size: 16px; cursor: pointer;">' . __('Štampaj sve nalepnice', 'd-express-woo') . '</button>
-        </div>';
+            <h1>' . __('D Express nalepnice za štampanje', 'd-express-woo') . '</h1>
+            <p class="shipment-count">' . sprintf(__('Ukupno %d nalepnica za štampanje.', 'd-express-woo'), count($shipments)) . '</p>
+            <button onclick="window.print()" class="print-button">' . __('Štampaj sve nalepnice', 'd-express-woo') . '</button>
+        </div>
+        
+        <div class="print-container">';
 
         // Generisanje nalepnica za svaku pošiljku
         foreach ($shipments as $index => $shipment) {
             $order = wc_get_order($shipment->order_id);
 
             if ($order) {
-                echo $this->generate_dexpress_label_html($shipment);
-
-                // Dodavanje page break-a između nalepnica, osim za poslednju
-                if ($index < count($shipments) - 1) {
-                    echo '<div class="page-break"></div>';
-                }
+                $this->generate_compact_label($shipment, $order);
             }
         }
 
-        echo '</body></html>';
+        echo '</div></body></html>';
         exit;
+    }
+    /**
+     * Generiše kompaktnu nalepnicu za višestruko štampanje
+     */
+    private function generate_compact_label($shipment, $order)
+    {
+        // Pripremanje podataka za nalepnicu
+        $order_data = $this->prepare_order_data($order);
+
+        // Tracking broj
+        $tracking_number = !empty($shipment->tracking_number) ? $shipment->tracking_number : 'TT' . str_pad(rand(1, 999999), 10, '0', STR_PAD_LEFT);
+
+        // Format otkupnine
+        $cod_amount = '';
+        if ($order_data['payment_method'] === 'cod') {
+            $cod_amount = number_format($order_data['order_total'], 2, ',', '.') . ' RSD';
+        }
+
+        // Referentni broj
+        $reference_id = !empty($shipment->reference_id) ? $shipment->reference_id : 'ORDER-' . $order->get_id();
+
+        // Datum i vreme štampe
+        $print_date = date_i18n('d.m.Y H:i:s');
+
+        // Broj paketa u pošiljci (obično 1)
+        $package_count = 1;
+        $package_index = 1;
+
+        // Town name za pošiljaoca
+        $town_id = get_option('dexpress_sender_town_id');
+        global $wpdb;
+        $town_name = $wpdb->get_var($wpdb->prepare(
+            "SELECT name FROM {$wpdb->prefix}dexpress_towns WHERE id = %d",
+            $town_id
+        ));
+
+        // HTML za nalepnicu
+?>
+        <div class="label-container">
+            <!-- Header sa podacima pošiljaoca -->
+            <div class="header">
+                D Express doo, Zage Malivuk 1, Beograd
+                <div class="package-info">
+                    <?php echo esc_html($package_index); ?>/<?php echo esc_html($package_count); ?>
+                </div>
+            </div>
+
+            <!-- Podaci pošiljaoca -->
+            <div class="sender-info">
+                <strong>Pošiljalac:</strong><br>
+                <?php echo esc_html(get_option('dexpress_sender_name')); ?>,
+                <?php echo esc_html(get_option('dexpress_sender_address')); ?>
+                <?php echo esc_html(get_option('dexpress_sender_address_num')); ?>,
+                <?php echo esc_html($town_name); ?><br>
+                <?php echo esc_html(get_option('dexpress_sender_contact_phone')); ?>
+            </div>
+
+            <!-- Barcode sekcija -->
+            <div class="barcode-container">
+                <svg class="barcode-<?php echo esc_attr($tracking_number); ?>"></svg>
+                <script>
+                    JsBarcode(".barcode-<?php echo esc_js($tracking_number); ?>", "<?php echo esc_js($tracking_number); ?>", {
+                        format: "CODE128",
+                        width: 1.5,
+                        height: 40,
+                        displayValue: false,
+                        margin: 0
+                    });
+                </script>
+                <div class="tracking-number"><?php echo esc_html($tracking_number); ?></div>
+            </div>
+
+            <!-- Podaci primaoca -->
+            <div class="recipient-info">
+                <div class="recipient-title">Primalac:</div>
+                <div class="recipient-name"><?php echo esc_html($order_data['shipping_name']); ?></div>
+                <div class="recipient-address"><?php echo esc_html($order_data['shipping_address']); ?></div>
+                <div class="recipient-city"><?php echo esc_html($order_data['shipping_postcode'] . ' ' . $order_data['shipping_city']); ?></div>
+                <div class="recipient-phone"><?php echo esc_html($order_data['shipping_phone']); ?></div>
+            </div>
+
+            <!-- Dodatni podaci -->
+            <div class="shipment-details">
+                <div class="detail-row">
+                    <span class="detail-label">Referentni broj:</span>
+                    <?php echo esc_html($reference_id); ?>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Uslugu plaća:</span>
+                    <?php echo esc_html(dexpress_get_payment_by_text(get_option('dexpress_payment_by', '0'))); ?> -
+                    <?php echo esc_html(dexpress_get_payment_type_text(get_option('dexpress_payment_type', '2'))); ?>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Dokumentacija:</span>
+                    <?php echo esc_html(dexpress_get_return_doc_text(get_option('dexpress_return_doc', '0'))); ?>
+                </div>
+
+                <?php if (!empty($cod_amount)): ?>
+                    <div class="detail-row">
+                        <span class="detail-label">Otkupnina:</span>
+                        <?php echo esc_html($cod_amount); ?>
+                    </div>
+                <?php endif; ?>
+
+                <div class="detail-row">
+                    <span class="detail-label">Sadržaj:</span>
+                    <?php echo esc_html(get_option('dexpress_default_content', 'Roba iz web prodavnice')); ?>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Masa:</span>
+                    <?php echo esc_html(number_format($order_data['total_weight'], 2, ',', '.') . ' kg'); ?>
+                </div>
+            </div>
+
+            <!-- Footer sa vremenom štampe -->
+            <div class="footer">
+                Vreme štampe: <?php echo esc_html($print_date); ?>
+            </div>
+        </div>
+    <?php
     }
     /**
      * AJAX akcija za preuzimanje nalepnice
@@ -165,8 +438,208 @@ class D_Express_Label_Generator
             wp_die(__('Pošiljka nije pronađena.', 'd-express-woo'));
         }
 
-        // Generisanje HTML nalepnice
-        echo $this->generate_dexpress_label_html($shipment);
+        $order = wc_get_order($shipment->order_id);
+        if (!$order) {
+            wp_die(__('Narudžbina nije pronađena.', 'd-express-woo'));
+        }
+
+        // Koristi isti stil kao za bulk štampanje
+        echo '<!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>D Express - Nalepnica</title>
+            <style>
+                /* Osnovna podešavanja */
+                body {
+                    font-family: Arial, sans-serif;
+                    margin: 0;
+                    padding: 0;
+                    background-color: #f4f4f4;
+                }
+                
+                /* Stilovi za štampanje */
+                @page {
+                    size: A4; /* Standardni A4 format */
+                    margin: 0.5cm; /* Manji margin za više nalepnica */
+                }
+                
+                /* Kontejner za štampanje */
+                .print-container {
+                    display: flex;
+                    flex-wrap: wrap;
+                    justify-content: space-around;
+                    max-width: 21cm; /* A4 širina */
+                    margin: 0 auto;
+                }
+                
+                /* Pojedinačna nalepnica */
+                .label-container {
+                    width: 10cm; /* Oko pola A4 papira širine */
+                    height: 14cm; /* Oko trećine A4 papira visine */
+                    margin: 0.2cm;
+                    border: 1px solid #000;
+                    page-break-inside: avoid; /* Sprečava prelom nalepnica */
+                    background-color: #fff;
+                    position: relative;
+                    padding: 0.2cm;
+                    box-sizing: border-box;
+                }
+                
+                /* Kontrolni deo koji se ne štampa */
+                .no-print {
+                    text-align: center;
+                    background-color: #f8f8f8;
+                    padding: 20px;
+                    border-radius: 5px;
+                    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+                    max-width: 600px;
+                    margin: 20px auto;
+                }
+                
+                .print-button {
+                    background-color: #2271b1;
+                    color: white;
+                    border: none;
+                    padding: 12px 24px;
+                    font-size: 16px;
+                    cursor: pointer;
+                    border-radius: 4px;
+                    margin-top: 15px;
+                }
+                
+                .print-button:hover {
+                    background-color: #135e96;
+                }
+                
+                .shipment-count {
+                    font-size: 16px;
+                    margin: 10px 0 20px;
+                }
+                
+                /* Elementi nalepnice */
+                .header {
+                    padding: 3px;
+                    font-size: 8px;
+                    text-align: left;
+                    border-bottom: 1px solid #eee;
+                }
+                
+                .package-info {
+                    position: absolute;
+                    top: 3px;
+                    right: 5px;
+                    font-weight: bold;
+                    font-size: 12px;
+                }
+                
+                .barcode-container {
+                    text-align: center;
+                    padding: 5px 0;
+                }
+                
+                .barcode {
+                    height: 40px;
+                    margin: 0 auto;
+                }
+                
+                .tracking-number {
+                    font-size: 12px;
+                    font-weight: bold;
+                    text-align: center;
+                    margin-top: 3px;
+                }
+                
+                .sender-info {
+                    padding: 3px;
+                    font-size: 9px;
+                    border-bottom: 1px solid #eee;
+                }
+                
+                .recipient-info {
+                    padding: 3px;
+                    text-align: center;
+                }
+                
+                .recipient-title {
+                    margin-bottom: 2px;
+                    font-size: 10px;
+                }
+                
+                .recipient-name {
+                    font-size: 14px;
+                    font-weight: bold;
+                }
+                
+                .recipient-address {
+                    font-size: 12px;
+                    font-weight: bold;
+                    margin-top: 2px;
+                }
+                
+                .recipient-city {
+                    font-size: 12px;
+                    font-weight: bold;
+                    margin-top: 2px;
+                }
+                
+                .recipient-phone {
+                    font-size: 12px;
+                    font-weight: bold;
+                    margin-top: 2px;
+                }
+                
+                .shipment-details {
+                    padding: 3px;
+                    font-size: 8px;
+                }
+                
+                .detail-row {
+                    margin-bottom: 2px;
+                }
+                
+                .detail-label {
+                    font-weight: normal;
+                    display: inline-block;
+                    width: 100px;
+                }
+                
+                .footer {
+                    padding: 3px;
+                    width: 100%;
+                    box-sizing: border-box;
+                    text-align: center;
+                    font-size: 8px;
+                    border-top: 1px solid #eee;
+                    margin-top: 5px;
+                }
+                
+                @media print {
+                    body {
+                        background-color: white;
+                    }
+                    .no-print {
+                        display: none;
+                    }
+                    .print-container {
+                        width: 100%;
+                    }
+                }
+            </style>
+            <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+        </head>
+        <body>
+            <div class="no-print">
+                <h1>' . __('D Express nalepnica za štampanje', 'd-express-woo') . '</h1>
+                <button onclick="window.print()" class="print-button">' . __('Štampaj nalepnicu', 'd-express-woo') . '</button>
+            </div>
+            
+            <div class="print-container">';
+
+        // Prikaz nalepnice koristeći istu funkciju kao za bulk štampanje
+        $this->generate_compact_label($shipment, $order);
+
+        echo '</div></body></html>';
         exit;
     }
 
@@ -221,7 +694,7 @@ class D_Express_Label_Generator
         ));
     }
 
-    public function generate_dexpress_label_html($shipment)
+    public function generate_dexpress_label_html($shipment, $is_bulk = false)
     {
         // Dobijanje podataka o narudžbini
         $order = wc_get_order($shipment->order_id);
@@ -254,7 +727,7 @@ class D_Express_Label_Generator
 
         // HTML za nalepnicu
         ob_start();
-?>
+    ?>
         <!DOCTYPE html>
         <html>
 
@@ -502,7 +975,9 @@ class D_Express_Label_Generator
                 </div>
             </div>
 
-            <button class="print-button" onclick="window.print()"><?php _e('Štampaj nalepnicu', 'd-express-woo'); ?></button>
+            <?php if (!$is_bulk): ?>
+                <button class="print-button" onclick="window.print()"><?php _e('Štampaj nalepnicu', 'd-express-woo'); ?></button>
+            <?php endif; ?>
         </body>
 
         </html>

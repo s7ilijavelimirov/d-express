@@ -191,7 +191,6 @@ class D_Express_Shipments_List extends WP_List_Table
     public function get_bulk_actions()
     {
         return [
-            'print' => __('Štampaj nalepnice', 'd-express-woo'),
             'delete' => __('Obriši', 'd-express-woo'),
         ];
     }
@@ -414,52 +413,63 @@ function dexpress_shipments_list()
 /**
  * Obrada bulk akcija
  */
-/**
- * Obrada bulk akcija
- */
 function dexpress_process_bulk_actions()
 {
-    $shipments_list = new D_Express_Shipments_List();
-
-    // Provera trenutne akcije
-    $action = $shipments_list->current_action();
-
-    if (!$action) {
+    // Proveri da li je forma poslata
+    if (!isset($_POST['_wpnonce'])) {
         return;
     }
 
-    // Provera da li postoje odabrane pošiljke
+    // Proveri da li je akcija postavljena
+    if (!isset($_POST['action']) || empty($_POST['action'])) {
+        if (isset($_POST['action2']) && !empty($_POST['action2'])) {
+            $_POST['action'] = $_POST['action2']; // Za bulk akcije sa dna tabele
+        } else {
+            return;
+        }
+    }
+
+    // Proveri da li postoje odabrane pošiljke
     if (!isset($_POST['shipment']) || empty($_POST['shipment'])) {
         return;
     }
 
+    $action = sanitize_key($_POST['action']);
+    $shipment_ids = array_map('intval', $_POST['shipment']);
+
     // Obrada akcije "print"
     if ($action === 'print') {
-        $shipment_ids = array_map('intval', $_POST['shipment']);
-
-        // Kreiraj nonce
         $nonce = wp_create_nonce('dexpress-bulk-print');
-
-        // Kreiraj URL za AJAX akciju za štampanje nalepnica
         $print_url = add_query_arg([
             'action'       => 'dexpress_bulk_print_labels',
             'shipment_ids' => implode(',', $shipment_ids),
             '_wpnonce'     => $nonce
         ], admin_url('admin-ajax.php'));
 
-        // Otvaranje URL-a u novom prozoru pomoću JavaScripta
+        // Kombinovani pristup:
+        // 1. Dodaj JavaScript koji odmah otvara prozor
         echo '<script>window.open("' . esc_url($print_url) . '", "_blank");</script>';
-        return;
+
+        // 2. Ali takođe preusmeri nazad na istu stranicu da bi korisnik video rezultat
+        wp_redirect(add_query_arg([
+            'page'    => 'dexpress-shipments',
+            'printed' => count($shipment_ids)
+        ], admin_url('admin.php')));
+        exit;
     }
 
-    // Obrada akcije "delete"
+    // Obrada akcije "delete" (zadrži postojeću logiku)
     if ($action === 'delete') {
-        // Provera nonce-a
-        check_admin_referer('bulk-' . $shipments_list->_args['plural']);
+        // Verifikuj nonce (opciono, ako koristiš nestandardne bulk akcije)
+        if (
+            !wp_verify_nonce($_POST['_wpnonce'], 'bulk-shipments') &&
+            !wp_verify_nonce($_POST['_wpnonce'], 'bulk-' . (isset($_POST['_wp_http_referer']) ? parse_url($_POST['_wp_http_referer'], PHP_URL_QUERY) : ''))
+        ) {
+            wp_die('Security check failed');
+        }
 
         global $wpdb;
         $table_name = $wpdb->prefix . 'dexpress_shipments';
-        $shipment_ids = array_map('intval', $_POST['shipment']);
 
         foreach ($shipment_ids as $id) {
             $wpdb->delete($table_name, ['id' => $id], ['%d']);
@@ -501,3 +511,69 @@ function dexpress_process_single_actions()
     }
 }
 add_action('admin_init', 'dexpress_process_single_actions');
+// Prvo uklonimo print kao bulk akciju
+add_filter('bulk_actions-woocommerce_page_dexpress-shipments', function ($actions) {
+    if (isset($actions['print'])) {
+        unset($actions['print']); // Ukloni standardnu bulk akciju za štampu
+    }
+    return $actions;
+}, 20);
+
+// Dodamo našu custom formu za bulk štampanje
+add_action('admin_footer', function () {
+    $screen = get_current_screen();
+    if (!isset($screen->id) || $screen->id !== 'woocommerce_page_dexpress-shipments')
+        return;
+?>
+    <form id="bulk_print_form" method="post" action="<?php echo admin_url('admin-ajax.php'); ?>" target="_blank">
+        <input type="hidden" name="action" value="dexpress_bulk_print_labels">
+        <input type="hidden" name="_wpnonce" value="<?php echo wp_create_nonce('dexpress-bulk-print'); ?>">
+        <input type="hidden" name="shipment_ids" id="bulk_print_ids" value="">
+    </form>
+
+    <script type="text/javascript">
+        jQuery(document).ready(function($) {
+            // Dodajemo naše custom dugme pored WP bulk select dugmadi
+            var btnHtml = '<input type="button" id="dexpress_bulk_print_btn" class="button action" value="<?php _e('Štampaj odabrane', 'd-express-woo'); ?>">';
+
+            $('#bulk-action-selector-top').after(btnHtml);
+
+            // Hendler za naše dugme
+            $('#dexpress_bulk_print_btn').on('click', function(e) {
+                var selectedIds = [];
+                $('input[name="shipment[]"]:checked').each(function() {
+                    selectedIds.push($(this).val());
+                });
+
+                if (selectedIds.length === 0) {
+                    alert('<?php _e('Molimo odaberite pošiljke za štampanje.', 'd-express-woo'); ?>');
+                    return;
+                }
+
+                // Postavi ID-jeve u hidden input i submituj formu
+                $('#bulk_print_ids').val(selectedIds.join(','));
+                $('#bulk_print_form').submit();
+            });
+
+            // Dodatno za dugme ispod tabele
+            $('#dexpress-bulk-print').on('click', function(e) {
+                e.preventDefault();
+
+                var selectedIds = [];
+                $('input[name="shipment[]"]:checked').each(function() {
+                    selectedIds.push($(this).val());
+                });
+
+                if (selectedIds.length === 0) {
+                    alert('<?php _e('Molimo odaberite pošiljke za štampanje.', 'd-express-woo'); ?>');
+                    return;
+                }
+
+                // Postavi ID-jeve u hidden input i submituj formu
+                $('#bulk_print_ids').val(selectedIds.join(','));
+                $('#bulk_print_form').submit();
+            });
+        });
+    </script>
+<?php
+});

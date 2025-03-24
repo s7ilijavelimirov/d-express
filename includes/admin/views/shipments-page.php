@@ -79,10 +79,9 @@ $shipments_list->prepare_items();
     <button type="button" id="dexpress-bulk-print" class="button button-primary"><?php _e('Štampaj odabrane nalepnice', 'd-express-woo'); ?></button>
     <button type="button" id="dexpress-bulk-delete" class="button"><?php _e('Obriši odabrane pošiljke', 'd-express-woo'); ?></button>
 </div>
-
 <script type="text/javascript">
     jQuery(document).ready(function($) {
-        // Bulk print akcija
+        // Bulk print akcija preko dugmeta ispod tabele
         $('#dexpress-bulk-print').on('click', function(e) {
             e.preventDefault();
 
@@ -96,11 +95,9 @@ $shipments_list->prepare_items();
                 return;
             }
 
-            var printUrl = '<?php echo admin_url('admin-ajax.php?action=dexpress_bulk_print_labels&shipment_ids='); ?>' +
-                selectedShipments.join(',') +
-                '&_wpnonce=<?php echo wp_create_nonce('dexpress-bulk-print'); ?>';
-
-            window.open(printUrl, '_blank');
+            // Koristeći našu novu formu za štampanje
+            $('#bulk_print_ids').val(selectedShipments.join(','));
+            $('#bulk_print_form').submit();
         });
 
         // Bulk delete akcija

@@ -193,19 +193,40 @@ class D_Express_Checkout
         }
 
         // Čuvanje telefona u API formatu
+        // Čuvanje telefona u API formatu
         if (isset($_POST['billing_phone'])) {
             $phone = sanitize_text_field($_POST['billing_phone']);
+            $formatted_phone = '';
 
-            // Ukloni +381 sa početka ako postoji
+            // Ukloni sve osim cifara
+            $digits_only = preg_replace('/[^0-9]/', '', $phone);
+
+            // Proveri da li već počinje sa +381 ili 381
             if (strpos($phone, '+381') === 0) {
-                $phone = substr($phone, 4);
+                // Već ima +381, sačuvaj kao što jeste
+                $formatted_phone = $phone;
+                // Pripremi API format (bez +)
+                $api_phone = '381' . substr($digits_only, 3);
             } elseif (strpos($phone, '381') === 0) {
-                $phone = substr($phone, 3);
+                // Već ima 381, dodaj + 
+                $formatted_phone = '+' . $phone;
+                // Pripremi API format (već je u dobrom formatu)
+                $api_phone = $digits_only;
+            } elseif (strpos($phone, '0') === 0) {
+                // Počinje sa 0, zameni 0 sa +381
+                $formatted_phone = '+381' . substr($digits_only, 1);
+                // Pripremi API format
+                $api_phone = '381' . substr($digits_only, 1);
+            } else {
+                // Dodaj +381 ispred broja
+                $formatted_phone = '+381' . $digits_only;
+                // Pripremi API format
+                $api_phone = '381' . $digits_only;
             }
 
-            // Sačuvaj broj sa prefiksom za API (bez +)
-            $api_phone = '381' . $phone;
-            update_post_meta($order_id, '_billing_phone_api_format', $api_phone);
+            // Sačuvaj oba formata
+            update_post_meta($order_id, '_billing_phone', $formatted_phone); // Override originalnog broja sa formatiranim
+            update_post_meta($order_id, '_billing_phone_api_format', $api_phone); // API format za D Express
         }
 
         dexpress_log($debug_info, 'debug');

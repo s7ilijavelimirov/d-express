@@ -208,3 +208,53 @@
 [2025-03-24 10:56:54] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/dispensers
 [2025-03-24 10:56:54] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/centres
 [2025-03-24 10:56:54] Index update completed successfully
+[2025-03-24 12:12:49] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/checkaddress
+[2025-03-24 12:12:49] Kreiranje pošiljke. Podaci: Array
+(
+    [CClientID] => UK16967
+    [CName] => s7Code DOO
+    [CAddress] => Bulevar Cara Lazara
+    [CAddressNum] => 106
+    [CTownID] => 802158
+    [CCName] => Ilija Velemirov
+    [CCPhone] => 381603995503
+    [PuClientID] => UK16967
+    [PuName] => s7Code DOO
+    [PuAddress] => Bulevar Cara Lazara
+    [PuAddressNum] => 106
+    [PuTownID] => 802158
+    [PuCName] => Ilija Velemirov
+    [PuCPhone] => 381603995503
+    [RName] => Igort Igorijevic
+    [RAddress] => Petefi Šandora
+    [RAddressNum] => 23
+    [RAddressDesc] => Dodatne informacije o ADRESI
+    [RTownID] => 802158
+    [RCName] => Igort Igorijevic
+    [RCPhone] => 381603995503
+    [Note] => Order Notes OPTIONAL
+    [DlTypeID] => 2
+    [PaymentBy] => 1
+    [PaymentType] => 2
+    [Value] => 51800
+    [Content] => Dokumenta
+    [Mass] => 100
+    [ReferenceID] => ORDER-762-1742818369
+    [ReturnDoc] => 0
+    [BuyOut] => 51800
+    [BuyOutFor] => 0
+    [BuyOutAccount] => 170-0010364556000-77
+    [SelfDropOff] => 0
+    [PackageList] => Array
+        (
+            [0] => Array
+                (
+                    [Code] => TT0000000057
+                    [Mass] => 100
+                )
+
+        )
+
+)
+
+[2025-03-24 12:12:49] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/addshipment
