@@ -703,7 +703,6 @@ class D_Express_API
         // Dohvatamo sačuvani API format telefona ako postoji
         $phone = get_post_meta($order_id, '_billing_phone_api_format', true);
 
-        // Ako ne postoji sačuvan API format, koristi standardni format
         if (empty($phone)) {
             $phone = D_Express_Validator::format_phone($order->get_billing_phone());
             dexpress_log("Using standard phone format conversion: {$phone}", 'debug');
@@ -716,7 +715,6 @@ class D_Express_API
             dexpress_log("WARNING: Invalid phone format: {$phone}", 'warning');
             $phone = '38160000000'; // Default phone ako je format neispravan
         }
-
         // Odredite koji tip adrese koristiti
         $address_type = $order->has_shipping_address() ? 'shipping' : 'billing';
         $address_desc = $order->get_meta("_{$address_type}_address_desc", true);

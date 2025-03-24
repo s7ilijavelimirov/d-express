@@ -12,7 +12,7 @@ class D_Express_Validator
      */
     public static function validate_phone($phone)
     {
-        $pattern = '/^(3816[0-9][0-9]{6,8}|381[1-9][0-9]{7,8})$/';
+        $pattern = '/^(381[1-9][0-9]{7,8}|38167[0-9]{6,8})$/';
         return preg_match($pattern, $phone);
     }
 
@@ -22,22 +22,19 @@ class D_Express_Validator
     public static function format_phone($phone)
     {
         // Ukloni sve osim brojeva
-        $phone = preg_replace('/[^0-9]/', '', $phone);
+        $digits_only = preg_replace('/[^0-9]/', '', $phone);
 
         // Ukloni +381 ili 381 sa početka ako postoji
-        if (substr($phone, 0, 4) === '+381') {
-            $phone = substr($phone, 4);
-        } elseif (substr($phone, 0, 3) === '381') {
-            $phone = substr($phone, 3);
+        if (strpos($digits_only, '381') === 0) {
+            // Već ima 381 prefiks
+            return $digits_only;
+        } elseif (strpos($digits_only, '0') === 0) {
+            // Počinje sa 0, zameni sa 381
+            return '381' . substr($digits_only, 1);
+        } else {
+            // Dodaj prefiks 381
+            return '381' . $digits_only;
         }
-
-        // Ukloni vodeću nulu ako postoji
-        if (substr($phone, 0, 1) === '0') {
-            $phone = substr($phone, 1);
-        }
-
-        // Dodaj prefiks 381
-        return '381' . $phone;
     }
 
     /**

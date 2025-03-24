@@ -132,7 +132,9 @@ class D_Express_Checkout
         if (empty($_POST[$address_type . '_postcode'])) {
             wc_add_notice(__('Poštanski broj je obavezan.', 'd-express-woo'), 'error');
         }
-
+        if (isset($_POST['billing_phone'])) {
+            dexpress_log("POST phone value: " . $_POST['billing_phone'], 'debug');
+        }
         // Validacija telefona samo ako je D Express dostava
         $is_dexpress = false;
         foreach ($_POST['shipping_method'] as $method) {
@@ -193,40 +195,28 @@ class D_Express_Checkout
         }
 
         // Čuvanje telefona u API formatu
-        // Čuvanje telefona u API formatu
-        if (isset($_POST['billing_phone'])) {
-            $phone = sanitize_text_field($_POST['billing_phone']);
-            $formatted_phone = '';
+        if (isset($_POST['dexpress_formatted_phone'])) {
+            // Prvenstveno koristimo formatiranu vrednost iz skrivenog polja
+            $formatted_phone = sanitize_text_field($_POST['dexpress_formatted_phone']);
+            update_post_meta($order_id, '_billing_phone', $formatted_phone);
 
-            // Ukloni sve osim cifara
+            // Takođe sačuvaj API format (bez +)
+            $api_phone = ltrim($formatted_phone, '+');
+            update_post_meta($order_id, '_billing_phone_api_format', $api_phone);
+
+            dexpress_log("Phone saved from hidden field: {$formatted_phone}", 'debug');
+        } else if (isset($_POST['billing_phone'])) {
+            // Fallback ako nema skrivenog polja
+            $phone = sanitize_text_field($_POST['billing_phone']);
             $digits_only = preg_replace('/[^0-9]/', '', $phone);
 
-            // Proveri da li već počinje sa +381 ili 381
-            if (strpos($phone, '+381') === 0) {
-                // Već ima +381, sačuvaj kao što jeste
-                $formatted_phone = $phone;
-                // Pripremi API format (bez +)
-                $api_phone = '381' . substr($digits_only, 3);
-            } elseif (strpos($phone, '381') === 0) {
-                // Već ima 381, dodaj + 
-                $formatted_phone = '+' . $phone;
-                // Pripremi API format (već je u dobrom formatu)
-                $api_phone = $digits_only;
-            } elseif (strpos($phone, '0') === 0) {
-                // Počinje sa 0, zameni 0 sa +381
-                $formatted_phone = '+381' . substr($digits_only, 1);
-                // Pripremi API format
-                $api_phone = '381' . substr($digits_only, 1);
-            } else {
-                // Dodaj +381 ispred broja
-                $formatted_phone = '+381' . $digits_only;
-                // Pripremi API format
-                $api_phone = '381' . $digits_only;
-            }
+            $formatted_phone = '+381' . $digits_only;
+            $api_phone = '381' . $digits_only;
 
-            // Sačuvaj oba formata
-            update_post_meta($order_id, '_billing_phone', $formatted_phone); // Override originalnog broja sa formatiranim
-            update_post_meta($order_id, '_billing_phone_api_format', $api_phone); // API format za D Express
+            update_post_meta($order_id, '_billing_phone', $formatted_phone);
+            update_post_meta($order_id, '_billing_phone_api_format', $api_phone);
+
+            dexpress_log("Phone saved fallback: {$formatted_phone}", 'debug');
         }
 
         dexpress_log($debug_info, 'debug');
@@ -346,7 +336,7 @@ class D_Express_Checkout
         if (!is_checkout()) {
             return;
         }
-
+        dexpress_log("Checkout scripts loaded", 'debug');
         // Učitavanje jQuery UI Autocomplete
         wp_enqueue_script('jquery-ui-autocomplete');
         wp_enqueue_style('jquery-ui', 'https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css');

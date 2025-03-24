@@ -318,7 +318,18 @@
             $(document).on('checkout_place_order', function () {
                 var addressType = $('#ship-to-different-address-checkbox').is(':checked') ? 'shipping' : 'billing';
                 var isValid = true;
+                var $phone = $('#billing_phone');
+                var phoneValue = $phone.val().trim();
 
+                // Dodaj formatiran telefon u skriveno polje BEZ OBZIRA na dostavu
+                if ($phone.length && phoneValue) {
+                    if (!$('#dexpress_formatted_phone').length) {
+                        $('<input type="hidden" id="dexpress_formatted_phone" name="dexpress_formatted_phone" />')
+                            .insertAfter($phone);
+                    }
+                    $('#dexpress_formatted_phone').val('+381' + phoneValue);
+                    console.log('Phone ready for submission: +381' + phoneValue);
+                }
                 // Samo validiraj D-Express polja ako je D-Express dostava izabrana
                 if (self.isDExpressSelected()) {
                     var $street = $('#' + addressType + '_street');
@@ -326,29 +337,15 @@
                     var $number = $('#' + addressType + '_number');
                     var $city = $('#' + addressType + '_city');
                     var $cityId = $('#' + addressType + '_city_id');
-                    var $phone = $('#billing_phone');
 
-                    // Validacija telefona
-                    var phoneValue = $phone.val().trim();
-                    if (!phoneValue) {
-                        isValid = self.showFieldError($phone, 'Telefon je obavezan za D Express dostavu');
-                    } else {
-                        // Formatiranje telefona za API
-                        var phoneDigits = phoneValue.replace(/\D/g, '');
-
-                        // Validacija API formata
-                        if (!/^(381[6-9][0-9]{7,8})$/.test(phoneDigits)) {
-                            isValid = self.showFieldError($phone, 'Broj telefona mora biti u formatu +381 6x xxx xxxx (9-10 cifara ukupno)');
-                        } else {
-                            // Kreiranje hidden polja za API format telefona
-                            if (!$('#dexpress_api_phone').length) {
-                                $('<input type="hidden" id="dexpress_api_phone" name="dexpress_api_phone" />')
-                                    .insertAfter($phone);
-                            }
-                            $('#dexpress_api_phone').val(phoneDigits);
+                    if ($phone.length && phoneValue) {
+                        if (!$('#dexpress_formatted_phone').length) {
+                            $('<input type="hidden" id="dexpress_formatted_phone" name="dexpress_formatted_phone" />')
+                                .insertAfter($phone);
                         }
+                        $('#dexpress_formatted_phone').val('+381' + phoneValue);
+                        console.log('Phone ready for submission: +381' + phoneValue);
                     }
-
                     // Validacija ulice
                     if (!$street.val()) {
                         isValid = self.showFieldError($street, dexpressCheckout.i18n.enterStreet);
@@ -381,7 +378,6 @@
                         return false;
                     }
                 }
-
                 return true;
             });
         },

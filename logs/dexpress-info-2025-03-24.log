@@ -258,3 +258,203 @@
 )
 
 [2025-03-24 12:12:49] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/addshipment
+[2025-03-24 12:20:37] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/checkaddress
+[2025-03-24 12:20:37] Kreiranje pošiljke. Podaci: Array
+(
+    [CClientID] => UK16967
+    [CName] => s7Code DOO
+    [CAddress] => Bulevar Cara Lazara
+    [CAddressNum] => 106
+    [CTownID] => 802158
+    [CCName] => Ilija Velemirov
+    [CCPhone] => 381603995503
+    [PuClientID] => UK16967
+    [PuName] => s7Code DOO
+    [PuAddress] => Bulevar Cara Lazara
+    [PuAddressNum] => 106
+    [PuTownID] => 802158
+    [PuCName] => Ilija Velemirov
+    [PuCPhone] => 381603995503
+    [RName] => Vlada Vladic
+    [RAddress] => Nikole Francuskog
+    [RAddressNum] => 15
+    [RAddressDesc] => spra 3 stan 4
+    [RTownID] => 802140
+    [RCName] => Vlada Vladic
+    [RCPhone] => 381603995503
+    [Note] => 
+    [DlTypeID] => 2
+    [PaymentBy] => 1
+    [PaymentType] => 2
+    [Value] => 51800
+    [Content] => Dokumenta
+    [Mass] => 100
+    [ReferenceID] => ORDER-763-1742818837
+    [ReturnDoc] => 0
+    [BuyOut] => 51800
+    [BuyOutFor] => 0
+    [BuyOutAccount] => 170-0010364556000-77
+    [SelfDropOff] => 0
+    [PackageList] => Array
+        (
+            [0] => Array
+                (
+                    [Code] => TT0000000058
+                    [Mass] => 100
+                )
+
+        )
+
+)
+
+[2025-03-24 12:20:37] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/addshipment
+[2025-03-24 12:28:26] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/checkaddress
+[2025-03-24 12:28:26] Kreiranje pošiljke. Podaci: Array
+(
+    [CClientID] => UK16967
+    [CName] => s7Code DOO
+    [CAddress] => Bulevar Cara Lazara
+    [CAddressNum] => 106
+    [CTownID] => 802158
+    [CCName] => Ilija Velemirov
+    [CCPhone] => 381603995503
+    [PuClientID] => UK16967
+    [PuName] => s7Code DOO
+    [PuAddress] => Bulevar Cara Lazara
+    [PuAddressNum] => 106
+    [PuTownID] => 802158
+    [PuCName] => Ilija Velemirov
+    [PuCPhone] => 381603995503
+    [RName] => Luka Burain
+    [RAddress] => 10. kilometra
+    [RAddressNum] => 15
+    [RAddressDesc] => 
+    [RTownID] => 791016
+    [RCName] => Luka Burain
+    [RCPhone] => 381603995503
+    [Note] => 
+    [DlTypeID] => 2
+    [PaymentBy] => 1
+    [PaymentType] => 2
+    [Value] => 51800
+    [Content] => Dokumenta
+    [Mass] => 100
+    [ReferenceID] => ORDER-764-1742819306
+    [ReturnDoc] => 0
+    [BuyOut] => 51800
+    [BuyOutFor] => 0
+    [BuyOutAccount] => 170-0010364556000-77
+    [SelfDropOff] => 0
+    [PackageList] => Array
+        (
+            [0] => Array
+                (
+                    [Code] => TT0000000059
+                    [Mass] => 100
+                )
+
+        )
+
+)
+
+[2025-03-24 12:28:26] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/addshipment
+[2025-03-24 12:39:46] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/checkaddress
+[2025-03-24 12:39:47] Kreiranje pošiljke. Podaci: Array
+(
+    [CClientID] => UK16967
+    [CName] => s7Code DOO
+    [CAddress] => Bulevar Cara Lazara
+    [CAddressNum] => 106
+    [CTownID] => 802158
+    [CCName] => Ilija Velemirov
+    [CCPhone] => 381603995503
+    [PuClientID] => UK16967
+    [PuName] => s7Code DOO
+    [PuAddress] => Bulevar Cara Lazara
+    [PuAddressNum] => 106
+    [PuTownID] => 802158
+    [PuCName] => Ilija Velemirov
+    [PuCPhone] => 381603995503
+    [RName] => Rozajac Luka
+    [RAddress] => 11. aprila
+    [RAddressNum] => 12
+    [RAddressDesc] => 
+    [RTownID] => 791067
+    [RCName] => Rozajac Luka
+    [RCPhone] => 381691885503
+    [Note] => 
+    [DlTypeID] => 2
+    [PaymentBy] => 1
+    [PaymentType] => 2
+    [Value] => 51800
+    [Content] => Dokumenta
+    [Mass] => 100
+    [ReferenceID] => ORDER-765-1742819987
+    [ReturnDoc] => 0
+    [BuyOut] => 51800
+    [BuyOutFor] => 0
+    [BuyOutAccount] => 170-0010364556000-77
+    [SelfDropOff] => 0
+    [PackageList] => Array
+        (
+            [0] => Array
+                (
+                    [Code] => TT0000000060
+                    [Mass] => 100
+                )
+
+        )
+
+)
+
+[2025-03-24 12:39:47] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/addshipment
+[2025-03-24 12:48:44] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/checkaddress
+[2025-03-24 12:48:44] Kreiranje pošiljke. Podaci: Array
+(
+    [CClientID] => UK16967
+    [CName] => s7Code DOO
+    [CAddress] => Bulevar Cara Lazara
+    [CAddressNum] => 106
+    [CTownID] => 802158
+    [CCName] => Ilija Velemirov
+    [CCPhone] => 381603995503
+    [PuClientID] => UK16967
+    [PuName] => s7Code DOO
+    [PuAddress] => Bulevar Cara Lazara
+    [PuAddressNum] => 106
+    [PuTownID] => 802158
+    [PuCName] => Ilija Velemirov
+    [PuCPhone] => 381603995503
+    [RName] => Ilija Velemirov
+    [RAddress] => Aleksandra Ace Tešića
+    [RAddressNum] => 12
+    [RAddressDesc] => 
+    [RTownID] => 704563
+    [RCName] => Ilija Velemirov
+    [RCPhone] => 381661985532
+    [Note] => 
+    [DlTypeID] => 2
+    [PaymentBy] => 1
+    [PaymentType] => 2
+    [Value] => 51800
+    [Content] => Dokumenta
+    [Mass] => 100
+    [ReferenceID] => ORDER-767-1742820524
+    [ReturnDoc] => 0
+    [BuyOut] => 51800
+    [BuyOutFor] => 0
+    [BuyOutAccount] => 170-0010364556000-77
+    [SelfDropOff] => 0
+    [PackageList] => Array
+        (
+            [0] => Array
+                (
+                    [Code] => TT0000000061
+                    [Mass] => 100
+                )
+
+        )
+
+)
+
+[2025-03-24 12:48:44] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/addshipment

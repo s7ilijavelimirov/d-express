@@ -199,3 +199,236 @@ shipping_postcode: 16000
 [2025-03-24 12:12:49] [SHIPPING] Tracking broj: TT0000000057, Shipment ID: TT0000000057
 [2025-03-24 12:12:49] [SHIPPING] Čuvanje pošiljke u bazu podataka
 [2025-03-24 12:12:49] [SHIPPING] Pošiljka uspešno kreirana sa ID: 57
+[2025-03-24 12:19:53] Order ID: 763
+billing_street: Nikole Francuskog
+billing_street_id: 22421
+billing_number: 15
+billing_address_desc: spra 3 stan 4
+billing_city: Iđoš
+billing_city_id: 802140
+billing_postcode: 23323
+billing_address_1: Nikole Francuskog 15
+shipping_street: 
+shipping_street_id: 
+shipping_number: 
+shipping_address_desc: 
+shipping_city: 
+shipping_city_id: 
+shipping_postcode: 
+
+[2025-03-24 12:19:54] Checkout order processed: 763
+[2025-03-24 12:19:54] Has D Express shipping: Yes
+[2025-03-24 12:19:54] Automatic shipment creation is disabled or status does not match. Auto create: Enabled, Current status: pending, Required status: processing
+[2025-03-24 12:20:37] [SHIPPING] Započinjem kreiranje pošiljke za narudžbinu #763
+[2025-03-24 12:20:37] [SHIPPING] Proveravam adresu za narudžbinu #763
+[2025-03-24 12:20:37] Checking address: Array
+(
+    [RName] => Vlada Vladic
+    [RAddress] => Nikole Francuskog
+    [RAddressNum] => 15
+    [RTownID] => 802140
+    [RCName] => Vlada Vladic
+    [RCPhone] => 381603995503
+)
+
+[2025-03-24 12:20:37] Address check response: TEST
+[2025-03-24 12:20:37] [SHIPPING] Adresa validirana uspešno
+[2025-03-24 12:20:37] [SHIPPING] Priprema podataka za narudžbinu #763
+[2025-03-24 12:20:37] Using saved API phone format: 381603995503
+[2025-03-24 12:20:37] Using address type: shipping
+[2025-03-24 12:20:37] Street: Nikole Francuskog, Number: 15, City ID: 802140
+[2025-03-24 12:20:37] Payment method: bacs, Is COD: Yes
+[2025-03-24 12:20:37] Using BuyOut: 51800, Account: 170-0010364556000-77
+[2025-03-24 12:20:37] Final BuyOut amount: 51800
+[2025-03-24 12:20:37] Final BuyOutAccount: 170-0010364556000-77
+[2025-03-24 12:20:37] Final RAddressNum: 15
+[2025-03-24 12:20:37] Final RTownID: 802140
+[2025-03-24 12:20:37] Final RCPhone: 381603995503
+[2025-03-24 12:20:37] [SHIPPING] Šaljem zahtev ka D-Express API-ju
+[2025-03-24 12:20:37] [SHIPPING] API odgovor primljen uspešno
+[2025-03-24 12:20:37] [SHIPPING] Tracking broj: TT0000000058, Shipment ID: TT0000000058
+[2025-03-24 12:20:37] [SHIPPING] Čuvanje pošiljke u bazu podataka
+[2025-03-24 12:20:37] [SHIPPING] Pošiljka uspešno kreirana sa ID: 58
+[2025-03-24 12:28:23] Order ID: 764
+billing_street: 10. kilometra
+billing_street_id: 35189
+billing_number: 15
+billing_address_desc: 
+billing_city: Beograd (Voždovac)
+billing_city_id: 791016
+billing_postcode: 11010
+billing_address_1: 10. kilometra 15
+shipping_street: 
+shipping_street_id: 
+shipping_number: 
+shipping_address_desc: 
+shipping_city: Iđoš
+shipping_city_id: 
+shipping_postcode: 23323
+
+[2025-03-24 12:28:23] Checkout order processed: 764
+[2025-03-24 12:28:23] Has D Express shipping: Yes
+[2025-03-24 12:28:23] Automatic shipment creation is disabled or status does not match. Auto create: Enabled, Current status: pending, Required status: processing
+[2025-03-24 12:28:26] [SHIPPING] Započinjem kreiranje pošiljke za narudžbinu #764
+[2025-03-24 12:28:26] [SHIPPING] Proveravam adresu za narudžbinu #764
+[2025-03-24 12:28:26] Checking address: Array
+(
+    [RName] => Luka Burain
+    [RAddress] => 10. kilometra
+    [RAddressNum] => 15
+    [RTownID] => 791016
+    [RCName] => Luka Burain
+    [RCPhone] => 381603995503
+)
+
+[2025-03-24 12:28:26] Address check response: TEST
+[2025-03-24 12:28:26] [SHIPPING] Adresa validirana uspešno
+[2025-03-24 12:28:26] [SHIPPING] Priprema podataka za narudžbinu #764
+[2025-03-24 12:28:26] Using saved API phone format: 381603995503
+[2025-03-24 12:28:26] Using address type: shipping
+[2025-03-24 12:28:26] Street: 10. kilometra, Number: 15, City ID: 791016
+[2025-03-24 12:28:26] Payment method: cod, Is COD: Yes
+[2025-03-24 12:28:26] Using BuyOut: 51800, Account: 170-0010364556000-77
+[2025-03-24 12:28:26] Final BuyOut amount: 51800
+[2025-03-24 12:28:26] Final BuyOutAccount: 170-0010364556000-77
+[2025-03-24 12:28:26] Final RAddressNum: 15
+[2025-03-24 12:28:26] Final RTownID: 791016
+[2025-03-24 12:28:26] Final RCPhone: 381603995503
+[2025-03-24 12:28:26] [SHIPPING] Šaljem zahtev ka D-Express API-ju
+[2025-03-24 12:28:26] [SHIPPING] API odgovor primljen uspešno
+[2025-03-24 12:28:26] [SHIPPING] Tracking broj: TT0000000059, Shipment ID: TT0000000059
+[2025-03-24 12:28:26] [SHIPPING] Čuvanje pošiljke u bazu podataka
+[2025-03-24 12:28:26] [SHIPPING] Pošiljka uspešno kreirana sa ID: 59
+[2025-03-24 12:38:45] Checkout scripts loaded
+[2025-03-24 12:39:43] POST phone value: 691885503
+[2025-03-24 12:39:43] Phone saved fallback: +381691885503
+[2025-03-24 12:39:43] Order ID: 765
+billing_street: 11. aprila
+billing_street_id: 4313
+billing_number: 12
+billing_address_desc: 
+billing_city: Beograd (Novi Beograd)
+billing_city_id: 791067
+billing_postcode: 11070
+billing_address_1: 11. aprila 12
+shipping_street: 
+shipping_street_id: 
+shipping_number: 
+shipping_address_desc: 
+shipping_city: Beograd (Voždovac)
+shipping_city_id: 
+shipping_postcode: 11010
+
+[2025-03-24 12:39:43] Checkout order processed: 765
+[2025-03-24 12:39:43] Has D Express shipping: Yes
+[2025-03-24 12:39:43] Automatic shipment creation is disabled or status does not match. Auto create: Enabled, Current status: pending, Required status: processing
+[2025-03-24 12:39:46] [SHIPPING] Započinjem kreiranje pošiljke za narudžbinu #765
+[2025-03-24 12:39:46] [SHIPPING] Proveravam adresu za narudžbinu #765
+[2025-03-24 12:39:46] Checking address: Array
+(
+    [RName] => Rozajac Luka
+    [RAddress] => 11. aprila
+    [RAddressNum] => 12
+    [RTownID] => 791067
+    [RCName] => Rozajac Luka
+    [RCPhone] => 381691885503
+)
+
+[2025-03-24 12:39:47] Address check response: TEST
+[2025-03-24 12:39:47] [SHIPPING] Adresa validirana uspešno
+[2025-03-24 12:39:47] [SHIPPING] Priprema podataka za narudžbinu #765
+[2025-03-24 12:39:47] Using saved API phone format: 381691885503
+[2025-03-24 12:39:47] Using address type: shipping
+[2025-03-24 12:39:47] Street: 11. aprila, Number: 12, City ID: 791067
+[2025-03-24 12:39:47] Payment method: cod, Is COD: Yes
+[2025-03-24 12:39:47] Using BuyOut: 51800, Account: 170-0010364556000-77
+[2025-03-24 12:39:47] Final BuyOut amount: 51800
+[2025-03-24 12:39:47] Final BuyOutAccount: 170-0010364556000-77
+[2025-03-24 12:39:47] Final RAddressNum: 12
+[2025-03-24 12:39:47] Final RTownID: 791067
+[2025-03-24 12:39:47] Final RCPhone: 381691885503
+[2025-03-24 12:39:47] [SHIPPING] Šaljem zahtev ka D-Express API-ju
+[2025-03-24 12:39:47] [SHIPPING] API odgovor primljen uspešno
+[2025-03-24 12:39:47] [SHIPPING] Tracking broj: TT0000000060, Shipment ID: TT0000000060
+[2025-03-24 12:39:47] [SHIPPING] Čuvanje pošiljke u bazu podataka
+[2025-03-24 12:39:47] [SHIPPING] Pošiljka uspešno kreirana sa ID: 60
+[2025-03-24 12:39:48] Checkout scripts loaded
+[2025-03-24 12:45:35] Checkout scripts loaded
+[2025-03-24 12:46:29] POST phone value: 603995503
+[2025-03-24 12:46:30] Phone saved fallback: +381603995503
+[2025-03-24 12:46:30] Order ID: 766
+billing_street: Semlačka
+billing_street_id: 22528
+billing_number: 5
+billing_address_desc: 25
+billing_city: Kikinda
+billing_city_id: 802158
+billing_postcode: 23300
+billing_address_1: Semlačka 5
+shipping_street: 
+shipping_street_id: 
+shipping_number: 
+shipping_address_desc: 
+shipping_city: 
+shipping_city_id: 
+shipping_postcode: 
+
+[2025-03-24 12:46:30] Checkout order processed: 766
+[2025-03-24 12:46:30] Has D Express shipping: Yes
+[2025-03-24 12:46:30] Automatic shipment creation is disabled or status does not match. Auto create: Enabled, Current status: pending, Required status: processing
+[2025-03-24 12:46:33] Checkout scripts loaded
+[2025-03-24 12:48:20] Checkout scripts loaded
+[2025-03-24 12:48:41] POST phone value: 661985532
+[2025-03-24 12:48:41] Phone saved fallback: +381661985532
+[2025-03-24 12:48:41] Order ID: 767
+billing_street: Aleksandra Ace Tešića
+billing_street_id: 33415
+billing_number: 12
+billing_address_desc: 
+billing_city: Barič
+billing_city_id: 704563
+billing_postcode: 11504
+billing_address_1: Aleksandra Ace Tešića 12
+shipping_street: 
+shipping_street_id: 
+shipping_number: 
+shipping_address_desc: 
+shipping_city: Kikinda
+shipping_city_id: 
+shipping_postcode: 23300
+
+[2025-03-24 12:48:41] Checkout order processed: 767
+[2025-03-24 12:48:41] Has D Express shipping: Yes
+[2025-03-24 12:48:41] Automatic shipment creation is disabled or status does not match. Auto create: Enabled, Current status: pending, Required status: processing
+[2025-03-24 12:48:44] [SHIPPING] Započinjem kreiranje pošiljke za narudžbinu #767
+[2025-03-24 12:48:44] [SHIPPING] Proveravam adresu za narudžbinu #767
+[2025-03-24 12:48:44] Checking address: Array
+(
+    [RName] => Ilija Velemirov
+    [RAddress] => Aleksandra Ace Tešića
+    [RAddressNum] => 12
+    [RTownID] => 704563
+    [RCName] => Ilija Velemirov
+    [RCPhone] => 381661985532
+)
+
+[2025-03-24 12:48:44] Address check response: TEST
+[2025-03-24 12:48:44] [SHIPPING] Adresa validirana uspešno
+[2025-03-24 12:48:44] [SHIPPING] Priprema podataka za narudžbinu #767
+[2025-03-24 12:48:44] Using saved API phone format: 381661985532
+[2025-03-24 12:48:44] Using address type: shipping
+[2025-03-24 12:48:44] Street: Aleksandra Ace Tešića, Number: 12, City ID: 704563
+[2025-03-24 12:48:44] Payment method: cod, Is COD: Yes
+[2025-03-24 12:48:44] Using BuyOut: 51800, Account: 170-0010364556000-77
+[2025-03-24 12:48:44] Final BuyOut amount: 51800
+[2025-03-24 12:48:44] Final BuyOutAccount: 170-0010364556000-77
+[2025-03-24 12:48:44] Final RAddressNum: 12
+[2025-03-24 12:48:44] Final RTownID: 704563
+[2025-03-24 12:48:44] Final RCPhone: 381661985532
+[2025-03-24 12:48:44] [SHIPPING] Šaljem zahtev ka D-Express API-ju
+[2025-03-24 12:48:44] [SHIPPING] API odgovor primljen uspešno
+[2025-03-24 12:48:44] [SHIPPING] Tracking broj: TT0000000061, Shipment ID: TT0000000061
+[2025-03-24 12:48:44] [SHIPPING] Čuvanje pošiljke u bazu podataka
+[2025-03-24 12:48:44] [SHIPPING] Pošiljka uspešno kreirana sa ID: 61
+[2025-03-24 12:48:46] Checkout scripts loaded
+[2025-03-24 12:58:41] Checkout scripts loaded
