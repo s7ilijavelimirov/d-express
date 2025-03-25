@@ -412,7 +412,6 @@
                 return true;
             });
         },
-        
         showFieldError: function ($field, message) {
             $field.addClass('dexpress-error woocommerce-invalid woocommerce-invalid-required-field');
 

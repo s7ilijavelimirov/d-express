@@ -261,12 +261,35 @@
 .dexpress-dispenser-item {
     padding: 10px;
     border-bottom: 1px solid #ddd;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     transition: 0.2s;
 }
 
 .dexpress-dispenser-item:hover {
-    background: #ececec;
+    background: #f5f5f5;
     cursor: pointer;
+}
+
+.dispenser-content {
+    flex: 1;
+}
+
+.dispenser-select-btn {
+    background: #0073aa;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    padding: 5px 10px;
+    cursor: pointer;
+    white-space: nowrap;
+    min-width: 80px;
+    text-align: center;
+}
+
+.dispenser-select-btn:hover {
+    background: #005d87;
 }
 
 /* ===== FOOTER MODALA ===== */
@@ -313,11 +336,11 @@
 
 .dexpress-dispenser-info {
     background: #fff;
-    padding: 15px;
+    /* padding: 15px; */
     border-radius: 8px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     font-family: Arial, sans-serif;
-    max-width: 400px;
+    max-width: 500px;
 }
 
 /* Grid za raspored u dve kolone */
@@ -353,6 +376,7 @@
     padding: 0;
 }
 
+
 .dexpress-info-right li {
     display: flex;
     align-items: center;
@@ -375,4 +399,146 @@
 
 .dexpress-select-this-dispenser:hover {
     background: #5a2ea5;
+}
+
+/* Stilizacija za autocomplete filter gradova */
+.dexpress-town-filter {
+    position: relative;
+    margin-bottom: 15px;
+}
+
+#dexpress-town-filter {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+/* Stilovi za autocomplete */
+.dexpress-town-suggestions {
+    display: none;
+    position: absolute;
+    z-index: 10;
+    width: 100%;
+    max-height: 200px;
+    overflow-y: auto;
+    background: white;
+    border: 1px solid #ddd;
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.town-suggestion {
+    padding: 8px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.town-suggestion:hover,
+.town-suggestion.active {
+    background-color: #f0f8ff;
+}
+
+/* Izmenjeni stil za stavku paketomata u listi */
+.dexpress-dispenser-item {
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: 0.2s;
+}
+
+.dispenser-content {
+    flex: 1;
+    cursor: pointer;
+}
+
+.dispenser-select-btn {
+    background: #0073aa;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    padding: 5px 10px;
+    cursor: pointer;
+    white-space: nowrap;
+    min-width: 80px;
+    text-align: center;
+    margin-left: 10px;
+}
+
+.dispenser-select-btn:hover {
+    background: #005d87;
+}
+
+/* Reset filter dugme */
+.dexpress-town-filter {
+    position: relative;
+}
+
+.reset-filter {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #999;
+    font-size: 16px;
+    display: none;
+}
+
+.dexpress-town-filter.has-value .reset-filter {
+    display: block;
+}
+
+/* Spinner za učitavanje */
+.dexpress-loader {
+    display: inline-block;
+    width: 50px;
+    height: 50px;
+    border: 3px solid rgba(0, 0, 0, 0.6);
+    border-radius: 50%;
+    border-top-color: black;
+    animation: dexpress-spin 1s ease-in-out infinite;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+}
+
+@keyframes dexpress-spin {
+    to {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
+}
+
+.dexpress-loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.7);
+    z-index: 5;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.dexpress-loading-overlay span {
+    display: block;
+    text-align: center;
+    margin-top: 60px;
+    color: #0073aa;
+    font-weight: bold;
+}
+
+.dexpress-container-relative {
+    position: relative;
+    min-height: 200px;
 }
