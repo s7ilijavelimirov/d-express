@@ -263,12 +263,24 @@ class D_Express_API
      */
     public function add_shipment($shipment_data)
     {
-        // Dodavanje ClientID ako nije uključen u podatke
-        if (!isset($shipment_data['CClientID'])) {
-            $shipment_data['CClientID'] = $this->client_id;
-        }
+        try {
+            // Dodavanje ClientID ako nije uključen u podatke
+            if (!isset($shipment_data['CClientID'])) {
+                $shipment_data['CClientID'] = $this->client_id;
+            }
 
-        return $this->api_request('data/addshipment', 'POST', $shipment_data);
+            // Validacija podataka pre slanja
+            $validation = D_Express_Validator::validate_shipment_data($shipment_data);
+            if ($validation !== true) {
+                dexpress_log("Validation failed: " . implode(", ", $validation), 'error');
+                return new WP_Error('validation_error', implode("<br>", $validation));
+            }
+
+            return $this->api_request('data/addshipment', 'POST', $shipment_data);
+        } catch (Exception $e) {
+            dexpress_log("Exception in add_shipment: " . $e->getMessage(), 'error');
+            return new WP_Error('exception', $e->getMessage());
+        }
     }
 
     /**
@@ -547,12 +559,6 @@ class D_Express_API
         global $wpdb;
         $table_name = $wpdb->prefix . 'dexpress_streets';
 
-        // Provera da li tabela postoji
-        if (!$wpdb->get_var("SHOW TABLES LIKE '$table_name'")) {
-            dexpress_log("Table $table_name does not exist.");
-            return;
-        }
-
         // Batch processing - ubacujemo po 1000 redova odjednom
         $batch_size = 1000;
         $total = count($streets);
@@ -560,31 +566,33 @@ class D_Express_API
         for ($i = 0; $i < $total; $i += $batch_size) {
             $batch = array_slice($streets, $i, $batch_size);
             $values = array();
-            $placeholders = array();
+            $place_values = array();
+            $all_params = array();
 
             foreach ($batch as $street) {
-                $values[] = $street['Id'];
-                $values[] = $street['Name'];
-                $values[] = $street['TId'];
-                $values[] = $street['Del'] ? 1 : 0; // Pretvaramo boolean u 0 ili 1
-                $values[] = current_time('mysql');
+                $id = intval($street['Id']);
+                $name = sanitize_text_field($street['Name']);
+                $tid = intval($street['TId']);
+                $deleted = $street['Del'] ? 1 : 0;
+                $date = current_time('mysql');
 
-                $placeholders[] = "(%d, %s, %d, %d, %s)";
+                $place_values[] = "(%d, %s, %d, %d, %s)";
+                array_push($all_params, $id, $name, $tid, $deleted, $date);
             }
 
-            // Koristimo ON DUPLICATE KEY UPDATE za ažuriranje postojećih redova
-            $query = $wpdb->prepare(
-                "INSERT INTO $table_name (id, name, TId, deleted, last_updated) 
-             VALUES " . implode(', ', $placeholders) . "
-             ON DUPLICATE KEY UPDATE 
-             name = VALUES(name), 
-             TId = VALUES(TId), 
-             deleted = VALUES(deleted), 
-             last_updated = VALUES(last_updated)",
-                $values
-            );
+            // Sigurniji način pripreme upita
+            $query = "INSERT INTO $table_name (id, name, TId, deleted, last_updated) 
+                 VALUES " . implode(', ', $place_values) . "
+                 ON DUPLICATE KEY UPDATE 
+                 name = VALUES(name), 
+                 TId = VALUES(TId), 
+                 deleted = VALUES(deleted), 
+                 last_updated = VALUES(last_updated)";
 
-            if (false === $wpdb->query($query)) {
+            // Pripremi upit sa svim parametrima
+            $prepared_query = $wpdb->prepare($query, $all_params);
+
+            if (false === $wpdb->query($prepared_query)) {
                 dexpress_log("Error updating streets: " . $wpdb->last_error);
             }
 
@@ -717,7 +725,7 @@ class D_Express_API
             $phone = '38160000000'; // Default phone ako je format neispravan
             dexpress_log("[API DEBUG] Korišćen default telefon: {$phone}", 'info');
         }
-        
+
         // Odredite koji tip adrese koristiti
         $address_type = $order->has_shipping_address() ? 'shipping' : 'billing';
         $address_desc = $order->get_meta("_{$address_type}_address_desc", true);
@@ -876,7 +884,10 @@ class D_Express_API
 
         // Dodavanje paketa
         $shipment_data['PackageList'] = $this->prepare_packages_for_order($order);
-
+        $dispenser_id = get_post_meta($order->get_id(), '_dexpress_dispenser_id', true);
+        if (!empty($dispenser_id)) {
+            $shipment_data['DispenserID'] = intval($dispenser_id);
+        }
         // Dodatno logiranje za debugiranje
         dexpress_log("Final BuyOut amount: " . $shipment_data['BuyOut'], 'debug');
         dexpress_log("Final BuyOutAccount: " . $shipment_data['BuyOutAccount'], 'debug');

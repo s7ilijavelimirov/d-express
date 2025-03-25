@@ -103,6 +103,9 @@ class D_Express_WooCommerce
 
         // Checkout klase
         require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/woocommerce/class-dexpress-checkout.php';
+
+        // U d-express-woocommerce-integration.php dodati ovu liniju u includes funkciji:
+        require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/woocommerce/class-dexpress-dispenser-shipping-method.php';
     }
 
     /**

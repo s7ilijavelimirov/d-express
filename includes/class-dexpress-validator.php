@@ -44,7 +44,7 @@ class D_Express_Validator
     public static function validate_name($name)
     {
         $name = trim($name);
-        $pattern = '/^[\-\#\$a-zžćčđšA-ZĐŠĆŽČ_0-9,:;\+\(\)\/\.]+( [\-\#\$a-zžćčđšA-ZĐŠĆŽČ_0-9,:;\+\(\)\/\.]+)*$/';
+        $pattern = '/^([\-a-zžćčđšA-ZĐŠĆŽČ_0-9\.]+)( [\-a-zžćčđšA-ZĐŠĆŽČ_0-9\.]+)*$/';
         return preg_match($pattern, $name) && strlen($name) <= 50;
     }
 

@@ -599,6 +599,18 @@ class D_Express_Admin
                                 <p class="description"><?php _e('Tajni ključ koji treba dostaviti D Express-u za verifikaciju notifikacija.', 'd-express-woo'); ?></p>
                             </td>
                         </tr>
+                        <tr>
+                            <th scope="row">
+                                <label for="dexpress_google_maps_api_key"><?php _e('Google Maps API ključ', 'd-express-woo'); ?></label>
+                            </th>
+                            <td>
+                                <input type="text" id="dexpress_google_maps_api_key" name="dexpress_google_maps_api_key"
+                                    value="<?php echo esc_attr(get_option('dexpress_google_maps_api_key', '')); ?>" class="regular-text">
+                                <p class="description">
+                                    <?php _e('Unesite Google Maps API ključ za prikazivanje mape paketomata. Možete ga dobiti na <a href="https://developers.google.com/maps/documentation/javascript/get-api-key" target="_blank">Google Developers Console</a>.', 'd-express-woo'); ?>
+                                </p>
+                            </td>
+                        </tr>
                     </table>
                 </div>
                 <!-- Clean Uninstall podešavanja -->

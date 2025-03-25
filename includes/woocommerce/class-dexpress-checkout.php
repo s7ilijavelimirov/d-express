@@ -22,8 +22,16 @@ class D_Express_Checkout
         add_action('wp_ajax_dexpress_get_town_for_street', [$this, 'ajax_get_town_for_street']);
         add_action('wp_ajax_nopriv_dexpress_get_town_for_street', [$this, 'ajax_get_town_for_street']);
 
+        add_action('woocommerce_after_shipping_rate', array($this, 'add_dispenser_selection'), 10, 2);
+        add_action('wp_footer', array($this, 'add_dispenser_modal'));
+
         // Učitavanje skripti i stilova
         add_action('wp_enqueue_scripts', [$this, 'enqueue_checkout_scripts']);
+
+        add_action('wp_ajax_dexpress_save_chosen_dispenser', array($this, 'ajax_save_chosen_dispenser'));
+        add_action('wp_ajax_nopriv_dexpress_save_chosen_dispenser', array($this, 'ajax_save_chosen_dispenser'));
+
+        add_action('woocommerce_checkout_update_order_meta', array($this, 'save_dispenser_to_order'), 10, 2);
     }
 
     /**
@@ -152,8 +160,11 @@ class D_Express_Checkout
         if ($is_dexpress) {
             $phone = isset($_POST['billing_phone']) ? sanitize_text_field($_POST['billing_phone']) : '';
 
-            // Provera formata telefona - mora početi sa +381
-            if (strpos($phone, '+381') !== 0 || !preg_match('/^\+381[1-9][0-9]{7,8}$/', $phone)) {
+            // Čišćenje telefona od svih znakova osim brojeva
+            $clean_phone = preg_replace('/[^0-9]/', '', $phone);
+
+            // Provera formata telefona - mora biti u formatu koji API zahteva
+            if (!preg_match('/^(381[1-9][0-9]{7,8}|38167[0-9]{6,8})$/', $clean_phone)) {
                 wc_add_notice(__('Telefon mora biti u formatu +381 XX XXX XXXX', 'd-express-woo'), 'error');
             }
         }
@@ -371,5 +382,245 @@ class D_Express_Checkout
                 'confirm' => __('Potvrdi', 'd-express-woo')
             )
         ));
+
+        // Google Maps API
+        $google_maps_api_key = get_option('dexpress_google_maps_api_key', '');
+        if (!empty($google_maps_api_key)) {
+            wp_enqueue_script(
+                'google-maps',
+                'https://maps.googleapis.com/maps/api/js?key=' . $google_maps_api_key,
+                array(),
+                null,
+                true
+            );
+        }
+
+        // Učitavanje JS-a za paketomat modal
+        wp_enqueue_script(
+            'dexpress-dispenser-modal',
+            DEXPRESS_WOO_PLUGIN_URL . 'assets/js/dexpress-dispenser-modal.js',
+            array('jquery'),
+            DEXPRESS_WOO_VERSION,
+            true
+        );
+    }
+    /**
+     * Dodaje izbor paketomata nakon opcije dostave
+     */
+    public function add_dispenser_selection($method, $index)
+    {
+        // Proveriti da li je D Express paketomat metoda
+        if ($method->get_method_id() !== 'dexpress_dispenser') {
+            return;
+        }
+
+        // Dobijanje dostupnih paketomata
+        $dispensers = $this->get_dispensers_list();
+
+        // Proveriti da li postoji već izabrani paketomat
+        $chosen_dispenser = WC()->session->get('chosen_dispenser');
+
+        echo '<div class="dexpress-dispenser-selection" style="margin: 10px 0 10px 30px;">';
+        echo '<button type="button" class="button dexpress-select-dispenser-btn">' . __('Izaberite paketomat', 'd-express-woo') . '</button>';
+        echo '<input type="hidden" id="dexpress_chosen_dispenser" name="dexpress_chosen_dispenser" value="' . esc_attr($chosen_dispenser ? $chosen_dispenser['id'] : '') . '">';
+
+        if ($chosen_dispenser) {
+            echo '<div class="dexpress-chosen-dispenser-info" style="margin-top: 10px; background: #f7f7f7; padding: 10px; border-radius: 3px;">';
+            echo '<strong>' . esc_html($chosen_dispenser['name']) . '</strong><br>';
+            echo esc_html($chosen_dispenser['address']) . ', ' . esc_html($chosen_dispenser['town']);
+            echo '<br><a href="#" class="dexpress-change-dispenser">' . __('Promenite paketomat', 'd-express-woo') . '</a>';
+            echo '</div>';
+        } else {
+            echo '<div class="dexpress-dispenser-warning" style="color: #e2401c; margin-top: 5px;">' . __('Morate izabrati paketomat za dostavu', 'd-express-woo') . '</div>';
+        }
+
+        echo '</div>';
+    }
+
+    /**
+     * Dodaje modal za izbor paketomata
+     */
+    public function add_dispenser_modal()
+    {
+        // Proveriti da li je checkout stranica
+        if (!is_checkout()) {
+            return;
+        }
+
+        // HTML za modal
+?>
+        <div id="dexpress-dispenser-modal" style="display: none;">
+            <div class="dexpress-modal-content" style="width: 90%; max-width: 800px;">
+                <div class="dexpress-modal-header">
+                    <h3><?php _e('Izaberite paketomat za dostavu', 'd-express-woo'); ?></h3>
+                    <span class="dexpress-modal-close">&times;</span>
+                </div>
+                <div class="dexpress-modal-body">
+                    <div class="dexpress-town-filter">
+                        <label for="dexpress-town-filter"><?php _e('Filtrirajte po gradu:', 'd-express-woo'); ?></label>
+                        <select id="dexpress-town-filter">
+                            <option value=""><?php _e('Svi gradovi', 'd-express-woo'); ?></option>
+                            <?php
+                            global $wpdb;
+                            $towns = $wpdb->get_results("
+                            SELECT DISTINCT t.id, t.name, t.postal_code
+                            FROM {$wpdb->prefix}dexpress_towns t
+                            JOIN {$wpdb->prefix}dexpress_dispensers d ON t.id = d.town_id
+                            WHERE d.deleted != 1
+                            ORDER BY t.name
+                        ");
+
+                            foreach ($towns as $town) {
+                                echo '<option value="' . esc_attr($town->id) . '">' . esc_html($town->name) . ' (' . esc_html($town->postal_code) . ')</option>';
+                            }
+                            ?>
+                        </select>
+                    </div>
+
+                    <div id="dexpress-dispensers-map" style="height: 400px; margin: 20px 0;"></div>
+
+                    <div id="dexpress-dispensers-list" style="max-height: 300px; overflow-y: auto; margin-top: 20px;">
+                        <!-- Lista paketomata se dinamički učitava -->
+                    </div>
+                </div>
+                <div class="dexpress-modal-footer">
+                    <button type="button" class="button button-secondary dexpress-modal-close"><?php _e('Odustani', 'd-express-woo'); ?></button>
+                </div>
+            </div>
+        </div>
+
+        <style>
+            #dexpress-dispenser-modal {
+                position: fixed;
+                z-index: 9999;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0, 0, 0, 0.5);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .dexpress-modal-content {
+                background-color: #fff;
+                border-radius: 5px;
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            }
+
+            .dexpress-modal-header {
+                padding: 15px;
+                border-bottom: 1px solid #eee;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .dexpress-modal-close {
+                cursor: pointer;
+                font-size: 24px;
+            }
+
+            .dexpress-modal-body {
+                padding: 15px;
+            }
+
+            .dexpress-modal-footer {
+                padding: 15px;
+                border-top: 1px solid #eee;
+                text-align: right;
+            }
+
+            .dexpress-dispenser-item {
+                padding: 10px;
+                border-bottom: 1px solid #eee;
+                cursor: pointer;
+            }
+
+            .dexpress-dispenser-item:hover {
+                background-color: #f9f9f9;
+            }
+
+            .dexpress-town-filter {
+                margin-bottom: 10px;
+            }
+        </style>
+<?php
+    }
+
+    /**
+     * Dobija listu paketomata
+     */
+    private function get_dispensers_list()
+    {
+        global $wpdb;
+
+        return $wpdb->get_results("
+        SELECT d.id, d.name, d.address, d.town, d.town_id, d.work_hours, d.work_days,
+               d.coordinates, t.postal_code
+        FROM {$wpdb->prefix}dexpress_dispensers d
+        LEFT JOIN {$wpdb->prefix}dexpress_towns t ON d.town_id = t.id
+        WHERE d.deleted != 1
+        ORDER BY d.town, d.name
+    ");
+    }
+    /**
+     * Čuvanje izabranog paketomata u narudžbini
+     */
+    public function save_dispenser_to_order($order_id, $posted_data)
+    {
+        // Proverava da li je izabran paketomat kao shipping metoda
+        $chosen_shipping_methods = WC()->session->get('chosen_shipping_methods');
+        $is_dispenser_shipping = false;
+
+        foreach ($chosen_shipping_methods as $method) {
+            if (strpos($method, 'dexpress_dispenser') !== false) {
+                $is_dispenser_shipping = true;
+                break;
+            }
+        }
+
+        if (!$is_dispenser_shipping) {
+            return;
+        }
+
+        // Dobijanje izabranog paketomata iz sesije
+        $chosen_dispenser = WC()->session->get('chosen_dispenser');
+
+        if ($chosen_dispenser) {
+            update_post_meta($order_id, '_dexpress_dispenser_id', $chosen_dispenser['id']);
+            update_post_meta($order_id, '_dexpress_dispenser_name', $chosen_dispenser['name']);
+            update_post_meta($order_id, '_dexpress_dispenser_address', $chosen_dispenser['address']);
+            update_post_meta($order_id, '_dexpress_dispenser_town', $chosen_dispenser['town']);
+
+            // Oslobađanje resursa sesije
+            WC()->session->__unset('chosen_dispenser');
+        }
+    }
+    /**
+     * AJAX: Čuvanje izabranog paketomata
+     */
+    public function ajax_save_chosen_dispenser()
+    {
+        check_ajax_referer('dexpress-frontend-nonce', 'nonce');
+
+        if (!isset($_POST['dispenser']) || !is_array($_POST['dispenser'])) {
+            wp_send_json_error(array('message' => __('Neispravni podaci o paketomatu.', 'd-express-woo')));
+        }
+
+        $dispenser = array(
+            'id' => isset($_POST['dispenser']['id']) ? intval($_POST['dispenser']['id']) : 0,
+            'name' => isset($_POST['dispenser']['name']) ? sanitize_text_field($_POST['dispenser']['name']) : '',
+            'address' => isset($_POST['dispenser']['address']) ? sanitize_text_field($_POST['dispenser']['address']) : '',
+            'town' => isset($_POST['dispenser']['town']) ? sanitize_text_field($_POST['dispenser']['town']) : '',
+            'town_id' => isset($_POST['dispenser']['town_id']) ? intval($_POST['dispenser']['town_id']) : 0,
+            'postal_code' => isset($_POST['dispenser']['postal_code']) ? sanitize_text_field($_POST['dispenser']['postal_code']) : ''
+        );
+
+        // Čuvanje u WooCommerce sesiji
+        WC()->session->set('chosen_dispenser', $dispenser);
+
+        wp_send_json_success();
     }
 }

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * D Express DB klasa
  * 
@@ -7,17 +8,21 @@
 
 defined('ABSPATH') || exit;
 
-class D_Express_DB {
-    
+class D_Express_DB
+{
+
+
+    private $cache = array();
     /**
      * Dodaje novu pošiljku u bazu
      *
      * @param array $shipment_data Podaci o pošiljci
      * @return int|false ID ubačenog reda ili false u slučaju greške
      */
-    public function add_shipment($shipment_data) {
+    public function add_shipment($shipment_data)
+    {
         global $wpdb;
-        
+
         $result = $wpdb->insert(
             $wpdb->prefix . 'dexpress_shipments',
             $shipment_data,
@@ -34,19 +39,20 @@ class D_Express_DB {
                 '%d', // is_test
             )
         );
-        
+
         return $result ? $wpdb->insert_id : false;
     }
-    
+
     /**
      * Dodaje novi paket u bazu
      *
      * @param array $package_data Podaci o paketu
      * @return int|false ID ubačenog reda ili false u slučaju greške
      */
-    public function add_package($package_data) {
+    public function add_package($package_data)
+    {
         global $wpdb;
-        
+
         $result = $wpdb->insert(
             $wpdb->prefix . 'dexpress_packages',
             $package_data,
@@ -58,10 +64,10 @@ class D_Express_DB {
                 '%s', // created_at
             )
         );
-        
+
         return $result ? $wpdb->insert_id : false;
     }
-    
+
     /**
      * Ažurira status pošiljke
      *
@@ -70,9 +76,10 @@ class D_Express_DB {
      * @param string $status_description Opis statusa
      * @return bool True u slučaju uspeha
      */
-    public function update_shipment_status($shipment_id, $status_code, $status_description = '') {
+    public function update_shipment_status($shipment_id, $status_code, $status_description = '')
+    {
         global $wpdb;
-        
+
         return $wpdb->update(
             $wpdb->prefix . 'dexpress_shipments',
             array(
@@ -85,7 +92,7 @@ class D_Express_DB {
             array('%s')
         ) !== false;
     }
-    
+
     /**
      * Ažurira status pošiljke prema referenci
      *
@@ -94,9 +101,10 @@ class D_Express_DB {
      * @param string $status_description Opis statusa
      * @return bool True u slučaju uspeha
      */
-    public function update_shipment_status_by_reference($reference_id, $status_code, $status_description = '') {
+    public function update_shipment_status_by_reference($reference_id, $status_code, $status_description = '')
+    {
         global $wpdb;
-        
+
         return $wpdb->update(
             $wpdb->prefix . 'dexpress_shipments',
             array(
@@ -109,108 +117,140 @@ class D_Express_DB {
             array('%s')
         ) !== false;
     }
-    
+
     /**
      * Dobijanje pošiljke prema ID-u
      *
      * @param int $id ID pošiljke
      * @return object|null Podaci o pošiljci
      */
-    public function get_shipment($id) {
+    public function get_shipment($id)
+    {
         global $wpdb;
-        
+
         return $wpdb->get_row($wpdb->prepare(
             "SELECT * FROM {$wpdb->prefix}dexpress_shipments WHERE id = %d",
             $id
         ));
     }
-    
+
     /**
      * Dobijanje pošiljke prema ID-u narudžbine
      *
      * @param int $order_id ID narudžbine
      * @return object|null Podaci o pošiljci
      */
-    public function get_shipment_by_order_id($order_id) {
+    public function get_shipment_by_order_id($order_id)
+    {
+        $cache_key = 'shipment_order_' . $order_id;
+
+        // Proveri da li imamo rezultat u kešu
+        if (isset($this->cache[$cache_key])) {
+            return $this->cache[$cache_key];
+        }
+
         global $wpdb;
-        
-        return $wpdb->get_row($wpdb->prepare(
+
+        $result = $wpdb->get_row($wpdb->prepare(
             "SELECT * FROM {$wpdb->prefix}dexpress_shipments WHERE order_id = %d",
             $order_id
         ));
+
+        // Sačuvaj rezultat u keš
+        $this->cache[$cache_key] = $result;
+
+        return $result;
     }
-    
+    // Dodaj index za order_id u tabeli dexpress_shipments za bolje performanse
+    public function add_shipment_index()
+    {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'dexpress_shipments';
+
+        // Proverava da li indeks već postoji
+        $index_exists = $wpdb->get_results("SHOW INDEX FROM $table_name WHERE Key_name = 'order_id'");
+
+        if (empty($index_exists)) {
+            $wpdb->query("ALTER TABLE $table_name ADD INDEX order_id (order_id)");
+        }
+    }
     /**
      * Dobijanje pošiljke prema tracking broju
      *
      * @param string $tracking_number Broj za praćenje
      * @return object|null Podaci o pošiljci
      */
-    public function get_shipment_by_tracking($tracking_number) {
+    public function get_shipment_by_tracking($tracking_number)
+    {
         global $wpdb;
-        
+
         return $wpdb->get_row($wpdb->prepare(
             "SELECT * FROM {$wpdb->prefix}dexpress_shipments WHERE tracking_number = %s",
             $tracking_number
         ));
     }
-    
+
     /**
      * Dobijanje pošiljke prema D Express ID-u
      *
      * @param string $shipment_id D Express ID pošiljke
      * @return object|null Podaci o pošiljci
      */
-    public function get_shipment_by_shipment_id($shipment_id) {
+    public function get_shipment_by_shipment_id($shipment_id)
+    {
         global $wpdb;
-        
+
         return $wpdb->get_row($wpdb->prepare(
             "SELECT * FROM {$wpdb->prefix}dexpress_shipments WHERE shipment_id = %s",
             $shipment_id
         ));
     }
-    
+
     /**
      * Dobijanje pošiljke prema referenci
      *
      * @param string $reference_id Referenca pošiljke
      * @return object|null Podaci o pošiljci
      */
-    public function get_shipment_by_reference($reference_id) {
+    public function get_shipment_by_reference($reference_id)
+    {
         global $wpdb;
-        
+
         return $wpdb->get_row($wpdb->prepare(
             "SELECT * FROM {$wpdb->prefix}dexpress_shipments WHERE reference_id = %s",
             $reference_id
         ));
     }
-    
+
     /**
      * Dobijanje statusa za pošiljku
      *
      * @param string $shipment_id D Express ID pošiljke
      * @return array Lista statusa
      */
-    public function get_statuses_for_shipment($shipment_id) {
+    public function get_statuses_for_shipment($shipment_id)
+    {
         global $wpdb;
-        
+
         return $wpdb->get_results($wpdb->prepare(
             "SELECT * FROM {$wpdb->prefix}dexpress_statuses 
             WHERE shipment_code = %s OR shipment_id = %s 
             ORDER BY status_date DESC",
-            $shipment_id, $shipment_id
+            $shipment_id,
+            $shipment_id
         ));
     }
-    
+
     /**
      * Dodaje novi status u bazu
      *
      * @param array $status_data Podaci o statusu
      * @return int|false ID ubačenog reda ili false u slučaju greške
      */
-    public function add_status($status_data) {
+    public function add_status($status_data)
+    {
         global $wpdb;
-        
+
         $result = $wpdb->insert(
             $wpdb->prefix . 'dexpress_statuses',
             $status_data,
@@ -226,19 +266,20 @@ class D_Express_DB {
                 '%s', // created_at
             )
         );
-        
+
         return $result ? $wpdb->insert_id : false;
     }
-    
+
     /**
      * Označava status kao obrađen
      *
      * @param int $status_id ID statusa
      * @return bool True u slučaju uspeha
      */
-    public function mark_status_as_processed($status_id) {
+    public function mark_status_as_processed($status_id)
+    {
         global $wpdb;
-        
+
         return $wpdb->update(
             $wpdb->prefix . 'dexpress_statuses',
             array('is_processed' => 1),

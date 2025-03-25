@@ -1,0 +1,123 @@
+[2025-03-25 08:27:59] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/shops
+[2025-03-25 08:27:59] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/locations
+[2025-03-25 08:28:00] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/municipalities?date=20000101000000
+[2025-03-25 08:28:01] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/towns?date=20000101000000
+[2025-03-25 08:28:10] Updating streets...
+[2025-03-25 08:28:10] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/streets?date=20000101000000
+[2025-03-25 08:28:11] Got 39339 streets, starting update...
+[2025-03-25 08:28:11] First street data: Array
+(
+    [Id] => 1
+    [Name] => Aberdareva
+    [TId] => 791075
+    [Del] => 
+)
+
+[2025-03-25 08:28:11] Streets update progress: 1000/39339
+[2025-03-25 08:28:11] Streets update progress: 2000/39339
+[2025-03-25 08:28:11] Streets update progress: 3000/39339
+[2025-03-25 08:28:11] Streets update progress: 4000/39339
+[2025-03-25 08:28:11] Streets update progress: 5000/39339
+[2025-03-25 08:28:11] Streets update progress: 6000/39339
+[2025-03-25 08:28:11] Streets update progress: 7000/39339
+[2025-03-25 08:28:11] Streets update progress: 8000/39339
+[2025-03-25 08:28:11] Streets update progress: 9000/39339
+[2025-03-25 08:28:11] Streets update progress: 10000/39339
+[2025-03-25 08:28:11] Streets update progress: 11000/39339
+[2025-03-25 08:28:11] Streets update progress: 12000/39339
+[2025-03-25 08:28:11] Streets update progress: 13000/39339
+[2025-03-25 08:28:11] Streets update progress: 14000/39339
+[2025-03-25 08:28:11] Streets update progress: 15000/39339
+[2025-03-25 08:28:11] Streets update progress: 16000/39339
+[2025-03-25 08:28:11] Streets update progress: 17000/39339
+[2025-03-25 08:28:11] Streets update progress: 18000/39339
+[2025-03-25 08:28:11] Streets update progress: 19000/39339
+[2025-03-25 08:28:11] Streets update progress: 20000/39339
+[2025-03-25 08:28:11] Streets update progress: 21000/39339
+[2025-03-25 08:28:11] Streets update progress: 22000/39339
+[2025-03-25 08:28:11] Streets update progress: 23000/39339
+[2025-03-25 08:28:11] Streets update progress: 24000/39339
+[2025-03-25 08:28:11] Streets update progress: 25000/39339
+[2025-03-25 08:28:11] Streets update progress: 26000/39339
+[2025-03-25 08:28:11] Streets update progress: 27000/39339
+[2025-03-25 08:28:12] Streets update progress: 28000/39339
+[2025-03-25 08:28:12] Streets update progress: 29000/39339
+[2025-03-25 08:28:12] Streets update progress: 30000/39339
+[2025-03-25 08:28:12] Streets update progress: 31000/39339
+[2025-03-25 08:28:12] Streets update progress: 32000/39339
+[2025-03-25 08:28:12] Streets update progress: 33000/39339
+[2025-03-25 08:28:12] Streets update progress: 34000/39339
+[2025-03-25 08:28:12] Streets update progress: 35000/39339
+[2025-03-25 08:28:12] Streets update progress: 36000/39339
+[2025-03-25 08:28:12] Streets update progress: 37000/39339
+[2025-03-25 08:28:12] Streets update progress: 38000/39339
+[2025-03-25 08:28:12] Streets update progress: 39000/39339
+[2025-03-25 08:28:12] Streets update progress: 39339/39339
+[2025-03-25 08:28:12] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/statuses
+[2025-03-25 08:28:12] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/dispensers
+[2025-03-25 08:28:13] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/centres
+[2025-03-25 08:28:13] Index update completed successfully
+[2025-03-25 08:30:35] Podešavanja su ažurirana od strane korisnika ID: 1
+[2025-03-25 08:32:07] Podešavanja su ažurirana od strane korisnika ID: 1
+[2025-03-25 08:38:14] Podešavanja su ažurirana od strane korisnika ID: 1
+[2025-03-25 08:38:19] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/statuses
+[2025-03-25 08:38:20] Test konekcije uspešan. Dobijeno 46 statusa.
+[2025-03-25 08:38:57] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/shops
+[2025-03-25 08:38:57] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/locations
+[2025-03-25 08:38:58] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/municipalities?date=20000101000000
+[2025-03-25 08:38:59] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/towns?date=20000101000000
+[2025-03-25 08:39:09] Updating streets...
+[2025-03-25 08:39:09] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/streets?date=20000101000000
+[2025-03-25 08:39:11] Got 39339 streets, starting update...
+[2025-03-25 08:39:11] First street data: Array
+(
+    [Id] => 1
+    [Name] => Aberdareva
+    [TId] => 791075
+    [Del] => 
+)
+
+[2025-03-25 08:39:11] Streets update progress: 1000/39339
+[2025-03-25 08:39:11] Streets update progress: 2000/39339
+[2025-03-25 08:39:11] Streets update progress: 3000/39339
+[2025-03-25 08:39:11] Streets update progress: 4000/39339
+[2025-03-25 08:39:11] Streets update progress: 5000/39339
+[2025-03-25 08:39:11] Streets update progress: 6000/39339
+[2025-03-25 08:39:11] Streets update progress: 7000/39339
+[2025-03-25 08:39:11] Streets update progress: 8000/39339
+[2025-03-25 08:39:11] Streets update progress: 9000/39339
+[2025-03-25 08:39:11] Streets update progress: 10000/39339
+[2025-03-25 08:39:11] Streets update progress: 11000/39339
+[2025-03-25 08:39:11] Streets update progress: 12000/39339
+[2025-03-25 08:39:12] Streets update progress: 13000/39339
+[2025-03-25 08:39:12] Streets update progress: 14000/39339
+[2025-03-25 08:39:12] Streets update progress: 15000/39339
+[2025-03-25 08:39:12] Streets update progress: 16000/39339
+[2025-03-25 08:39:12] Streets update progress: 17000/39339
+[2025-03-25 08:39:12] Streets update progress: 18000/39339
+[2025-03-25 08:39:12] Streets update progress: 19000/39339
+[2025-03-25 08:39:12] Streets update progress: 20000/39339
+[2025-03-25 08:39:12] Streets update progress: 21000/39339
+[2025-03-25 08:39:12] Streets update progress: 22000/39339
+[2025-03-25 08:39:12] Streets update progress: 23000/39339
+[2025-03-25 08:39:12] Streets update progress: 24000/39339
+[2025-03-25 08:39:12] Streets update progress: 25000/39339
+[2025-03-25 08:39:12] Streets update progress: 26000/39339
+[2025-03-25 08:39:12] Streets update progress: 27000/39339
+[2025-03-25 08:39:12] Streets update progress: 28000/39339
+[2025-03-25 08:39:12] Streets update progress: 29000/39339
+[2025-03-25 08:39:12] Streets update progress: 30000/39339
+[2025-03-25 08:39:12] Streets update progress: 31000/39339
+[2025-03-25 08:39:12] Streets update progress: 32000/39339
+[2025-03-25 08:39:12] Streets update progress: 33000/39339
+[2025-03-25 08:39:12] Streets update progress: 34000/39339
+[2025-03-25 08:39:12] Streets update progress: 35000/39339
+[2025-03-25 08:39:12] Streets update progress: 36000/39339
+[2025-03-25 08:39:12] Streets update progress: 37000/39339
+[2025-03-25 08:39:12] Streets update progress: 38000/39339
+[2025-03-25 08:39:12] Streets update progress: 39000/39339
+[2025-03-25 08:39:12] Streets update progress: 39339/39339
+[2025-03-25 08:39:12] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/statuses
+[2025-03-25 08:39:12] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/dispensers
+[2025-03-25 08:39:13] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/centres
+[2025-03-25 08:39:14] Index update completed successfully
