@@ -130,9 +130,249 @@
 .woocommerce-invalid {
     border-color: #b22222 !important;
 }
+
 .phone-format-hint {
     display: block;
     font-size: 0.857em;
     color: #767676;
     margin-top: 3px;
+}
+
+/* ===== MODAL STIL ===== */
+#dexpress-dispenser-modal {
+    display: none;
+    position: fixed;
+    z-index: 10000;
+    /* Da bude iznad svega */
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    /* Poluprovidna pozadina */
+    overflow: auto;
+}
+
+/* Unutrašnji modal */
+.dexpress-modal-content {
+    background: #fff;
+    width: 90%;
+    max-width: 800px;
+    margin: 10% auto;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    animation: modalFadeIn 0.3s ease-in-out;
+}
+
+/* Animacija otvaranja modala */
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* ===== HEADER MODALA ===== */
+.dexpress-modal-header {
+    background: #0073aa;
+    /* WooCommerce plava */
+    color: #fff;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.dexpress-modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+}
+
+.dexpress-modal-close {
+    font-size: 22px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+.dexpress-modal-close:hover {
+    color: #ff3b3b;
+}
+
+/* ===== TELO MODALA ===== */
+.dexpress-modal-body {
+    padding: 20px;
+}
+
+/* Stil za filter gradova */
+.dexpress-town-filter {
+    margin-bottom: 15px;
+}
+
+.dexpress-town-filter label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+#dexpress-town-filter {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+/* ===== MAPA I LISTA (POREDJANI) ===== */
+.dexpress-dispensers-container {
+    display: flex;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+/* Mapa */
+#dexpress-dispensers-map {
+    flex: 1;
+    height: 400px;
+    background: #e5e5e5;
+    /* Siva pozadina dok se mapa ne učita */
+    border-radius: 5px;
+    border: 1px solid #ddd;
+}
+
+/* Lista paketomata */
+#dexpress-dispensers-list {
+    flex: 1;
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    padding: 10px;
+    background: #f9f9f9;
+    border-radius: 5px;
+}
+
+/* Stil za svaki paketomat u listi */
+.dexpress-dispenser-item {
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+    transition: 0.2s;
+}
+
+.dexpress-dispenser-item:hover {
+    background: #ececec;
+    cursor: pointer;
+}
+
+/* ===== FOOTER MODALA ===== */
+.dexpress-modal-footer {
+    padding: 15px;
+    text-align: right;
+    background: #f1f1f1;
+}
+
+/* Dugme za zatvaranje */
+.dexpress-modal-footer .button {
+    background: #0073aa;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.dexpress-modal-footer .button:hover {
+    background: #005d87;
+}
+
+/* ===== RESPONSIVE PRILAGODJAVANJE ===== */
+@media (max-width: 768px) {
+    .dexpress-modal-content {
+        width: 95%;
+        margin: 5% auto;
+    }
+
+    .dexpress-dispensers-container {
+        display: block;
+        /* Stavlja mapu i listu jednu ispod druge */
+    }
+
+    #dexpress-dispensers-map,
+    #dexpress-dispensers-list {
+        width: 100%;
+        height: auto;
+        margin-bottom: 10px;
+    }
+}
+
+.dexpress-dispenser-info {
+    background: #fff;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    font-family: Arial, sans-serif;
+    max-width: 400px;
+}
+
+/* Grid za raspored u dve kolone */
+.dexpress-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    align-items: start;
+}
+
+/* Stilizacija levog i desnog dela */
+.dexpress-info-left, .dexpress-info-right {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* Ikonice i font stil */
+.dexpress-info-left p, .dexpress-info-right p {
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+}
+
+.dexpress-info-left p::before, .dexpress-info-right p::before {
+    margin-right: 6px;
+    font-size: 18px;
+}
+
+/* Stilizacija radnog vremena */
+.dexpress-info-right ul {
+    list-style: none;
+    padding: 0;
+}
+
+.dexpress-info-right li {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Dugme */
+.dexpress-select-this-dispenser {
+    display: block;
+    width: 100%;
+    margin-top: 15px;
+    padding: 10px;
+    background: #673ab7;
+    color: white;
+    text-align: center;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.dexpress-select-this-dispenser:hover {
+    background: #5a2ea5;
 }

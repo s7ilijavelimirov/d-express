@@ -705,7 +705,10 @@ class D_Express_API
         if (!$order instanceof WC_Order) {
             return new WP_Error('invalid_order', __('Nevažeća narudžbina', 'd-express-woo'));
         }
-
+        $dispenser_id = get_post_meta($order->get_id(), '_dexpress_dispenser_id', true);
+        if (!empty($dispenser_id)) {
+            $shipment_data['DispenserID'] = intval($dispenser_id);
+        }
         $order_id = $order->get_id();
         // DEBUG LOG: Inicijalna vrednost iz WooCommerce
         dexpress_log("[API DEBUG] Inicijalna vrednost telefona iz WC: " . $order->get_billing_phone(), 'info');

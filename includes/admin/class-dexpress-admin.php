@@ -796,6 +796,9 @@ class D_Express_Admin
         // Webhook podešavanja
         $webhook_secret = isset($_POST['dexpress_webhook_secret']) ? sanitize_text_field($_POST['dexpress_webhook_secret']) : wp_generate_password(32, false);
 
+        // Google Maps API ključ
+        $google_maps_api_key = isset($_POST['dexpress_google_maps_api_key']) ? sanitize_text_field($_POST['dexpress_google_maps_api_key']) : '';
+
         // Ažuriranje opcija
         update_option('dexpress_api_username', $api_username);
         if (!empty($api_password)) {
@@ -825,7 +828,7 @@ class D_Express_Admin
         update_option('dexpress_webhook_secret', $webhook_secret);
         update_option('dexpress_require_buyout_account', $require_buyout_account);
         update_option('dexpress_clean_uninstall', $clean_uninstall);
-
+        update_option('dexpress_google_maps_api_key', $google_maps_api_key);
         // Beležimo u log da su podešavanja ažurirana
         if ($enable_logging === 'yes') {
             dexpress_log('Podešavanja su ažurirana od strane korisnika ID: ' . get_current_user_id(), 'info');

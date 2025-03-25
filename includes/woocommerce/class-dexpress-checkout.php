@@ -182,6 +182,17 @@ class D_Express_Checkout
                 wc_add_notice(__('Telefon mora biti u formatu +381 XX XXX XXXX', 'd-express-woo'), 'error');
             }
         }
+        $is_dispenser_shipping = false;
+        foreach (WC()->session->get('chosen_shipping_methods', array()) as $method) {
+            if (strpos($method, 'dexpress_dispenser') !== false) {
+                $is_dispenser_shipping = true;
+                break;
+            }
+        }
+
+        if ($is_dispenser_shipping && empty($_POST['dexpress_chosen_dispenser'])) {
+            wc_add_notice(__('Morate izabrati paketomat za dostavu.', 'd-express-woo'), 'error');
+        }
     }
 
     /**
@@ -401,6 +412,8 @@ class D_Express_Checkout
 
         // Google Maps API - koristimo API ključ ako je dostupan
         $google_maps_api_key = get_option('dexpress_google_maps_api_key', '');
+        dexpress_log("Google Maps API key: {$google_maps_api_key}", 'debug');
+
         $google_maps_url = empty($google_maps_api_key)
             ? 'https://maps.googleapis.com/maps/api/js?v=weekly'
             : 'https://maps.googleapis.com/maps/api/js?key=' . $google_maps_api_key . '&v=weekly';
@@ -468,12 +481,13 @@ class D_Express_Checkout
         // HTML za modal
 ?>
         <div id="dexpress-dispenser-modal" style="display: none;">
-            <div class="dexpress-modal-content" style="width: 90%; max-width: 800px;">
+            <div class="dexpress-modal-content" style="width: 90%; max-width: 1000px;">
                 <div class="dexpress-modal-header">
                     <h3><?php _e('Izaberite paketomat za dostavu', 'd-express-woo'); ?></h3>
                     <span class="dexpress-modal-close">&times;</span>
                 </div>
                 <div class="dexpress-modal-body">
+                    <!-- Filter gradova ostaje gore -->
                     <div class="dexpress-town-filter">
                         <label for="dexpress-town-filter"><?php _e('Filtrirajte po gradu:', 'd-express-woo'); ?></label>
                         <select id="dexpress-town-filter">
@@ -481,12 +495,12 @@ class D_Express_Checkout
                             <?php
                             global $wpdb;
                             $towns = $wpdb->get_results("
-                            SELECT DISTINCT t.id, t.name, t.postal_code
-                            FROM {$wpdb->prefix}dexpress_towns t
-                            JOIN {$wpdb->prefix}dexpress_dispensers d ON t.id = d.town_id
-                            WHERE d.deleted != 1
-                            ORDER BY t.name
-                        ");
+                SELECT DISTINCT t.id, t.name, t.postal_code
+                FROM {$wpdb->prefix}dexpress_towns t
+                JOIN {$wpdb->prefix}dexpress_dispensers d ON t.id = d.town_id
+                WHERE d.deleted != 1
+                ORDER BY t.name
+            ");
 
                             foreach ($towns as $town) {
                                 echo '<option value="' . esc_attr($town->id) . '">' . esc_html($town->name) . ' (' . esc_html($town->postal_code) . ')</option>';
@@ -495,12 +509,13 @@ class D_Express_Checkout
                         </select>
                     </div>
 
-                    <div id="dexpress-dispensers-map" style="height: 400px; margin: 20px 0;"></div>
-
-                    <div id="dexpress-dispensers-list" style="max-height: 300px; overflow-y: auto; margin-top: 20px;">
-                        <!-- Lista paketomata se dinamički učitava -->
+                    <!-- Glavni kontejner za mapu i listu -->
+                    <div class="dexpress-dispensers-container">
+                        <div id="dexpress-dispensers-map"></div>
+                        <div id="dexpress-dispensers-list"></div>
                     </div>
                 </div>
+
                 <div class="dexpress-modal-footer">
                     <button type="button" class="button button-secondary dexpress-modal-close"><?php _e('Odustani', 'd-express-woo'); ?></button>
                 </div>

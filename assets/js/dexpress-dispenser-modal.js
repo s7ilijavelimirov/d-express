@@ -92,43 +92,76 @@
         },
 
         // Nova funkcija za renderovanje informacija o paketomatu
-        renderDispenserInfo: function(dispenser) {
+        renderDispenserInfo: function (dispenser) {
             // Pomoćna funkcija za proveru da li postoji vrednost
             function ifExists(value, prefix = '', suffix = '') {
                 return value ? prefix + value + suffix : '';
             }
-            
+
             // Formatiranje radnog vremena
-            function formatWorkHours(workHours, workDays) {
-                if (!workHours) return 'Nije definisano';
-                
-                let formatted = workHours;
-                if (workDays) {
-                    formatted += ' (' + workDays + ')';
+            function formatWorkHours(workHours) {
+                console.log("📌 workHours:", workHours); // Debugging - vidi šta API vraća
+
+                // Ako nema podataka, prikaži poruku
+                if (!workHours || typeof workHours !== "string") {
+                    return `<li>❌ Radno vreme nije dostupno</li>`;
                 }
-                return formatted;
+
+                // Ako radno vreme dolazi u formatu "Svakim danom 6-22", samo ga prikaži
+                if (workHours.toLowerCase().includes("svakim danom")) {
+                    return `<li>🕒 ${workHours}</li>`;
+                }
+
+                // Ako je radno vreme već formatirano pravilno kao niz, koristi ga
+                const days = ["Ponedeljak", "Utorak", "Sreda", "Četvrtak", "Petak", "Subota", "Nedelja"];
+                const hoursArray = workHours.split(', '); // Razbijanje stringa u niz prema zarezima
+
+                // Ako API vraća svih 7 dana, formatiraj ih lepo
+                if (hoursArray.length === 7) {
+                    let output = "<ul class='dexpress-work-hours'>";
+                    hoursArray.forEach((hours, index) => {
+                        output += `<li>📅 <strong>${days[index]}:</strong> ${hours}</li>`;
+                    });
+                    output += "</ul>";
+                    return output;
+                }
+
+                // Ako format ne odgovara ni jednom pravilu, vrati default poruku
+                return `<li>⚠ Format radnog vremena nije prepoznat</li>`;
             }
-            
             // Priprema informacija o načinu plaćanja
             let paymentOptions = [];
             if (dispenser.pay_by_cash == 1) paymentOptions.push('Gotovina');
             if (dispenser.pay_by_card == 1) paymentOptions.push('Kartica');
-            
-            let paymentInfo = paymentOptions.length > 0 ? 
+
+            let paymentInfo = paymentOptions.length > 0 ?
                 '<p><strong>Načini plaćanja:</strong> ' + paymentOptions.join(', ') + '</p>' : '';
-            
+
             // Formatiranje sadržaja info prozora
             return `
-                <div class="dexpress-dispenser-info">
-                    <h4>${dispenser.name}</h4>
-                    <p>${dispenser.address}, ${dispenser.town} ${ifExists(dispenser.postal_code, '(', ')')}</p>
-                    <p><strong>Radno vreme:</strong> ${formatWorkHours(dispenser.work_hours, dispenser.work_days)}</p>
-                    ${paymentInfo}
-                    <button class="button dexpress-select-this-dispenser" data-id="${dispenser.id}">
-                        Izaberi ovaj paketomat
-                    </button>
-                </div>
-            `;
+                    <div class="dexpress-dispenser-info">
+                        <h4>${dispenser.name}</h4>
+
+                        <div class="dexpress-info-grid">
+                            <!-- Leva kolona -->
+                            <div class="dexpress-info-left">
+                                <p>📍 <strong>Grad:</strong> ${dispenser.town}</p>
+                                <p>📌 <strong>Adresa podizanja:</strong> ${dispenser.address}</p>
+                                ${dispenser.phone ? `<p>📞 <strong>Pozovite nas:</strong> ${dispenser.phone}</p>` : ""}
+                            </div>
+
+                            <!-- Desna kolona -->
+                            <div class="dexpress-info-right">
+                                <p>⏰ <strong>Radno vreme:</strong> <br> ${formatWorkHours(dispenser.work_hours)}</p>
+                                ${paymentInfo}
+                            </div>
+                        </div>
+
+                        <button class="button dexpress-select-this-dispenser" data-id="${dispenser.id}">
+                            ✅ Izaberi ovaj paketomat
+                        </button>
+                    </div>
+                `;
         },
 
         renderDispensers: function (map) {
@@ -205,9 +238,9 @@
                         <strong>${dispenser.name}</strong><br>
                         ${dispenser.address}, ${dispenser.town} ${dispenser.postal_code ? `(${dispenser.postal_code})` : ''}<br>
                         <small>Radno vreme: ${dispenser.work_hours || 'Nije definisano'}</small>
-                        ${(dispenser.pay_by_cash == 1 || dispenser.pay_by_card == 1) ? 
-                            `<br><small>Plaćanje: ${dispenser.pay_by_cash == 1 ? 'Gotovina' : ''}${(dispenser.pay_by_cash == 1 && dispenser.pay_by_card == 1) ? ', ' : ''}${dispenser.pay_by_card == 1 ? 'Kartica' : ''}</small>` 
-                            : ''}
+                        ${(dispenser.pay_by_cash == 1 || dispenser.pay_by_card == 1) ?
+                        `<br><small>Plaćanje: ${dispenser.pay_by_cash == 1 ? 'Gotovina' : ''}${(dispenser.pay_by_cash == 1 && dispenser.pay_by_card == 1) ? ', ' : ''}${dispenser.pay_by_card == 1 ? 'Kartica' : ''}</small>`
+                        : ''}
                     </div>
                 `;
             });
@@ -218,28 +251,28 @@
             // Klik na paketomat u listi
             $('.dexpress-dispenser-item').on('click', function () {
                 var id = $(this).data('id');
-                
+
                 // Pronađi marker i centrraj mapu na njega
-                var marker = markers.find(function(m) { 
-                    return m.dispenser.id == id; 
+                var marker = markers.find(function (m) {
+                    return m.dispenser.id == id;
                 });
-                
+
                 if (marker && marker.marker) {
                     // Centriraj mapu na marker
                     map.setCenter(marker.marker.getPosition());
                     map.setZoom(15);
-                    
+
                     // Otvori info prozor
                     infoWindow.setContent(self.renderDispenserInfo(marker.dispenser));
                     infoWindow.open(map, marker.marker);
-                    
+
                     // Animiraj marker da bi bio uočljiviji
                     marker.marker.setAnimation(google.maps.Animation.BOUNCE);
-                    setTimeout(function() {
+                    setTimeout(function () {
                         marker.marker.setAnimation(null);
                     }, 1500);
                 }
-                
+
                 self.selectDispenser(id, markers, map);
             });
 
@@ -253,13 +286,13 @@
             // Podešavanje granica mape
             if (markers.length > 0) {
                 map.fitBounds(bounds);
-                
+
                 // Ograniči maksimalni zoom da ne bude previše blizu
-                var listener = google.maps.event.addListener(map, 'idle', function() { 
+                var listener = google.maps.event.addListener(map, 'idle', function () {
                     if (map.getZoom() > 15) {
                         map.setZoom(15);
                     }
-                    google.maps.event.removeListener(listener); 
+                    google.maps.event.removeListener(listener);
                 });
             } else {
                 // Ako nema markera, centriraj na Srbiju
