@@ -3,6 +3,9 @@
 
     var DExpressCheckout = {
         init: function () {
+            if (!$('#billing_first_name').length) {
+                return; // Ne inicijalizujemo na stranicama koje nisu checkout
+            }
             this.initStreetAutocomplete('billing');
             this.initStreetAutocomplete('shipping');
             this.initPhoneFormatter();
@@ -171,43 +174,85 @@
         },
 
         initPhoneFormatter: function () {
+            $(document).ready(function () {
+                var $phone = $('#billing_phone');
+                if ($phone.length) {
+                    var val = $phone.val();
+                    if (!val || val === '') {
+                        $phone.val('+381');
+                    } else if (val.indexOf('+381') !== 0) {
+                        if (val.indexOf('381') === 0) {
+                            $phone.val('+' + val);
+                        } else if (val.indexOf('0') === 0) {
+                            $phone.val('+381' + val.substring(1));
+                        } else {
+                            $phone.val('+381' + val);
+                        }
+                    }
+                }
+            });
             var self = this;
             var $phone = $('#billing_phone');
 
-            // Dodajemo prefiks i container
-            if ($phone.length && !$phone.parent().hasClass('phone-prefix-container')) {
-                $phone.wrap('<div class="phone-prefix-container"></div>');
-                $('<span class="phone-prefix">+381</span>').insertBefore($phone);
-                $phone.addClass('phone-with-prefix');
+            // Provera da li element postoji
+            if (!$phone.length) {
+                return;
+            }
 
-                // Dodaj pomoćni tekst
-                $('<span class="phone-format-hint">Format: +381 6X XXX XXXX</span>')
+            // Dodaj pomoćni tekst ispod polja
+            if (!$phone.next('.phone-format-hint').length) {
+                $('<span class="phone-format-hint">Format: +381(0) XX XXX XXXX (mobilni ili fiksni broj)</span>')
                     .insertAfter($phone);
             }
 
-            // Pre-formatiramo postojeći broj
-            self.formatPhoneNumber($phone);
+            // Inicijalno formatiranje - ako nema prefiks, dodaj ga
+            var currentValue = $phone.val();
+            if (currentValue && currentValue.indexOf('+381') !== 0) {
+                // Ako već ima prefiks 381 bez +, dodaj samo +
+                if (currentValue.indexOf('381') === 0) {
+                    $phone.val('+' + currentValue);
+                }
+                // Ako ima vodeću nulu, zameni je sa +381
+                else if (currentValue.indexOf('0') === 0) {
+                    $phone.val('+381' + currentValue.substring(1));
+                }
+                // Inače, dodaj +381
+                else {
+                    $phone.val('+381' + currentValue);
+                }
+            }
+
+            // Fokus na kraj polja
+            $phone.on('focus', function () {
+                // Prebaci kursor na kraj
+                var val = this.value;
+                this.value = '';
+                this.value = val;
+            });
 
             // Kada korisnik kucka
             $phone.on('input', function () {
                 var input = $(this);
                 var value = input.val();
 
-                // Ukloni greške dok korisnik kuca
-                input.removeClass('woocommerce-invalid');
-                input.parent().find('.phone-validation-error').remove();
+                // Ako korisnik obriše prefiks, vrati ga
+                if (!value.startsWith('+381')) {
+                    var cursorPos = this.selectionStart;
+                    var beforeCursor = value.substring(0, cursorPos);
+                    var afterCursor = value.substring(cursorPos);
 
-                // Makni +381 ako ga je korisnik uneo iako već imamo prefiks
-                if (value.startsWith('+381')) {
-                    value = value.substring(4);
-                    input.val(value);
-                } else if (value.startsWith('381')) {
-                    value = value.substring(3);
-                    input.val(value);
-                } else if (value.startsWith('0')) {
-                    // Ako korisnik unese 0 na početku, ukloni je
-                    value = value.substring(1);
-                    input.val(value);
+                    // Ako postoji deo prefiksa, dočekaj ga
+                    if ('+381'.startsWith(beforeCursor)) {
+                        // Ne radi ništa, dopusti korisniku da ga dovrši
+                    } else {
+                        // Vrati prefiks
+                        input.val('+381' + value);
+
+                        // Postavi kursor nakon prefiksa
+                        setTimeout(function () {
+                            input[0].setSelectionRange(4 + value.length, 4 + value.length);
+                        }, 0);
+                    }
                 }
             });
 
@@ -217,34 +262,21 @@
             });
         },
 
-        formatPhoneNumber: function ($phone) {
-            var value = $phone.val().trim();
-
-            // Ako već imamo prefiks +381, uklonimo ga iz vrednosti polja
-            if (value.startsWith('+381')) {
-                value = value.substring(4);
-            } else if (value.startsWith('381')) {
-                value = value.substring(3);
-            } else if (value.startsWith('0')) {
-                value = value.substring(1);
-            }
-
-            $phone.val(value);
-        },
-
+        // Nova funkcija validacije
         validatePhoneField: function ($phone) {
-            var value = $phone.val().trim();
-            var fullNumber = '+381' + value;
+            if (!$phone.length) return false;
+
+            var value = $phone.val();
+            if (!value) return false;
 
             // Validacija prema D Express API formatu
-            var pattern = /^\+381[6-9][0-9]{7,8}$/;
+            var pattern = /^\+381[1-9][0-9]{7,8}$/;
 
-            if (!pattern.test(fullNumber)) {
+            if (!pattern.test(value)) {
                 $phone.addClass('woocommerce-invalid');
 
-                // Dodaj poruku o grešci
                 if ($phone.parent().find('.phone-validation-error').length === 0) {
-                    $('<div class="phone-validation-error woocommerce-error">Telefon mora biti u formatu +381 6x xxx xxxx</div>')
+                    $('<div class="phone-validation-error woocommerce-error">Telefon mora biti u formatu +381 XX XXX XXXX</div>')
                         .insertAfter($phone);
                 }
                 return false;
@@ -321,7 +353,6 @@
                 var $phone = $('#billing_phone');
                 var phoneValue = $phone.val().trim();
 
-                // Dodaj formatiran telefon u skriveno polje BEZ OBZIRA na dostavu
                 if ($phone.length && phoneValue) {
                     if (!$('#dexpress_formatted_phone').length) {
                         $('<input type="hidden" id="dexpress_formatted_phone" name="dexpress_formatted_phone" />')

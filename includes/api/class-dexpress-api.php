@@ -699,22 +699,25 @@ class D_Express_API
         }
 
         $order_id = $order->get_id();
-
+        // DEBUG LOG: Inicijalna vrednost iz WooCommerce
+        dexpress_log("[API DEBUG] Inicijalna vrednost telefona iz WC: " . $order->get_billing_phone(), 'info');
         // Dohvatamo sačuvani API format telefona ako postoji
         $phone = get_post_meta($order_id, '_billing_phone_api_format', true);
 
         if (empty($phone)) {
             $phone = D_Express_Validator::format_phone($order->get_billing_phone());
-            dexpress_log("Using standard phone format conversion: {$phone}", 'debug');
+            dexpress_log("[API DEBUG] Telefon formatiran standardno: {$phone}", 'info');
         } else {
-            dexpress_log("Using saved API phone format: {$phone}", 'debug');
+            dexpress_log("[API DEBUG] Koristi se sačuvani API format telefona: {$phone}", 'info');
         }
 
         // Validacija telefonskog broja
         if (!D_Express_Validator::validate_phone($phone)) {
-            dexpress_log("WARNING: Invalid phone format: {$phone}", 'warning');
+            dexpress_log("[API DEBUG] UPOZORENJE: Neispravan format telefona: {$phone}", 'info');
             $phone = '38160000000'; // Default phone ako je format neispravan
+            dexpress_log("[API DEBUG] Korišćen default telefon: {$phone}", 'info');
         }
+        
         // Odredite koji tip adrese koristiti
         $address_type = $order->has_shipping_address() ? 'shipping' : 'billing';
         $address_desc = $order->get_meta("_{$address_type}_address_desc", true);
@@ -887,7 +890,7 @@ class D_Express_API
             dexpress_log("SHIPMENT DATA VALIDATION FAILED: " . implode(", ", $validation), 'error');
             // Ovde odlučujemo da li da odbacimo slanje ili nastavimo uprkos upozorenjima
         }
-
+        dexpress_log("[API DEBUG] Finalni RCPhone za API: {$phone}", 'info');
         // Omogućavanje filtiranja podataka za dodatna prilagođavanja
         return apply_filters('dexpress_prepare_shipment_data', $shipment_data, $order);
     }

@@ -95,8 +95,13 @@ class D_Express_Checkout
         }
         if (isset($fields['billing']['billing_phone'])) {
             $fields['billing']['billing_phone']['custom_attributes']['data-validate'] = 'phone';
-            $fields['billing']['billing_phone']['custom_attributes']['pattern'] = '\\+381[6-9][0-9]{7,8}';
-            $fields['billing']['billing_phone']['placeholder'] = __('Npr: +381 60 123 4567', 'd-express-woo');
+            $fields['billing']['billing_phone']['custom_attributes']['pattern'] = '\\+381[1-9][0-9]{7,8}';
+            $fields['billing']['billing_phone']['placeholder'] = __('npr. +381(0) 60 123 4567', 'd-express-woo');
+
+            // Postavite podrazumevanu vrednost na +381 ako je polje prazno
+            if (empty($fields['billing']['billing_phone']['default'])) {
+                $fields['billing']['billing_phone']['default'] = '+381';
+            }
         }
         // Ne sakrivamo standardna polja, već samo postavljamo stilove da se ne prikazuju,
         // ali primaju podatke za ispravno čuvanje
@@ -147,18 +152,9 @@ class D_Express_Checkout
         if ($is_dexpress) {
             $phone = isset($_POST['billing_phone']) ? sanitize_text_field($_POST['billing_phone']) : '';
 
-            // Formatiranje telefona za API
-            if (strpos($phone, '+381') === 0) {
-                $phone = substr($phone, 4);
-            } elseif (strpos($phone, '381') === 0) {
-                $phone = substr($phone, 3);
-            }
-
-            $api_phone = '381' . $phone;
-
-            // Provera formata telefona za API
-            if (!preg_match('/^381[6-9][0-9]{7,8}$/', $api_phone)) {
-                wc_add_notice(__('Telefon mora biti u formatu +381 6x xxx xxxx', 'd-express-woo'), 'error');
+            // Provera formata telefona - mora početi sa +381
+            if (strpos($phone, '+381') !== 0 || !preg_match('/^\+381[1-9][0-9]{7,8}$/', $phone)) {
+                wc_add_notice(__('Telefon mora biti u formatu +381 XX XXX XXXX', 'd-express-woo'), 'error');
             }
         }
     }
@@ -195,28 +191,20 @@ class D_Express_Checkout
         }
 
         // Čuvanje telefona u API formatu
-        if (isset($_POST['dexpress_formatted_phone'])) {
-            // Prvenstveno koristimo formatiranu vrednost iz skrivenog polja
-            $formatted_phone = sanitize_text_field($_POST['dexpress_formatted_phone']);
-            update_post_meta($order_id, '_billing_phone', $formatted_phone);
-
-            // Takođe sačuvaj API format (bez +)
-            $api_phone = ltrim($formatted_phone, '+');
-            update_post_meta($order_id, '_billing_phone_api_format', $api_phone);
-
-            dexpress_log("Phone saved from hidden field: {$formatted_phone}", 'debug');
-        } else if (isset($_POST['billing_phone'])) {
-            // Fallback ako nema skrivenog polja
+        if (isset($_POST['billing_phone'])) {
             $phone = sanitize_text_field($_POST['billing_phone']);
-            $digits_only = preg_replace('/[^0-9]/', '', $phone);
 
-            $formatted_phone = '+381' . $digits_only;
-            $api_phone = '381' . $digits_only;
+            // Log vrednosti
+            dexpress_log("[CHECKOUT] Telefon iz forme: " . $phone, 'info');
 
-            update_post_meta($order_id, '_billing_phone', $formatted_phone);
-            update_post_meta($order_id, '_billing_phone_api_format', $api_phone);
+            // Ako postoji, sačuvaj ga direktno sa prefiksom
+            update_post_meta($order_id, '_billing_phone', $phone);
 
-            dexpress_log("Phone saved fallback: {$formatted_phone}", 'debug');
+            // Sačuvaj API format za korišćenje u API
+            if (strpos($phone, '+381') === 0) {
+                $api_phone = substr($phone, 1); // ukloni samo + sa početka
+                update_post_meta($order_id, '_billing_phone_api_format', $api_phone);
+            }
         }
 
         dexpress_log($debug_info, 'debug');

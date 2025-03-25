@@ -79,7 +79,7 @@ class D_Express_Shipment_Service
             // Dobijanje podataka za pošiljku
             dexpress_log('[SHIPPING] Priprema podataka za narudžbinu #' . $order->get_id(), 'debug');
             $shipment_data = $this->api->prepare_shipment_data_from_order($order);
-
+            dexpress_log('[SHIPPING DEBUG] Telefon u API zahtevu: ' . $shipment_data['RCPhone'], 'info');
             if (is_wp_error($shipment_data)) {
                 dexpress_log('[SHIPPING] Greška pri pripremi podataka: ' . $shipment_data->get_error_message(), 'error');
                 return $shipment_data;
@@ -100,7 +100,7 @@ class D_Express_Shipment_Service
             }
 
             dexpress_log('[SHIPPING] API odgovor primljen uspešno', 'debug');
-
+            dexpress_log('[SHIPPING] API odgovor: ' . print_r($response, true), 'debug');
             // Kreiranje tracking broja
             $tracking_number = isset($response['TrackingNumber']) ? $response['TrackingNumber'] : $shipment_data['PackageList'][0]['Code'];
             $shipment_id = isset($response['ShipmentID']) ? $response['ShipmentID'] : $tracking_number;
@@ -173,6 +173,7 @@ class D_Express_Shipment_Service
             // Hook za dodatne akcije nakon kreiranja pošiljke
             do_action('dexpress_after_shipment_created', $insert_id, $order);
             return $insert_id;
+            dexpress_log('[SHIPPING DEBUG] Pošiljka kreirana sa telefonom: ' . $shipment_data['RCPhone'], 'info');
         } catch (Exception $e) {
             dexpress_log('[SHIPPING] Exception pri kreiranju pošiljke: ' . $e->getMessage(), 'error');
             return new WP_Error('exception', $e->getMessage());

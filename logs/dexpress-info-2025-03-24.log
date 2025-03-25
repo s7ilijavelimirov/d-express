@@ -1,6 +1,10 @@
-[2025-03-24 09:46:23] Podešavanja su ažurirana od strane korisnika ID: 1
-[2025-03-24 09:47:39] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/checkaddress
-[2025-03-24 09:47:39] Kreiranje pošiljke. Podaci: Array
+[2025-03-24 14:23:52] [CHECKOUT] Telefon iz forme: +381691995502
+[2025-03-24 14:23:55] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/checkaddress
+[2025-03-24 14:23:55] [API DEBUG] Inicijalna vrednost telefona iz WC: +381691995502
+[2025-03-24 14:23:55] [API DEBUG] Koristi se sačuvani API format telefona: 381691995502
+[2025-03-24 14:23:55] [API DEBUG] Finalni RCPhone za API: 381691995502
+[2025-03-24 14:23:55] [SHIPPING DEBUG] Telefon u API zahtevu: 381691995502
+[2025-03-24 14:23:55] Kreiranje pošiljke. Podaci: Array
 (
     [CClientID] => UK16967
     [CName] => s7Code DOO
@@ -16,13 +20,13 @@
     [PuTownID] => 802158
     [PuCName] => Ilija Velemirov
     [PuCPhone] => 381603995503
-    [RName] => Ilija Velemirov
-    [RAddress] => Bulevar Nikole Pašića
+    [RName] => Velemirov Ilija
+    [RAddress] => Kikindska
     [RAddressNum] => 15
-    [RAddressDesc] => 
-    [RTownID] => 721107
-    [RCName] => Ilija Velemirov
-    [RCPhone] => 381691995503
+    [RAddressDesc] => stan 3, deda ce izaci ispred zgrade
+    [RTownID] => 802590
+    [RCName] => Velemirov Ilija
+    [RCPhone] => 381691995502
     [Note] => 
     [DlTypeID] => 2
     [PaymentBy] => 1
@@ -30,7 +34,7 @@
     [Value] => 51800
     [Content] => Dokumenta
     [Mass] => 100
-    [ReferenceID] => ORDER-759-1742809659
+    [ReferenceID] => ORDER-776-1742826235
     [ReturnDoc] => 0
     [BuyOut] => 51800
     [BuyOutFor] => 0
@@ -40,7 +44,7 @@
         (
             [0] => Array
                 (
-                    [Code] => TT0000000054
+                    [Code] => TT0000000070
                     [Mass] => 100
                 )
 
@@ -48,9 +52,74 @@
 
 )
 
-[2025-03-24 09:47:39] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/addshipment
-[2025-03-24 09:50:25] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/checkaddress
-[2025-03-24 09:50:25] Kreiranje pošiljke. Podaci: Array
+[2025-03-24 14:23:55] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/addshipment
+[2025-03-24 14:24:04] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: +381691995502
+[2025-03-24 14:24:04] [ADMIN DEBUG] Telefon već ima +381 prefiks: +381691995502
+[2025-03-24 14:24:04] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381691995502
+[2025-03-24 14:24:04] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: +381691995502
+[2025-03-24 14:24:04] [ADMIN DEBUG] Telefon već ima +381 prefiks: +381691995502
+[2025-03-24 14:24:04] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381691995502
+[2025-03-24 14:24:04] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: +381691995502
+[2025-03-24 14:24:04] [ADMIN DEBUG] Telefon već ima +381 prefiks: +381691995502
+[2025-03-24 14:24:04] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381691995502
+[2025-03-24 14:24:04] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: +381691995502
+[2025-03-24 14:24:04] [ADMIN DEBUG] Telefon već ima +381 prefiks: +381691995502
+[2025-03-24 14:24:04] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381691995502
+[2025-03-24 14:24:04] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: 603995503
+[2025-03-24 14:24:04] [ADMIN DEBUG] Korišćen sačuvani API format: +381603995503
+[2025-03-24 14:24:04] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381603995503
+[2025-03-24 14:24:04] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: 603995503
+[2025-03-24 14:24:04] [ADMIN DEBUG] Korišćen sačuvani API format: +381603995503
+[2025-03-24 14:24:04] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381603995503
+[2025-03-24 14:24:04] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: 23025760
+[2025-03-24 14:24:04] [ADMIN DEBUG] Korišćen sačuvani API format: +38123025760
+[2025-03-24 14:24:04] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +38123025760
+[2025-03-24 14:24:04] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: 603995503
+[2025-03-24 14:24:04] [ADMIN DEBUG] Korišćen sačuvani API format: +381603995503
+[2025-03-24 14:24:04] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381603995503
+[2025-03-24 14:24:04] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: 691995503
+[2025-03-24 14:24:04] [ADMIN DEBUG] Korišćen sačuvani API format: +381691995503
+[2025-03-24 14:24:04] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381691995503
+[2025-03-24 14:24:04] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: 661985532
+[2025-03-24 14:24:04] [ADMIN DEBUG] Korišćen sačuvani API format: +381661985532
+[2025-03-24 14:24:04] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381661985532
+[2025-03-24 14:24:04] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: 603995503
+[2025-03-24 14:24:04] [ADMIN DEBUG] Korišćen sačuvani API format: +381603995503
+[2025-03-24 14:24:04] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381603995503
+[2025-03-24 14:24:04] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: 691885503
+[2025-03-24 14:24:04] [ADMIN DEBUG] Korišćen sačuvani API format: +381691885503
+[2025-03-24 14:24:04] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381691885503
+[2025-03-24 14:24:04] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: 603995503
+[2025-03-24 14:24:04] [ADMIN DEBUG] Korišćen sačuvani API format: +381603995503
+[2025-03-24 14:24:04] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381603995503
+[2025-03-24 14:24:04] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: 603995503
+[2025-03-24 14:24:04] [ADMIN DEBUG] Korišćen sačuvani API format: +381603995503
+[2025-03-24 14:24:04] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381603995503
+[2025-03-24 14:24:04] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: 603995503
+[2025-03-24 14:24:04] [ADMIN DEBUG] Korišćen sačuvani API format: +381603995503
+[2025-03-24 14:24:04] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381603995503
+[2025-03-24 14:24:04] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: 603995503
+[2025-03-24 14:24:04] [ADMIN DEBUG] Korišćen sačuvani API format: +381603995503
+[2025-03-24 14:24:04] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381603995503
+[2025-03-24 14:24:04] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: 603995503
+[2025-03-24 14:24:04] [ADMIN DEBUG] Korišćen sačuvani API format: +381603995503
+[2025-03-24 14:24:04] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381603995503
+[2025-03-24 14:24:04] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: 691995503
+[2025-03-24 14:24:04] [ADMIN DEBUG] Korišćen sačuvani API format: +381691995503
+[2025-03-24 14:24:04] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381691995503
+[2025-03-24 14:24:04] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: +3816919955
+[2025-03-24 14:24:04] [ADMIN DEBUG] Telefon već ima +381 prefiks: +3816919955
+[2025-03-24 14:24:04] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +3816919955
+[2025-03-24 14:24:04] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: +381230
+[2025-03-24 14:24:04] [ADMIN DEBUG] Telefon već ima +381 prefiks: +381230
+[2025-03-24 14:24:04] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381230
+[2025-03-24 14:30:01] [CHECKOUT] Telefon iz forme: +381691995502
+[2025-03-24 14:30:03] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/checkaddress
+[2025-03-24 14:30:03] [API DEBUG] Inicijalna vrednost telefona iz WC: +381691995502
+[2025-03-24 14:30:03] [API DEBUG] Koristi se sačuvani API format telefona: 381691995502
+[2025-03-24 14:30:03] [API DEBUG] Finalni RCPhone za API: 381691995502
+[2025-03-24 14:30:03] [SHIPPING DEBUG] Telefon u API zahtevu: 381691995502
+[2025-03-24 14:30:03] Kreiranje pošiljke. Podaci: Array
 (
     [CClientID] => UK16967
     [CName] => s7Code DOO
@@ -66,330 +135,21 @@
     [PuTownID] => 802158
     [PuCName] => Ilija Velemirov
     [PuCPhone] => 381603995503
-    [RName] => Ilija Velemirov
-    [RAddress] => Bulevar Nikole Pašića
-    [RAddressNum] => 15
-    [RAddressDesc] => 23
-    [RTownID] => 721107
-    [RCName] => Ilija Velemirov
-    [RCPhone] => 381603995503
-    [Note] => Order noter optional za diferent shipping
-    [DlTypeID] => 2
-    [PaymentBy] => 1
-    [PaymentType] => 2
-    [Value] => 51800
-    [Content] => Dokumenta
-    [Mass] => 100
-    [ReferenceID] => ORDER-760-1742809825
-    [ReturnDoc] => 0
-    [BuyOut] => 51800
-    [BuyOutFor] => 0
-    [BuyOutAccount] => 170-0010364556000-77
-    [SelfDropOff] => 0
-    [PackageList] => Array
-        (
-            [0] => Array
-                (
-                    [Code] => TT0000000055
-                    [Mass] => 100
-                )
-
-        )
-
-)
-
-[2025-03-24 09:50:25] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/addshipment
-[2025-03-24 10:41:59] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/checkaddress
-[2025-03-24 10:42:00] Kreiranje pošiljke. Podaci: Array
-(
-    [CClientID] => UK16967
-    [CName] => s7Code DOO
-    [CAddress] => Bulevar Cara Lazara
-    [CAddressNum] => 106
-    [CTownID] => 802158
-    [CCName] => Ilija Velemirov
-    [CCPhone] => 381603995503
-    [PuClientID] => UK16967
-    [PuName] => s7Code DOO
-    [PuAddress] => Bulevar Cara Lazara
-    [PuAddressNum] => 106
-    [PuTownID] => 802158
-    [PuCName] => Ilija Velemirov
-    [PuCPhone] => 381603995503
-    [RName] => Petar Petrovic
-    [RAddress] => Bulevar Nikole Pašića
-    [RAddressNum] => 2
-    [RAddressDesc] => 3
-    [RTownID] => 724548
-    [RCName] => Petar Petrovic
-    [RCPhone] => 381603995503
-    [Note] => 
-    [DlTypeID] => 2
-    [PaymentBy] => 1
-    [PaymentType] => 2
-    [Value] => 51800
-    [Content] => Dokumenta
-    [Mass] => 100
-    [ReferenceID] => ORDER-761-1742812920
-    [ReturnDoc] => 0
-    [BuyOut] => 51800
-    [BuyOutFor] => 0
-    [BuyOutAccount] => 170-0010364556000-77
-    [SelfDropOff] => 0
-    [PackageList] => Array
-        (
-            [0] => Array
-                (
-                    [Code] => TT0000000056
-                    [Mass] => 100
-                )
-
-        )
-
-)
-
-[2025-03-24 10:42:00] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/addshipment
-[2025-03-24 10:56:37] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/shops
-[2025-03-24 10:56:37] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/locations
-[2025-03-24 10:56:38] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/municipalities?date=20000101000000
-[2025-03-24 10:56:39] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/towns?date=20000101000000
-[2025-03-24 10:56:48] Updating streets...
-[2025-03-24 10:56:48] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/streets?date=20000101000000
-[2025-03-24 10:56:53] Got 39339 streets, starting update...
-[2025-03-24 10:56:53] First street data: Array
-(
-    [Id] => 1
-    [Name] => Aberdareva
-    [TId] => 791075
-    [Del] => 
-)
-
-[2025-03-24 10:56:53] Streets update progress: 1000/39339
-[2025-03-24 10:56:53] Streets update progress: 2000/39339
-[2025-03-24 10:56:53] Streets update progress: 3000/39339
-[2025-03-24 10:56:53] Streets update progress: 4000/39339
-[2025-03-24 10:56:53] Streets update progress: 5000/39339
-[2025-03-24 10:56:53] Streets update progress: 6000/39339
-[2025-03-24 10:56:53] Streets update progress: 7000/39339
-[2025-03-24 10:56:53] Streets update progress: 8000/39339
-[2025-03-24 10:56:53] Streets update progress: 9000/39339
-[2025-03-24 10:56:53] Streets update progress: 10000/39339
-[2025-03-24 10:56:53] Streets update progress: 11000/39339
-[2025-03-24 10:56:53] Streets update progress: 12000/39339
-[2025-03-24 10:56:53] Streets update progress: 13000/39339
-[2025-03-24 10:56:53] Streets update progress: 14000/39339
-[2025-03-24 10:56:53] Streets update progress: 15000/39339
-[2025-03-24 10:56:53] Streets update progress: 16000/39339
-[2025-03-24 10:56:53] Streets update progress: 17000/39339
-[2025-03-24 10:56:53] Streets update progress: 18000/39339
-[2025-03-24 10:56:53] Streets update progress: 19000/39339
-[2025-03-24 10:56:53] Streets update progress: 20000/39339
-[2025-03-24 10:56:53] Streets update progress: 21000/39339
-[2025-03-24 10:56:53] Streets update progress: 22000/39339
-[2025-03-24 10:56:53] Streets update progress: 23000/39339
-[2025-03-24 10:56:53] Streets update progress: 24000/39339
-[2025-03-24 10:56:53] Streets update progress: 25000/39339
-[2025-03-24 10:56:53] Streets update progress: 26000/39339
-[2025-03-24 10:56:53] Streets update progress: 27000/39339
-[2025-03-24 10:56:53] Streets update progress: 28000/39339
-[2025-03-24 10:56:53] Streets update progress: 29000/39339
-[2025-03-24 10:56:53] Streets update progress: 30000/39339
-[2025-03-24 10:56:53] Streets update progress: 31000/39339
-[2025-03-24 10:56:53] Streets update progress: 32000/39339
-[2025-03-24 10:56:53] Streets update progress: 33000/39339
-[2025-03-24 10:56:53] Streets update progress: 34000/39339
-[2025-03-24 10:56:53] Streets update progress: 35000/39339
-[2025-03-24 10:56:53] Streets update progress: 36000/39339
-[2025-03-24 10:56:53] Streets update progress: 37000/39339
-[2025-03-24 10:56:53] Streets update progress: 38000/39339
-[2025-03-24 10:56:53] Streets update progress: 39000/39339
-[2025-03-24 10:56:53] Streets update progress: 39339/39339
-[2025-03-24 10:56:53] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/statuses
-[2025-03-24 10:56:54] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/dispensers
-[2025-03-24 10:56:54] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/centres
-[2025-03-24 10:56:54] Index update completed successfully
-[2025-03-24 12:12:49] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/checkaddress
-[2025-03-24 12:12:49] Kreiranje pošiljke. Podaci: Array
-(
-    [CClientID] => UK16967
-    [CName] => s7Code DOO
-    [CAddress] => Bulevar Cara Lazara
-    [CAddressNum] => 106
-    [CTownID] => 802158
-    [CCName] => Ilija Velemirov
-    [CCPhone] => 381603995503
-    [PuClientID] => UK16967
-    [PuName] => s7Code DOO
-    [PuAddress] => Bulevar Cara Lazara
-    [PuAddressNum] => 106
-    [PuTownID] => 802158
-    [PuCName] => Ilija Velemirov
-    [PuCPhone] => 381603995503
-    [RName] => Igort Igorijevic
-    [RAddress] => Petefi Šandora
-    [RAddressNum] => 23
-    [RAddressDesc] => Dodatne informacije o ADRESI
-    [RTownID] => 802158
-    [RCName] => Igort Igorijevic
-    [RCPhone] => 381603995503
-    [Note] => Order Notes OPTIONAL
-    [DlTypeID] => 2
-    [PaymentBy] => 1
-    [PaymentType] => 2
-    [Value] => 51800
-    [Content] => Dokumenta
-    [Mass] => 100
-    [ReferenceID] => ORDER-762-1742818369
-    [ReturnDoc] => 0
-    [BuyOut] => 51800
-    [BuyOutFor] => 0
-    [BuyOutAccount] => 170-0010364556000-77
-    [SelfDropOff] => 0
-    [PackageList] => Array
-        (
-            [0] => Array
-                (
-                    [Code] => TT0000000057
-                    [Mass] => 100
-                )
-
-        )
-
-)
-
-[2025-03-24 12:12:49] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/addshipment
-[2025-03-24 12:20:37] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/checkaddress
-[2025-03-24 12:20:37] Kreiranje pošiljke. Podaci: Array
-(
-    [CClientID] => UK16967
-    [CName] => s7Code DOO
-    [CAddress] => Bulevar Cara Lazara
-    [CAddressNum] => 106
-    [CTownID] => 802158
-    [CCName] => Ilija Velemirov
-    [CCPhone] => 381603995503
-    [PuClientID] => UK16967
-    [PuName] => s7Code DOO
-    [PuAddress] => Bulevar Cara Lazara
-    [PuAddressNum] => 106
-    [PuTownID] => 802158
-    [PuCName] => Ilija Velemirov
-    [PuCPhone] => 381603995503
-    [RName] => Vlada Vladic
+    [RName] => Velemirov Verka
     [RAddress] => Nikole Francuskog
-    [RAddressNum] => 15
-    [RAddressDesc] => spra 3 stan 4
-    [RTownID] => 802140
-    [RCName] => Vlada Vladic
-    [RCPhone] => 381603995503
-    [Note] => 
-    [DlTypeID] => 2
-    [PaymentBy] => 1
-    [PaymentType] => 2
-    [Value] => 51800
-    [Content] => Dokumenta
-    [Mass] => 100
-    [ReferenceID] => ORDER-763-1742818837
-    [ReturnDoc] => 0
-    [BuyOut] => 51800
-    [BuyOutFor] => 0
-    [BuyOutAccount] => 170-0010364556000-77
-    [SelfDropOff] => 0
-    [PackageList] => Array
-        (
-            [0] => Array
-                (
-                    [Code] => TT0000000058
-                    [Mass] => 100
-                )
-
-        )
-
-)
-
-[2025-03-24 12:20:37] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/addshipment
-[2025-03-24 12:28:26] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/checkaddress
-[2025-03-24 12:28:26] Kreiranje pošiljke. Podaci: Array
-(
-    [CClientID] => UK16967
-    [CName] => s7Code DOO
-    [CAddress] => Bulevar Cara Lazara
-    [CAddressNum] => 106
-    [CTownID] => 802158
-    [CCName] => Ilija Velemirov
-    [CCPhone] => 381603995503
-    [PuClientID] => UK16967
-    [PuName] => s7Code DOO
-    [PuAddress] => Bulevar Cara Lazara
-    [PuAddressNum] => 106
-    [PuTownID] => 802158
-    [PuCName] => Ilija Velemirov
-    [PuCPhone] => 381603995503
-    [RName] => Luka Burain
-    [RAddress] => 10. kilometra
-    [RAddressNum] => 15
-    [RAddressDesc] => 
-    [RTownID] => 791016
-    [RCName] => Luka Burain
-    [RCPhone] => 381603995503
-    [Note] => 
-    [DlTypeID] => 2
-    [PaymentBy] => 1
-    [PaymentType] => 2
-    [Value] => 51800
-    [Content] => Dokumenta
-    [Mass] => 100
-    [ReferenceID] => ORDER-764-1742819306
-    [ReturnDoc] => 0
-    [BuyOut] => 51800
-    [BuyOutFor] => 0
-    [BuyOutAccount] => 170-0010364556000-77
-    [SelfDropOff] => 0
-    [PackageList] => Array
-        (
-            [0] => Array
-                (
-                    [Code] => TT0000000059
-                    [Mass] => 100
-                )
-
-        )
-
-)
-
-[2025-03-24 12:28:26] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/addshipment
-[2025-03-24 12:39:46] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/checkaddress
-[2025-03-24 12:39:47] Kreiranje pošiljke. Podaci: Array
-(
-    [CClientID] => UK16967
-    [CName] => s7Code DOO
-    [CAddress] => Bulevar Cara Lazara
-    [CAddressNum] => 106
-    [CTownID] => 802158
-    [CCName] => Ilija Velemirov
-    [CCPhone] => 381603995503
-    [PuClientID] => UK16967
-    [PuName] => s7Code DOO
-    [PuAddress] => Bulevar Cara Lazara
-    [PuAddressNum] => 106
-    [PuTownID] => 802158
-    [PuCName] => Ilija Velemirov
-    [PuCPhone] => 381603995503
-    [RName] => Rozajac Luka
-    [RAddress] => 11. aprila
     [RAddressNum] => 12
-    [RAddressDesc] => 
-    [RTownID] => 791067
-    [RCName] => Rozajac Luka
-    [RCPhone] => 381691885503
-    [Note] => 
+    [RAddressDesc] => iza coska, pa ispred cimnuti telefonom
+    [RTownID] => 802158
+    [RCName] => Velemirov Verka
+    [RCPhone] => 381691995502
+    [Note] => Order neki je nemam pojma, ovo je NOTE
     [DlTypeID] => 2
     [PaymentBy] => 1
     [PaymentType] => 2
     [Value] => 51800
     [Content] => Dokumenta
     [Mass] => 100
-    [ReferenceID] => ORDER-765-1742819987
+    [ReferenceID] => ORDER-777-1742826603
     [ReturnDoc] => 0
     [BuyOut] => 51800
     [BuyOutFor] => 0
@@ -399,7 +159,7 @@
         (
             [0] => Array
                 (
-                    [Code] => TT0000000060
+                    [Code] => TT0000000071
                     [Mass] => 100
                 )
 
@@ -407,54 +167,136 @@
 
 )
 
-[2025-03-24 12:39:47] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/addshipment
-[2025-03-24 12:48:44] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/checkaddress
-[2025-03-24 12:48:44] Kreiranje pošiljke. Podaci: Array
-(
-    [CClientID] => UK16967
-    [CName] => s7Code DOO
-    [CAddress] => Bulevar Cara Lazara
-    [CAddressNum] => 106
-    [CTownID] => 802158
-    [CCName] => Ilija Velemirov
-    [CCPhone] => 381603995503
-    [PuClientID] => UK16967
-    [PuName] => s7Code DOO
-    [PuAddress] => Bulevar Cara Lazara
-    [PuAddressNum] => 106
-    [PuTownID] => 802158
-    [PuCName] => Ilija Velemirov
-    [PuCPhone] => 381603995503
-    [RName] => Ilija Velemirov
-    [RAddress] => Aleksandra Ace Tešića
-    [RAddressNum] => 12
-    [RAddressDesc] => 
-    [RTownID] => 704563
-    [RCName] => Ilija Velemirov
-    [RCPhone] => 381661985532
-    [Note] => 
-    [DlTypeID] => 2
-    [PaymentBy] => 1
-    [PaymentType] => 2
-    [Value] => 51800
-    [Content] => Dokumenta
-    [Mass] => 100
-    [ReferenceID] => ORDER-767-1742820524
-    [ReturnDoc] => 0
-    [BuyOut] => 51800
-    [BuyOutFor] => 0
-    [BuyOutAccount] => 170-0010364556000-77
-    [SelfDropOff] => 0
-    [PackageList] => Array
-        (
-            [0] => Array
-                (
-                    [Code] => TT0000000061
-                    [Mass] => 100
-                )
-
-        )
-
-)
-
-[2025-03-24 12:48:44] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/addshipment
+[2025-03-24 14:30:03] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/addshipment
+[2025-03-24 14:30:16] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: +381691995502
+[2025-03-24 14:30:16] [ADMIN DEBUG] Telefon već ima +381 prefiks: +381691995502
+[2025-03-24 14:30:16] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381691995502
+[2025-03-24 14:30:16] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: +381691995502
+[2025-03-24 14:30:16] [ADMIN DEBUG] Telefon već ima +381 prefiks: +381691995502
+[2025-03-24 14:30:16] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381691995502
+[2025-03-24 14:30:16] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: +381691995502
+[2025-03-24 14:30:16] [ADMIN DEBUG] Telefon već ima +381 prefiks: +381691995502
+[2025-03-24 14:30:16] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381691995502
+[2025-03-24 14:30:16] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: +381691995502
+[2025-03-24 14:30:16] [ADMIN DEBUG] Telefon već ima +381 prefiks: +381691995502
+[2025-03-24 14:30:16] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381691995502
+[2025-03-24 14:30:16] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: +381691995502
+[2025-03-24 14:30:16] [ADMIN DEBUG] Telefon već ima +381 prefiks: +381691995502
+[2025-03-24 14:30:16] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381691995502
+[2025-03-24 14:30:16] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: 603995503
+[2025-03-24 14:30:16] [ADMIN DEBUG] Korišćen sačuvani API format: +381603995503
+[2025-03-24 14:30:16] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381603995503
+[2025-03-24 14:30:16] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: 603995503
+[2025-03-24 14:30:16] [ADMIN DEBUG] Korišćen sačuvani API format: +381603995503
+[2025-03-24 14:30:16] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381603995503
+[2025-03-24 14:30:16] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: 23025760
+[2025-03-24 14:30:16] [ADMIN DEBUG] Korišćen sačuvani API format: +38123025760
+[2025-03-24 14:30:16] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +38123025760
+[2025-03-24 14:30:16] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: 603995503
+[2025-03-24 14:30:16] [ADMIN DEBUG] Korišćen sačuvani API format: +381603995503
+[2025-03-24 14:30:16] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381603995503
+[2025-03-24 14:30:16] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: 691995503
+[2025-03-24 14:30:16] [ADMIN DEBUG] Korišćen sačuvani API format: +381691995503
+[2025-03-24 14:30:16] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381691995503
+[2025-03-24 14:30:16] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: 661985532
+[2025-03-24 14:30:16] [ADMIN DEBUG] Korišćen sačuvani API format: +381661985532
+[2025-03-24 14:30:16] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381661985532
+[2025-03-24 14:30:16] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: 603995503
+[2025-03-24 14:30:16] [ADMIN DEBUG] Korišćen sačuvani API format: +381603995503
+[2025-03-24 14:30:16] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381603995503
+[2025-03-24 14:30:16] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: 691885503
+[2025-03-24 14:30:16] [ADMIN DEBUG] Korišćen sačuvani API format: +381691885503
+[2025-03-24 14:30:16] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381691885503
+[2025-03-24 14:30:16] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: 603995503
+[2025-03-24 14:30:16] [ADMIN DEBUG] Korišćen sačuvani API format: +381603995503
+[2025-03-24 14:30:16] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381603995503
+[2025-03-24 14:30:16] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: 603995503
+[2025-03-24 14:30:16] [ADMIN DEBUG] Korišćen sačuvani API format: +381603995503
+[2025-03-24 14:30:16] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381603995503
+[2025-03-24 14:30:16] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: 603995503
+[2025-03-24 14:30:16] [ADMIN DEBUG] Korišćen sačuvani API format: +381603995503
+[2025-03-24 14:30:16] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381603995503
+[2025-03-24 14:30:16] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: 603995503
+[2025-03-24 14:30:16] [ADMIN DEBUG] Korišćen sačuvani API format: +381603995503
+[2025-03-24 14:30:16] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381603995503
+[2025-03-24 14:30:16] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: 603995503
+[2025-03-24 14:30:16] [ADMIN DEBUG] Korišćen sačuvani API format: +381603995503
+[2025-03-24 14:30:16] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381603995503
+[2025-03-24 14:30:16] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: 691995503
+[2025-03-24 14:30:16] [ADMIN DEBUG] Korišćen sačuvani API format: +381691995503
+[2025-03-24 14:30:16] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381691995503
+[2025-03-24 14:30:16] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: +3816919955
+[2025-03-24 14:30:16] [ADMIN DEBUG] Telefon već ima +381 prefiks: +3816919955
+[2025-03-24 14:30:16] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +3816919955
+[2025-03-24 14:30:19] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: +381691995502
+[2025-03-24 14:30:19] [ADMIN DEBUG] Telefon već ima +381 prefiks: +381691995502
+[2025-03-24 14:30:19] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381691995502
+[2025-03-24 14:30:19] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: +381691995502
+[2025-03-24 14:30:19] [ADMIN DEBUG] Telefon već ima +381 prefiks: +381691995502
+[2025-03-24 14:30:19] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381691995502
+[2025-03-24 15:00:19] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: +381691995502
+[2025-03-24 15:00:19] [ADMIN DEBUG] Telefon već ima +381 prefiks: +381691995502
+[2025-03-24 15:00:19] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381691995502
+[2025-03-24 15:00:19] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: +381691995502
+[2025-03-24 15:00:19] [ADMIN DEBUG] Telefon već ima +381 prefiks: +381691995502
+[2025-03-24 15:00:19] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381691995502
+[2025-03-24 15:00:19] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: +381691995502
+[2025-03-24 15:00:19] [ADMIN DEBUG] Telefon već ima +381 prefiks: +381691995502
+[2025-03-24 15:00:19] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381691995502
+[2025-03-24 15:00:19] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: +381691995502
+[2025-03-24 15:00:19] [ADMIN DEBUG] Telefon već ima +381 prefiks: +381691995502
+[2025-03-24 15:00:19] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381691995502
+[2025-03-24 15:00:19] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: +381691995502
+[2025-03-24 15:00:19] [ADMIN DEBUG] Telefon već ima +381 prefiks: +381691995502
+[2025-03-24 15:00:19] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381691995502
+[2025-03-24 15:00:19] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: 603995503
+[2025-03-24 15:00:19] [ADMIN DEBUG] Korišćen sačuvani API format: +381603995503
+[2025-03-24 15:00:19] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381603995503
+[2025-03-24 15:00:19] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: 603995503
+[2025-03-24 15:00:19] [ADMIN DEBUG] Korišćen sačuvani API format: +381603995503
+[2025-03-24 15:00:19] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381603995503
+[2025-03-24 15:00:19] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: 23025760
+[2025-03-24 15:00:19] [ADMIN DEBUG] Korišćen sačuvani API format: +38123025760
+[2025-03-24 15:00:19] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +38123025760
+[2025-03-24 15:00:19] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: 603995503
+[2025-03-24 15:00:19] [ADMIN DEBUG] Korišćen sačuvani API format: +381603995503
+[2025-03-24 15:00:19] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381603995503
+[2025-03-24 15:00:19] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: 691995503
+[2025-03-24 15:00:19] [ADMIN DEBUG] Korišćen sačuvani API format: +381691995503
+[2025-03-24 15:00:19] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381691995503
+[2025-03-24 15:00:19] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: 661985532
+[2025-03-24 15:00:19] [ADMIN DEBUG] Korišćen sačuvani API format: +381661985532
+[2025-03-24 15:00:19] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381661985532
+[2025-03-24 15:00:19] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: 603995503
+[2025-03-24 15:00:19] [ADMIN DEBUG] Korišćen sačuvani API format: +381603995503
+[2025-03-24 15:00:19] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381603995503
+[2025-03-24 15:00:19] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: 691885503
+[2025-03-24 15:00:19] [ADMIN DEBUG] Korišćen sačuvani API format: +381691885503
+[2025-03-24 15:00:19] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381691885503
+[2025-03-24 15:00:19] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: 603995503
+[2025-03-24 15:00:19] [ADMIN DEBUG] Korišćen sačuvani API format: +381603995503
+[2025-03-24 15:00:19] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381603995503
+[2025-03-24 15:00:19] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: 603995503
+[2025-03-24 15:00:19] [ADMIN DEBUG] Korišćen sačuvani API format: +381603995503
+[2025-03-24 15:00:19] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381603995503
+[2025-03-24 15:00:19] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: 603995503
+[2025-03-24 15:00:19] [ADMIN DEBUG] Korišćen sačuvani API format: +381603995503
+[2025-03-24 15:00:19] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381603995503
+[2025-03-24 15:00:19] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: 603995503
+[2025-03-24 15:00:19] [ADMIN DEBUG] Korišćen sačuvani API format: +381603995503
+[2025-03-24 15:00:19] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381603995503
+[2025-03-24 15:00:19] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: 603995503
+[2025-03-24 15:00:19] [ADMIN DEBUG] Korišćen sačuvani API format: +381603995503
+[2025-03-24 15:00:19] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381603995503
+[2025-03-24 15:00:19] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: 691995503
+[2025-03-24 15:00:19] [ADMIN DEBUG] Korišćen sačuvani API format: +381691995503
+[2025-03-24 15:00:19] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381691995503
+[2025-03-24 15:00:19] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: +3816919955
+[2025-03-24 15:00:19] [ADMIN DEBUG] Telefon već ima +381 prefiks: +3816919955
+[2025-03-24 15:00:19] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +3816919955
+[2025-03-24 15:00:23] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: +381691995502
+[2025-03-24 15:00:23] [ADMIN DEBUG] Telefon već ima +381 prefiks: +381691995502
+[2025-03-24 15:00:23] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381691995502
+[2025-03-24 15:00:23] [ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: +381691995502
+[2025-03-24 15:00:23] [ADMIN DEBUG] Telefon već ima +381 prefiks: +381691995502
+[2025-03-24 15:00:23] [ADMIN DEBUG] Finalni formatirani telefon za prikaz: +381691995502

@@ -36,10 +36,56 @@ class D_Express_Admin
         // Dodavanje kolone za praćenje u listi narudžbina
         add_filter('manage_edit-shop_order_columns', array($this, 'add_order_tracking_column'));
         add_action('manage_shop_order_posts_custom_column', array($this, 'show_order_tracking_column_data'), 10, 2);
+
+        add_filter('woocommerce_get_order_address', array($this, 'format_order_address_phone'), 10, 3);
     }
     public function __construct()
     {
         $this->admin_nonce = wp_create_nonce('dexpress-admin-nonce');
+    }
+    public function format_order_address_phone($address, $type, $order)
+    {
+        if ($type === 'billing' && isset($address['phone'])) {
+            // DEBUG LOG: Pre formatiranja
+            dexpress_log("[ADMIN DEBUG] Pre formatiranja telefona u admin panelu - original: " . $address['phone'], 'info');
+
+            // Proveri da li telefon već počinje sa +381
+            if (strpos($address['phone'], '+381') !== 0) {
+                // Proveriti da li postoji sačuvani API format
+                $api_phone = get_post_meta($order->get_id(), '_billing_phone_api_format', true);
+
+                if (!empty($api_phone) && strpos($api_phone, '381') === 0) {
+                    // Dodaj + ispred API broja
+                    $address['phone'] = '+' . $api_phone;
+                    dexpress_log("[ADMIN DEBUG] Korišćen sačuvani API format: " . $address['phone'], 'info');
+                } else {
+                    // Ako ne, formatiraj standardni telefon
+                    $phone = preg_replace('/[^0-9]/', '', $address['phone']);
+
+                    // Ukloni početnu nulu ako postoji
+                    if (strlen($phone) > 0 && $phone[0] === '0') {
+                        $phone = substr($phone, 1);
+                        dexpress_log("[ADMIN DEBUG] Uklonjena početna nula: " . $phone, 'info');
+                    }
+
+                    // Dodaj prefiks ako ne postoji
+                    if (strpos($phone, '381') !== 0) {
+                        $address['phone'] = '+381' . $phone;
+                        dexpress_log("[ADMIN DEBUG] Dodat prefiks +381: " . $address['phone'], 'info');
+                    } else {
+                        $address['phone'] = '+' . $phone;
+                        dexpress_log("[ADMIN DEBUG] Dodat samo + jer već sadrži 381: " . $address['phone'], 'info');
+                    }
+                }
+            } else {
+                dexpress_log("[ADMIN DEBUG] Telefon već ima +381 prefiks: " . $address['phone'], 'info');
+            }
+
+            // DEBUG LOG: Finalni rezultat
+            dexpress_log("[ADMIN DEBUG] Finalni formatirani telefon za prikaz: " . $address['phone'], 'info');
+        }
+
+        return $address;
     }
     /**
      * Dodavanje admin menija

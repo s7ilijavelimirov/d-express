@@ -12,7 +12,8 @@ class D_Express_Validator
      */
     public static function validate_phone($phone)
     {
-        $pattern = '/^(381[1-9][0-9]{7,8}|38167[0-9]{6,8})$/';
+        // Prihvata sve brojeve koji počinju sa 381 i imaju cifru 1-9 iza toga, pa još 7-8 cifara
+        $pattern = '/^(381[1-9][0-9]{7,8})$/';
         return preg_match($pattern, $phone);
     }
 

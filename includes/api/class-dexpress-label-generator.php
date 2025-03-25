@@ -74,7 +74,7 @@ class D_Express_Label_Generator
         if (empty($shipments)) {
             wp_die(__('Pošiljke nisu pronađene.', 'd-express-woo'));
         }
-
+        $total_shipments = count($shipments);
         // Početak HTML-a za nalepnice
         echo '<!DOCTYPE html>
         <html>
@@ -270,11 +270,14 @@ class D_Express_Label_Generator
         <div class="print-container">';
 
         // Generisanje nalepnica za svaku pošiljku
-        foreach ($shipments as $index => $shipment) {
+        $shipment_index = 1; // Brojač pošiljki
+
+        foreach ($shipments as $shipment) {
             $order = wc_get_order($shipment->order_id);
 
             if ($order) {
-                $this->generate_compact_label($shipment, $order);
+                $this->generate_compact_label($shipment, $order, $shipment_index, $total_shipments);
+                $shipment_index++; // Povećavamo indeks za sledeću pošiljku
             }
         }
 
@@ -282,12 +285,39 @@ class D_Express_Label_Generator
         exit;
     }
     /**
-     * Generiše kompaktnu nalepnicu za višestruko štampanje
+     * Dobavlja broj paketa za pošiljku
+     * 
+     * @param object $shipment Podaci o pošiljci
+     * @return int Broj paketa
      */
-    private function generate_compact_label($shipment, $order)
+    private function get_package_count($shipment)
+    {
+        // Ako postoji PackageList u podacima pošiljke, koristimo njegovu dužinu
+        if (!empty($shipment->package_list)) {
+            $package_list = maybe_unserialize($shipment->package_list);
+            if (is_array($package_list)) {
+                return count($package_list);
+            }
+        }
+
+        // Ako nemamo podatke o paketima, pretpostavljamo da je jedan paket
+        return 1;
+    }
+    /**
+     * Generiše kompaktnu nalepnicu za višestruko štampanje
+     * 
+     * @param object $shipment Podaci o pošiljci
+     * @param WC_Order $order WooCommerce narudžbina
+     * @param int $package_index Indeks trenutnog paketa (opciono)
+     * @param int $package_count Ukupan broj paketa (opciono)
+     */
+    public function generate_compact_label($shipment, $order, $package_index = 1, $package_count = 1)
     {
         // Pripremanje podataka za nalepnicu
         $order_data = $this->prepare_order_data($order);
+
+        $address_type = $order->has_shipping_address() ? 'shipping' : 'billing';
+        $address_desc = get_post_meta($order->get_id(), "_{$address_type}_address_desc", true);
 
         // Tracking broj
         $tracking_number = !empty($shipment->tracking_number) ? $shipment->tracking_number : 'TT' . str_pad(rand(1, 999999), 10, '0', STR_PAD_LEFT);
@@ -304,10 +334,6 @@ class D_Express_Label_Generator
         // Datum i vreme štampe
         $print_date = date_i18n('d.m.Y H:i:s');
 
-        // Broj paketa u pošiljci (obično 1)
-        $package_count = 1;
-        $package_index = 1;
-
         // Town name za pošiljaoca
         $town_id = get_option('dexpress_sender_town_id');
         global $wpdb;
@@ -315,6 +341,12 @@ class D_Express_Label_Generator
             "SELECT name FROM {$wpdb->prefix}dexpress_towns WHERE id = %d",
             $town_id
         ));
+
+        // Debug info
+        $debug_info = "Generating label for order: " . $order->get_id() . "\n";
+        $debug_info .= "Address description: " . print_r($order_data['shipping_address_desc'], true) . "\n";
+        $debug_info .= "Package index/count: " . $package_index . "/" . $package_count . "\n";
+        error_log($debug_info);
 
         // HTML za nalepnicu
 ?>
@@ -392,6 +424,10 @@ class D_Express_Label_Generator
                     <span class="detail-label">Masa:</span>
                     <?php echo esc_html(number_format($order_data['total_weight'], 2, ',', '.') . ' kg'); ?>
                 </div>
+                <div class="detail-row">
+                    <span class="detail-label">Napomena:</span>
+                    <?php echo !empty($order_data['shipping_address_desc']) ? esc_html($order_data['shipping_address_desc']) : ''; ?>
+                </div>
             </div>
 
             <!-- Footer sa vremenom štampe -->
@@ -442,7 +478,7 @@ class D_Express_Label_Generator
         if (!$order) {
             wp_die(__('Narudžbina nije pronađena.', 'd-express-woo'));
         }
-
+        $package_count = $this->get_package_count($shipment);
         // Koristi isti stil kao za bulk štampanje
         echo '<!DOCTYPE html>
         <html>
@@ -637,7 +673,9 @@ class D_Express_Label_Generator
             <div class="print-container">';
 
         // Prikaz nalepnice koristeći istu funkciju kao za bulk štampanje
-        $this->generate_compact_label($shipment, $order);
+        for ($i = 1; $i <= $package_count; $i++) {
+            $this->generate_compact_label($shipment, $order, $i, $package_count);
+        }
 
         echo '</div></body></html>';
         exit;
@@ -934,6 +972,9 @@ class D_Express_Label_Generator
                     <div class="recipient-address"><?php echo esc_html($order_data['shipping_address']); ?></div>
                     <div class="recipient-city"><?php echo esc_html($order_data['shipping_postcode'] . ' ' . $order_data['shipping_city']); ?></div>
                     <div class="recipient-phone"><?php echo esc_html($order_data['shipping_phone']); ?></div>
+                    <?php if (!empty($address_desc)): ?>
+                        <div class="recipient-address-desc"><?php echo esc_html($address_desc); ?></div>
+                    <?php endif; ?>
                 </div>
 
                 <!-- Dodatni podaci -->
@@ -966,6 +1007,10 @@ class D_Express_Label_Generator
                     <div class="detail-row">
                         <span class="detail-label">Masa:</span>
                         <?php echo esc_html(number_format($order_data['total_weight'], 2, ',', '.') . ' kg'); ?>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Napomena:</span>
+                        <?php echo !empty($order_data['shipping_address_desc']) ? esc_html($order_data['shipping_address_desc']) : ''; ?>
                     </div>
                 </div>
 
@@ -1023,6 +1068,17 @@ class D_Express_Label_Generator
             $total_weight = 0.5; // 500g
         }
 
+        // Odredi tip adrese (billing ili shipping)
+        $address_type = $order->has_shipping_address() ? 'shipping' : 'billing';
+
+        // Prvo pokušaj da dobiješ napomenu iz odgovarajućeg tipa adrese
+        $address_desc = get_post_meta($order->get_id(), "_{$address_type}_address_desc", true);
+
+        // Ako je napomena prazna, a koristimo shipping adresu, probaj i billing
+        if (empty($address_desc) && $address_type === 'shipping') {
+            $address_desc = get_post_meta($order->get_id(), "_billing_address_desc", true);
+        }
+
         // Podaci o pošiljci
         return array(
             'sender_name' => $sender_name,
@@ -1030,6 +1086,7 @@ class D_Express_Label_Generator
             'sender_city' => $sender_city,
             'shipping_name' => $order->get_shipping_first_name() . ' ' . $order->get_shipping_last_name(),
             'shipping_address' => $order->get_shipping_address_1(),
+            'shipping_address_desc' => $address_desc, // Dodali smo napomenu ovde
             'shipping_city' => $order->get_shipping_city(),
             'shipping_postcode' => $order->get_shipping_postcode(),
             'shipping_phone' => $order->get_billing_phone(),

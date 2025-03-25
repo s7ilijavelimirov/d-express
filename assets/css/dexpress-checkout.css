@@ -130,23 +130,6 @@
 .woocommerce-invalid {
     border-color: #b22222 !important;
 }
-
-.phone-with-prefix {
-    padding-left: 45px !important;
-    /* Dovoljno prostora za +381 */
-}
-
-.phone-prefix {
-    position: absolute;
-    left: 8px;
-    top: 10px;
-    font-weight: bold;
-    color: #555;
-    z-index: 100;
-    pointer-events: none;
-    /* Da ne ometa fokus na input polju */
-}
-
 .phone-format-hint {
     display: block;
     font-size: 0.857em;
