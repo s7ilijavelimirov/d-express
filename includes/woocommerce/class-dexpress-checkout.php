@@ -32,8 +32,22 @@ class D_Express_Checkout
         add_action('wp_ajax_nopriv_dexpress_save_chosen_dispenser', array($this, 'ajax_save_chosen_dispenser'));
 
         add_action('woocommerce_checkout_update_order_meta', array($this, 'save_dispenser_to_order'), 10, 2);
-    }
 
+        // Dodajte ove linije u init() metodu
+        add_action('wp_ajax_dexpress_get_dispensers', array($this, 'ajax_get_dispensers'));
+        add_action('wp_ajax_nopriv_dexpress_get_dispensers', array($this, 'ajax_get_dispensers'));
+    }
+    /**
+     * AJAX: Dobavljanje liste paketomata za mapu
+     */
+    public function ajax_get_dispensers()
+    {
+        check_ajax_referer('dexpress-frontend-nonce', 'nonce');
+
+        $dispensers = $this->get_dispensers_list();
+
+        wp_send_json_success(array('dispensers' => $dispensers));
+    }
     /**
      * Modifikacija checkout polja (zamena sa D Express poljima)
      */
@@ -384,16 +398,13 @@ class D_Express_Checkout
         ));
 
         // Google Maps API
-        $google_maps_api_key = get_option('dexpress_google_maps_api_key', '');
-        if (!empty($google_maps_api_key)) {
-            wp_enqueue_script(
-                'google-maps',
-                'https://maps.googleapis.com/maps/api/js?key=' . $google_maps_api_key,
-                array(),
-                null,
-                true
-            );
-        }
+        wp_enqueue_script(
+            'google-maps',
+            'https://maps.googleapis.com/maps/api/js?v=weekly', // Bez API ključa za razvoj
+            array(),
+            null,
+            true
+        );
 
         // Učitavanje JS-a za paketomat modal
         wp_enqueue_script(
@@ -561,7 +572,7 @@ class D_Express_Checkout
                d.coordinates, t.postal_code
         FROM {$wpdb->prefix}dexpress_dispensers d
         LEFT JOIN {$wpdb->prefix}dexpress_towns t ON d.town_id = t.id
-        WHERE d.deleted != 1
+        WHERE d.deleted IS NULL OR d.deleted != 1
         ORDER BY d.town, d.name
     ");
     }

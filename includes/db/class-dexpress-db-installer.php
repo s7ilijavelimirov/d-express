@@ -165,6 +165,7 @@ class D_Express_DB_Installer
             coordinates text DEFAULT NULL,
             pay_by_cash tinyint(1) NOT NULL DEFAULT 0,
             pay_by_card tinyint(1) NOT NULL DEFAULT 0,
+            deleted tinyint(1) NOT NULL DEFAULT 0,
             last_updated datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY  (id),
             KEY town_id (town_id)
