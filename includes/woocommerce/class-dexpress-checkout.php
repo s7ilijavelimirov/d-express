@@ -350,6 +350,7 @@ class D_Express_Checkout
             return;
         }
         dexpress_log("Checkout scripts loaded", 'debug');
+
         // Učitavanje jQuery UI Autocomplete
         wp_enqueue_script('jquery-ui-autocomplete');
         wp_enqueue_style('jquery-ui', 'https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css');
@@ -371,6 +372,7 @@ class D_Express_Checkout
             DEXPRESS_WOO_VERSION,
             true
         );
+
         // Učitavanje naših stilova
         wp_enqueue_style(
             'dexpress-checkout',
@@ -397,10 +399,15 @@ class D_Express_Checkout
             )
         ));
 
-        // Google Maps API
+        // Google Maps API - koristimo API ključ ako je dostupan
+        $google_maps_api_key = get_option('dexpress_google_maps_api_key', '');
+        $google_maps_url = empty($google_maps_api_key)
+            ? 'https://maps.googleapis.com/maps/api/js?v=weekly'
+            : 'https://maps.googleapis.com/maps/api/js?key=' . $google_maps_api_key . '&v=weekly';
+
         wp_enqueue_script(
             'google-maps',
-            'https://maps.googleapis.com/maps/api/js?v=weekly', // Bez API ključa za razvoj
+            $google_maps_url,
             array(),
             null,
             true
@@ -568,8 +575,9 @@ class D_Express_Checkout
         global $wpdb;
 
         return $wpdb->get_results("
-        SELECT d.id, d.name, d.address, d.town, d.town_id, d.work_hours, d.work_days,
-               d.coordinates, t.postal_code
+        SELECT d.id, d.name, d.address, d.town, d.town_id, 
+               d.work_hours, d.work_days, d.coordinates, 
+               d.pay_by_cash, d.pay_by_card, t.postal_code
         FROM {$wpdb->prefix}dexpress_dispensers d
         LEFT JOIN {$wpdb->prefix}dexpress_towns t ON d.town_id = t.id
         WHERE d.deleted IS NULL OR d.deleted != 1

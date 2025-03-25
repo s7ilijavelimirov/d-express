@@ -54,7 +54,11 @@
             // Inicijalizacija mape sa centrom na Srbiji
             var map = new google.maps.Map(document.getElementById('dexpress-dispensers-map'), {
                 center: { lat: 44.0165, lng: 21.0059 },
-                zoom: 7
+                zoom: 7,
+                mapTypeControl: true,
+                streetViewControl: false,
+                fullscreenControl: true,
+                zoomControl: true
             });
 
             this.loadDispensers(map);
@@ -85,6 +89,46 @@
                     $('#dexpress-dispensers-list').html('<p>Greška pri učitavanju paketomata</p>');
                 }
             });
+        },
+
+        // Nova funkcija za renderovanje informacija o paketomatu
+        renderDispenserInfo: function(dispenser) {
+            // Pomoćna funkcija za proveru da li postoji vrednost
+            function ifExists(value, prefix = '', suffix = '') {
+                return value ? prefix + value + suffix : '';
+            }
+            
+            // Formatiranje radnog vremena
+            function formatWorkHours(workHours, workDays) {
+                if (!workHours) return 'Nije definisano';
+                
+                let formatted = workHours;
+                if (workDays) {
+                    formatted += ' (' + workDays + ')';
+                }
+                return formatted;
+            }
+            
+            // Priprema informacija o načinu plaćanja
+            let paymentOptions = [];
+            if (dispenser.pay_by_cash == 1) paymentOptions.push('Gotovina');
+            if (dispenser.pay_by_card == 1) paymentOptions.push('Kartica');
+            
+            let paymentInfo = paymentOptions.length > 0 ? 
+                '<p><strong>Načini plaćanja:</strong> ' + paymentOptions.join(', ') + '</p>' : '';
+            
+            // Formatiranje sadržaja info prozora
+            return `
+                <div class="dexpress-dispenser-info">
+                    <h4>${dispenser.name}</h4>
+                    <p>${dispenser.address}, ${dispenser.town} ${ifExists(dispenser.postal_code, '(', ')')}</p>
+                    <p><strong>Radno vreme:</strong> ${formatWorkHours(dispenser.work_hours, dispenser.work_days)}</p>
+                    ${paymentInfo}
+                    <button class="button dexpress-select-this-dispenser" data-id="${dispenser.id}">
+                        Izaberi ovaj paketomat
+                    </button>
+                </div>
+            `;
         },
 
         renderDispensers: function (map) {
@@ -139,20 +183,13 @@
                         map: map,
                         title: dispenser.name,
                         icon: markerIcon,
-                        dispenserId: dispenser.id
+                        dispenserId: dispenser.id,
+                        animation: google.maps.Animation.DROP
                     });
 
                     // Klik na marker otvara info prozor
                     google.maps.event.addListener(marker, 'click', function () {
-                        infoWindow.setContent(
-                            '<div class="dexpress-dispenser-info">' +
-                            '<h4>' + dispenser.name + '</h4>' +
-                            '<p>' + dispenser.address + ', ' + dispenser.town + '</p>' +
-                            '<p><strong>Radno vreme:</strong> ' + dispenser.work_hours + '</p>' +
-                            '<button class="button dexpress-select-this-dispenser" data-id="' + dispenser.id + '">' +
-                            'Izaberi ovaj paketomat</button>' +
-                            '</div>'
-                        );
+                        infoWindow.setContent(self.renderDispenserInfo(dispenser));
                         infoWindow.open(map, marker);
                     });
 
@@ -162,12 +199,17 @@
                     });
                 }
 
-                // Dodavanje u listu
-                listHtml += '<div class="dexpress-dispenser-item" data-id="' + dispenser.id + '">' +
-                    '<strong>' + dispenser.name + '</strong><br>' +
-                    dispenser.address + ', ' + dispenser.town + '<br>' +
-                    '<small>Radno vreme: ' + dispenser.work_hours + '</small>' +
-                    '</div>';
+                // Dodavanje u listu - Unapređeni prikaz
+                listHtml += `
+                    <div class="dexpress-dispenser-item" data-id="${dispenser.id}">
+                        <strong>${dispenser.name}</strong><br>
+                        ${dispenser.address}, ${dispenser.town} ${dispenser.postal_code ? `(${dispenser.postal_code})` : ''}<br>
+                        <small>Radno vreme: ${dispenser.work_hours || 'Nije definisano'}</small>
+                        ${(dispenser.pay_by_cash == 1 || dispenser.pay_by_card == 1) ? 
+                            `<br><small>Plaćanje: ${dispenser.pay_by_cash == 1 ? 'Gotovina' : ''}${(dispenser.pay_by_cash == 1 && dispenser.pay_by_card == 1) ? ', ' : ''}${dispenser.pay_by_card == 1 ? 'Kartica' : ''}</small>` 
+                            : ''}
+                    </div>
+                `;
             });
 
             // Dodavanje liste paketomata
@@ -176,6 +218,28 @@
             // Klik na paketomat u listi
             $('.dexpress-dispenser-item').on('click', function () {
                 var id = $(this).data('id');
+                
+                // Pronađi marker i centrraj mapu na njega
+                var marker = markers.find(function(m) { 
+                    return m.dispenser.id == id; 
+                });
+                
+                if (marker && marker.marker) {
+                    // Centriraj mapu na marker
+                    map.setCenter(marker.marker.getPosition());
+                    map.setZoom(15);
+                    
+                    // Otvori info prozor
+                    infoWindow.setContent(self.renderDispenserInfo(marker.dispenser));
+                    infoWindow.open(map, marker.marker);
+                    
+                    // Animiraj marker da bi bio uočljiviji
+                    marker.marker.setAnimation(google.maps.Animation.BOUNCE);
+                    setTimeout(function() {
+                        marker.marker.setAnimation(null);
+                    }, 1500);
+                }
+                
                 self.selectDispenser(id, markers, map);
             });
 
@@ -189,6 +253,14 @@
             // Podešavanje granica mape
             if (markers.length > 0) {
                 map.fitBounds(bounds);
+                
+                // Ograniči maksimalni zoom da ne bude previše blizu
+                var listener = google.maps.event.addListener(map, 'idle', function() { 
+                    if (map.getZoom() > 15) {
+                        map.setZoom(15);
+                    }
+                    google.maps.event.removeListener(listener); 
+                });
             } else {
                 // Ako nema markera, centriraj na Srbiju
                 map.setCenter(new google.maps.LatLng(44.0165, 21.0059));
@@ -202,7 +274,6 @@
             this.initMap();
         },
 
-        // Selektovanje paketomata
         // Selektovanje paketomata
         selectDispenser: function (dispenserId, markers, map) {
             var dispenser = this.dispensers.find(function (d) {
