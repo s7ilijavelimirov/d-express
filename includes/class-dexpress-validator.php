@@ -185,7 +185,33 @@ class D_Express_Validator
                 }
             }
         }
+        // Provera dimenzija proizvoda za paketomat
+        if ($is_dispenser_shipping) {
+            $max_dimensions = array(
+                'length' => 470, // mm
+                'width'  => 440, // mm
+                'height' => 440  // mm
+            );
 
+            foreach (WC()->cart->get_cart() as $cart_item) {
+                $product = $cart_item['data'];
+                if ($product && $product->has_dimensions()) {
+                    $length = wc_get_dimension($product->get_length(), 'mm');
+                    $width = wc_get_dimension($product->get_width(), 'mm');
+                    $height = wc_get_dimension($product->get_height(), 'mm');
+
+                    if ($length > $max_dimensions['length'] || $width > $max_dimensions['width'] || $height > $max_dimensions['height']) {
+                        $errors[] = sprintf(
+                            __('Proizvod "%s" je prevelikih dimenzija za paketomat. Maksimalne dozvoljene dimenzije su %d x %d x %d mm.', 'd-express-woo'),
+                            $product->get_name(),
+                            $max_dimensions['length'],
+                            $max_dimensions['width'],
+                            $max_dimensions['height']
+                        );
+                    }
+                }
+            }
+        }
         // Dodavanje grešaka u WooCommerce
         foreach ($errors as $error) {
             wc_add_notice($error, 'error');
@@ -418,10 +444,6 @@ class D_Express_Validator
                 }
             }
         }
-
-        // NAPOMENA: Ostala ograničenja za paketomate:
-        // - Paketomat pošiljka ne može imati povrat dokumenta (ReturnDoc mora biti 0)
-        // - Paketomat pošiljka modu da ima samo jedan paket
 
         return true;
     }

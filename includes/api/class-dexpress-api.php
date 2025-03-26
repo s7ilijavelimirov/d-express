@@ -1064,14 +1064,43 @@ class D_Express_API
      */
     private function prepare_packages_for_order($order)
     {
-        // Za jednostavne slučajeve, samo jedan paket
-        $packages = array(
-            array(
-                'Code' => $this->generate_package_code(),
-                'Mass' => $this->calculate_order_weight($order)
-            )
+        $packages = array();
+        $total_weight = $this->calculate_order_weight($order);
+
+        // Kreiraj jedan paket sa svim dimenzijama
+        $package = array(
+            'Code' => $this->generate_package_code(),
+            'Mass' => $total_weight
         );
 
+        // Dodaj dimenzije ako su dostupne
+        $max_length = 0;
+        $max_width = 0;
+        $max_height = 0;
+
+        foreach ($order->get_items() as $item) {
+            $product = $item->get_product();
+            if ($product && $product->has_dimensions()) {
+                // Konvertuj u mm
+                $length = wc_get_dimension($product->get_length(), 'mm');
+                $width = wc_get_dimension($product->get_width(), 'mm');
+                $height = wc_get_dimension($product->get_height(), 'mm');
+
+                // Uzmi najveće dimenzije
+                $max_length = max($max_length, $length);
+                $max_width = max($max_width, $width);
+                $max_height = max($max_height, $height);
+            }
+        }
+
+        // Dodaj dimenzije u paket ako su izračunate
+        if ($max_length > 0 && $max_width > 0 && $max_height > 0) {
+            $package['DimX'] = round($max_width);
+            $package['DimY'] = round($max_length);
+            $package['DimZ'] = round($max_height);
+        }
+
+        $packages[] = $package;
         return $packages;
     }
 
