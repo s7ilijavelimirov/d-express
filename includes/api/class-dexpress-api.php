@@ -705,7 +705,6 @@ class D_Express_API
     {
         return dexpress_generate_package_code();
     }
-
     /**
      * Priprema podatke pošiljke iz WooCommerce narudžbine
      */
@@ -714,25 +713,41 @@ class D_Express_API
         if (!$order instanceof WC_Order) {
             return new WP_Error('invalid_order', __('Nevažeća narudžbina', 'd-express-woo'));
         }
-        $dispenser_id = get_post_meta($order->get_id(), '_dexpress_dispenser_id', true);
-        if (!empty($dispenser_id)) {
-            $shipment_data['DispenserID'] = intval($dispenser_id);
-        }
+
         $order_id = $order->get_id();
+
         // DEBUG LOG: Inicijalna vrednost iz WooCommerce
         dexpress_log("[API DEBUG] Inicijalna vrednost telefona iz WC: " . $order->get_billing_phone(), 'info');
+
         // Dohvatamo sačuvani API format telefona ako postoji
         $phone = get_post_meta($order_id, '_billing_phone_api_format', true);
         $payment_type = intval(get_option('dexpress_payment_type', 2));
 
-        // Ako je paketomat, uvek koristimo faktura (2)
+        // Provera da li je izabran paketomat
         $dispenser_id = get_post_meta($order->get_id(), '_dexpress_dispenser_id', true);
-        if (!empty($dispenser_id)) {
-            $payment_type = 2; // Faktura za paketomat
+        $is_dispenser = !empty($dispenser_id);
+
+        // Dohvati podatke o paketomatu ako je izabran
+        $dispenser = null;
+        if ($is_dispenser) {
+            global $wpdb;
+            $dispenser = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM {$wpdb->prefix}dexpress_dispensers
+            WHERE id = %d",
+                intval($dispenser_id)
+            ));
+
+            if ($dispenser) {
+                dexpress_log("[PAKETOMAT] Koristi se paketomat ID: {$dispenser->id}, Adresa: {$dispenser->address}, Town: {$dispenser->town}", 'info');
+            } else {
+                dexpress_log("[PAKETOMAT ERROR] Paketomat sa ID {$dispenser_id} nije pronađen u bazi!", 'error');
+            }
+
+            // Za paketomat uvek koristimo Faktura (2)
+            $payment_type = 2;
             dexpress_log("[PAKETOMAT] Postavljanje payment_type na 2 (Faktura) za paketomat", 'info');
         }
-        
-        $shipment_data['PaymentType'] = $payment_type;
+
         if (empty($phone)) {
             $phone = D_Express_Validator::format_phone($order->get_billing_phone());
             dexpress_log("[API DEBUG] Telefon formatiran standardno: {$phone}", 'info');
@@ -780,7 +795,6 @@ class D_Express_API
 
         dexpress_log("Using address type: {$address_type}", 'debug');
         dexpress_log("Street: {$street}, Number: {$number}, City ID: {$city_id}", 'debug');
-
 
         // Postavke za otkupninu
         $buyout_amount = 0;
@@ -880,10 +894,11 @@ class D_Express_API
             'RCName' => $order->get_shipping_first_name() . ' ' . $order->get_shipping_last_name(),
             'RCPhone' => $phone,
             'Note' => $delivery_note,
+
             // Tip pošiljke i plaćanje
             'DlTypeID' => intval(get_option('dexpress_shipment_type', 2)),
             'PaymentBy' => intval(get_option('dexpress_payment_by', 0)),
-            'PaymentType' => intval(get_option('dexpress_payment_type', 2)),
+            'PaymentType' => $payment_type,
 
             // Vrednost i masa
             'Value' => dexpress_convert_price_to_para($order->get_total()),
@@ -905,8 +920,9 @@ class D_Express_API
 
         // Dodavanje paketa
         $shipment_data['PackageList'] = $this->prepare_packages_for_order($order);
-        $dispenser_id = get_post_meta($order->get_id(), '_dexpress_dispenser_id', true);
-        if (!empty($dispenser_id)) {
+
+        // Ako koristimo paketomat, postavimo adresu paketomata umesto adrese kupca
+        if ($is_dispenser && $dispenser) {
             // Provere za paketomat
             if (count($shipment_data['PackageList']) > 1) {
                 return new WP_Error('paketomat_validation', __('Za dostavu u paketomat dozvoljen je samo jedan paket.', 'd-express-woo'));
@@ -924,9 +940,22 @@ class D_Express_API
                 return new WP_Error('paketomat_validation', __('Za dostavu u paketomat, pošiljka mora biti lakša od 20kg.', 'd-express-woo'));
             }
 
+            // Postaviti adresu i druge podatke paketomata
+            $shipment_data['RAddress'] = $dispenser->address;
+            $shipment_data['RAddressNum'] = 'bb'; // Paketomati obično nemaju broj
+            $shipment_data['RTownID'] = $dispenser->town_id;
+
             // Dodaj DispenserID u podatke
             $shipment_data['DispenserID'] = intval($dispenser_id);
+
+            // Za paketomat sa pouzećem, odgovarajuće podešavanje PaymentBy
+            if ($shipment_data['BuyOut'] > 0) {
+                // Ako se plaća pouzećem kod paketomata, pošiljalac plaća troškove dostave
+                $shipment_data['PaymentBy'] = 0; // Sender (pošiljalac)
+                dexpress_log("[PAKETOMAT] Pouzećem kod paketomata - PaymentBy postavljen na 0 (Sender)", 'info');
+            }
         }
+
         // Dodatno logiranje za debugiranje
         dexpress_log("Final BuyOut amount: " . $shipment_data['BuyOut'], 'debug');
         dexpress_log("Final BuyOutAccount: " . $shipment_data['BuyOutAccount'], 'debug');
@@ -934,13 +963,24 @@ class D_Express_API
         dexpress_log("Final RTownID: " . $shipment_data['RTownID'], 'debug');
         dexpress_log("Final RCPhone: " . $shipment_data['RCPhone'], 'debug');
 
+        if ($is_dispenser) {
+            dexpress_log("[PAKETOMAT API] Finalni zahtev za paketomat:", 'info');
+            dexpress_log("[PAKETOMAT API] DispenserID: {$shipment_data['DispenserID']}", 'info');
+            dexpress_log("[PAKETOMAT API] RAddress: {$shipment_data['RAddress']}", 'info');
+            dexpress_log("[PAKETOMAT API] RTownID: {$shipment_data['RTownID']}", 'info');
+            dexpress_log("[PAKETOMAT API] PaymentType: {$shipment_data['PaymentType']}", 'info');
+            dexpress_log("[PAKETOMAT API] PaymentBy: {$shipment_data['PaymentBy']}", 'info');
+        }
+
         // Validacija kompletnih podataka za slanje
         $validation = D_Express_Validator::validate_shipment_data($shipment_data);
         if ($validation !== true) {
             dexpress_log("SHIPMENT DATA VALIDATION FAILED: " . implode(", ", $validation), 'error');
             // Ovde odlučujemo da li da odbacimo slanje ili nastavimo uprkos upozorenjima
         }
+
         dexpress_log("[API DEBUG] Finalni RCPhone za API: {$phone}", 'info');
+
         // Omogućavanje filtiranja podataka za dodatna prilagođavanja
         return apply_filters('dexpress_prepare_shipment_data', $shipment_data, $order);
     }

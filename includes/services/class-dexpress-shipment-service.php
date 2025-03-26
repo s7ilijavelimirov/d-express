@@ -409,6 +409,8 @@ class D_Express_Shipment_Service
         add_action('wp_ajax_dexpress_create_shipment', array($this, 'ajax_create_shipment'));
     }
     // Dodaj u klasu D_Express_Shipment_Service
+    // U funkciji send_tracking_email u klasi D_Express_Shipment_Service
+
     public function send_tracking_email($shipment_id, $order)
     {
         // Provera da li je već poslat email
@@ -424,10 +426,24 @@ class D_Express_Shipment_Service
             return;
         }
 
-        // Dobavljanje emaila kupca
+        // Dobavljanje email-a kupca
         $recipient = $order->get_billing_email();
 
-        // Naslov emaila
+        // Provera da li je dostava preko paketomata
+        $dispenser_id = get_post_meta($order->get_id(), '_dexpress_dispenser_id', true);
+        $is_dispenser = !empty($dispenser_id);
+        $dispenser = null;
+
+        if ($is_dispenser) {
+            // Dohvati podatke o paketomatu
+            global $wpdb;
+            $dispenser = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM {$wpdb->prefix}dexpress_dispensers WHERE id = %d",
+                intval($dispenser_id)
+            ));
+        }
+
+        // Naslov email-a
         $subject = sprintf(__('Praćenje pošiljke za narudžbinu #%s', 'd-express-woo'), $order->get_order_number());
         $email_heading = $subject;
 
@@ -440,12 +456,19 @@ class D_Express_Shipment_Service
         // Kreiramo email objekat
         $email = new WC_Email();
 
-        // Učitavanje sadržaja emaila iz šablona
-        ob_start();
-        include DEXPRESS_WOO_PLUGIN_DIR . 'templates/emails/shipment-created.php';
-        $email_content = ob_get_clean();
+        // Učitavanje sadržaja email-a iz šablona
+        // Koristimo različite šablone zavisno od toga da li je paketomat ili ne
+        if ($is_dispenser && $dispenser) {
+            ob_start();
+            include DEXPRESS_WOO_PLUGIN_DIR . 'templates/emails/shipment-created-dispenser.php';
+            $email_content = ob_get_clean();
+        } else {
+            ob_start();
+            include DEXPRESS_WOO_PLUGIN_DIR . 'templates/emails/shipment-created.php';
+            $email_content = ob_get_clean();
+        }
 
-        // Slanje emaila
+        // Slanje email-a
         $headers = "Content-Type: text/html\r\n";
         $mailer->send($recipient, $subject, $email_content, $headers);
 
