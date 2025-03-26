@@ -1,14 +1,463 @@
 <?php
 
 /**
- * Validacija podataka prema D Express API specifikaciji
+ * Centralizovana klasa za validaciju D Express podataka
+ * 
+ * Objedinjuje sve validacije na jednom mestu za lakše održavanje
  */
+
+defined('ABSPATH') || exit;
+
 class D_Express_Validator
 {
+
+    /**
+     * Validacija kompletne narudžbine za D Express dostavu
+     * 
+     * @param WC_Order $order WooCommerce narudžbina
+     * @return bool|WP_Error True ako je validacija uspela, WP_Error ako nije
+     */
+    public static function validate_order($order)
+    {
+        try {
+            // 1. Validacija adrese
+            $address_validation = self::validate_order_address($order);
+            if (is_wp_error($address_validation)) {
+                return $address_validation;
+            }
+
+            // 2. Validacija težine
+            $weight_validation = self::validate_order_weight($order);
+            if (is_wp_error($weight_validation)) {
+                return $weight_validation;
+            }
+
+            // 3. Validacija vrednosti i otkupnine
+            $value_validation = self::validate_order_value($order);
+            if (is_wp_error($value_validation)) {
+                return $value_validation;
+            }
+
+            // 4. Validacija telefona
+            $phone_validation = self::validate_order_phone($order);
+            if (is_wp_error($phone_validation)) {
+                return $phone_validation;
+            }
+
+            // 5. Provera da li je paketomat i dodatne validacije
+            $is_dispenser = !empty(get_post_meta($order->get_id(), '_dexpress_dispenser_id', true));
+            if ($is_dispenser) {
+                $dispenser_validation = self::validate_dispenser_order($order);
+                if (is_wp_error($dispenser_validation)) {
+                    return $dispenser_validation;
+                }
+            }
+
+            // Sve validacije su prošle
+            return true;
+        } catch (Exception $e) {
+            return new WP_Error('validation_exception', $e->getMessage());
+        }
+    }
+
+    /**
+     * Validacija za checkout proces
+     * Koristi se pre završetka narudžbine
+     * 
+     * @return bool True ako validacija prolazi
+     */
+    public static function validate_checkout()
+    {
+        // Proveravamo samo ako je checkout forma poslata
+        if (empty($_POST['woocommerce-process-checkout-nonce'])) {
+            return true;
+        }
+
+        // Proverava da li je odabrana D Express dostava
+        $is_dexpress = false;
+        if (!empty($_POST['shipping_method'])) {
+            foreach ($_POST['shipping_method'] as $method) {
+                if (strpos($method, 'dexpress') !== false) {
+                    $is_dexpress = true;
+                    break;
+                }
+            }
+        }
+
+        if (!$is_dexpress) {
+            return true;
+        }
+
+        // Provera obaveznih polja adrese
+        $address_type = isset($_POST['ship_to_different_address']) ? 'shipping' : 'billing';
+        $errors = [];
+
+        // Provera ulice
+        if (empty($_POST[$address_type . '_street']) || empty($_POST[$address_type . '_street_id'])) {
+            $errors[] = __('Morate izabrati ulicu iz padajućeg menija.', 'd-express-woo');
+        }
+
+        // Provera kućnog broja
+        if (empty($_POST[$address_type . '_number'])) {
+            $errors[] = __('Kućni broj je obavezan.', 'd-express-woo');
+        } elseif (!self::validate_address_number($_POST[$address_type . '_number'])) {
+            $errors[] = __('Kućni broj nije u ispravnom formatu. Podržani formati: 15, bb, 23a, 44/2', 'd-express-woo');
+        }
+
+        // Provera grada
+        if (empty($_POST[$address_type . '_city_id'])) {
+            $errors[] = __('Potrebno je izabrati grad.', 'd-express-woo');
+        }
+
+        // Provera telefona
+        if (empty($_POST['billing_phone'])) {
+            $errors[] = __('Broj telefona je obavezan za D Express dostavu.', 'd-express-woo');
+        } elseif (!self::validate_phone_format($_POST['billing_phone'])) {
+            $errors[] = __('Broj telefona mora biti u formatu +3816XXXXXXXX ili +3811XXXXXXXX.', 'd-express-woo');
+        }
+
+        // Provera paketomata ako je odabran
+        $is_dispenser_shipping = false;
+        foreach (WC()->session->get('chosen_shipping_methods', array()) as $method) {
+            if (strpos($method, 'dexpress_dispenser') !== false) {
+                $is_dispenser_shipping = true;
+                break;
+            }
+        }
+
+        if ($is_dispenser_shipping && empty($_POST['dexpress_chosen_dispenser'])) {
+            $errors[] = __('Morate izabrati paketomat za dostavu.', 'd-express-woo');
+        }
+
+        // Provera težine narudžbine
+        $cart_weight = self::calculate_cart_weight();
+        if ($cart_weight <= 0) {
+            $errors[] = __('Težina vaše narudžbine mora biti veća od 0.', 'd-express-woo');
+        } elseif ($cart_weight > 10000000) { // 10.000 kg u gramima
+            $errors[] = sprintf(
+                __('Težina narudžbine ne može biti veća od %s kg za D Express dostavu.', 'd-express-woo'),
+                number_format(10000, 0, ',', '.')
+            );
+        }
+
+        // Provera da li je pouzeće (COD)
+        $payment_method = isset($_POST['payment_method']) ? $_POST['payment_method'] : '';
+        $is_cod = ($payment_method === 'cod' || $payment_method === 'bacs' || $payment_method === 'cheque');
+
+        if ($is_cod) {
+            // Maksimalna vrednost otkupnine za standardnu dostavu
+            $max_buyout = 1000000000; // 10.000.000 RSD u para (100 para = 1 RSD)
+
+            // Ako je paketomat, poseban limit
+            if ($is_dispenser_shipping) {
+                $max_buyout = 20000000; // 200.000 RSD u para
+            }
+
+            // Provera iznosa
+            $cart_total_para = WC()->cart->get_total('edit') * 100;
+            if ($cart_total_para > $max_buyout) {
+                $errors[] = sprintf(
+                    __('Vrednost porudžbine za otkupninu ne može biti veća od %s RSD za D Express dostavu.', 'd-express-woo'),
+                    number_format($max_buyout / 100, 2, ',', '.')
+                );
+            }
+
+            // Provera postojanja računa za otkupninu
+            if (get_option('dexpress_require_buyout_account', 'no') === 'yes') {
+                $buyout_account = get_option('dexpress_buyout_account', '');
+                if (empty($buyout_account) || !self::validate_bank_account($buyout_account)) {
+                    $errors[] = __('Za pouzeće je obavezan validan bankovni račun. Postavite ga u D Express podešavanjima.', 'd-express-woo');
+                }
+            }
+        }
+
+        // Dodavanje grešaka u WooCommerce
+        foreach ($errors as $error) {
+            wc_add_notice($error, 'error');
+        }
+
+        return empty($errors);
+    }
+
+    /**
+     * Validacija adrese narudžbine
+     * 
+     * @param WC_Order $order WooCommerce narudžbina
+     * @return bool|WP_Error True ako je validna, WP_Error ako nije
+     */
+    private static function validate_order_address($order)
+    {
+        // Odredite koji tip adrese koristiti
+        $address_type = $order->has_shipping_address() ? 'shipping' : 'billing';
+
+        // Dohvatite meta podatke za adresu
+        $street = $order->get_meta("_{$address_type}_street", true);
+        $number = $order->get_meta("_{$address_type}_number", true);
+        $city_id = $order->get_meta("_{$address_type}_city_id", true);
+
+        // Validacija ulice
+        if (empty($street) || !self::validate_name($street)) {
+            return new WP_Error('invalid_street', __('Neispravan format ulice. Molimo unesite ispravnu ulicu.', 'd-express-woo'));
+        }
+
+        // Validacija kućnog broja
+        if (empty($number) || !self::validate_address_number($number)) {
+            return new WP_Error('invalid_address_number', __('Neispravan format kućnog broja. Prihvatljiv format: bb, 10, 15a, 23/4', 'd-express-woo'));
+        }
+
+        // Validacija grada
+        if (empty($city_id) || !self::validate_town_id($city_id)) {
+            return new WP_Error('invalid_town', __('Neispravan grad. Molimo izaberite grad iz liste.', 'd-express-woo'));
+        }
+
+        return true;
+    }
+
+    /**
+     * Validacija težine narudžbine
+     * 
+     * @param WC_Order $order WooCommerce narudžbina
+     * @return bool|WP_Error True ako je validna, WP_Error ako nije
+     */
+    private static function validate_order_weight($order)
+    {
+        $weight_grams = self::calculate_order_weight($order); // Dobijamo težinu u gramima
+
+        if ($weight_grams <= 0) {
+            return new WP_Error('invalid_weight', __('Težina narudžbine mora biti veća od 0.', 'd-express-woo'));
+        }
+
+        // 1. Maksimalna težina za standardnu dostavu (10.000 kg = 10.000.000 g)
+        $max_weight = 10000000; // 10.000 kg u gramima
+        if ($weight_grams > $max_weight) {
+            return new WP_Error(
+                'weight_limit_exceeded',
+                sprintf(__('Težina pošiljke ne može biti veća od %s kg.', 'd-express-woo'), number_format($max_weight / 1000, 0, ',', '.'))
+            );
+        }
+
+        return true;
+    }
+
+    /**
+     * Validacija vrednosti narudžbine i otkupnine
+     * 
+     * @param WC_Order $order WooCommerce narudžbina
+     * @return bool|WP_Error True ako je validna, WP_Error ako nije
+     */
+    private static function validate_order_value($order)
+    {
+        // Provera vrednosti - vrednost pošiljke (Value) mora biti između 0 i 1.000.000.000 para (10.000.000 RSD)
+        $value_para = self::convert_price_to_para($order->get_total());
+        $max_value = 1000000000; // 10.000.000 RSD
+
+        if ($value_para > $max_value) {
+            return new WP_Error(
+                'value_limit_exceeded',
+                sprintf(
+                    __('Vrednost pošiljke ne može biti veća od %s RSD.', 'd-express-woo'),
+                    number_format($max_value / 100, 2, ',', '.')
+                )
+            );
+        }
+
+        // Provera metode plaćanja i otkupnine
+        $payment_method = $order->get_payment_method();
+        $is_cod = ($payment_method === 'cod' || $payment_method === 'bacs' || $payment_method === 'cheque');
+
+        if ($is_cod) {
+            // Opšta provera maksimuma za otkupninu prema API dokumentaciji (10.000.000 RSD / 1.000.000.000 para)
+            $max_buyout_api = 1000000000; // 10.000.000 RSD u para
+
+            // Provera limita otkupnine
+            if ($value_para > $max_buyout_api) {
+                return new WP_Error(
+                    'buyout_limit_exceeded',
+                    sprintf(
+                        __('Vrednost otkupnine ne može biti veća od %s RSD za D Express dostavu.', 'd-express-woo'),
+                        number_format($max_buyout_api / 100, 2, ',', '.')
+                    )
+                );
+            }
+
+            // Provera postojanja računa za otkupninu
+            if (get_option('dexpress_require_buyout_account', 'no') === 'yes') {
+                $buyout_account = get_option('dexpress_buyout_account', '');
+                if (empty($buyout_account) || !self::validate_bank_account($buyout_account)) {
+                    return new WP_Error(
+                        'missing_buyout_account',
+                        __('Za pouzeće je obavezan validan bankovni račun. Podesite ga u D Express podešavanjima.', 'd-express-woo')
+                    );
+                }
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Validacija telefona
+     * 
+     * @param WC_Order $order WooCommerce narudžbina
+     * @return bool|WP_Error True ako je validna, WP_Error ako nije
+     */
+    private static function validate_order_phone($order)
+    {
+        $phone = get_post_meta($order->get_id(), '_billing_phone_api_format', true);
+
+        if (empty($phone)) {
+            $phone = self::format_phone($order->get_billing_phone());
+        }
+
+        if (!self::validate_phone($phone)) {
+            return new WP_Error('invalid_phone', __('Neispravan format telefona. Format treba biti +381XXXXXXXXX', 'd-express-woo'));
+        }
+
+        return true;
+    }
+
+    /**
+     * Dodatne validacije za paketomat
+     * 
+     * @param WC_Order $order WooCommerce narudžbina
+     * @return bool|WP_Error True ako je validna, WP_Error ako nije
+     */
+    private static function validate_dispenser_order($order)
+    {
+        // 1. Provera broja paketa - mora biti samo jedan
+        // Za sada uvek prolazi jer ne podržavamo više paketa
+
+        // 2. Provera težine - mora biti manja od 20 kg
+        $weight_grams = self::calculate_order_weight($order);
+        // Maksimalna težina za paketomat (20 kg = 20.000 g)
+        if ($weight_grams > 20000) {
+            return new WP_Error('paketomat_validation', __('Za dostavu u paketomat, pošiljka mora biti lakša od 20kg.', 'd-express-woo'));
+        }
+
+        // 3. Provera vrednosti otkupnine - mora biti manja od 200.000 RSD
+        $payment_method = $order->get_payment_method();
+        $is_cod = ($payment_method === 'cod' || $payment_method === 'bacs' || $payment_method === 'cheque');
+
+        if ($is_cod) {
+            $total_para = self::convert_price_to_para($order->get_total());
+            if ($total_para > 20000000) { // 200.000 RSD
+                return new WP_Error('paketomat_validation', __('Za dostavu u paketomat, otkupnina mora biti manja od 200.000,00 RSD.', 'd-express-woo'));
+            }
+        }
+
+        // 4. Provera povratnih dokumenata - ne sme biti povratka dokumenata
+        $return_doc = intval(get_option('dexpress_return_doc', 0));
+        if ($return_doc != 0) {
+            return new WP_Error('paketomat_validation', __('Za dostavu u paketomat nije dozvoljeno vraćanje dokumenata.', 'd-express-woo'));
+        }
+
+        return true;
+    }
+
+    /**
+     * Izračunavanje težine narudžbine u gramima
+     * 
+     * @param WC_Order $order WooCommerce narudžbina
+     * @return int Težina u gramima
+     */
+    public static function calculate_order_weight($order)
+    {
+        $weight = 0;
+
+        // Provera da li je objekat narudžbine validan
+        if (!($order instanceof WC_Order)) {
+            return 0;
+        }
+
+        // Dohvatanje stavki narudžbine
+        $items = $order->get_items();
+        if (empty($items)) {
+            return 0;
+        }
+
+        foreach ($items as $item) {
+            try {
+                if (!$item instanceof WC_Order_Item_Product) {
+                    continue;
+                }
+
+                $product = $item->get_product();
+                if ($product && $product->has_weight()) {
+                    $product_weight_kg = floatval($product->get_weight()); // Težina u kg
+                    $product_weight_g = $product_weight_kg * 1000; // Konverzija u grame
+                    $weight += $product_weight_g * $item->get_quantity();
+                }
+            } catch (Exception $e) {
+                dexpress_log("Greška pri dohvatanju težine proizvoda: " . $e->getMessage(), 'error');
+                continue;
+            }
+        }
+
+        // Minimalna težina 100g
+        $weight = max(0.1, $weight);
+
+        // Konverzija u grame
+        return self::convert_weight_to_grams($weight);
+    }
+
+    /**
+     * Izračunavanje težine korpe u gramima
+     * 
+     * @return int Težina u gramima
+     */
+    public static function calculate_cart_weight()
+    {
+        $weight = 0;
+
+        foreach (WC()->cart->get_cart() as $cart_item) {
+            $product = $cart_item['data'];
+            if ($product && $product->has_weight()) {
+                $product_weight = floatval($product->get_weight());
+                $weight += $product_weight * $cart_item['quantity'];
+            }
+        }
+
+        // Minimalna težina 100g
+        $weight = max(0.1, $weight);
+
+        // Konverzija u grame
+        return self::convert_weight_to_grams($weight);
+    }
+
+    /**
+     * Konverzija kg u grame
+     * 
+     * @param float $weight_kg Težina u kg
+     * @return int Težina u gramima (zaokružena na ceo broj)
+     */
+    public static function convert_weight_to_grams($weight_kg)
+    {
+        $grams = round($weight_kg * 1000);
+        return $grams;
+    }
+
+    /**
+     * Konverzija cene u para
+     * 
+     * @param float $price Cena u valuti prodavnice
+     * @return int Cena u para (100 para = 1 RSD)
+     */
+    public static function convert_price_to_para($price)
+    {
+        // Konverzija u RSD ako je potrebno
+        $price_rsd = $price; // Ovde bi trebalo implementirati konverziju ako prodavnica ne koristi RSD
+
+        // Konverzija u para (1 RSD = 100 para)
+        return intval($price_rsd * 100);
+    }
+
     /**
      * Validira telefonski broj
      * 
      * Format: 381XXXXXXXXX (381 + broj bez prve nule)
+     * 
+     * @param string $phone Broj telefona
+     * @return bool True ako je ispravan
      */
     public static function validate_phone($phone)
     {
@@ -18,7 +467,23 @@ class D_Express_Validator
     }
 
     /**
+     * Validacija telefonskog broja sa prefiksom +
+     * 
+     * @param string $phone Broj telefona
+     * @return bool True ako je ispravan
+     */
+    public static function validate_phone_format($phone)
+    {
+        // Prihvata sve brojeve koji počinju sa +381 i imaju cifru 1-9 iza toga, pa još 7-8 cifara
+        $pattern = '/^\+381[1-9][0-9]{7,8}$/';
+        return preg_match($pattern, $phone);
+    }
+
+    /**
      * Formatira telefonski broj u D Express format
+     * 
+     * @param string $phone Broj telefona
+     * @return string Formatiran broj
      */
     public static function format_phone($phone)
     {
@@ -39,7 +504,10 @@ class D_Express_Validator
     }
 
     /**
-     * Validira naziv (ime, naziv ulice itd.)
+     * Validacija naziva (ime, naziv ulice itd.)
+     * 
+     * @param string $name Naziv
+     * @return bool True ako je ispravan
      */
     public static function validate_name($name)
     {
@@ -49,7 +517,10 @@ class D_Express_Validator
     }
 
     /**
-     * Validira broj kuće/zgrade
+     * Validacija broja kuće/zgrade
+     * 
+     * @param string $number Broj
+     * @return bool True ako je ispravan
      */
     public static function validate_address_number($number)
     {
@@ -58,7 +529,32 @@ class D_Express_Validator
     }
 
     /**
-     * Validira opis sadržaja pošiljke
+     * Validacija TownID
+     * 
+     * @param int $town_id ID grada
+     * @return bool True ako je ispravan
+     */
+    public static function validate_town_id($town_id)
+    {
+        return is_numeric($town_id) && $town_id >= 100000 && $town_id <= 10000000;
+    }
+
+    /**
+     * Validacija bankovnog računa
+     * 
+     * @param string $account Broj računa
+     * @return bool True ako je ispravan
+     */
+    public static function validate_bank_account($account)
+    {
+        // Proverimo osnovni format (XXX-XXXXXXXXX-XX)
+        return preg_match('/^\d{3}-\d{8,13}-\d{2}$/', $account);
+    }
+    /**
+     * Validacija opisa sadržaja pošiljke
+     * 
+     * @param string $content Opis sadržaja
+     * @return bool True ako je ispravan
      */
     public static function validate_content($content)
     {
@@ -67,7 +563,10 @@ class D_Express_Validator
     }
 
     /**
-     * Validira referencu
+     * Validacija reference
+     * 
+     * @param string $reference Referenca
+     * @return bool True ako je ispravan
      */
     public static function validate_reference($reference)
     {
@@ -76,65 +575,7 @@ class D_Express_Validator
     }
 
     /**
-     * Validira bankovni račun
-     * 
-     * Poboljšana validacija koja podržava različite formate računa, ali obezbeđuje 
-     * da račun ima osnovni format XXX-XXXXXXXXX-XX sa fleksibilnim brojem cifara u srednjem delu
-     */
-    public static function validate_bank_account($account)
-    {
-        // Uklonimo sve razmake prvo
-        $account = trim($account);
-
-        // Proverimo osnovni format (cifre i crtice)
-        if (!preg_match('/^[\d\-]+$/', $account)) {
-            return false;
-        }
-
-        // Proverimo dužinu (prema API dokumentaciji, maksimalna dužina je 20)
-        if (strlen($account) > 20) {
-            return false;
-        }
-
-        // Proverimo osnovni format (X-X-X) gde je X niz cifara
-        $parts = explode('-', $account);
-        if (count($parts) !== 3) {
-            return false;
-        }
-
-        // Prvi deo bi trebao biti 3 cifre (npr. 170, 160, 200...)
-        if (!preg_match('/^\d{1,3}$/', $parts[0])) {
-            return false;
-        }
-
-        // Poslednji deo bi trebao biti 2 cifre (kontrolni broj)
-        if (!preg_match('/^\d{1,2}$/', $parts[2])) {
-            return false;
-        }
-
-        // Srednji deo može biti različite dužine, ali mora biti samo cifre
-        if (!preg_match('/^\d+$/', $parts[1])) {
-            return false;
-        }
-
-        // Sve provere su prošle
-        return true;
-    }
-
-    /**
-     * Validira Town ID
-     */
-    public static function validate_town_id($town_id)
-    {
-        return is_numeric($town_id) && $town_id >= 100000 && $town_id <= 10000000;
-    }
-    public static function validate_note($note)
-    {
-        $pattern = '/^([\-a-zžćčđšA-ZĐŠĆŽČ:,._0-9]+\.?)( [\-a-zžćčđšA-ZĐŠĆŽČ:,._0-9]+\.?)*$/u';
-        return empty($note) || preg_match($pattern, $note);
-    }
-    /**
-     * Validira kompletne podatke shipment-a
+     * Validacija kompletnih podataka shipment-a
      * 
      * @param array $data Podaci za validaciju
      * @return true|array True ako su podaci validni, niz grešaka ako nisu

@@ -206,66 +206,9 @@ class D_Express_Checkout
      */
     public function validate_checkout_fields()
     {
-        $address_type = isset($_POST['ship_to_different_address']) ? 'shipping' : 'billing';
-
-        if (empty($_POST[$address_type . '_street_id'])) {
-            wc_add_notice(__('Molimo izaberite validnu ulicu iz liste.', 'd-express-woo'), 'error');
-        }
-
-        if (empty($_POST[$address_type . '_city_id'])) {
-            wc_add_notice(__('Molimo izaberite validan grad.', 'd-express-woo'), 'error');
-        }
-
-        if (empty($_POST[$address_type . '_postcode'])) {
-            wc_add_notice(__('Poštanski broj je obavezan.', 'd-express-woo'), 'error');
-        }
-        if (isset($_POST['billing_phone'])) {
-            dexpress_log("POST phone value: " . $_POST['billing_phone'], 'debug');
-        }
-
-        $is_dexpress = false;
-        foreach ($_POST['shipping_method'] as $method) {
-            if (strpos($method, 'dexpress') !== false) {
-                $is_dexpress = true;
-                break;
-            }
-        }
-
-        if ($is_dexpress) {
-            // Provera da li je pouzeće (COD)
-            $payment_method = isset($_POST['payment_method']) ? $_POST['payment_method'] : '';
-            $is_cod = ($payment_method === 'cod' || $payment_method === 'bacs' || $payment_method === 'cheque');
-
-            if ($is_cod) {
-                // Dohvati maksimalnu vrednost otkupnine za D-Express
-                $max_buyout = 20000000; // 200.000 RSD u para
-
-                // Izračunaj vrednost korpe u para (100 para = 1 RSD)
-                $cart_total_para = WC()->cart->get_total('edit') * 100;
-
-                // Proveri da li je vrednost prevelika
-                if ($cart_total_para > $max_buyout) {
-                    wc_add_notice(
-                        sprintf(
-                            __('Vrednost porudžbine za otkupninu ne može biti veća od %s RSD za D Express dostavu.', 'd-express-woo'),
-                            number_format($max_buyout / 100, 2, ',', '.')
-                        ),
-                        'error'
-                    );
-                }
-            }
-        }
-        $is_dispenser_shipping = false;
-        foreach (WC()->session->get('chosen_shipping_methods', array()) as $method) {
-            if (strpos($method, 'dexpress_dispenser') !== false) {
-                $is_dispenser_shipping = true;
-                break;
-            }
-        }
-
-        if ($is_dispenser_shipping && empty($_POST['dexpress_chosen_dispenser'])) {
-            wc_add_notice(__('Morate izabrati paketomat za dostavu.', 'd-express-woo'), 'error');
-        }
+        // Koristimo centralni validator
+        require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/class-dexpress-validator.php';
+        D_Express_Validator::validate_checkout();
     }
 
     /**

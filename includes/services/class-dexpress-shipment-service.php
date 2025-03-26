@@ -63,17 +63,12 @@ class D_Express_Shipment_Service
                 return new WP_Error('missing_credentials', __('Nedostaju API kredencijali. Molimo podesite API kredencijale u podešavanjima.', 'd-express-woo'));
             }
 
-            // Validacija adrese ako je opcija uključena
-            if (get_option('dexpress_validate_address', 'yes') === 'yes') {
-                dexpress_log('[SHIPPING] Proveravam adresu za narudžbinu #' . $order->get_id(), 'debug');
-                $address_check = $this->api->validate_order_address($order);
-
-                if (is_wp_error($address_check)) {
-                    dexpress_log('[SHIPPING] Greška pri proveri adrese: ' . $address_check->get_error_message(), 'error');
-                    return $address_check;
-                }
-
-                dexpress_log('[SHIPPING] Adresa validirana uspešno', 'debug');
+            // Centralna validacija
+            require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/class-dexpress-validator.php';
+            $validation = D_Express_Validator::validate_order($order);
+            if (is_wp_error($validation)) {
+                dexpress_log('[SHIPPING] Validacija nije uspela: ' . $validation->get_error_message(), 'error');
+                return $validation;
             }
 
             // Dobijanje podataka za pošiljku

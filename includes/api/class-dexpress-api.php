@@ -270,22 +270,33 @@ class D_Express_API
             }
             $payment_type = intval(get_option('dexpress_payment_type', 2));
             dexpress_log("[PAYMENT] Vrednost dexpress_payment_type iz opcija: " . $payment_type, 'info');
+
             // Dodavanje ClientID ako nije uključen u podatke
             if (!isset($shipment_data['CClientID'])) {
                 $shipment_data['CClientID'] = $this->client_id;
             }
 
             // Validacija podataka pre slanja
-            $validation = D_Express_Validator::validate_shipment_data($shipment_data);
-            if ($validation !== true) {
-                dexpress_log("Validation failed: " . implode(", ", $validation), 'error');
-                return new WP_Error('validation_error', implode("<br>", $validation));
+            // Prvo proveravamo da li klasa i metoda postoje
+            if (class_exists('D_Express_Validator') && method_exists('D_Express_Validator', 'validate_shipment_data')) {
+                $validation = D_Express_Validator::validate_shipment_data($shipment_data);
+                if ($validation !== true) {
+                    dexpress_log("Validation failed: " . implode(", ", $validation), 'error');
+                    return new WP_Error('validation_error', implode("<br>", $validation));
+                }
+            } else {
+                dexpress_log("WARNING: D_Express_Validator::validate_shipment_data nije dostupna. Preskačem validaciju.", 'warning');
             }
 
-            return $this->api_request('data/addshipment', 'POST', $shipment_data);
-            if (isset($shipment_data['DispenserID'])) {
+            // Slanje zahteva i čuvanje odgovora
+            $response = $this->api_request('data/addshipment', 'POST', $shipment_data);
+
+            // Logovanje odgovora API-ja za paketomat
+            if (isset($shipment_data['DispenserID']) && !is_wp_error($response)) {
                 dexpress_log("[PAKETOMAT DEBUG] Odgovor API-ja: " . print_r($response, true), 'info');
             }
+
+            return $response;
         } catch (Exception $e) {
             dexpress_log("Exception in add_shipment: " . $e->getMessage(), 'error');
             return new WP_Error('exception', $e->getMessage());

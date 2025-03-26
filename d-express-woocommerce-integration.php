@@ -127,52 +127,8 @@ class D_Express_WooCommerce
 
         // Dodavanje REST API ruta za webhook
         add_action('rest_api_init', array($this, 'register_rest_routes'));
-
-        add_action('woocommerce_checkout_process', array($this, 'validate_dexpress_shipping'), 999);
     }
-    // Dodaj novu metodu
-    public function validate_dexpress_shipping()
-    {
-        // Proveri samo ako je checkout forma poslata
-        if (empty($_POST['woocommerce-process-checkout-nonce'])) {
-            return;
-        }
 
-        // Proveri da li je izabrana D-Express dostava
-        $is_dexpress = false;
-        if (!empty($_POST['shipping_method'])) {
-            foreach ($_POST['shipping_method'] as $method) {
-                if (strpos($method, 'dexpress') !== false) {
-                    $is_dexpress = true;
-                    break;
-                }
-            }
-        }
-
-        if (!$is_dexpress) {
-            return;
-        }
-
-        // Proveri da li je pouzeće (COD)
-        $payment_method = isset($_POST['payment_method']) ? $_POST['payment_method'] : '';
-        $is_cod = ($payment_method === 'cod' || $payment_method === 'bacs' || $payment_method === 'cheque');
-
-        if ($is_cod) {
-            // Validacija maksimalne vrednosti za otkupninu
-            $max_buyout = 20000000; // 200.000 RSD u para
-            $cart_total_para = WC()->cart->get_total('edit') * 100;
-
-            if ($cart_total_para > $max_buyout) {
-                wc_add_notice(
-                    sprintf(
-                        __('Vrednost porudžbine za otkupninu ne može biti1 veća od %s RSD za D Express dostavu.', 'd-express-woo'),
-                        number_format($max_buyout / 100, 2, ',', '.')
-                    ),
-                    'error'
-                );
-            }
-        }
-    }
     /**
      * Aktivacija plugin-a
      */
