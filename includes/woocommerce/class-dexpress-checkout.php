@@ -222,7 +222,7 @@ class D_Express_Checkout
         if (isset($_POST['billing_phone'])) {
             dexpress_log("POST phone value: " . $_POST['billing_phone'], 'debug');
         }
-        // Validacija telefona samo ako je D Express dostava
+
         $is_dexpress = false;
         foreach ($_POST['shipping_method'] as $method) {
             if (strpos($method, 'dexpress') !== false) {
@@ -232,14 +232,27 @@ class D_Express_Checkout
         }
 
         if ($is_dexpress) {
-            $phone = isset($_POST['billing_phone']) ? sanitize_text_field($_POST['billing_phone']) : '';
+            // Provera da li je pouzeće (COD)
+            $payment_method = isset($_POST['payment_method']) ? $_POST['payment_method'] : '';
+            $is_cod = ($payment_method === 'cod' || $payment_method === 'bacs' || $payment_method === 'cheque');
 
-            // Čišćenje telefona od svih znakova osim brojeva
-            $clean_phone = preg_replace('/[^0-9]/', '', $phone);
+            if ($is_cod) {
+                // Dohvati maksimalnu vrednost otkupnine za D-Express
+                $max_buyout = 20000000; // 200.000 RSD u para
 
-            // Provera formata telefona - mora biti u formatu koji API zahteva
-            if (!preg_match('/^(381[1-9][0-9]{7,8}|38167[0-9]{6,8})$/', $clean_phone)) {
-                wc_add_notice(__('Telefon mora biti u formatu +381 XX XXX XXXX', 'd-express-woo'), 'error');
+                // Izračunaj vrednost korpe u para (100 para = 1 RSD)
+                $cart_total_para = WC()->cart->get_total('edit') * 100;
+
+                // Proveri da li je vrednost prevelika
+                if ($cart_total_para > $max_buyout) {
+                    wc_add_notice(
+                        sprintf(
+                            __('Vrednost porudžbine za otkupninu ne može biti veća od %s RSD za D Express dostavu.', 'd-express-woo'),
+                            number_format($max_buyout / 100, 2, ',', '.')
+                        ),
+                        'error'
+                    );
+                }
             }
         }
         $is_dispenser_shipping = false;

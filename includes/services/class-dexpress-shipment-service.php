@@ -101,9 +101,10 @@ class D_Express_Shipment_Service
 
             dexpress_log('[SHIPPING] API odgovor primljen uspešno', 'debug');
             dexpress_log('[SHIPPING] API odgovor: ' . print_r($response, true), 'debug');
-            // Kreiranje tracking broja
-            $tracking_number = isset($response['TrackingNumber']) ? $response['TrackingNumber'] : $shipment_data['PackageList'][0]['Code'];
-            $shipment_id = isset($response['ShipmentID']) ? $response['ShipmentID'] : $tracking_number;
+
+            // Kreiranje tracking broja - dodajemo proveru da li postoje ključevi
+            $tracking_number = !empty($response['TrackingNumber']) ? $response['TrackingNumber'] : $shipment_data['PackageList'][0]['Code'];
+            $shipment_id = !empty($response['ShipmentID']) ? $response['ShipmentID'] : $tracking_number;
 
             dexpress_log('[SHIPPING] Tracking broj: ' . $tracking_number . ', Shipment ID: ' . $shipment_id, 'debug');
 

@@ -741,6 +741,7 @@ class D_Express_API
                 dexpress_log("[PAKETOMAT] Koristi se paketomat ID: {$dispenser->id}, Adresa: {$dispenser->address}, Town: {$dispenser->town}", 'info');
             } else {
                 dexpress_log("[PAKETOMAT ERROR] Paketomat sa ID {$dispenser_id} nije pronađen u bazi!", 'error');
+                return new WP_Error('dispenser_not_found', __('Izabrani paketomat nije pronađen. Molimo izaberite drugi paketomat.', 'd-express-woo'));
             }
 
             // Za paketomat uvek koristimo Faktura (2)
@@ -758,8 +759,8 @@ class D_Express_API
         // Validacija telefonskog broja
         if (!D_Express_Validator::validate_phone($phone)) {
             dexpress_log("[API DEBUG] UPOZORENJE: Neispravan format telefona: {$phone}", 'info');
-            $phone = '38160000000'; // Default phone ako je format neispravan
-            dexpress_log("[API DEBUG] Korišćen default telefon: {$phone}", 'info');
+            // Umesto da postavimo default, vratićemo grešku
+            return new WP_Error('invalid_phone', __('Neispravan format telefona. Format treba biti +381XXXXXXXXX', 'd-express-woo'));
         }
 
         // Odredite koji tip adrese koristiti
@@ -811,9 +812,30 @@ class D_Express_API
 
         // Ako je pouzeće i imamo račun, koristimo otkupninu
         if ($is_cod) {
+            // Opšta provera maksimuma za otkupninu prema API dokumentaciji (10.000.000 RSD / 1.000.000.000 para)
+            $max_buyout_api = 1000000000; // 10.000.000 RSD u para
+            // Poseban limit za paketomate (200.000 RSD / 20.000.000 para)
+            $max_buyout_dispenser = 20000000; // 200.000 RSD u para
+
+            $total_para = dexpress_convert_price_to_para($order->get_total());
+
+            // Provera limita otkupnine (zavisno od tipa dostave)
+            $max_buyout = $is_dispenser ? $max_buyout_dispenser : $max_buyout_api;
+
+            if ($total_para > $max_buyout) {
+                $max_rsd = $max_buyout / 100;
+                return new WP_Error(
+                    'buyout_limit_exceeded',
+                    sprintf(
+                        __('Vrednost otkupnine ne može biti veća od %s RSD za D Express dostavu.', 'd-express-woo'),
+                        number_format($max_rsd, 2, ',', '.')
+                    )
+                );
+            }
+
             if (!empty($buyout_account) && D_Express_Validator::validate_bank_account($buyout_account)) {
                 // Validni bankovni račun, možemo koristiti otkupninu
-                $buyout_amount = dexpress_convert_price_to_para($order->get_total());
+                $buyout_amount = $total_para;
                 dexpress_log("Using BuyOut: {$buyout_amount}, Account: {$buyout_account}", 'debug');
             } else {
                 // Nema validnog bankovnog računa - upozorenje
@@ -837,17 +859,17 @@ class D_Express_API
         // Validacija adrese primaoca
         if (empty($street) || !D_Express_Validator::validate_name($street)) {
             dexpress_log("WARNING: Invalid street name: {$street}", 'warning');
-            $street = substr($order->get_shipping_address_1(), 0, 50); // Fallback na shipping adresu
+            return new WP_Error('invalid_street', __('Neispravan format ulice. Molimo unesite ispravnu ulicu.', 'd-express-woo'));
         }
 
         if (empty($number) || !D_Express_Validator::validate_address_number($number)) {
             dexpress_log("WARNING: Invalid address number: {$number}", 'warning');
-            $number = "bb"; // Default vrednost ako je format neispravan
+            return new WP_Error('invalid_address_number', __('Neispravan format kućnog broja. Prihvatljiv format: bb, 10, 15a, 23/4', 'd-express-woo'));
         }
 
         if (empty($city_id) || !D_Express_Validator::validate_town_id($city_id)) {
             dexpress_log("WARNING: Invalid town ID: {$city_id}", 'warning');
-            $city_id = 100001; // Default vrednost
+            return new WP_Error('invalid_town', __('Neispravan grad. Molimo izaberite grad iz liste.', 'd-express-woo'));
         }
 
         // Pripremanje sadržaja pošiljke
@@ -862,6 +884,35 @@ class D_Express_API
         if (!D_Express_Validator::validate_reference($reference_id)) {
             dexpress_log("WARNING: Invalid reference ID: {$reference_id}", 'warning');
             $reference_id = "ORDER-" . $order->get_id(); // Pojednostavljena referenca
+        }
+
+        // Izračunaj težinu za porudžbinu
+        $weight_grams = $this->calculate_order_weight($order);
+
+        // Provera maksimalne težine (10.000 kg / 10.000.000 g)
+        $max_weight = 10000000; // 10.000 kg
+        if ($weight_grams > $max_weight) {
+            return new WP_Error(
+                'weight_limit_exceeded',
+                sprintf(
+                    __('Težina pošiljke ne može biti veća od %s kg.', 'd-express-woo'),
+                    number_format($max_weight / 1000, 0, ',', '.')
+                )
+            );
+        }
+
+        // Provera vrednosti - vrednost pošiljke (Value) mora biti između 0 i 1.000.000.000 para (10.000.000 RSD)
+        $value_para = dexpress_convert_price_to_para($order->get_total());
+        $max_value = 1000000000; // 10.000.000 RSD
+
+        if ($value_para > $max_value) {
+            return new WP_Error(
+                'value_limit_exceeded',
+                sprintf(
+                    __('Vrednost pošiljke ne može biti veća od %s RSD.', 'd-express-woo'),
+                    number_format($max_value / 100, 2, ',', '.')
+                )
+            );
         }
 
         // Osnovni podaci o pošiljci
@@ -901,9 +952,9 @@ class D_Express_API
             'PaymentType' => $payment_type,
 
             // Vrednost i masa
-            'Value' => dexpress_convert_price_to_para($order->get_total()),
+            'Value' => $value_para,
             'Content' => $content,
-            'Mass' => $this->calculate_order_weight($order),
+            'Mass' => $weight_grams,
 
             // Reference i opcije
             'ReferenceID' => $reference_id,
@@ -923,22 +974,33 @@ class D_Express_API
 
         // Ako koristimo paketomat, postavimo adresu paketomata umesto adrese kupca
         if ($is_dispenser && $dispenser) {
-            // Provere za paketomat
+            // Provere za paketomat prema dokumentaciji
+
+            // 1. Provera broja paketa - mora biti samo jedan
             if (count($shipment_data['PackageList']) > 1) {
                 return new WP_Error('paketomat_validation', __('Za dostavu u paketomat dozvoljen je samo jedan paket.', 'd-express-woo'));
             }
 
+            // 2. Provera vrednosti otkupnine - mora biti manja od 200.000 RSD
             if ($shipment_data['BuyOut'] > 20000000) {
                 return new WP_Error('paketomat_validation', __('Za dostavu u paketomat, otkupnina mora biti manja od 200.000,00 RSD.', 'd-express-woo'));
             }
 
+            // 3. Provera telefona - mora biti mobilni (već validiramo telefon ranije)
+
+            // 4. Provera povratnih dokumenata - ne sme biti povratka dokumenata
             if ($shipment_data['ReturnDoc'] != 0) {
                 return new WP_Error('paketomat_validation', __('Za dostavu u paketomat nije dozvoljeno vraćanje dokumenata.', 'd-express-woo'));
             }
 
+            // 5. Provera težine - mora biti manja od 20 kg
             if ($shipment_data['Mass'] > 20000) { // 20kg u gramima
                 return new WP_Error('paketomat_validation', __('Za dostavu u paketomat, pošiljka mora biti lakša od 20kg.', 'd-express-woo'));
             }
+
+            // 6. Dimenzije - moraju biti manje od 470 x 440 x 440mm
+            // Napomena: Trenutno nemamo način da validiramo dimenzije
+            // Implementirati kasnije kad budemo imali dimenzije proizvoda
 
             // Postaviti adresu i druge podatke paketomata
             $shipment_data['RAddress'] = $dispenser->address;
@@ -976,7 +1038,8 @@ class D_Express_API
         $validation = D_Express_Validator::validate_shipment_data($shipment_data);
         if ($validation !== true) {
             dexpress_log("SHIPMENT DATA VALIDATION FAILED: " . implode(", ", $validation), 'error');
-            // Ovde odlučujemo da li da odbacimo slanje ili nastavimo uprkos upozorenjima
+            // Umesto da ignorišemo, vratićemo grešku
+            return new WP_Error('validation_error', __('Greška u podacima za pošiljku: ', 'd-express-woo') . implode(", ", $validation));
         }
 
         dexpress_log("[API DEBUG] Finalni RCPhone za API: {$phone}", 'info');
