@@ -264,6 +264,12 @@ class D_Express_API
     public function add_shipment($shipment_data)
     {
         try {
+            if (isset($shipment_data['DispenserID'])) {
+                dexpress_log("[PAKETOMAT DEBUG] Kreiranje pošiljke za paketomat ID: " . $shipment_data['DispenserID'], 'info');
+                dexpress_log("[PAKETOMAT DEBUG] Kompletan zahtev: " . print_r($shipment_data, true), 'info');
+            }
+            $payment_type = intval(get_option('dexpress_payment_type', 2));
+            dexpress_log("[PAYMENT] Vrednost dexpress_payment_type iz opcija: " . $payment_type, 'info');
             // Dodavanje ClientID ako nije uključen u podatke
             if (!isset($shipment_data['CClientID'])) {
                 $shipment_data['CClientID'] = $this->client_id;
@@ -277,6 +283,9 @@ class D_Express_API
             }
 
             return $this->api_request('data/addshipment', 'POST', $shipment_data);
+            if (isset($shipment_data['DispenserID'])) {
+                dexpress_log("[PAKETOMAT DEBUG] Odgovor API-ja: " . print_r($response, true), 'info');
+            }
         } catch (Exception $e) {
             dexpress_log("Exception in add_shipment: " . $e->getMessage(), 'error');
             return new WP_Error('exception', $e->getMessage());
@@ -714,7 +723,16 @@ class D_Express_API
         dexpress_log("[API DEBUG] Inicijalna vrednost telefona iz WC: " . $order->get_billing_phone(), 'info');
         // Dohvatamo sačuvani API format telefona ako postoji
         $phone = get_post_meta($order_id, '_billing_phone_api_format', true);
+        $payment_type = intval(get_option('dexpress_payment_type', 2));
 
+        // Ako je paketomat, uvek koristimo faktura (2)
+        $dispenser_id = get_post_meta($order->get_id(), '_dexpress_dispenser_id', true);
+        if (!empty($dispenser_id)) {
+            $payment_type = 2; // Faktura za paketomat
+            dexpress_log("[PAKETOMAT] Postavljanje payment_type na 2 (Faktura) za paketomat", 'info');
+        }
+        
+        $shipment_data['PaymentType'] = $payment_type;
         if (empty($phone)) {
             $phone = D_Express_Validator::format_phone($order->get_billing_phone());
             dexpress_log("[API DEBUG] Telefon formatiran standardno: {$phone}", 'info');
@@ -889,6 +907,24 @@ class D_Express_API
         $shipment_data['PackageList'] = $this->prepare_packages_for_order($order);
         $dispenser_id = get_post_meta($order->get_id(), '_dexpress_dispenser_id', true);
         if (!empty($dispenser_id)) {
+            // Provere za paketomat
+            if (count($shipment_data['PackageList']) > 1) {
+                return new WP_Error('paketomat_validation', __('Za dostavu u paketomat dozvoljen je samo jedan paket.', 'd-express-woo'));
+            }
+
+            if ($shipment_data['BuyOut'] > 20000000) {
+                return new WP_Error('paketomat_validation', __('Za dostavu u paketomat, otkupnina mora biti manja od 200.000,00 RSD.', 'd-express-woo'));
+            }
+
+            if ($shipment_data['ReturnDoc'] != 0) {
+                return new WP_Error('paketomat_validation', __('Za dostavu u paketomat nije dozvoljeno vraćanje dokumenata.', 'd-express-woo'));
+            }
+
+            if ($shipment_data['Mass'] > 20000) { // 20kg u gramima
+                return new WP_Error('paketomat_validation', __('Za dostavu u paketomat, pošiljka mora biti lakša od 20kg.', 'd-express-woo'));
+            }
+
+            // Dodaj DispenserID u podatke
             $shipment_data['DispenserID'] = intval($dispenser_id);
         }
         // Dodatno logiranje za debugiranje

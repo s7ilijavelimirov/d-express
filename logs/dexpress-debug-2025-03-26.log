@@ -1,0 +1,55 @@
+[2025-03-26 09:18:13] Checkout scripts loaded
+[2025-03-26 09:18:13] Google Maps API key: AIzaSyAJekmLcgqJvKMGaf2IeABhU2tsSBjpihM
+[2025-03-26 09:18:37] POST phone value: +381603995503
+[2025-03-26 09:18:37] Order ID: 787
+billing_street: Bulevar cara Lazara
+billing_street_id: 23795
+billing_number: 15
+billing_address_desc: ispred zgrade
+billing_city: Novi Sad
+billing_city_id: 802824
+billing_postcode: 21000
+billing_address_1: Bulevar cara Lazara 15
+shipping_street: NOT SET
+shipping_street_id: NOT SET
+shipping_number: NOT SET
+shipping_address_desc: NOT SET
+shipping_city: NOT SET
+shipping_city_id: NOT SET
+shipping_postcode: NOT SET
+
+[2025-03-26 09:18:37] Checkout order processed: 787
+[2025-03-26 09:18:37] Has D Express shipping: Yes
+[2025-03-26 09:18:37] Automatic shipment creation is disabled or status does not match. Auto create: Enabled, Current status: pending, Required status: processing
+[2025-03-26 09:18:40] [SHIPPING] Započinjem kreiranje pošiljke za narudžbinu #787
+[2025-03-26 09:18:40] [SHIPPING] Proveravam adresu za narudžbinu #787
+[2025-03-26 09:18:40] Checking address: Array
+(
+    [RName] => Ilija Velemirov
+    [RAddress] => Bulevar cara Lazara
+    [RAddressNum] => 15
+    [RTownID] => 802824
+    [RCName] => Ilija Velemirov
+    [RCPhone] => 381603995503
+)
+
+[2025-03-26 09:18:40] Address check response: TEST
+[2025-03-26 09:18:40] [SHIPPING] Adresa validirana uspešno
+[2025-03-26 09:18:40] [SHIPPING] Priprema podataka za narudžbinu #787
+[2025-03-26 09:18:40] Using address type: shipping
+[2025-03-26 09:18:40] Street: Bulevar cara Lazara, Number: 15, City ID: 802824
+[2025-03-26 09:18:40] Payment method: cod, Is COD: Yes
+[2025-03-26 09:18:40] Using BuyOut: 41700, Account: 170-0010364556000-77
+[2025-03-26 09:18:40] Final BuyOut amount: 41700
+[2025-03-26 09:18:40] Final BuyOutAccount: 170-0010364556000-77
+[2025-03-26 09:18:40] Final RAddressNum: 15
+[2025-03-26 09:18:40] Final RTownID: 802824
+[2025-03-26 09:18:40] Final RCPhone: 381603995503
+[2025-03-26 09:18:40] [SHIPPING] Šaljem zahtev ka D-Express API-ju
+[2025-03-26 09:18:40] [SHIPPING] API odgovor primljen uspešno
+[2025-03-26 09:18:40] [SHIPPING] API odgovor: TEST
+[2025-03-26 09:18:40] [SHIPPING] Tracking broj: TT0000000083, Shipment ID: TT0000000083
+[2025-03-26 09:18:40] [SHIPPING] Čuvanje pošiljke u bazu podataka
+[2025-03-26 09:18:40] [SHIPPING] Pošiljka uspešno kreirana sa ID: 6
+[2025-03-26 09:18:42] Checkout scripts loaded
+[2025-03-26 09:18:42] Google Maps API key: AIzaSyAJekmLcgqJvKMGaf2IeABhU2tsSBjpihM
