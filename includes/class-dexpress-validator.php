@@ -75,10 +75,14 @@ class D_Express_Validator
 
         // Proverava da li je odabrana D Express dostava
         $is_dexpress = false;
+        $is_dispenser = false;
         if (!empty($_POST['shipping_method'])) {
             foreach ($_POST['shipping_method'] as $method) {
                 if (strpos($method, 'dexpress') !== false) {
                     $is_dexpress = true;
+                    if (strpos($method, 'dexpress_dispenser') !== false) {
+                        $is_dispenser = true;
+                    }
                     break;
                 }
             }
@@ -133,11 +137,22 @@ class D_Express_Validator
         $cart_weight = self::calculate_cart_weight();
         if ($cart_weight <= 0) {
             $errors[] = __('Težina vaše narudžbine mora biti veća od 0.', 'd-express-woo');
-        } elseif ($cart_weight > 10000000) { // 10.000 kg u gramima
-            $errors[] = sprintf(
-                __('Težina narudžbine ne može biti veća od %s kg za D Express dostavu.', 'd-express-woo'),
-                number_format(10000, 0, ',', '.')
-            );
+        } else {
+            // KLJUČNA PROMENA: Provera maksimalne težine zavisno od tipa dostave
+            if ($is_dispenser) {
+                // Paketomat ima limit od 20kg
+                if ($cart_weight > 20000) { // 20kg u gramima
+                    $errors[] = __('Za dostavu u paketomat, ukupna težina narudžbine ne može biti veća od 20kg.', 'd-express-woo');
+                }
+            } else {
+                // Standardna dostava ima limit od 10.000kg
+                if ($cart_weight > 10000000) { // 10.000kg u gramima
+                    $errors[] = sprintf(
+                        __('Ukupna težina narudžbine ne može biti veća od %s kg za D Express dostavu.', 'd-express-woo'),
+                        number_format(10000, 0, ',', '.')
+                    );
+                }
+            }
         }
 
         // Provera da li je pouzeće (COD)
@@ -325,12 +340,12 @@ class D_Express_Validator
     private static function validate_dispenser_order($order)
     {
         // 1. Provera broja paketa - mora biti samo jedan
-        // Za sada uvek prolazi jer ne podržavamo više paketa
+        // Ovo je ograničenje D Express API-ja za paketomate
+        // Za sada uvek prolazi jer plugin ne podržava više paketa
 
         // 2. Provera težine - mora biti manja od 20 kg
         $weight_grams = self::calculate_order_weight($order);
-        // Maksimalna težina za paketomat (20 kg = 20.000 g)
-        if ($weight_grams > 20000) {
+        if ($weight_grams > 20000) { // 20kg u gramima
             return new WP_Error('paketomat_validation', __('Za dostavu u paketomat, pošiljka mora biti lakša od 20kg.', 'd-express-woo'));
         }
 
@@ -340,7 +355,7 @@ class D_Express_Validator
 
         if ($is_cod) {
             $total_para = self::convert_price_to_para($order->get_total());
-            if ($total_para > 20000000) { // 200.000 RSD
+            if ($total_para > 20000000) { // 200.000 RSD u para
                 return new WP_Error('paketomat_validation', __('Za dostavu u paketomat, otkupnina mora biti manja od 200.000,00 RSD.', 'd-express-woo'));
             }
         }
@@ -351,9 +366,65 @@ class D_Express_Validator
             return new WP_Error('paketomat_validation', __('Za dostavu u paketomat nije dozvoljeno vraćanje dokumenata.', 'd-express-woo'));
         }
 
+        // 5. Provera da li je telefon mobilni
+        // Mobilni brojevi su obavezni za paketomate jer se šalje SMS
+        $phone = get_post_meta($order->get_id(), '_billing_phone_api_format', true);
+
+        if (empty($phone)) {
+            $phone = self::format_phone($order->get_billing_phone());
+        }
+
+        if (!self::validate_mobile_phone($phone)) {
+            return new WP_Error('paketomat_validation', __('Za dostavu u paketomat, potreban je validan mobilni broj telefona (+3816XXXXXXXX).', 'd-express-woo'));
+        }
+
+        // 6. Dimenzije paketa - po API dokumentaciji ne smeju biti veće od 470 x 440 x 440mm
+        $max_dimensions = array(
+            'length' => 470, // mm
+            'width'  => 440, // mm
+            'height' => 440  // mm
+        );
+
+        // Proveri dimenzije svakog proizvoda u narudžbini
+        $items = $order->get_items();
+        foreach ($items as $item) {
+            if (!($item instanceof WC_Order_Item_Product)) {
+                continue;
+            }
+
+            $product = $item->get_product();
+            if (!$product) {
+                continue;
+            }
+
+            // Proveri da li proizvod ima dimenzije
+            if ($product->has_dimensions()) {
+                $length = wc_get_dimension($product->get_length(), 'mm');
+                $width = wc_get_dimension($product->get_width(), 'mm');
+                $height = wc_get_dimension($product->get_height(), 'mm');
+
+                // Ako bilo koja dimenzija prelazi maksimum, vrati grešku
+                if ($length > $max_dimensions['length'] || $width > $max_dimensions['width'] || $height > $max_dimensions['height']) {
+                    return new WP_Error(
+                        'paketomat_validation',
+                        sprintf(
+                            __('Proizvod "%s" je prevelikih dimenzija za paketomat. Maksimalne dozvoljene dimenzije su %d x %d x %d mm.', 'd-express-woo'),
+                            $product->get_name(),
+                            $max_dimensions['length'],
+                            $max_dimensions['width'],
+                            $max_dimensions['height']
+                        )
+                    );
+                }
+            }
+        }
+
+        // NAPOMENA: Ostala ograničenja za paketomate:
+        // - Paketomat pošiljka ne može imati povrat dokumenta (ReturnDoc mora biti 0)
+        // - Paketomat pošiljka modu da ima samo jedan paket
+
         return true;
     }
-
     /**
      * Izračunavanje težine narudžbine u gramima
      * 
@@ -412,17 +483,32 @@ class D_Express_Validator
         foreach (WC()->cart->get_cart() as $cart_item) {
             $product = $cart_item['data'];
             if ($product && $product->has_weight()) {
-                $product_weight = floatval($product->get_weight());
-                $weight += $product_weight * $cart_item['quantity'];
+                $product_weight_kg = floatval($product->get_weight());
+                $weight += $product_weight_kg * $cart_item['quantity'];
             }
         }
 
-        // Minimalna težina 100g
+        // Minimalna težina 100g (0.1kg)
         $weight = max(0.1, $weight);
 
         // Konverzija u grame
         return self::convert_weight_to_grams($weight);
     }
+    /**
+     * Validacija mobilnog telefona
+     * Prihvata samo mobilne brojeve za Srbiju
+     * 
+     * @param string $phone Broj telefona
+     * @return bool True ako je validan mobilni broj
+     */
+    public static function validate_mobile_phone($phone)
+    {
+        // Prihvata samo mobilne brojeve za Srbiju sa prefiksom 6
+        // 381 + 6 + 7-8 cifara = mobilni brojevi
+        $pattern = '/^(381[6][0-9]{7,8})$/';
+        return preg_match($pattern, $phone);
+    }
+
 
     /**
      * Konverzija kg u grame

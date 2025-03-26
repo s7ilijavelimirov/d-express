@@ -376,7 +376,6 @@ class D_Express_Checkout
         if (!is_checkout()) {
             return;
         }
-        dexpress_log("Checkout scripts loaded", 'debug');
 
         // Učitavanje jQuery UI Autocomplete
         wp_enqueue_script('jquery-ui-autocomplete');
@@ -428,7 +427,6 @@ class D_Express_Checkout
 
         // Google Maps API - koristimo API ključ ako je dostupan
         $google_maps_api_key = get_option('dexpress_google_maps_api_key', '');
-        dexpress_log("Google Maps API key: {$google_maps_api_key}", 'debug');
 
         $google_maps_url = empty($google_maps_api_key)
             ? 'https://maps.googleapis.com/maps/api/js?v=weekly'

@@ -122,9 +122,6 @@ class D_Express_WooCommerce
         // Inicijalizacija nakon učitavanja svih plugin-a
         add_action('plugins_loaded', array($this, 'init'), 0);
 
-        // Dodavanje akcija na WooCommerce checkout
-        add_action('woocommerce_checkout_process', array($this, 'validate_checkout_address'));
-
         // Dodavanje REST API ruta za webhook
         add_action('rest_api_init', array($this, 'register_rest_routes'));
     }
@@ -246,15 +243,6 @@ class D_Express_WooCommerce
                 add_option($option_name, $default_value);
             }
         }
-    }
-
-    /**
-     * Validacija adrese na checkout-u
-     */
-    public function validate_checkout_address()
-    {
-        // Validacija adrese ako je izabrana D Express dostava
-        // Implementacija u sledećem koraku
     }
     /**
      * Registracija REST API ruta za webhook
