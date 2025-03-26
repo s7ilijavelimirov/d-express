@@ -41,6 +41,46 @@ class D_Express_Checkout
         add_action('wp_ajax_dexpress_get_towns_list', array($this, 'ajax_get_towns_list'));
         add_action('wp_ajax_nopriv_dexpress_get_towns_list', array($this, 'ajax_get_towns_list'));
     }
+    /**
+     * Dodaje modal za izbor paketomata
+     */
+    public function add_dispenser_modal()
+    {
+        // Proveriti da li je checkout stranica
+        if (!is_checkout()) {
+            return;
+        }
+
+        // HTML za modal
+?>
+        <div id="dexpress-dispenser-modal" style="display: none;">
+            <div class="dexpress-modal-content" style="width: 90%; max-width: 1000px;">
+                <div class="dexpress-modal-header">
+                    <h3><?php _e('Izaberite paketomat za dostavu', 'd-express-woo'); ?></h3>
+                    <span class="dexpress-modal-close">&times;</span>
+                </div>
+                <div class="dexpress-modal-body">
+                    <!-- Filter gradova ostaje gore -->
+                    <div class="dexpress-town-filter">
+                        <label for="dexpress-town-filter"><?php _e('Filtrirajte po gradu:', 'd-express-woo'); ?></label>
+                        <input type="text" id="dexpress-town-filter" placeholder="Započnite unos naziva grada..." autocomplete="off">
+                        <div id="dexpress-town-suggestions" class="dexpress-town-suggestions"></div>
+                    </div>
+
+                    <!-- Glavni kontejner za mapu i listu -->
+                    <div class="dexpress-dispensers-container">
+                        <div id="dexpress-dispensers-map"></div>
+                        <div id="dexpress-dispensers-list"></div>
+                    </div>
+                </div>
+
+                <div class="dexpress-modal-footer">
+                    <button type="button" class="button button-secondary dexpress-modal-close"><?php _e('Odustani', 'd-express-woo'); ?></button>
+                </div>
+            </div>
+        </div>
+    <?php
+    }
     public function ajax_get_towns_list()
     {
         check_ajax_referer('dexpress-frontend-nonce', 'nonce');
@@ -465,63 +505,99 @@ class D_Express_Checkout
             return;
         }
 
-        // Dobijanje dostupnih paketomata
-        $dispensers = $this->get_dispensers_list();
-
         // Proveriti da li postoji već izabrani paketomat
         $chosen_dispenser = WC()->session->get('chosen_dispenser');
 
-        // Dohvatanje postavki iz WooCommerce opcija
+        // Dohvatanje instance_id za trenutnu metodu dostave
         $instance_id = $method->get_instance_id();
+
+        // Dobijanje postavki iz WooCommerce opcija koristeći instance_id
+        $settings = $this->get_shipping_method_settings($instance_id);
+
+        // Provera da li je ova shipping metoda trenutno izabrana
+        $is_selected = $this->is_selected_shipping_method($method->get_id());
+
+        // Generisanje HTML-a
+        $this->render_dispenser_selection_html($method, $chosen_dispenser, $settings, $is_selected);
+    }
+    /**
+     * Dohvata podešavanja shipping metode iz baze
+     */
+    private function get_shipping_method_settings($instance_id)
+    {
         $option_key = "woocommerce_dexpress_dispenser_{$instance_id}_settings";
         $settings = get_option($option_key, array());
 
-        // Postavljanje default vrednosti ako opcije ne postoje
-        $description = isset($settings['description_text']) ? $settings['description_text'] :
-            'D Paketomati su postavljeni na benzinskim stanicama, supermarketima, šoping centrima i rade 245 časa dnevno, jednostavni su i bezbedni za upotrebu. Svoju porudžbinu možete preuzeti i u Paket shopu koji Vam najviše odgovara – radno vreme lokacije je prikazano prilikom odabira!';
+        // Podrazumevane vrednosti
+        $defaults = array(
+            'description_text' => 'D Paketomati su postavljeni na benzinskim stanicama, supermarketima, šoping centrima i rade 24 časa dnevno, jednostavni su i bezbedni za upotrebu. Svoju porudžbinu možete preuzeti i u Paket shopu koji Vam najviše odgovara – radno vreme lokacije je prikazano prilikom odabira!',
+            'steps_text' => "1. Odaberite paketomat/paket shop lokaciju i završite porudžbinu\n2. Kada je paket isporučen na željenu lokaciju, D Express će vam putem Viber/SMS poruke poslati kod za otvaranje paketomat ormarića\n3. Ukoliko plaćate pouzećem potrebno je da kasiru pokažete kod i platite pošiljku gotovinom ili platnom karticom\n4. Upišite kod na paketomatu\n5. Preuzmite paket iz ormarića koji će se automatski otvoriti",
+            'note_text' => '* Rok za preuzimanje pošiljke sa paketomata je 2 radna dana i nakon odabira ovog tipa dostave pošiljku nije moguće preusmeriti na drugu adresu',
+            'delivery_time_text' => '3 RADNA DANA',
+            'button_text' => 'ODABERITE PAKETOMAT'
+        );
 
-        $steps_text = isset($settings['steps_text']) ? $settings['steps_text'] :
-            "1. Odaberite paketomat/paket shop lokaciju i završite porudžbinu\n" .
-            "2. Kada je paket isporučen na željenu lokaciju, D Express će vam putem Viber/SMS poruke poslati kod za otvaranje paketomat ormarića\n" .
-            "3. Ukoliko plaćate pouzećem potrebno je da kasiru pokažete kod i platite pošiljku gotovinom ili platnom karticom\n" .
-            "4. Upišite kod na paketomatu\n" .
-            "5. Preuzmite paket iz ormarića koji će se automatski otvoriti";
+        // Spajanje postavki sa default vrednostima
+        return wp_parse_args($settings, $defaults);
+    }
+    /**
+     * Proverava da li je metoda dostave trenutno izabrana
+     */
+    private function is_selected_shipping_method($method_id)
+    {
+        $chosen_methods = WC()->session->get('chosen_shipping_methods', array());
+        return in_array($method_id, $chosen_methods);
+    }
+    /**
+     * Generisanje HTML-a za prikaz izbora paketomata
+     */
+    private function render_dispenser_selection_html($method, $chosen_dispenser, $settings, $is_selected)
+    {
+        // Priprema koraka kao HTML listu
+        $steps_html = $this->format_steps_as_html($settings['steps_text']);
 
-        $note = isset($settings['note_text']) ? $settings['note_text'] :
-            '* Rok za preuzimanje pošiljke sa paketomata je 2 radna dana i nakon odabira ovog tipa dostave pošiljku nije moguće1 preusmeriti na drugu adresu';
+        // Dohvati simbol valute
+        $currency_symbol = get_woocommerce_currency_symbol();
 
-        $delivery_time = isset($settings['delivery_time_text']) ? $settings['delivery_time_text'] : '3 RADNA DANA';
-        $button_text = isset($settings['button_text']) ? $settings['button_text'] : 'ODABERITE PAKETOMAT';
-        $price_text = sprintf('Cena isporuke je %s RSD.', wc_price($method->get_cost()));
+        // Formiraj tekst cene sa simbolom valute
+        $cost = $method->get_cost();
+        $formatted_cost = number_format($cost, 0, ',', '.');
+        $price_text = sprintf(__('Cena isporuke je %s %s.', 'd-express-woo'), $formatted_cost, $currency_symbol);
 
-        // Format koraka u HTML listu
-        $steps_html = '';
-        if (!empty($steps_text)) {
-            $steps = explode("\n", $steps_text);
-            foreach ($steps as $step) {
-                if (!empty(trim($step))) {
-                    $steps_html .= '<li>' . esc_html(trim($step)) . '</li>';
-                }
-            }
-        }
-
-?>
-       <div class="dexpress-dispenser-wrapper" style="margin-top: 15px; padding: 15px; border: 1px solid #eee; border-radius: 4px; background-color: #f9f9f9; display: <?php echo in_array('dexpress_dispenser', WC()->session->get('chosen_shipping_methods', array())) ? 'block' : 'none'; ?>;">
+        // Klase za prikaz/sakrivanje panela
+        $display_style = $is_selected ? 'block' : 'none';
+    ?>
+        <div class="dexpress-dispenser-wrapper" style="margin-top: 15px; padding: 15px; border: 1px solid #eee; border-radius: 4px; background-color: #f9f9f9; display: <?php echo esc_attr($display_style); ?>;">
             <!-- Naslov i opis -->
-            <div class="dexpress-dispenser-info">
-                <p class="dexpress-dispenser-description"><?php echo wp_kses_post($description); ?></p>
+            <div class="dexpress-dispenser-info-method">
+                <p class="dexpress-dispenser-description"><?php echo wp_kses_post($settings['description_text']); ?></p>
                 <p class="dexpress-dispenser-price"><?php echo esc_html($price_text); ?></p>
 
                 <!-- Vreme isporuke -->
                 <div class="dexpress-delivery-time" style="margin: 10px 0; text-align: right; font-weight: bold;">
-                    <?php echo esc_html($delivery_time); ?>
+                    <?php echo esc_html($settings['delivery_time_text']); ?>
                 </div>
             </div>
+            <!-- Koraci za preuzimanje -->
+            <?php if (!empty($steps_html)): ?>
+                <div class="dexpress-steps" style="margin-top: 20px;">
+                    <ol style="padding-left: 20px; margin: 0;">
+                        <?php echo $steps_html; ?>
+                    </ol>
+                </div>
+            <?php endif; ?>
+
+            <!-- Napomena -->
+            <?php if (!empty($settings['note_text'])): ?>
+                <div class="dexpress-note" style="margin-top: 10px; color: #e2401c; font-size: 0.9em;">
+                    <?php echo esc_html($settings['note_text']); ?>
+                </div>
+            <?php endif; ?>
 
             <!-- Dugme za izbor -->
             <div class="dexpress-dispenser-selection" style="margin: 15px 0;">
                 <button type="button" class="button dexpress-select-dispenser-btn" style="width: 100%; text-align: center; padding: 10px;">
-                    <?php echo esc_html($button_text); ?>
+                    <?php echo esc_html($settings['button_text']); ?>
                 </button>
                 <input type="hidden" id="dexpress_chosen_dispenser" name="dexpress_chosen_dispenser" value="<?php echo esc_attr($chosen_dispenser ? $chosen_dispenser['id'] : ''); ?>">
             </div>
@@ -538,125 +614,30 @@ class D_Express_Checkout
                     <?php _e('Morate izabrati paketomat za dostavu', 'd-express-woo'); ?>
                 </div>
             <?php endif; ?>
-
-            <!-- Koraci za preuzimanje -->
-            <?php if (!empty($steps_html)): ?>
-                <div class="dexpress-steps" style="margin-top: 20px;">
-                    <ol style="padding-left: 20px; margin: 0;">
-                        <?php echo $steps_html; ?>
-                    </ol>
-                </div>
-            <?php endif; ?>
-
-            <!-- Napomena -->
-            <?php if (!empty($note)): ?>
-                <div class="dexpress-note" style="margin-top: 10px; color: #e2401c; font-size: 0.9em;">
-                    <?php echo esc_html($note); ?>
-                </div>
-            <?php endif; ?>
         </div>
-    <?php
-    }
-
-    /**
-     * Dodaje modal za izbor paketomata
-     */
-    public function add_dispenser_modal()
-    {
-        // Proveriti da li je checkout stranica
-        if (!is_checkout()) {
-            return;
-        }
-
-        // HTML za modal
-    ?>
-        <div id="dexpress-dispenser-modal" style="display: none;">
-            <div class="dexpress-modal-content" style="width: 90%; max-width: 1000px;">
-                <div class="dexpress-modal-header">
-                    <h3><?php _e('Izaberite paketomat za dostavu', 'd-express-woo'); ?></h3>
-                    <span class="dexpress-modal-close">&times;</span>
-                </div>
-                <div class="dexpress-modal-body">
-                    <!-- Filter gradova ostaje gore -->
-                    <div class="dexpress-town-filter">
-                        <label for="dexpress-town-filter"><?php _e('Filtrirajte po gradu:', 'd-express-woo'); ?></label>
-                        <input type="text" id="dexpress-town-filter" placeholder="Započnite unos naziva grada..." autocomplete="off">
-                        <div id="dexpress-town-suggestions" class="dexpress-town-suggestions"></div>
-                    </div>
-
-                    <!-- Glavni kontejner za mapu i listu -->
-                    <div class="dexpress-dispensers-container">
-                        <div id="dexpress-dispensers-map"></div>
-                        <div id="dexpress-dispensers-list"></div>
-                    </div>
-                </div>
-
-                <div class="dexpress-modal-footer">
-                    <button type="button" class="button button-secondary dexpress-modal-close"><?php _e('Odustani', 'd-express-woo'); ?></button>
-                </div>
-            </div>
-        </div>
-
-        <style>
-            #dexpress-dispenser-modal {
-                position: fixed;
-                z-index: 9999;
-                left: 0;
-                top: 0;
-                width: 100%;
-                height: 100%;
-                background-color: rgba(0, 0, 0, 0.5);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }
-
-            .dexpress-modal-content {
-                background-color: #fff;
-                border-radius: 5px;
-                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-            }
-
-            .dexpress-modal-header {
-                padding: 15px;
-                border-bottom: 1px solid #eee;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-            }
-
-            .dexpress-modal-close {
-                cursor: pointer;
-                font-size: 24px;
-            }
-
-            .dexpress-modal-body {
-                padding: 15px;
-            }
-
-            .dexpress-modal-footer {
-                padding: 15px;
-                border-top: 1px solid #eee;
-                text-align: right;
-            }
-
-            .dexpress-dispenser-item {
-                padding: 10px;
-                border-bottom: 1px solid #eee;
-                cursor: pointer;
-            }
-
-            .dexpress-dispenser-item:hover {
-                background-color: #f9f9f9;
-            }
-
-            .dexpress-town-filter {
-                margin-bottom: 10px;
-            }
-        </style>
 <?php
     }
+    /**
+     * Formatira korake kao HTML listu
+     */
+    private function format_steps_as_html($steps_text)
+    {
+        if (empty($steps_text)) {
+            return '';
+        }
 
+        $steps_html = '';
+        $steps = explode("\n", $steps_text);
+
+        foreach ($steps as $step) {
+            $step = trim($step);
+            if (!empty($step)) {
+                $steps_html .= '<li>' . esc_html($step) . '</li>';
+            }
+        }
+
+        return $steps_html;
+    }
     /**
      * Dobija listu paketomata
      */
