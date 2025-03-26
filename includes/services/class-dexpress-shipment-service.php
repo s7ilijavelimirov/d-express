@@ -77,7 +77,12 @@ class D_Express_Shipment_Service
             dexpress_log('[SHIPPING DEBUG] Telefon u API zahtevu: ' . $shipment_data['RCPhone'], 'info');
             if (is_wp_error($shipment_data)) {
                 dexpress_log('[SHIPPING] Greška pri pripremi podataka: ' . $shipment_data->get_error_message(), 'error');
-                return $shipment_data;
+                // Dodati kod greške za lakše identifikovanje
+                return new WP_Error('prepare_data_failed', $shipment_data->get_error_message(), [
+                    'order_id' => $order->get_id(),
+                    'function' => 'create_shipment',
+                    'step' => 'prepare_data'
+                ]);
             }
 
             // Logovanje u test modu

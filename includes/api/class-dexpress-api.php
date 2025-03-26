@@ -1137,31 +1137,4 @@ class D_Express_API
 
         return 0;
     }
-
-    /**
-     * Formatiranje broja telefona za D Express format
-     */
-    private function format_phone_number($phone)
-    {
-        // Uklanjanje svega osim brojeva
-        $phone = preg_replace('/[^0-9]/', '', $phone);
-
-        // Dodavanje prefiksa 381 ako nedostaje
-        if (substr($phone, 0, 3) !== '381') {
-            // Ako počinje sa 0, zameniti 0 sa 381
-            if (substr($phone, 0, 1) === '0') {
-                $phone = '381' . substr($phone, 1);
-            } else {
-                // Inače samo dodati 381 na početak
-                $phone = '381' . $phone;
-            }
-        }
-
-        // Trebalo bi dodati validaciju prema regularnom izrazu iz API dokumentacije
-        if (!preg_match('/^(381[1-9][0-9]{7,8}|38167[0-9]{6,8})$/', $phone)) {
-            // Ovde treba odlučiti šta uraditi ako format nije ispravан
-        }
-
-        return $phone;
-    }
 }

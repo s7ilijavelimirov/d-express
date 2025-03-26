@@ -48,7 +48,9 @@ class D_Express_DB_Installer
             KEY order_id (order_id),
             KEY shipment_id (shipment_id),
             KEY tracking_number (tracking_number),
-            KEY reference_id (reference_id)
+            KEY reference_id (reference_id),
+            KEY status_code (status_code),
+             KEY created_at (created_at)
         ) $charset_collate;";
 
         // 2. Tabela za pakete
@@ -80,7 +82,8 @@ class D_Express_DB_Installer
             UNIQUE KEY notification_id (notification_id),
             KEY shipment_id (shipment_id),
             KEY reference_id (reference_id),
-            KEY status_id (status_id)
+            KEY status_id (status_id),
+            KEY status_date (status_date)
         ) $charset_collate;";
 
         // 4. Tabela za šifarnik statusa pošiljki

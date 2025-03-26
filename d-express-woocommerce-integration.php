@@ -80,7 +80,7 @@ class D_Express_WooCommerce
         // Admin klase
         if (is_admin()) {
             require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/admin/class-dexpress-admin.php';
-            require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/admin/dexpress-admin-ajax.php'; // Dodaj ovu liniju
+            // require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/admin/dexpress-admin-ajax.php'; // Dodaj ovu liniju
             // U glavnoj datoteci plugina ili u funkciji za uključivanje zavisnosti
             include_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/admin/class-dexpress-shipments-list.php';
             require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/admin/class-dexpress-reports.php';
@@ -131,9 +131,13 @@ class D_Express_WooCommerce
      */
     public function activate()
     {
+        if (!class_exists('WooCommerce')) {
+            deactivate_plugins(plugin_basename(__FILE__));
+            wp_die(__('D Express WooCommerce Integration zahteva WooCommerce plugin. Molimo instalirajte i aktivirajte WooCommerce.', 'd-express-woo'));
+        }
         if (is_admin()) {
             require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/admin/class-dexpress-admin.php';
-            require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/admin/dexpress-admin-ajax.php';
+            // require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/admin/dexpress-admin-ajax.php';
         }
         // Kreiranje potrebnih tabela u bazi
         require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/db/class-dexpress-db-installer.php';
@@ -244,6 +248,7 @@ class D_Express_WooCommerce
             }
         }
     }
+
     /**
      * Registracija REST API ruta za webhook
      */
