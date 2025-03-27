@@ -11,6 +11,7 @@ defined('ABSPATH') || exit;
 class D_Express_Validator
 {
 
+
     /**
      * Validacija kompletne narudžbine za D Express dostavu
      * 
@@ -59,7 +60,95 @@ class D_Express_Validator
             return new WP_Error('validation_exception', $e->getMessage());
         }
     }
+    /**
+     * Izračunavanje težine korpe u gramima
+     * 
+     * @return int Težina u gramima
+     */
+    public static function calculate_cart_weight()
+    {
+        $weight = 0;
 
+        foreach (WC()->cart->get_cart() as $cart_item) {
+            $product = $cart_item['data'];
+            if ($product && $product->has_weight()) {
+                $product_weight_kg = floatval($product->get_weight());
+                $weight += $product_weight_kg * $cart_item['quantity'];
+            }
+        }
+
+        // Minimalna težina 100g (0.1kg)
+        $weight = max(0.1, $weight);
+
+        // Konverzija u grame
+        return self::convert_weight_to_grams($weight);
+    }
+    /**
+     * Validacija dimenzija proizvoda za specifičnu dostavu
+     * 
+     * @param WC_Product $product WooCommerce proizvod
+     * @param array $max_dimensions Maksimalne dozvoljene dimenzije u mm
+     * @return bool|string True ako je validno, string s porukom greške ako nije
+     */
+    public static function validate_product_dimensions($product, $max_dimensions)
+    {
+        if (!$product->has_dimensions()) {
+            return true; // Nema dimenzija, pretpostavljamo da je u redu
+        }
+
+        // Konvertuj dimenzije iz cm u mm (WooCommerce čuva u cm)
+        $length = wc_get_dimension($product->get_length(), 'mm');
+        $width = wc_get_dimension($product->get_width(), 'mm');
+        $height = wc_get_dimension($product->get_height(), 'mm');
+
+        // Detaljne poruke o greškama za svaku dimenziju
+        if ($length > $max_dimensions['length']) {
+            return sprintf(
+                __('Dužina proizvoda "%s" (%d mm) prelazi maksimalno dozvoljenu (%d mm).', 'd-express-woo'),
+                $product->get_name(),
+                round($length),
+                $max_dimensions['length']
+            );
+        }
+
+        if ($width > $max_dimensions['width']) {
+            return sprintf(
+                __('Širina proizvoda "%s" (%d mm) prelazi maksimalno dozvoljenu (%d mm).', 'd-express-woo'),
+                $product->get_name(),
+                round($width),
+                $max_dimensions['width']
+            );
+        }
+
+        if ($height > $max_dimensions['height']) {
+            return sprintf(
+                __('Visina proizvoda "%s" (%d mm) prelazi maksimalno dozvoljenu (%d mm).', 'd-express-woo'),
+                $product->get_name(),
+                round($height),
+                $max_dimensions['height']
+            );
+        }
+
+        return true;
+    }
+    /**
+     * Generisanje i čuvanje jedinstvenog ReferenceID-a
+     * 
+     * @param int $order_id ID narudžbine
+     * @return string Jedinstveni ReferenceID
+     */
+    public static function generate_reference_id($order_id)
+    {
+        $reference_id = 'ORDER-' . $order_id . '-' . time() . '-' . rand(1000, 9999);
+
+        // Osigurajmo da je ReferenceID u skladu sa API zahtevima
+        $reference_id = substr($reference_id, 0, 50);
+
+        // Čuvanje u meta podacima narudžbine
+        update_post_meta($order_id, '_dexpress_reference_id', $reference_id);
+
+        return $reference_id;
+    }
     /**
      * Validacija za checkout proces
      * Koristi se pre završetka narudžbine
@@ -94,30 +183,36 @@ class D_Express_Validator
 
         // Provera obaveznih polja adrese
         $address_type = isset($_POST['ship_to_different_address']) ? 'shipping' : 'billing';
-        $errors = [];
+        $has_errors = false;
 
         // Provera ulice
         if (empty($_POST[$address_type . '_street']) || empty($_POST[$address_type . '_street_id'])) {
-            $errors[] = __('Morate izabrati ulicu iz padajućeg menija.', 'd-express-woo');
+            wc_add_notice(__('Morate izabrati ulicu iz padajućeg menija.', 'd-express-woo'), 'error');
+            $has_errors = true;
         }
 
         // Provera kućnog broja
         if (empty($_POST[$address_type . '_number'])) {
-            $errors[] = __('Kućni broj je obavezan.', 'd-express-woo');
+            wc_add_notice(__('Kućni broj je obavezan.', 'd-express-woo'), 'error');
+            $has_errors = true;
         } elseif (!self::validate_address_number($_POST[$address_type . '_number'])) {
-            $errors[] = __('Kućni broj nije u ispravnom formatu. Podržani formati: 15, bb, 23a, 44/2', 'd-express-woo');
+            wc_add_notice(__('Kućni broj nije u ispravnom formatu. Podržani formati: 15, bb, 23a, 44/2', 'd-express-woo'), 'error');
+            $has_errors = true;
         }
 
         // Provera grada
         if (empty($_POST[$address_type . '_city_id'])) {
-            $errors[] = __('Potrebno je izabrati grad.', 'd-express-woo');
+            wc_add_notice(__('Potrebno je izabrati grad.', 'd-express-woo'), 'error');
+            $has_errors = true;
         }
 
         // Provera telefona
         if (empty($_POST['billing_phone'])) {
-            $errors[] = __('Broj telefona je obavezan za D Express dostavu.', 'd-express-woo');
+            wc_add_notice(__('Broj telefona je obavezan za D Express dostavu.', 'd-express-woo'), 'error');
+            $has_errors = true;
         } elseif (!self::validate_phone_format($_POST['billing_phone'])) {
-            $errors[] = __('Broj telefona mora biti u formatu +3816XXXXXXXX ili +3811XXXXXXXX.', 'd-express-woo');
+            wc_add_notice(__('Broj telefona mora biti u formatu +3816XXXXXXXX ili +3811XXXXXXXX.', 'd-express-woo'), 'error');
+            $has_errors = true;
         }
 
         // Provera paketomata ako je odabran
@@ -130,28 +225,29 @@ class D_Express_Validator
         }
 
         if ($is_dispenser_shipping && empty($_POST['dexpress_chosen_dispenser'])) {
-            $errors[] = __('Morate izabrati paketomat za dostavu.', 'd-express-woo');
+            wc_add_notice(__('Morate izabrati paketomat za dostavu.', 'd-express-woo'), 'error');
+            $has_errors = true;
         }
+
+
 
         // Provera težine narudžbine
         $cart_weight = self::calculate_cart_weight();
-        if ($cart_weight <= 0) {
-            $errors[] = __('Težina vaše narudžbine mora biti veća od 0.', 'd-express-woo');
+        // Za testiranje
+        if ($is_dispenser) {
+            // Paketomat ima limit od 20kg
+            if ($cart_weight > 20000) { // 20kg u gramima
+                wc_add_notice(__('Za dostavu u paketomat, ukupna težina narudžbine ne može biti teža od 20kg.', 'd-express-woo'), 'error');
+                $has_errors = true;
+            }
         } else {
-            // KLJUČNA PROMENA: Provera maksimalne težine zavisno od tipa dostave
-            if ($is_dispenser) {
-                // Paketomat ima limit od 20kg
-                if ($cart_weight > 20000) { // 20kg u gramima
-                    $errors[] = __('Za dostavu u paketomat, ukupna težina narudžbine ne može biti veća od 20kg.', 'd-express-woo');
-                }
-            } else {
-                // Standardna dostava ima limit od 10.000kg
-                if ($cart_weight > 10000000) { // 10.000kg u gramima
-                    $errors[] = sprintf(
-                        __('Ukupna težina narudžbine ne može biti veća od %s kg za D Express dostavu.', 'd-express-woo'),
-                        number_format(10000, 0, ',', '.')
-                    );
-                }
+            // Standardna dostava ima limit od 10.000kg
+            if ($cart_weight > 10000000) { // 10.000kg u gramima
+                wc_add_notice(sprintf(
+                    __('Ukupna težina narudžbine ne može biti teža od %s kg za D Express dostavu.', 'd-express-woo'),
+                    number_format(10000, 0, ',', '.')
+                ), 'error');
+                $has_errors = true;
             }
         }
 
@@ -171,20 +267,23 @@ class D_Express_Validator
             // Provera iznosa
             $cart_total_para = WC()->cart->get_total('edit') * 100;
             if ($cart_total_para > $max_buyout) {
-                $errors[] = sprintf(
+                wc_add_notice(sprintf(
                     __('Vrednost porudžbine za otkupninu ne može biti veća od %s RSD za D Express dostavu.', 'd-express-woo'),
                     number_format($max_buyout / 100, 2, ',', '.')
-                );
+                ), 'error');
+                $has_errors = true;
             }
 
             // Provera postojanja računa za otkupninu
             if (get_option('dexpress_require_buyout_account', 'no') === 'yes') {
                 $buyout_account = get_option('dexpress_buyout_account', '');
                 if (empty($buyout_account) || !self::validate_bank_account($buyout_account)) {
-                    $errors[] = __('Za pouzeće je obavezan validan bankovni račun. Postavite ga u D Express podešavanjima.', 'd-express-woo');
+                    wc_add_notice(__('Za pouzeće je obavezan validan bankovni račun. Postavite ga u D Express podešavanjima.', 'd-express-woo'), 'error');
+                    $has_errors = true;
                 }
             }
         }
+
         // Provera dimenzija proizvoda za paketomat
         if ($is_dispenser_shipping) {
             $max_dimensions = array(
@@ -196,28 +295,17 @@ class D_Express_Validator
             foreach (WC()->cart->get_cart() as $cart_item) {
                 $product = $cart_item['data'];
                 if ($product && $product->has_dimensions()) {
-                    $length = wc_get_dimension($product->get_length(), 'mm');
-                    $width = wc_get_dimension($product->get_width(), 'mm');
-                    $height = wc_get_dimension($product->get_height(), 'mm');
+                    $validation_result = self::validate_product_dimensions($product, $max_dimensions);
 
-                    if ($length > $max_dimensions['length'] || $width > $max_dimensions['width'] || $height > $max_dimensions['height']) {
-                        $errors[] = sprintf(
-                            __('Proizvod "%s" je prevelikih dimenzija za paketomat. Maksimalne dozvoljene dimenzije su %d x %d x %d mm.', 'd-express-woo'),
-                            $product->get_name(),
-                            $max_dimensions['length'],
-                            $max_dimensions['width'],
-                            $max_dimensions['height']
-                        );
+                    if ($validation_result !== true) {
+                        wc_add_notice($validation_result, 'error');
+                        $has_errors = true;
                     }
                 }
             }
         }
-        // Dodavanje grešaka u WooCommerce
-        foreach ($errors as $error) {
-            wc_add_notice($error, 'error');
-        }
 
-        return empty($errors);
+        return !$has_errors;
     }
 
     /**
@@ -423,25 +511,10 @@ class D_Express_Validator
                 continue;
             }
 
-            // Proveri da li proizvod ima dimenzije
-            if ($product->has_dimensions()) {
-                $length = wc_get_dimension($product->get_length(), 'mm');
-                $width = wc_get_dimension($product->get_width(), 'mm');
-                $height = wc_get_dimension($product->get_height(), 'mm');
-
-                // Ako bilo koja dimenzija prelazi maksimum, vrati grešku
-                if ($length > $max_dimensions['length'] || $width > $max_dimensions['width'] || $height > $max_dimensions['height']) {
-                    return new WP_Error(
-                        'paketomat_validation',
-                        sprintf(
-                            __('Proizvod "%s" je prevelikih dimenzija za paketomat. Maksimalne dozvoljene dimenzije su %d x %d x %d mm.', 'd-express-woo'),
-                            $product->get_name(),
-                            $max_dimensions['length'],
-                            $max_dimensions['width'],
-                            $max_dimensions['height']
-                        )
-                    );
-                }
+            // Koristimo našu novu funkciju za validaciju
+            $validation_result = self::validate_product_dimensions($product, $max_dimensions);
+            if ($validation_result !== true) {
+                return new WP_Error('paketomat_validation', $validation_result);
             }
         }
 
@@ -455,7 +528,7 @@ class D_Express_Validator
      */
     public static function calculate_order_weight($order)
     {
-        $weight = 0;
+        $weight_kg = 0;
 
         // Provera da li je objekat narudžbine validan
         if (!($order instanceof WC_Order)) {
@@ -477,8 +550,7 @@ class D_Express_Validator
                 $product = $item->get_product();
                 if ($product && $product->has_weight()) {
                     $product_weight_kg = floatval($product->get_weight()); // Težina u kg
-                    $product_weight_g = $product_weight_kg * 1000; // Konverzija u grame
-                    $weight += $product_weight_g * $item->get_quantity();
+                    $weight_kg += $product_weight_kg * $item->get_quantity();
                 }
             } catch (Exception $e) {
                 dexpress_log("Greška pri dohvatanju težine proizvoda: " . $e->getMessage(), 'error');
@@ -486,36 +558,13 @@ class D_Express_Validator
             }
         }
 
-        // Minimalna težina 100g
-        $weight = max(0.1, $weight);
+        // Minimalna težina 0.1kg
+        $weight_kg = max(0.1, $weight_kg);
 
         // Konverzija u grame
-        return self::convert_weight_to_grams($weight);
+        return self::convert_weight_to_grams($weight_kg);
     }
 
-    /**
-     * Izračunavanje težine korpe u gramima
-     * 
-     * @return int Težina u gramima
-     */
-    public static function calculate_cart_weight()
-    {
-        $weight = 0;
-
-        foreach (WC()->cart->get_cart() as $cart_item) {
-            $product = $cart_item['data'];
-            if ($product && $product->has_weight()) {
-                $product_weight_kg = floatval($product->get_weight());
-                $weight += $product_weight_kg * $cart_item['quantity'];
-            }
-        }
-
-        // Minimalna težina 100g (0.1kg)
-        $weight = max(0.1, $weight);
-
-        // Konverzija u grame
-        return self::convert_weight_to_grams($weight);
-    }
     /**
      * Validacija mobilnog telefona
      * Prihvata samo mobilne brojeve za Srbiju

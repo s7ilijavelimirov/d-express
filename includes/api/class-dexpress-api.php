@@ -790,7 +790,6 @@ class D_Express_API
             // Umesto da postavimo default, vratićemo grešku
             return new WP_Error('invalid_phone', __('Neispravan format telefona. Format treba biti +381XXXXXXXXX', 'd-express-woo'));
         }
-
         // Odredite koji tip adrese koristiti
         $address_type = $order->has_shipping_address() ? 'shipping' : 'billing';
         $address_desc = $order->get_meta("_{$address_type}_address_desc", true);
@@ -916,7 +915,7 @@ class D_Express_API
 
         // Izračunaj težinu za porudžbinu
         $weight_grams = $this->calculate_order_weight($order);
-
+        dexpress_log("[WEIGHT DEBUG] Težina iz calculate_order_weight: {$weight_grams} grama", 'debug');
         // Provera maksimalne težine (10.000 kg / 10.000.000 g)
         $max_weight = 10000000; // 10.000 kg
         if ($weight_grams > $max_weight) {
@@ -996,7 +995,7 @@ class D_Express_API
             // SelfDropOff - nova opcija
             'SelfDropOff' => intval(get_option('dexpress_self_drop_off', 0)),
         );
-
+        dexpress_log("[WEIGHT DEBUG] Težina nakon formatiranja za API: {$shipment_data['Mass']} grama", 'debug');
         // Dodavanje paketa
         $shipment_data['PackageList'] = $this->prepare_packages_for_order($order);
 
@@ -1118,28 +1117,46 @@ class D_Express_API
         }
 
         $packages[] = $package;
+        // Unutar prepare_packages_for_order funkcije 
+        dexpress_log("[PACKAGE DEBUG] Težina pojedinačnog paketa: {$package} grama", 'debug');
         return $packages;
     }
 
     /**
-     * Izračunavanje ukupne težine narudžbine u gramima
+     * Izračunavanje težine narudžbine u gramima
      */
-    private function calculate_order_weight($order)
+    public function calculate_order_weight($order)
     {
-        $weight = 0;
+        dexpress_log("[WEIGHT DEBUG] Početak izračunavanja težine za narudžbinu #" . $order->get_id(), 'debug');
+        $weight_kg = 0;
 
-        foreach ($order->get_items() as $item) {
+        // Dohvatanje stavki narudžbine
+        $items = $order->get_items();
+
+        foreach ($items as $item) {
             $product = $item->get_product();
             if ($product && $product->has_weight()) {
-                $weight += floatval($product->get_weight()) * $item->get_quantity();
+                $product_weight_kg = floatval($product->get_weight());
+                $quantity = $item->get_quantity();
+                $item_weight_kg = $product_weight_kg * $quantity;
+
+                dexpress_log("[WEIGHT DEBUG] Proizvod: " . $product->get_name() . ", Težina: " . $product_weight_kg . "kg, Količina: " . $quantity . ", Ukupno: " . $item_weight_kg . "kg", 'debug');
+
+                $weight_kg += $item_weight_kg;
             }
         }
 
-        // Minimalna težina 100g
-        $weight = max(0.1, $weight);
+        dexpress_log("[WEIGHT DEBUG] Ukupna težina u kg pre konverzije: " . $weight_kg, 'debug');
+
+        // Minimalna težina 0.1kg
+        $weight_kg = max(0.1, $weight_kg);
 
         // Konverzija u grame
-        return dexpress_convert_weight_to_grams($weight);
+        $grams = D_Express_Validator::convert_weight_to_grams($weight_kg);
+
+        dexpress_log("[WEIGHT DEBUG] Konačna težina u gramima: " . $grams, 'debug');
+
+        return $grams;
     }
 
     /**

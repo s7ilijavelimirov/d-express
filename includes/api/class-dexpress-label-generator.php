@@ -422,7 +422,14 @@ class D_Express_Label_Generator
                 </div>
                 <div class="detail-row">
                     <span class="detail-label">Masa:</span>
-                    <?php echo esc_html(number_format($order_data['total_weight'], 2, ',', '.') . ' kg'); ?>
+                    <?php
+                    // Prikazujemo težinu bez decimalnih mesta ako je ceo broj
+                    if ($order_data['total_weight'] == (int)$order_data['total_weight']) {
+                        echo esc_html(number_format($order_data['total_weight'], 0, ',', '.') . ' kg');
+                    } else {
+                        echo esc_html(number_format($order_data['total_weight'], 1, ',', '.') . ' kg');
+                    }
+                    ?>
                 </div>
                 <div class="detail-row">
                     <span class="detail-label">Napomena:</span>
@@ -1006,7 +1013,14 @@ class D_Express_Label_Generator
                     </div>
                     <div class="detail-row">
                         <span class="detail-label">Masa:</span>
-                        <?php echo esc_html(number_format($order_data['total_weight'], 2, ',', '.') . ' kg'); ?>
+                        <?php
+                        // Prikazujemo težinu bez decimalnih mesta ako je ceo broj
+                        if ($order_data['total_weight'] == (int)$order_data['total_weight']) {
+                            echo esc_html(number_format($order_data['total_weight'], 0, ',', '.') . ' kg');
+                        } else {
+                            echo esc_html(number_format($order_data['total_weight'], 1, ',', '.') . ' kg');
+                        }
+                        ?>
                     </div>
                     <div class="detail-row">
                         <span class="detail-label">Napomena:</span>
@@ -1055,17 +1069,28 @@ class D_Express_Label_Generator
         }
 
         // Izračunavanje ukupne težine narudžbine
-        $total_weight = 0;
-        // foreach ($order->get_items() as $item) {
-        //     $product = $item->get_product();
-        //     if ($product && $product->has_weight()) {
-        //         $total_weight += floatval($product->get_weight()) * $item->get_quantity();
-        //     }
-        // }
+        if (class_exists('D_Express_Validator')) {
+            $weight_grams = D_Express_Validator::calculate_order_weight($order);
+            $total_weight = $weight_grams / 1000; // Konverzija iz grama u kg za prikaz
+        } else {
+            // Alternativno, ako klasa nije dostupna, izračunaj ovde
+            $total_weight = 0;
+            foreach ($order->get_items() as $item) {
+                // Provera da li je $item instanca WC_Order_Item_Product
+                if (!($item instanceof WC_Order_Item_Product)) {
+                    continue;
+                }
 
-        // Ako nema težine, postavimo neku podrazumevanu vrednost
-        if ($total_weight <= 0) {
-            $total_weight = 0.5; // 500g
+                $product = $item->get_product();
+                if ($product && $product instanceof WC_Product && $product->has_weight()) {
+                    $total_weight += floatval($product->get_weight()) * $item->get_quantity();
+                }
+            }
+
+            // Ako nema težine, postavimo neku podrazumevanu vrednost
+            if ($total_weight <= 0) {
+                $total_weight = 0.5; // 500g = 0.5kg
+            }
         }
 
         // Odredi tip adrese (billing ili shipping)
