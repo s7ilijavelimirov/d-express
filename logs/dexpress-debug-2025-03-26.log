@@ -1,0 +1,46 @@
+[2025-03-26 14:43:10] Checkout order processed: 797
+[2025-03-26 14:43:10] Has D Express shipping: Yes
+[2025-03-26 14:43:10] Automatic shipment creation is disabled or status does not match. Auto create: Enabled, Current status: pending, Required status: processing
+[2025-03-26 14:43:13] [SHIPPING] Započinjem kreiranje pošiljke za narudžbinu #797
+[2025-03-26 14:43:13] [SHIPPING] Započinjem kreiranje pošiljke za narudžbinu #797
+[2025-03-26 14:43:27] [SHIPPING] Započinjem kreiranje pošiljke za narudžbinu #797
+[2025-03-26 14:44:04] Checkout order processed: 798
+[2025-03-26 14:44:04] Has D Express shipping: Yes
+[2025-03-26 14:44:04] Automatic shipment creation is disabled or status does not match. Auto create: Enabled, Current status: pending, Required status: processing
+[2025-03-26 14:44:06] [SHIPPING] Započinjem kreiranje pošiljke za narudžbinu #798
+[2025-03-26 14:44:06] [SHIPPING] Priprema podataka za narudžbinu #798
+[2025-03-26 14:44:06] Using address type: shipping
+[2025-03-26 14:44:06] Street: Kikina, Number: 15, City ID: 703729
+[2025-03-26 14:44:06] Payment method: cod, Is COD: Yes
+[2025-03-26 14:44:06] Using BuyOut: 55500, Account: 170-0010364556000-77
+[2025-03-26 14:44:06] Final BuyOut amount: 55500
+[2025-03-26 14:44:06] Final BuyOutAccount: 170-0010364556000-77
+[2025-03-26 14:44:06] Final RAddressNum: 15
+[2025-03-26 14:44:06] Final RTownID: 703729
+[2025-03-26 14:44:06] Final RCPhone: 381603995503
+[2025-03-26 14:44:06] [SHIPPING] Šaljem zahtev ka D-Express API-ju
+[2025-03-26 14:44:06] [SHIPPING] API odgovor primljen uspešno
+[2025-03-26 14:44:06] [SHIPPING] API odgovor: TEST
+[2025-03-26 14:44:06] [SHIPPING] Tracking broj: TT0000000096, Shipment ID: TT0000000096
+[2025-03-26 14:44:06] [SHIPPING] Čuvanje pošiljke u bazu podataka
+[2025-03-26 14:44:06] [SHIPPING] Pošiljka uspešno kreirana sa ID: 13
+[2025-03-26 14:45:34] Checkout order processed: 799
+[2025-03-26 14:45:34] Has D Express shipping: Yes
+[2025-03-26 14:45:34] Automatic shipment creation is disabled or status does not match. Auto create: Enabled, Current status: pending, Required status: processing
+[2025-03-26 14:45:36] [SHIPPING] Započinjem kreiranje pošiljke za narudžbinu #799
+[2025-03-26 14:45:36] [SHIPPING] Priprema podataka za narudžbinu #799
+[2025-03-26 14:45:36] Using address type: shipping
+[2025-03-26 14:45:36] Street: Grčića Milenka, Number: 3, City ID: 791016
+[2025-03-26 14:45:36] Payment method: cod, Is COD: Yes
+[2025-03-26 14:45:36] Using BuyOut: 45400, Account: 170-0010364556000-77
+[2025-03-26 14:45:36] Final BuyOut amount: 45400
+[2025-03-26 14:45:36] Final BuyOutAccount: 170-0010364556000-77
+[2025-03-26 14:45:36] Final RAddressNum: bb
+[2025-03-26 14:45:36] Final RTownID: 802158
+[2025-03-26 14:45:36] Final RCPhone: 381603995503
+[2025-03-26 14:45:36] [SHIPPING] Šaljem zahtev ka D-Express API-ju
+[2025-03-26 14:45:36] [SHIPPING] API odgovor primljen uspešno
+[2025-03-26 14:45:36] [SHIPPING] API odgovor: TEST
+[2025-03-26 14:45:36] [SHIPPING] Tracking broj: TT0000000097, Shipment ID: TT0000000097
+[2025-03-26 14:45:36] [SHIPPING] Čuvanje pošiljke u bazu podataka
+[2025-03-26 14:45:37] [SHIPPING] Pošiljka uspešno kreirana sa ID: 14

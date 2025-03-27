@@ -143,7 +143,8 @@ class D_Express_WooCommerce
         require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/db/class-dexpress-db-installer.php';
         $installer = new D_Express_DB_Installer();
         $installer->install();
-
+        $db = new D_Express_DB();
+        $db->add_shipment_index();
         // Postavljanje potrebnih opcija
         $this->set_default_options();
 

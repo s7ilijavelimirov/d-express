@@ -50,7 +50,7 @@ class D_Express_DB_Installer
             KEY tracking_number (tracking_number),
             KEY reference_id (reference_id),
             KEY status_code (status_code),
-             KEY created_at (created_at)
+            KEY created_at (created_at)
         ) $charset_collate;";
 
         // 2. Tabela za pakete

@@ -140,6 +140,7 @@ class D_Express_DB
      * @param int $order_id ID narudžbine
      * @return object|null Podaci o pošiljci
      */
+
     public function get_shipment_by_order_id($order_id)
     {
         $cache_key = 'shipment_order_' . $order_id;

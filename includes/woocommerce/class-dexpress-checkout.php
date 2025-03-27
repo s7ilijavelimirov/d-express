@@ -217,17 +217,17 @@ class D_Express_Checkout
     public function save_checkout_fields($order_id)
     {
         $address_types = ['billing', 'shipping'];
-        $debug_info = "Order ID: " . $order_id . "\n";
+        $fields_to_save = ['street', 'street_id', 'number', 'address_desc', 'city', 'city_id', 'postcode'];
 
         foreach ($address_types as $type) {
-            foreach (['street', 'street_id', 'number', 'address_desc', 'city', 'city_id', 'postcode'] as $key) {
+            $updated_values = [];
+
+            // Prikupljamo vrednosti za batch ažuriranje
+            foreach ($fields_to_save as $key) {
                 $field_name = "{$type}_{$key}";
                 if (isset($_POST[$field_name])) {
                     $value = sanitize_text_field($_POST[$field_name]);
-                    update_post_meta($order_id, "_{$field_name}", $value);
-                    $debug_info .= "{$field_name}: {$value}\n";
-                } else {
-                    $debug_info .= "{$field_name}: NOT SET\n";
+                    $updated_values["_{$field_name}"] = $value;
                 }
             }
 
@@ -237,19 +237,18 @@ class D_Express_Checkout
                 $number = sanitize_text_field($_POST["{$type}_number"]);
 
                 // Postavi address_1 kao kombinaciju ulice i broja
-                update_post_meta($order_id, "_{$type}_address_1", $street . ' ' . $number);
-                $debug_info .= "{$type}_address_1: {$street} {$number}\n";
+                $updated_values["_{$type}_address_1"] = $street . ' ' . $number;
+            }
+
+            // Batch ažuriranje meta podataka
+            foreach ($updated_values as $meta_key => $meta_value) {
+                update_post_meta($order_id, $meta_key, $meta_value);
             }
         }
 
         // Čuvanje telefona u API formatu
         if (isset($_POST['billing_phone'])) {
             $phone = sanitize_text_field($_POST['billing_phone']);
-
-            // Log vrednosti
-            dexpress_log("[CHECKOUT] Telefon iz forme: " . $phone, 'info');
-
-            // Ako postoji, sačuvaj ga direktno sa prefiksom
             update_post_meta($order_id, '_billing_phone', $phone);
 
             // Sačuvaj API format za korišćenje u API
@@ -258,8 +257,6 @@ class D_Express_Checkout
                 update_post_meta($order_id, '_billing_phone_api_format', $api_phone);
             }
         }
-
-        dexpress_log($debug_info, 'debug');
     }
 
     /**

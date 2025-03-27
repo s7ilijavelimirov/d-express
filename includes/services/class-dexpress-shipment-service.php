@@ -241,8 +241,8 @@ class D_Express_Shipment_Service
         try {
             global $wpdb;
 
-            // Korak 1: Preuzimanje informacija o pošiljci iz baze
-            dexpress_log('[STATUS] Započinjem sinhronizaciju statusa za pošiljku ID: ' . $shipment_id, 'debug');
+            // Preuzimanje informacija o pošiljci iz baze
+            $shipment = null;
 
             // Dozvoli da shipment_id bude ili ID iz naše baze ili tracking broj
             if (is_numeric($shipment_id)) {
@@ -252,55 +252,57 @@ class D_Express_Shipment_Service
             }
 
             if (!$shipment) {
-                dexpress_log('[STATUS] Pošiljka nije pronađena: ' . $shipment_id, 'error');
                 return new WP_Error('shipment_not_found', __('Pošiljka nije pronađena u sistemu.', 'd-express-woo'));
             }
 
             // Ako je test pošiljka, postavićemo samo simluirani status
             if ($shipment->is_test) {
-                dexpress_log('[STATUS] Test pošiljka, postavljam simulirani status', 'debug');
                 // Simuliramo da je pošiljka isporučena nakon određenog vremena
                 $created_time = strtotime($shipment->created_at);
                 $current_time = time();
 
                 // Ako je prošlo više od 2 dana, označavamo kao isporučeno
-                if (($current_time - $created_time) > (2 * 24 * 60 * 60)) {
+                if (($current_time - $created_time) > (2 * 24 * 60 * 60) && $shipment->status_code != '130') {
                     $this->db->update_shipment_status($shipment->shipment_id, '130', __('Pošiljka isporučena (simulirano)', 'd-express-woo'));
+
+                    // Dobavi narudžbinu i dodaj napomenu
+                    $order = wc_get_order($shipment->order_id);
+                    if ($order) {
+                        $order->add_order_note(sprintf(
+                            __('D Express status ažuriran: %s (simulirano za test pošiljku)', 'd-express-woo'),
+                            __('Pošiljka isporučena', 'd-express-woo')
+                        ));
+
+                        // Pošalji email o isporuci
+                        $this->send_status_email($shipment, $order, 'delivered');
+                    }
+
                     return true;
                 }
                 return true;
             }
 
-            // Korak 2: Dohvatanje poslednjeg statusa iz baze
-            dexpress_log('[STATUS] Dohvatam poslednji status za pošiljku: ' . $shipment->shipment_id, 'debug');
-
-            $latest_status = $wpdb->get_row(
-                $wpdb->prepare(
-                    "SELECT * FROM {$wpdb->prefix}dexpress_statuses 
+            // Dohvatanje poslednjeg statusa iz baze
+            $latest_status = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM {$wpdb->prefix}dexpress_statuses 
                 WHERE (shipment_code = %s OR reference_id = %s) 
                 ORDER BY status_date DESC LIMIT 1",
-                    $shipment->shipment_id,
-                    $shipment->reference_id
-                )
-            );
+                $shipment->shipment_id,
+                $shipment->reference_id
+            ));
 
             // Ako nema statusa u tabeli statusa, vraćamo true (nema promene)
             if (!$latest_status) {
-                dexpress_log('[STATUS] Nema novih statusa za sinhronizaciju', 'debug');
                 return true;
             }
 
-            // Korak 3: Ažuriranje statusa u tabeli pošiljki
+            // Ažuriranje statusa u tabeli pošiljki
             if ($latest_status->status_id != $shipment->status_code) {
-                dexpress_log('[STATUS] Novi status pronađen: ' . $latest_status->status_id, 'debug');
-
                 // Dohvati opis statusa
-                $status_description = $wpdb->get_var(
-                    $wpdb->prepare(
-                        "SELECT name FROM {$wpdb->prefix}dexpress_statuses_index WHERE id = %s",
-                        $latest_status->status_id
-                    )
-                );
+                $status_description = $wpdb->get_var($wpdb->prepare(
+                    "SELECT name FROM {$wpdb->prefix}dexpress_statuses_index WHERE id = %s",
+                    $latest_status->status_id
+                ));
 
                 // Ažuriranje statusa u bazi
                 $updated = $this->db->update_shipment_status(
@@ -310,11 +312,10 @@ class D_Express_Shipment_Service
                 );
 
                 if (!$updated) {
-                    dexpress_log('[STATUS] Greška pri ažuriranju statusa u bazi', 'error');
                     return new WP_Error('update_failed', __('Greška pri ažuriranju statusa pošiljke.', 'd-express-woo'));
                 }
 
-                // Korak 4: Dobaviti narudžbinu i dodati napomenu o promeni statusa
+                // Dobaviti narudžbinu i dodati napomenu o promeni statusa
                 $order = wc_get_order($shipment->order_id);
                 if ($order) {
                     $order->add_order_note(
@@ -324,23 +325,21 @@ class D_Express_Shipment_Service
                         )
                     );
 
-                    // Korak 5: Slanje email notifikacije kupcima za određene statuse
+                    // Slanje email notifikacije kupcima za određene statuse
                     if ($latest_status->status_id == '130') { // Isporučeno
                         $this->send_status_email($shipment, $order, 'delivered');
                     } elseif ($latest_status->status_id == '131') { // Neuspešna isporuka
                         $this->send_status_email($shipment, $order, 'failed');
                     }
 
-                    // Korak 6: Izvršiti hook za custom akcije nakon promene statusa
+                    // Izvršiti hook za custom akcije nakon promene statusa
                     do_action('dexpress_shipment_status_updated', $shipment, $latest_status->status_id, $status_description, $order);
                 }
 
-                dexpress_log('[STATUS] Status uspešno ažuriran', 'debug');
-                return true;
-            } else {
-                dexpress_log('[STATUS] Status je već ažuriran', 'debug');
                 return true;
             }
+
+            return true;
         } catch (Exception $e) {
             dexpress_log('[STATUS] Exception pri sinhronizaciji statusa: ' . $e->getMessage(), 'error');
             return new WP_Error('exception', $e->getMessage());

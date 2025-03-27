@@ -558,7 +558,23 @@ class D_Express_Validator
         // Konverzija u para (1 RSD = 100 para)
         return intval($price_rsd * 100);
     }
+    public static function validate_address_desc($description)
+    {
+        if (empty($description)) {
+            return true; // Nije obavezno polje
+        }
+        $pattern = '/^([\-a-zžćčđšA-ZĐŠĆŽČ():\/\\\\,._0-9]+\.?)( [\-a-zžćčđšA-ZĐŠĆŽČ():\/\\\\,._0-9]+\.?)*$/';
+        return preg_match($pattern, $description) && strlen($description) <= 50;
+    }
 
+    public static function validate_note($note)
+    {
+        if (empty($note)) {
+            return true; // Nije obavezno polje
+        }
+        $pattern = '/^([\-a-zžćčđšA-ZĐŠĆŽČ:,._0-9]+\.?)( [\-a-zžćčđšA-ZĐŠĆŽČ:,._0-9]+\.?)*$/';
+        return preg_match($pattern, $note) && strlen($note) <= 150;
+    }
     /**
      * Validira telefonski broj
      * 
@@ -570,7 +586,8 @@ class D_Express_Validator
     public static function validate_phone($phone)
     {
         // Prihvata sve brojeve koji počinju sa 381 i imaju cifru 1-9 iza toga, pa još 7-8 cifara
-        $pattern = '/^(381[1-9][0-9]{7,8})$/';
+        // ILI brojeve koji počinju sa 38167 i imaju još 6-8 cifara
+        $pattern = '/^(381[1-9][0-9]{7,8}|38167[0-9]{6,8})$/';
         return preg_match($pattern, $phone);
     }
 
@@ -598,17 +615,25 @@ class D_Express_Validator
         // Ukloni sve osim brojeva
         $digits_only = preg_replace('/[^0-9]/', '', $phone);
 
-        // Ukloni +381 ili 381 sa početka ako postoji
-        if (strpos($digits_only, '381') === 0) {
-            // Već ima 381 prefiks
-            return $digits_only;
-        } elseif (strpos($digits_only, '0') === 0) {
-            // Počinje sa 0, zameni sa 381
-            return '381' . substr($digits_only, 1);
-        } else {
-            // Dodaj prefiks 381
+        // Ako počinje sa + (koji je uklonjen), proverimo da li imamo kompletan broj
+        if (substr($phone, 0, 1) === '+') {
+            // Ako već ima +381, samo formatiramo ostatak
+            if (strpos($digits_only, '381') === 0) {
+                return $digits_only;
+            }
+        }
+
+        // Uklonimo početnu nulu ako postoji
+        if (strlen($digits_only) > 0 && $digits_only[0] === '0') {
+            $digits_only = substr($digits_only, 1);
+        }
+
+        // Dodaj prefiks 381 ako ga nema
+        if (strpos($digits_only, '381') !== 0) {
             return '381' . $digits_only;
         }
+
+        return $digits_only;
     }
 
     /**
@@ -696,7 +721,17 @@ class D_Express_Validator
         if (empty($data['CClientID']) || !preg_match('/^UK[0-9]{5}$/', $data['CClientID'])) {
             $errors[] = "Neispravan ClientID format (treba biti u formatu UK12345)";
         }
+        if (!empty($data['RAddressDesc']) && !self::validate_address_desc($data['RAddressDesc'])) {
+            $errors[] = "Neispravan format dodatnog opisa adrese primaoca";
+        }
 
+        if (!empty($data['PuAddressDesc']) && !self::validate_address_desc($data['PuAddressDesc'])) {
+            $errors[] = "Neispravan format dodatnog opisa adrese pošiljaoca";
+        }
+
+        if (!empty($data['Note']) && !self::validate_note($data['Note'])) {
+            $errors[] = "Neispravan format napomene";
+        }
         // Validacija imena
         foreach (['CName', 'PuName', 'RName'] as $field) {
             if (empty($data[$field]) || !self::validate_name($data[$field])) {

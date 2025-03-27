@@ -53,8 +53,10 @@ class D_Express_API
         if (!$this->has_credentials()) {
             return new WP_Error('missing_credentials', __('Nedostaju API kredencijali', 'd-express-woo'));
         }
+
         set_time_limit(300); // 5 minuta
         ini_set('memory_limit', '256M');
+
         $url = self::API_ENDPOINT . '/' . ltrim($endpoint, '/');
 
         $args = array(
@@ -73,13 +75,15 @@ class D_Express_API
 
         // Logovanje zahteva u test modu
         if ($this->test_mode) {
-            dexpress_log('API Zahtev: ' . $url);
+            dexpress_log('API Zahtev: ' . $url . ', Metod: ' . $method . ', Podaci: ' . ($data ? json_encode($data, JSON_PRETTY_PRINT) : 'nema'));
         }
 
         $response = wp_remote_request($url, $args);
 
         if (is_wp_error($response)) {
-            dexpress_log('API Greška: ' . $response->get_error_message(), 'error');
+            $error_message = $response->get_error_message();
+            $error_code = $response->get_error_code();
+            dexpress_log('API Greška: [' . $error_code . '] ' . $error_message, 'error');
             return $response;
         }
 
@@ -88,16 +92,15 @@ class D_Express_API
 
         // Logovanje odgovora u test modu
         if ($this->test_mode) {
-            if (is_wp_error($response)) {
-                dexpress_log('API Greška: ' . $response->get_error_message(), 'error');
-                return $response;
-            }
+            dexpress_log('API Odgovor (kod ' . $response_code . ')');
         }
 
         if ($response_code < 200 || $response_code >= 600) {
+            $error_message = sprintf(__('API greška: %s', 'd-express-woo'), wp_remote_retrieve_response_message($response));
+            dexpress_log('API Greška [' . $response_code . ']: ' . $error_message . ', Body: ' . $body, 'error');
             return new WP_Error(
                 'api_error',
-                sprintf(__('API greška: %s', 'd-express-woo'), wp_remote_retrieve_response_message($response)),
+                $error_message,
                 array('status' => $response_code, 'body' => $body)
             );
         }
@@ -108,6 +111,7 @@ class D_Express_API
         if (json_last_error() !== JSON_ERROR_NONE) {
             // Neki API pozivi mogu vratiti običan tekst, tako da nije uvek greška
             if (strpos($body, 'ERROR') === 0) {
+                dexpress_log('API je vratio grešku: ' . $body, 'error');
                 return new WP_Error('api_error', $body);
             }
 
@@ -579,9 +583,12 @@ class D_Express_API
         global $wpdb;
         $table_name = $wpdb->prefix . 'dexpress_streets';
 
-        // Batch processing - ubacujemo po 1000 redova odjednom
-        $batch_size = 1000;
+        // Batch processing - ubacujemo po 500 redova odjednom (smanjio sa 1000)
+        $batch_size = 500;
         $total = count($streets);
+
+        // Čistimo memoriju pre obrade
+        gc_enable();
 
         for ($i = 0; $i < $total; $i += $batch_size) {
             $batch = array_slice($streets, $i, $batch_size);
@@ -593,28 +600,38 @@ class D_Express_API
                 $id = intval($street['Id']);
                 $name = sanitize_text_field($street['Name']);
                 $tid = intval($street['TId']);
-                $deleted = $street['Del'] ? 1 : 0;
+                $deleted = isset($street['Del']) && $street['Del'] ? 1 : 0;
                 $date = current_time('mysql');
 
                 $place_values[] = "(%d, %s, %d, %d, %s)";
                 array_push($all_params, $id, $name, $tid, $deleted, $date);
             }
 
-            // Sigurniji način pripreme upita
+            // Pripremi bulk upit
             $query = "INSERT INTO $table_name (id, name, TId, deleted, last_updated) 
-                 VALUES " . implode(', ', $place_values) . "
-                 ON DUPLICATE KEY UPDATE 
-                 name = VALUES(name), 
-                 TId = VALUES(TId), 
-                 deleted = VALUES(deleted), 
-                 last_updated = VALUES(last_updated)";
+             VALUES " . implode(', ', $place_values) . "
+             ON DUPLICATE KEY UPDATE 
+             name = VALUES(name), 
+             TId = VALUES(TId), 
+             deleted = VALUES(deleted), 
+             last_updated = VALUES(last_updated)";
 
-            // Pripremi upit sa svim parametrima
+            // Pripremljeni upit
             $prepared_query = $wpdb->prepare($query, $all_params);
 
+            // Izvršavanje upita
             if (false === $wpdb->query($prepared_query)) {
-                dexpress_log("Error updating streets: " . $wpdb->last_error);
+                dexpress_log("Greška ažuriranja ulica: " . $wpdb->last_error, 'error');
             }
+
+            // Oslobađamo memoriju
+            unset($batch);
+            unset($values);
+            unset($place_values);
+            unset($all_params);
+
+            // Forsiramo oslobađanje memorije
+            gc_collect_cycles();
 
             // Logovanje progresa
             dexpress_log(sprintf('Streets update progress: %d/%d', min($i + $batch_size, $total), $total));
