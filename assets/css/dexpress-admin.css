@@ -68,12 +68,6 @@
     color: #761919;
 }
 
-/* Settings form */
-.dexpress-settings-form {
-    max-width: 800px;
-    margin-top: 20px;
-}
-
 .dexpress-settings-section {
     margin-bottom: 30px;
     padding: 20px;
@@ -105,4 +99,85 @@
 
 .dexpress-shipments-table .check-column input {
     margin-left: 8px;
+}
+
+.dexpress-settings-form {
+    max-width: 100%;
+}
+.dexpress-tab-content {
+    display: none;
+}
+.dexpress-tab-content.active {
+    display: block;
+}
+.dexpress-nav-tab-wrapper {
+    margin-bottom: 20px;
+}
+.dexpress-info-box {
+    background-color: #f9f9f9;
+    border-left: 4px solid #2271b1;
+    padding: 15px;
+    margin: 15px 0;
+}
+.dexpress-info-box h3 {
+    margin-top: 0;
+}
+.example-text {
+    color: #777;
+    font-style: italic;
+    font-size: 12px;
+    margin-top: 3px;
+}
+.dexpress-settings-section {
+    margin-bottom: 20px;
+    padding: 10px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+}
+.dexpress-about-section {
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #fff;
+    border-left: 4px solid #2271b1;
+}
+.dexpress-settings-actions {
+    margin-top: 20px;
+    padding: 15px;
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+}
+.dexpress-settings-actions .button {
+    margin-right: 10px;
+}
+
+
+.wp-pointer-content h3 {
+    margin-bottom: 5px;
+    font-size: 14px;
+}
+.dexpress-tooltip {
+    cursor: help;
+    color: #888;
+    transition: color 0.2s ease;
+    margin-left: 5px;
+    display: inline-block;
+    padding: 2px 4px; /* Povećajte zonu klika */
+    position: relative;
+    z-index: 100;
+}
+
+.dexpress-tooltip:hover {
+    color: #555;
+}
+
+/* Dodajte overlay koji će proširiti hover zonu */
+.dexpress-tooltip::after {
+    content: '';
+    position: absolute;
+    left: -5px;
+    top: -5px;
+    right: -5px;
+    bottom: -5px;
 }

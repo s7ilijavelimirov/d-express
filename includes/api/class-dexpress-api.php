@@ -1118,7 +1118,6 @@ class D_Express_API
 
         $packages[] = $package;
         // Unutar prepare_packages_for_order funkcije 
-        dexpress_log("[PACKAGE DEBUG] Težina pojedinačnog paketa: {$package} grama", 'debug');
         return $packages;
     }
 

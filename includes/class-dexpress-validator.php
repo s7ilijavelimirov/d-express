@@ -185,35 +185,80 @@ class D_Express_Validator
         $address_type = isset($_POST['ship_to_different_address']) ? 'shipping' : 'billing';
         $has_errors = false;
 
+        // Umesto da postavljamo polja kao obavezna, koristićemo WooCommerce funkciju za direktno dodavanje grešaka
+
         // Provera ulice
         if (empty($_POST[$address_type . '_street']) || empty($_POST[$address_type . '_street_id'])) {
-            wc_add_notice(__('Morate izabrati ulicu iz padajućeg menija.', 'd-express-woo'), 'error');
+            wc_add_notice(sprintf(
+                __('%s mora biti izabrana iz padajućeg menija.', 'd-express-woo'),
+                __($address_type == 'billing' ? 'Ulica' : 'Ulica za dostavu', 'd-express-woo')
+            ), 'error');
             $has_errors = true;
         }
 
         // Provera kućnog broja
         if (empty($_POST[$address_type . '_number'])) {
-            wc_add_notice(__('Kućni broj je obavezan.', 'd-express-woo'), 'error');
+            wc_add_notice(
+                sprintf(
+                    __('%s je obavezan.', 'd-express-woo'),
+                    __($address_type == 'billing' ? 'Kućni broj za račun' : 'Kućni broj za dostavu', 'd-express-woo')
+                ),
+                'error',
+                ['data-id' => $address_type . '_number']
+            );
             $has_errors = true;
         } elseif (!self::validate_address_number($_POST[$address_type . '_number'])) {
-            wc_add_notice(__('Kućni broj nije u ispravnom formatu. Podržani formati: 15, bb, 23a, 44/2', 'd-express-woo'), 'error');
+            wc_add_notice(
+                sprintf(
+                    __('%s nije u ispravnom formatu. Podržani formati: 15, bb, 23a, 44/2', 'd-express-woo'),
+                    __($address_type == 'billing' ? 'Kućni broj za račun' : 'Kućni broj za dostavu', 'd-express-woo')
+                ),
+                'error',
+                ['data-id' => $address_type . '_number']
+            );
             $has_errors = true;
         }
 
         // Provera grada
         if (empty($_POST[$address_type . '_city_id'])) {
-            wc_add_notice(__('Potrebno je izabrati grad.', 'd-express-woo'), 'error');
+            wc_add_notice(
+                sprintf(
+                    __('%s mora biti izabran.', 'd-express-woo'),
+                    __($address_type == 'billing' ? 'Grad za račun' : 'Grad za dostavu', 'd-express-woo')
+                ),
+                'error',
+                ['data-id' => $address_type . '_city']
+            );
             $has_errors = true;
         }
 
         // Provera telefona
         if (empty($_POST['billing_phone'])) {
-            wc_add_notice(__('Broj telefona je obavezan za D Express dostavu.', 'd-express-woo'), 'error');
+            wc_add_notice(
+                __('Broj telefona je obavezan za D Express dostavu.', 'd-express-woo'),
+                'error',
+                ['data-id' => 'billing_phone']
+            );
             $has_errors = true;
         } elseif (!self::validate_phone_format($_POST['billing_phone'])) {
-            wc_add_notice(__('Broj telefona mora biti u formatu +3816XXXXXXXX ili +3811XXXXXXXX.', 'd-express-woo'), 'error');
+            wc_add_notice(
+                __('Broj telefona mora biti u formatu +3816XXXXXXXX ili +3811XXXXXXXX.', 'd-express-woo'),
+                'error',
+                ['data-id' => 'billing_phone']
+            );
             $has_errors = true;
         }
+
+        // Sprečavanje standardnih WooCommerce validacija za ova polja
+        add_filter('woocommerce_checkout_fields', function ($fields) use ($address_type) {
+            $field_keys = [$address_type . '_street', $address_type . '_number', $address_type . '_city'];
+            foreach ($field_keys as $key) {
+                if (isset($fields[$address_type][$key])) {
+                    $fields[$address_type][$key]['required'] = false;
+                }
+            }
+            return $fields;
+        }, 999);
 
         // Provera paketomata ako je odabran
         $is_dispenser_shipping = false;
@@ -225,15 +270,18 @@ class D_Express_Validator
         }
 
         if ($is_dispenser_shipping && empty($_POST['dexpress_chosen_dispenser'])) {
-            wc_add_notice(__('Morate izabrati paketomat za dostavu.', 'd-express-woo'), 'error');
+            wc_add_notice(
+                __('Morate izabrati paketomat za dostavu.', 'd-express-woo'),
+                'error',
+                ['data-id' => 'dexpress_chosen_dispenser']
+            );
             $has_errors = true;
         }
 
-
+        // Ostale validacije
 
         // Provera težine narudžbine
         $cart_weight = self::calculate_cart_weight();
-        // Za testiranje
         if ($is_dispenser) {
             // Paketomat ima limit od 20kg
             if ($cart_weight > 20000) { // 20kg u gramima
@@ -307,7 +355,6 @@ class D_Express_Validator
 
         return !$has_errors;
     }
-
     /**
      * Validacija adrese narudžbine
      * 

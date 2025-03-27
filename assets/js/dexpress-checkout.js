@@ -439,3 +439,55 @@
     });
 
 })(jQuery);
+
+// dexpress-validation.js
+jQuery(function($) {
+    'use strict';
+    
+    // Ručno dodajemo validaciju za naša D Express polja
+    $(document.body).on('checkout_error', function() {
+        // Provera da li je izabran D Express
+        let isDExpress = false;
+        $('input.shipping_method:checked, input.shipping_method:hidden').each(function() {
+            if ($(this).val() && $(this).val().indexOf('dexpress') !== -1) {
+                isDExpress = true;
+                return false;
+            }
+        });
+        
+        if (!isDExpress) return;
+        
+        // Tip adrese (billing ili shipping)
+        const addressType = $('#ship-to-different-address-checkbox').is(':checked') ? 'shipping' : 'billing';
+        
+        // Lista polja za validaciju
+        const fields = [
+            addressType + '_street',
+            addressType + '_number',
+            addressType + '_city'
+        ];
+        
+        // Prolazak kroz poruke o greškama i povezivanje sa poljima
+        $('.woocommerce-error li').each(function() {
+            let errorText = $(this).text().trim();
+            
+            // Povezujemo poruke sa odgovarajućim poljima
+            fields.forEach(function(fieldId) {
+                const $field = $('#' + fieldId);
+                const fieldLabel = $field.closest('.form-row').find('label').text().trim();
+                
+                if (errorText.includes(fieldLabel) || 
+                    errorText.includes('Ulica') || 
+                    errorText.includes('Kućni broj') || 
+                    errorText.includes('Grad')) {
+                    
+                    // Dodajemo klase za invalidaciju
+                    $field.addClass('woocommerce-invalid woocommerce-invalid-required-field');
+                    
+                    // Dodajemo data-id atribut na li element za kompatibilnost
+                    $(this).attr('data-id', fieldId);
+                }
+            });
+        });
+    });
+});

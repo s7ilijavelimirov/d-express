@@ -267,3 +267,7 @@
     ]
 }
 [2025-03-27 09:39:14] API Odgovor (kod 200)
+[2025-03-27 11:13:18] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/statuses, Metod: GET, Podaci: nema
+[2025-03-27 11:13:18] API Odgovor (kod 200)
+[2025-03-27 11:13:18] Test konekcije uspešan. Dobijeno 46 statusa.
+[2025-03-27 11:48:44] Podešavanja su ažurirana od strane korisnika ID: 1
