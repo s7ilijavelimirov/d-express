@@ -16,7 +16,6 @@ class D_Express_Admin
      */
     public function init()
     {
-        //add_action('admin_enqueue_scripts', array($this, 'dexpress_enqueue_tooltips'));
 
         // Dodavanje admin menija
         add_action('admin_menu', array($this, 'add_admin_menu'));
@@ -40,7 +39,6 @@ class D_Express_Admin
 
         add_filter('woocommerce_get_order_address', array($this, 'format_order_address_phone'), 10, 3);
     }
-
     public function __construct()
     {
         $this->admin_nonce = wp_create_nonce('dexpress-admin-nonce');
@@ -118,8 +116,7 @@ class D_Express_Admin
             strpos($hook, 'dexpress') !== false ||
             (isset($_GET['page']) && strpos($_GET['page'], 'dexpress') !== false)
         ) {
-            wp_enqueue_script('wp-pointer');
-            wp_enqueue_style('wp-pointer');
+
             wp_enqueue_style(
                 'dexpress-admin-css',
                 DEXPRESS_WOO_PLUGIN_URL . 'assets/css/dexpress-admin.css',
@@ -130,7 +127,7 @@ class D_Express_Admin
             wp_enqueue_script(
                 'dexpress-admin-js',
                 DEXPRESS_WOO_PLUGIN_URL . 'assets/js/dexpress-admin.js',
-                array('jquery', 'wp-pointer'), // Dodajte wp-pointer kao zavisnost
+                array('jquery'),
                 DEXPRESS_WOO_VERSION,
                 true
             );
@@ -187,35 +184,12 @@ class D_Express_Admin
 
         // Dobijanje lista gradova za dropdown
         $towns_options = dexpress_get_towns_options();
-        // Aktivan tab (podrazumevano prvi)
-        $active_tab = isset($_GET['tab']) ? sanitize_text_field($_GET['tab']) : 'api_settings';
 
-        // Definisanje tabova
-        $tabs = array(
-            'api_settings' => __('API podešavanja', 'd-express-woo'),
-            'shipment_settings' => __('Podešavanja pošiljke', 'd-express-woo'),
-            'sender_settings' => __('Podaci pošiljaoca', 'd-express-woo'),
-            'automatic_settings' => __('Automatska kreacija', 'd-express-woo'),
-            'webhook_settings' => __('Webhook podešavanja', 'd-express-woo'),
-            'uninstall_settings' => __('Deinstalacija', 'd-express-woo'),
-        );
         // HTML za stranicu podešavanja
 ?>
         <div class="wrap">
-            <h1 class="wp-heading-inline"><?php echo __('D Express Podešavanja', 'd-express-woo'); ?></h1>
-            <div class="dexpress-about-section inside" style="display: flex; align-items: center; justify-content: space-between;">
-                <!-- Tekst -->
-                <div class="dexpress-text" style="flex: 1;">
-                    <p><?php _e('D Express je usluga kurirske dostave u Srbiji. Ovaj plugin omogućava integraciju vašeg WooCommerce prodavnice sa D Express API-jem za automatizovano slanje pošiljki.', 'd-express-woo'); ?></p>
-                    <p><?php _e('Za korišćenje ove integracije potrebno je da imate aktivan ugovor sa D Express-om i dobijene pristupne podatke za njihov API.', 'd-express-woo'); ?></p>
-                </div>
-                <!-- Slika desno -->
-                <div class="dexpress-logo" style="margin-left: 20px;">
-                    <img src="<?php echo DEXPRESS_WOO_PLUGIN_URL . '/assets/images/logo_dexpress.jpg'; ?>"
-                        alt="D Express logo"
-                        style="max-height: 100px;">
-                </div>
-            </div>
+            <h1><?php echo __('D Express Podešavanja', 'd-express-woo'); ?></h1>
+
             <?php if (isset($_GET['settings-updated']) && $_GET['settings-updated'] === 'true'): ?>
                 <div class="notice notice-success is-dismissible">
                     <p><?php _e('Podešavanja su uspešno sačuvana.', 'd-express-woo'); ?></p>
@@ -251,448 +225,409 @@ class D_Express_Admin
                     <p><?php _e('Nedostaju API kredencijali. Molimo unesite korisničko ime, lozinku i client ID.', 'd-express-woo'); ?></p>
                 </div>
             <?php endif; ?>
-
-            <h2 class="nav-tab-wrapper dexpress-nav-tab-wrapper">
-                <?php foreach ($tabs as $tab_id => $tab_name): ?>
-                    <a href="?page=dexpress-settings&tab=<?php echo esc_attr($tab_id); ?>"
-                        class="nav-tab <?php echo $active_tab === $tab_id ? 'nav-tab-active' : ''; ?>">
-                        <?php echo esc_html($tab_name); ?>
-                    </a>
-                <?php endforeach; ?>
-            </h2>
-
             <form method="post" action="" class="dexpress-settings-form">
                 <?php wp_nonce_field('dexpress_settings_nonce'); ?>
 
                 <!-- API Podešavanja -->
-                <div id="tab-api_settings" class="dexpress-tab-content <?php echo $active_tab === 'api_settings' ? 'active' : ''; ?>">
-                    <div class="dexpress-settings-section">
-                        <h2><?php esc_html_e('API Podešavanja', 'd-express-woo'); ?></h2>
+                <div class="dexpress-settings-section">
+                    <h2><?php _e('API Podešavanja', 'd-express-woo'); ?></h2>
 
-                        <table class="form-table">
-                            <tr>
-                                <th scope="row">
-                                    <label for="dexpress_api_username">
-                                        <?php esc_html_e('API Korisničko ime', 'd-express-woo'); ?>
-                                    </label>
-                                </th>
-                                <td>
-                                    <input
-                                        type="text"
-                                        id="dexpress_api_username"
-                                        name="dexpress_api_username"
-                                        value="<?php echo esc_attr($api_username); ?>"
-                                        class="regular-text"
-                                        placeholder="<?php esc_attr_e('Unesite API korisničko ime', 'd-express-woo'); ?>">
-                                    <p class="description">
-                                        <?php esc_html_e('Korisničko ime dobijeno od D Express-a.', 'd-express-woo'); ?>
-                                        <span
-                                            class="dashicons dashicons-info dexpress-tooltip"
-                                            data-wp-tooltip="<?php esc_attr_e('Detaljniji opis: Korisničko ime koje vam je dodeljeno od strane D Express servisa za pristup njihovom API-ju', 'd-express-woo'); ?>"></span>
-                                    </p>
-                                </td>
-                            </tr>
-
-                            <tr>
-                                <th scope="row">
-                                    <label for="dexpress_api_password">
-                                        <?php esc_html_e('API Lozinka', 'd-express-woo'); ?>
-                                        <span class="dashicons dashicons-info" data-wp-tooltip="<?php esc_attr_e('Unesite lozinku dobijenu od D Express-a', 'd-express-woo'); ?>"></span>
-                                    </label>
-                                </th>
-                                <td>
-                                    <input
-                                        type="password"
-                                        id="dexpress_api_password"
-                                        name="dexpress_api_password"
-                                        value="<?php echo esc_attr($api_password); ?>"
-                                        class="regular-text"
-                                        placeholder="<?php esc_attr_e('Unesite API lozinku', 'd-express-woo'); ?>">
-                                    <p class="description">
-                                        <?php esc_html_e('Lozinka dobijena od D Express-a.', 'd-express-woo'); ?>
-                                    </p>
-                                </td>
-                            </tr>
-
-                            <tr>
-                                <th scope="row">
-                                    <label for="dexpress_client_id">
-                                        <?php esc_html_e('Client ID', 'd-express-woo'); ?>
-                                        <span class="dashicons dashicons-info" data-wp-tooltip="<?php esc_attr_e('Unesite Client ID u formatu UK12345', 'd-express-woo'); ?>"></span>
-                                    </label>
-                                </th>
-                                <td>
-                                    <input
-                                        type="text"
-                                        id="dexpress_client_id"
-                                        name="dexpress_client_id"
-                                        value="<?php echo esc_attr($client_id); ?>"
-                                        class="regular-text"
-                                        placeholder="<?php esc_attr_e('Unesite Client ID', 'd-express-woo'); ?>">
-                                    <p class="description">
-                                        <?php esc_html_e('Client ID u formatu UK12345.', 'd-express-woo'); ?>
-                                    </p>
-                                </td>
-                            </tr>
-
-                            <tr>
-                                <th scope="row">
-                                    <label for="dexpress_test_mode">
-                                        <?php esc_html_e('Test režim', 'd-express-woo'); ?>
-                                        <span class="dashicons dashicons-info" data-wp-tooltip="<?php esc_attr_e('Aktivirajte test režim tokom razvoja i testiranja', 'd-express-woo'); ?>"></span>
-                                    </label>
-                                </th>
-                                <td>
-                                    <input
-                                        type="checkbox"
-                                        id="dexpress_test_mode"
-                                        name="dexpress_test_mode"
-                                        value="yes"
-                                        <?php checked($test_mode, 'yes'); ?>>
-                                    <p class="description">
-                                        <?php esc_html_e('Aktivirajte test režim tokom razvoja i testiranja.', 'd-express-woo'); ?>
-                                    </p>
-                                </td>
-                            </tr>
-
-                            <tr>
-                                <th scope="row">
-                                    <label for="dexpress_enable_logging">
-                                        <?php esc_html_e('Uključi logovanje', 'd-express-woo'); ?>
-                                        <span class="dashicons dashicons-info" data-wp-tooltip="<?php esc_attr_e('Aktivirajte logovanje API zahteva i odgovora', 'd-express-woo'); ?>"></span>
-                                    </label>
-                                </th>
-                                <td>
-                                    <input
-                                        type="checkbox"
-                                        id="dexpress_enable_logging"
-                                        name="dexpress_enable_logging"
-                                        value="yes"
-                                        <?php checked($enable_logging, 'yes'); ?>>
-                                    <p class="description">
-                                        <?php esc_html_e('Aktivirajte logovanje API zahteva i odgovora.', 'd-express-woo'); ?>
-                                    </p>
-                                </td>
-                            </tr>
-                        </table>
-                    </div>
+                    <table class="form-table">
+                        <tr>
+                            <th scope="row">
+                                <label for="dexpress_api_username"><?php _e('API Korisničko ime', 'd-express-woo'); ?></label>
+                            </th>
+                            <td>
+                                <input type="text" id="dexpress_api_username" name="dexpress_api_username"
+                                    value="<?php echo esc_attr($api_username); ?>" class="regular-text">
+                                <p class="description"><?php _e('Korisničko ime dobijeno od D Express-a.', 'd-express-woo'); ?></p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">
+                                <label for="dexpress_api_password"><?php _e('API Lozinka', 'd-express-woo'); ?></label>
+                            </th>
+                            <td>
+                                <input type="password" id="dexpress_api_password" name="dexpress_api_password"
+                                    value="<?php echo esc_attr($api_password); ?>" class="regular-text">
+                                <p class="description"><?php _e('Lozinka dobijena od D Express-a.', 'd-express-woo'); ?></p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">
+                                <label for="dexpress_client_id"><?php _e('Client ID', 'd-express-woo'); ?></label>
+                            </th>
+                            <td>
+                                <input type="text" id="dexpress_client_id" name="dexpress_client_id"
+                                    value="<?php echo esc_attr($client_id); ?>" class="regular-text">
+                                <p class="description"><?php _e('Client ID u formatu UK12345.', 'd-express-woo'); ?></p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">
+                                <label for="dexpress_test_mode"><?php _e('Test režim', 'd-express-woo'); ?></label>
+                            </th>
+                            <td>
+                                <input type="checkbox" id="dexpress_test_mode" name="dexpress_test_mode"
+                                    value="yes" <?php checked($test_mode, 'yes'); ?>>
+                                <p class="description"><?php _e('Aktivirajte test režim tokom razvoja i testiranja.', 'd-express-woo'); ?></p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">
+                                <label for="dexpress_enable_logging"><?php _e('Uključi logovanje', 'd-express-woo'); ?></label>
+                            </th>
+                            <td>
+                                <input type="checkbox" id="dexpress_enable_logging" name="dexpress_enable_logging"
+                                    value="yes" <?php checked($enable_logging, 'yes'); ?>>
+                                <p class="description"><?php _e('Aktivirajte logovanje API zahteva i odgovora.', 'd-express-woo'); ?></p>
+                            </td>
+                        </tr>
+                    </table>
                 </div>
 
+                <!-- Podešavanja kodova pošiljki -->
+                <div class="dexpress-settings-section">
+                    <h2><?php _e('Kodovi pošiljki', 'd-express-woo'); ?></h2>
 
+                    <table class="form-table">
+                        <tr>
+                            <th scope="row">
+                                <label for="dexpress_code_prefix"><?php _e('Prefiks koda', 'd-express-woo'); ?></label>
+                            </th>
+                            <td>
+                                <input type="text" id="dexpress_code_prefix" name="dexpress_code_prefix"
+                                    value="<?php echo esc_attr($code_prefix); ?>" class="regular-text">
+                                <p class="description"><?php _e('Prefiks koda paketa (npr. TT).', 'd-express-woo'); ?></p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">
+                                <label for="dexpress_code_range_start"><?php _e('Početak opsega', 'd-express-woo'); ?></label>
+                            </th>
+                            <td>
+                                <input type="number" id="dexpress_code_range_start" name="dexpress_code_range_start"
+                                    value="<?php echo esc_attr($code_range_start); ?>" class="small-text">
+                                <p class="description"><?php _e('Početni broj za kodove paketa.', 'd-express-woo'); ?></p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">
+                                <label for="dexpress_code_range_end"><?php _e('Kraj opsega', 'd-express-woo'); ?></label>
+                            </th>
+                            <td>
+                                <input type="number" id="dexpress_code_range_end" name="dexpress_code_range_end"
+                                    value="<?php echo esc_attr($code_range_end); ?>" class="small-text">
+                                <p class="description"><?php _e('Krajnji broj za kodove paketa.', 'd-express-woo'); ?></p>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
 
                 <!-- Podešavanja automatske kreacije pošiljki -->
-                <div id="tab-automatic_settings" class="dexpress-tab-content <?php echo $active_tab === 'automatic_settings' ? 'active' : ''; ?>">
-                    <div class="dexpress-settings-section">
-                        <h2><?php _e('Automatsko kreiranje pošiljki', 'd-express-woo'); ?></h2>
+                <div class="dexpress-settings-section">
+                    <h2><?php _e('Automatsko kreiranje pošiljki', 'd-express-woo'); ?></h2>
 
-                        <table class="form-table">
-                            <tr>
-                                <th scope="row">
-                                    <label for="dexpress_validate_address"><?php _e('Validacija adrese', 'd-express-woo'); ?></label>
-                                </th>
-                                <td>
-                                    <input type="checkbox" id="dexpress_validate_address" name="dexpress_validate_address"
-                                        value="yes" <?php checked(get_option('dexpress_validate_address', 'yes'), 'yes'); ?>>
-                                    <p class="description"><?php _e('Proveri validnost adrese pre kreiranja pošiljke putem D Express API-ja', 'd-express-woo'); ?></p>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row">
-                                    <label for="dexpress_auto_create_shipment"><?php _e('Automatsko kreiranje', 'd-express-woo'); ?></label>
-                                </th>
-                                <td>
-                                    <input type="checkbox" id="dexpress_auto_create_shipment" name="dexpress_auto_create_shipment"
-                                        value="yes" <?php checked($auto_create_shipment, 'yes'); ?>>
-                                    <p class="description"><?php _e('Automatski kreiraj pošiljku kada narudžbina dobije određeni status.', 'd-express-woo'); ?></p>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row">
-                                    <label for="dexpress_auto_create_on_status"><?php _e('Status za kreiranje', 'd-express-woo'); ?></label>
-                                </th>
-                                <td>
-                                    <select id="dexpress_auto_create_on_status" name="dexpress_auto_create_on_status">
-                                        <?php foreach ($order_statuses as $status => $name): ?>
-                                            <?php $status_key = str_replace('wc-', '', $status); ?>
-                                            <option value="<?php echo esc_attr($status_key); ?>" <?php selected($auto_create_on_status, $status_key); ?>>
-                                                <?php echo esc_html($name); ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                    <p class="description"><?php _e('Izaberite status narudžbine koji će pokrenuti kreiranje pošiljke.', 'd-express-woo'); ?></p>
-                                </td>
-                            </tr>
-                        </table>
-                    </div>
+                    <table class="form-table">
+                        <tr>
+                            <th scope="row">
+                                <label for="dexpress_validate_address"><?php _e('Validacija adrese', 'd-express-woo'); ?></label>
+                            </th>
+                            <td>
+                                <input type="checkbox" id="dexpress_validate_address" name="dexpress_validate_address"
+                                    value="yes" <?php checked(get_option('dexpress_validate_address', 'yes'), 'yes'); ?>>
+                                <p class="description"><?php _e('Proveri validnost adrese pre kreiranja pošiljke putem D Express API-ja', 'd-express-woo'); ?></p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">
+                                <label for="dexpress_auto_create_shipment"><?php _e('Automatsko kreiranje', 'd-express-woo'); ?></label>
+                            </th>
+                            <td>
+                                <input type="checkbox" id="dexpress_auto_create_shipment" name="dexpress_auto_create_shipment"
+                                    value="yes" <?php checked($auto_create_shipment, 'yes'); ?>>
+                                <p class="description"><?php _e('Automatski kreiraj pošiljku kada narudžbina dobije određeni status.', 'd-express-woo'); ?></p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">
+                                <label for="dexpress_auto_create_on_status"><?php _e('Status za kreiranje', 'd-express-woo'); ?></label>
+                            </th>
+                            <td>
+                                <select id="dexpress_auto_create_on_status" name="dexpress_auto_create_on_status">
+                                    <?php foreach ($order_statuses as $status => $name): ?>
+                                        <?php $status_key = str_replace('wc-', '', $status); ?>
+                                        <option value="<?php echo esc_attr($status_key); ?>" <?php selected($auto_create_on_status, $status_key); ?>>
+                                            <?php echo esc_html($name); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <p class="description"><?php _e('Izaberite status narudžbine koji će pokrenuti kreiranje pošiljke.', 'd-express-woo'); ?></p>
+                            </td>
+                        </tr>
+                    </table>
                 </div>
 
                 <!-- Podešavanja pošiljaoca -->
-                <div id="tab-sender_settings" class="dexpress-tab-content <?php echo $active_tab === 'sender_settings' ? 'active' : ''; ?>">
-                    <div class="dexpress-settings-section">
-                        <h2><?php _e('Podaci pošiljaoca', 'd-express-woo'); ?></h2>
+                <div class="dexpress-settings-section">
+                    <h2><?php _e('Podaci pošiljaoca', 'd-express-woo'); ?></h2>
 
-                        <table class="form-table">
-                            <tr>
-                                <th scope="row">
-                                    <label for="dexpress_sender_name"><?php _e('Naziv pošiljaoca', 'd-express-woo'); ?></label>
-                                </th>
-                                <td>
-                                    <input type="text" id="dexpress_sender_name" name="dexpress_sender_name"
-                                        value="<?php echo esc_attr($sender_name); ?>" class="regular-text">
-                                    <p class="description"><?php _e('Naziv pošiljaoca koji će biti prikazan na pošiljci.', 'd-express-woo'); ?></p>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row">
-                                    <label for="dexpress_sender_address"><?php _e('Ulica', 'd-express-woo'); ?></label>
-                                </th>
-                                <td>
-                                    <input type="text" id="dexpress_sender_address" name="dexpress_sender_address"
-                                        value="<?php echo esc_attr($sender_address); ?>" class="regular-text">
-                                    <p class="description"><?php _e('Naziv ulice (bez broja).', 'd-express-woo'); ?></p>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row">
-                                    <label for="dexpress_sender_address_num"><?php _e('Broj', 'd-express-woo'); ?></label>
-                                </th>
-                                <td>
-                                    <input type="text" id="dexpress_sender_address_num" name="dexpress_sender_address_num"
-                                        value="<?php echo esc_attr($sender_address_num); ?>" class="regular-text">
-                                    <p class="description"><?php _e('Kućni broj.', 'd-express-woo'); ?></p>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row">
-                                    <label for="dexpress_sender_town_id"><?php _e('Grad', 'd-express-woo'); ?></label>
-                                </th>
-                                <td>
-                                    <select id="dexpress_sender_town_id" name="dexpress_sender_town_id" class="regular-text">
-                                        <option value=""><?php _e('- Izaberite grad -', 'd-express-woo'); ?></option>
-                                        <?php foreach ($towns_options as $id => $name): ?>
-                                            <option value="<?php echo esc_attr($id); ?>" <?php selected($sender_town_id, $id); ?>>
-                                                <?php echo esc_html($name); ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                    <p class="description"><?php _e('Izaberite grad iz D Express šifarnika.', 'd-express-woo'); ?></p>
-                                    <?php if (empty($towns_options)): ?>
-                                        <p class="notice notice-warning">
-                                            <?php _e('Molimo ažurirajte šifarnike klikom na dugme "Ažuriraj šifarnike" na dnu strane.', 'd-express-woo'); ?>
-                                        </p>
-                                    <?php endif; ?>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row">
-                                    <label for="dexpress_sender_contact_name"><?php _e('Kontakt osoba', 'd-express-woo'); ?></label>
-                                </th>
-                                <td>
-                                    <input type="text" id="dexpress_sender_contact_name" name="dexpress_sender_contact_name"
-                                        value="<?php echo esc_attr($sender_contact_name); ?>" class="regular-text">
-                                    <p class="description"><?php _e('Ime i prezime kontakt osobe.', 'd-express-woo'); ?></p>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row">
-                                    <label for="dexpress_sender_contact_phone"><?php _e('Kontakt telefon', 'd-express-woo'); ?></label>
-                                </th>
-                                <td>
-                                    <input type="text" id="dexpress_sender_contact_phone" name="dexpress_sender_contact_phone"
-                                        value="<?php echo esc_attr($sender_contact_phone); ?>" class="regular-text">
-                                    <p class="description"><?php _e('Telefon kontakt osobe (u formatu 381xxxxxxxxx).', 'd-express-woo'); ?></p>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row">
-                                    <label for="dexpress_require_buyout_account"><?php _e('Obavezan račun za otkupninu', 'd-express-woo'); ?></label>
-                                </th>
-                                <td>
-                                    <input type="checkbox" id="dexpress_require_buyout_account" name="dexpress_require_buyout_account"
-                                        value="yes" <?php checked(get_option('dexpress_require_buyout_account', 'no'), 'yes'); ?>>
-                                    <p class="description">
-                                        <?php _e('Spreči kreiranje pošiljki sa pouzećem ako bankovni račun nije podešen', 'd-express-woo'); ?>
+                    <table class="form-table">
+                        <tr>
+                            <th scope="row">
+                                <label for="dexpress_sender_name"><?php _e('Naziv pošiljaoca', 'd-express-woo'); ?></label>
+                            </th>
+                            <td>
+                                <input type="text" id="dexpress_sender_name" name="dexpress_sender_name"
+                                    value="<?php echo esc_attr($sender_name); ?>" class="regular-text">
+                                <p class="description"><?php _e('Naziv pošiljaoca koji će biti prikazan na pošiljci.', 'd-express-woo'); ?></p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">
+                                <label for="dexpress_sender_address"><?php _e('Ulica', 'd-express-woo'); ?></label>
+                            </th>
+                            <td>
+                                <input type="text" id="dexpress_sender_address" name="dexpress_sender_address"
+                                    value="<?php echo esc_attr($sender_address); ?>" class="regular-text">
+                                <p class="description"><?php _e('Naziv ulice (bez broja).', 'd-express-woo'); ?></p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">
+                                <label for="dexpress_sender_address_num"><?php _e('Broj', 'd-express-woo'); ?></label>
+                            </th>
+                            <td>
+                                <input type="text" id="dexpress_sender_address_num" name="dexpress_sender_address_num"
+                                    value="<?php echo esc_attr($sender_address_num); ?>" class="regular-text">
+                                <p class="description"><?php _e('Kućni broj.', 'd-express-woo'); ?></p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">
+                                <label for="dexpress_sender_town_id"><?php _e('Grad', 'd-express-woo'); ?></label>
+                            </th>
+                            <td>
+                                <select id="dexpress_sender_town_id" name="dexpress_sender_town_id" class="regular-text">
+                                    <option value=""><?php _e('- Izaberite grad -', 'd-express-woo'); ?></option>
+                                    <?php foreach ($towns_options as $id => $name): ?>
+                                        <option value="<?php echo esc_attr($id); ?>" <?php selected($sender_town_id, $id); ?>>
+                                            <?php echo esc_html($name); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <p class="description"><?php _e('Izaberite grad iz D Express šifarnika.', 'd-express-woo'); ?></p>
+                                <?php if (empty($towns_options)): ?>
+                                    <p class="notice notice-warning">
+                                        <?php _e('Molimo ažurirajte šifarnike klikom na dugme "Ažuriraj šifarnike" na dnu strane.', 'd-express-woo'); ?>
                                     </p>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row">
-                                    <label for="dexpress_buyout_account"><?php _e('Broj računa za otkupninu', 'd-express-woo'); ?></label>
-                                </th>
-                                <td>
-                                    <input type="text" id="dexpress_buyout_account" name="dexpress_buyout_account"
-                                        value="<?php echo esc_attr(get_option('dexpress_buyout_account', '')); ?>"
-                                        class="regular-text"
-                                        placeholder="XXX-XXXXXXXXXX-XX">
-                                    <p class="description"><?php _e('Broj računa na koji će D Express uplaćivati iznose prikupljene pouzećem. Format: XXX-XXXXXXXXXX-XX (npr. 160-0000000000-00).', 'd-express-woo'); ?></p>
-                                </td>
-                            </tr>
-                        </table>
-                    </div>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">
+                                <label for="dexpress_sender_contact_name"><?php _e('Kontakt osoba', 'd-express-woo'); ?></label>
+                            </th>
+                            <td>
+                                <input type="text" id="dexpress_sender_contact_name" name="dexpress_sender_contact_name"
+                                    value="<?php echo esc_attr($sender_contact_name); ?>" class="regular-text">
+                                <p class="description"><?php _e('Ime i prezime kontakt osobe.', 'd-express-woo'); ?></p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">
+                                <label for="dexpress_sender_contact_phone"><?php _e('Kontakt telefon', 'd-express-woo'); ?></label>
+                            </th>
+                            <td>
+                                <input type="text" id="dexpress_sender_contact_phone" name="dexpress_sender_contact_phone"
+                                    value="<?php echo esc_attr($sender_contact_phone); ?>" class="regular-text">
+                                <p class="description"><?php _e('Telefon kontakt osobe (u formatu 381xxxxxxxxx).', 'd-express-woo'); ?></p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">
+                                <label for="dexpress_require_buyout_account"><?php _e('Obavezan račun za otkupninu', 'd-express-woo'); ?></label>
+                            </th>
+                            <td>
+                                <input type="checkbox" id="dexpress_require_buyout_account" name="dexpress_require_buyout_account"
+                                    value="yes" <?php checked(get_option('dexpress_require_buyout_account', 'no'), 'yes'); ?>>
+                                <p class="description">
+                                    <?php _e('Spreči kreiranje pošiljki sa pouzećem ako bankovni račun nije podešen', 'd-express-woo'); ?>
+                                </p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">
+                                <label for="dexpress_buyout_account"><?php _e('Broj računa za otkupninu', 'd-express-woo'); ?></label>
+                            </th>
+                            <td>
+                                <input type="text" id="dexpress_buyout_account" name="dexpress_buyout_account"
+                                    value="<?php echo esc_attr(get_option('dexpress_buyout_account', '')); ?>"
+                                    class="regular-text"
+                                    placeholder="XXX-XXXXXXXXXX-XX">
+                                <p class="description"><?php _e('Broj računa na koji će D Express uplaćivati iznose prikupljene pouzećem. Format: XXX-XXXXXXXXXX-XX (npr. 160-0000000000-00).', 'd-express-woo'); ?></p>
+                            </td>
+                        </tr>
+                    </table>
                 </div>
 
                 <!-- Podešavanja pošiljke -->
-                <div id="tab-shipment_settings" class="dexpress-tab-content <?php echo $active_tab === 'shipment_settings' ? 'active' : ''; ?>">
-                    <div class="dexpress-settings-section">
-                        <h2><?php _e('Podešavanja pošiljke', 'd-express-woo'); ?></h2>
+                <div class="dexpress-settings-section">
+                    <h2><?php _e('Podešavanja pošiljke', 'd-express-woo'); ?></h2>
 
-                        <table class="form-table">
-                            <tr>
-                                <th scope="row">
-                                    <label for="dexpress_shipment_type"><?php _e('Tip pošiljke', 'd-express-woo'); ?></label>
-                                </th>
-                                <td>
-                                    <select id="dexpress_shipment_type" name="dexpress_shipment_type">
-                                        <?php foreach (dexpress_get_shipment_types() as $type_id => $type_name): ?>
-                                            <option value="<?php echo esc_attr($type_id); ?>" <?php selected($shipment_type, $type_id); ?>>
-                                                <?php echo esc_html($type_name); ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row">
-                                    <label for="dexpress_payment_by"><?php _e('Ko plaća dostavu', 'd-express-woo'); ?></label>
-                                </th>
-                                <td>
-                                    <select id="dexpress_payment_by" name="dexpress_payment_by">
-                                        <?php foreach (dexpress_get_payment_by_options() as $option_id => $option_name): ?>
-                                            <option value="<?php echo esc_attr($option_id); ?>" <?php selected($payment_by, $option_id); ?>>
-                                                <?php echo esc_html($option_name); ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row">
-                                    <label for="dexpress_payment_type"><?php _e('Način plaćanja dostave', 'd-express-woo'); ?></label>
-                                </th>
-                                <td>
-                                    <select id="dexpress_payment_type" name="dexpress_payment_type">
-                                        <?php foreach (dexpress_get_payment_type_options() as $type_id => $type_name): ?>
-                                            <option value="<?php echo esc_attr($type_id); ?>" <?php selected($payment_type, $type_id); ?>>
-                                                <?php echo esc_html($type_name); ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row">
-                                    <label for="dexpress_return_doc"><?php _e('Povraćaj dokumenata', 'd-express-woo'); ?></label>
-                                </th>
-                                <td>
-                                    <select id="dexpress_return_doc" name="dexpress_return_doc">
-                                        <?php foreach (dexpress_get_return_doc_options() as $option_id => $option_name): ?>
-                                            <option value="<?php echo esc_attr($option_id); ?>" <?php selected($return_doc, $option_id); ?>>
-                                                <?php echo esc_html($option_name); ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row">
-                                    <label for="dexpress_default_content"><?php _e('Podrazumevani sadržaj', 'd-express-woo'); ?></label>
-                                </th>
-                                <td>
-                                    <input type="text" id="dexpress_default_content" name="dexpress_default_content"
-                                        value="<?php echo esc_attr($default_content); ?>" class="regular-text">
-                                    <p class="description"><?php _e('Podrazumevani opis sadržaja pošiljke.', 'd-express-woo'); ?></p>
-                                </td>
-                            </tr>
-                        </table>
-                    </div>
+                    <table class="form-table">
+                        <tr>
+                            <th scope="row">
+                                <label for="dexpress_shipment_type"><?php _e('Tip pošiljke', 'd-express-woo'); ?></label>
+                            </th>
+                            <td>
+                                <select id="dexpress_shipment_type" name="dexpress_shipment_type">
+                                    <?php foreach (dexpress_get_shipment_types() as $type_id => $type_name): ?>
+                                        <option value="<?php echo esc_attr($type_id); ?>" <?php selected($shipment_type, $type_id); ?>>
+                                            <?php echo esc_html($type_name); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">
+                                <label for="dexpress_payment_by"><?php _e('Ko plaća dostavu', 'd-express-woo'); ?></label>
+                            </th>
+                            <td>
+                                <select id="dexpress_payment_by" name="dexpress_payment_by">
+                                    <?php foreach (dexpress_get_payment_by_options() as $option_id => $option_name): ?>
+                                        <option value="<?php echo esc_attr($option_id); ?>" <?php selected($payment_by, $option_id); ?>>
+                                            <?php echo esc_html($option_name); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">
+                                <label for="dexpress_payment_type"><?php _e('Način plaćanja dostave', 'd-express-woo'); ?></label>
+                            </th>
+                            <td>
+                                <select id="dexpress_payment_type" name="dexpress_payment_type">
+                                    <?php foreach (dexpress_get_payment_type_options() as $type_id => $type_name): ?>
+                                        <option value="<?php echo esc_attr($type_id); ?>" <?php selected($payment_type, $type_id); ?>>
+                                            <?php echo esc_html($type_name); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">
+                                <label for="dexpress_return_doc"><?php _e('Povraćaj dokumenata', 'd-express-woo'); ?></label>
+                            </th>
+                            <td>
+                                <select id="dexpress_return_doc" name="dexpress_return_doc">
+                                    <?php foreach (dexpress_get_return_doc_options() as $option_id => $option_name): ?>
+                                        <option value="<?php echo esc_attr($option_id); ?>" <?php selected($return_doc, $option_id); ?>>
+                                            <?php echo esc_html($option_name); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">
+                                <label for="dexpress_default_content"><?php _e('Podrazumevani sadržaj', 'd-express-woo'); ?></label>
+                            </th>
+                            <td>
+                                <input type="text" id="dexpress_default_content" name="dexpress_default_content"
+                                    value="<?php echo esc_attr($default_content); ?>" class="regular-text">
+                                <p class="description"><?php _e('Podrazumevani opis sadržaja pošiljke.', 'd-express-woo'); ?></p>
+                            </td>
+                        </tr>
+                    </table>
                 </div>
-                <!-- Webhook podešavanja -->
-                <div id="tab-webhook_settings" class="dexpress-tab-content <?php echo $active_tab === 'webhook_settings' ? 'active' : ''; ?>">
-                    <div class="dexpress-settings-section">
-                        <h2><?php _e('Webhook podešavanja', 'd-express-woo'); ?></h2>
 
-                        <table class="form-table">
-                            <tr>
-                                <th scope="row">
-                                    <label for="dexpress_allowed_webhook_ips"><?php _e('Dozvoljene IP adrese', 'd-express-woo'); ?></label>
-                                </th>
-                                <td>
-                                    <input type="text" id="dexpress_allowed_webhook_ips" name="dexpress_allowed_webhook_ips"
-                                        value="<?php echo esc_attr(get_option('dexpress_allowed_webhook_ips', '')); ?>" class="regular-text">
-                                    <p class="description">
-                                        <?php _e('Lista dozvoljenih IP adresa za webhook, razdvojenih zarezima. Ostavite prazno da dozvolite sve IP adrese.', 'd-express-woo'); ?>
-                                    </p>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row">
-                                    <label for="dexpress_webhook_url"><?php _e('Webhook URL', 'd-express-woo'); ?></label>
-                                </th>
-                                <td>
-                                    <input type="text" id="dexpress_webhook_url" readonly
-                                        value="<?php echo esc_url(rest_url('dexpress-woo/v1/notify')); ?>" class="regular-text">
-                                    <button type="button" class="button button-secondary" onclick="copyToClipboard('#dexpress_webhook_url')">
-                                        <?php _e('Kopiraj', 'd-express-woo'); ?>
-                                    </button>
-                                    <p class="description"><?php _e('URL koji treba dostaviti D Express-u za primanje notifikacija.', 'd-express-woo'); ?></p>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row">
-                                    <label for="dexpress_webhook_secret"><?php _e('Webhook tajni ključ', 'd-express-woo'); ?></label>
-                                </th>
-                                <td>
-                                    <input type="text" id="dexpress_webhook_secret" name="dexpress_webhook_secret"
-                                        value="<?php echo esc_attr($webhook_secret); ?>" class="regular-text">
-                                    <button type="button" class="button button-secondary" onclick="generateWebhookSecret()">
-                                        <?php _e('Generiši novi', 'd-express-woo'); ?>
-                                    </button>
-                                    <p class="description"><?php _e('Tajni ključ koji treba dostaviti D Express-u za verifikaciju notifikacija.', 'd-express-woo'); ?></p>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row">
-                                    <label for="dexpress_google_maps_api_key"><?php _e('Google Maps API ključ', 'd-express-woo'); ?></label>
-                                </th>
-                                <td>
-                                    <input type="text" id="dexpress_google_maps_api_key" name="dexpress_google_maps_api_key"
-                                        value="<?php echo esc_attr(get_option('dexpress_google_maps_api_key', '')); ?>" class="regular-text">
-                                    <p class="description">
-                                        <?php _e('Unesite Google Maps API ključ za prikazivanje mape paketomata. Možete ga dobiti na <a href="https://developers.google.com/maps/documentation/javascript/get-api-key" target="_blank">Google Developers Console</a>.', 'd-express-woo'); ?>
-                                    </p>
-                                </td>
-                            </tr>
-                        </table>
-                    </div>
+                <!-- Webhook podešavanja -->
+                <div class="dexpress-settings-section">
+                    <h2><?php _e('Webhook podešavanja', 'd-express-woo'); ?></h2>
+
+                    <table class="form-table">
+                        <tr>
+                            <th scope="row">
+                                <label for="dexpress_allowed_webhook_ips"><?php _e('Dozvoljene IP adrese', 'd-express-woo'); ?></label>
+                            </th>
+                            <td>
+                                <input type="text" id="dexpress_allowed_webhook_ips" name="dexpress_allowed_webhook_ips"
+                                    value="<?php echo esc_attr(get_option('dexpress_allowed_webhook_ips', '')); ?>" class="regular-text">
+                                <p class="description">
+                                    <?php _e('Lista dozvoljenih IP adresa za webhook, razdvojenih zarezima. Ostavite prazno da dozvolite sve IP adrese.', 'd-express-woo'); ?>
+                                </p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">
+                                <label for="dexpress_webhook_url"><?php _e('Webhook URL', 'd-express-woo'); ?></label>
+                            </th>
+                            <td>
+                                <input type="text" id="dexpress_webhook_url" readonly
+                                    value="<?php echo esc_url(rest_url('dexpress-woo/v1/notify')); ?>" class="regular-text">
+                                <button type="button" class="button button-secondary" onclick="copyToClipboard('#dexpress_webhook_url')">
+                                    <?php _e('Kopiraj', 'd-express-woo'); ?>
+                                </button>
+                                <p class="description"><?php _e('URL koji treba dostaviti D Express-u za primanje notifikacija.', 'd-express-woo'); ?></p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">
+                                <label for="dexpress_webhook_secret"><?php _e('Webhook tajni ključ', 'd-express-woo'); ?></label>
+                            </th>
+                            <td>
+                                <input type="text" id="dexpress_webhook_secret" name="dexpress_webhook_secret"
+                                    value="<?php echo esc_attr($webhook_secret); ?>" class="regular-text">
+                                <button type="button" class="button button-secondary" onclick="generateWebhookSecret()">
+                                    <?php _e('Generiši novi', 'd-express-woo'); ?>
+                                </button>
+                                <p class="description"><?php _e('Tajni ključ koji treba dostaviti D Express-u za verifikaciju notifikacija.', 'd-express-woo'); ?></p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">
+                                <label for="dexpress_google_maps_api_key"><?php _e('Google Maps API ključ', 'd-express-woo'); ?></label>
+                            </th>
+                            <td>
+                                <input type="text" id="dexpress_google_maps_api_key" name="dexpress_google_maps_api_key"
+                                    value="<?php echo esc_attr(get_option('dexpress_google_maps_api_key', '')); ?>" class="regular-text">
+                                <p class="description">
+                                    <?php _e('Unesite Google Maps API ključ za prikazivanje mape paketomata. Možete ga dobiti na <a href="https://developers.google.com/maps/documentation/javascript/get-api-key" target="_blank">Google Developers Console</a>.', 'd-express-woo'); ?>
+                                </p>
+                            </td>
+                        </tr>
+                    </table>
                 </div>
                 <!-- Clean Uninstall podešavanja -->
-                <div id="tab-uninstall_settings" class="dexpress-tab-content <?php echo $active_tab === 'uninstall_settings' ? 'active' : ''; ?>">
-                    <div class="dexpress-settings-section">
-                        <h2><?php _e('Clean Uninstall Podešavanja', 'd-express-woo'); ?></h2>
+                <div class="dexpress-settings-section">
+                    <h2><?php _e('Clean Uninstall Podešavanja', 'd-express-woo'); ?></h2>
 
-                        <table class="form-table">
-                            <tr>
-                                <th scope="row">
-                                    <label for="dexpress_clean_uninstall"><?php _e('Clean Uninstall', 'd-express-woo'); ?></label>
-                                </th>
-                                <td>
-                                    <label>
-                                        <input type="checkbox"
-                                            id="dexpress_clean_uninstall"
-                                            name="dexpress_clean_uninstall"
-                                            value="yes"
-                                            <?php checked(get_option('dexpress_clean_uninstall'), 'yes'); ?>>
-                                        <span>
-                                            <strong><?php _e('Obriši sve podatke pri brisanju plugina', 'd-express-woo'); ?></strong>
-                                        </span>
-                                    </label>
-                                    <p class="description" style="color: red;">
-                                        <?php _e('UPOZORENJE: Ako je ova opcija označena, svi podaci plugina (uključujući sve tabele u bazi) će biti obrisani kada se plugin obriše.', 'd-express-woo'); ?>
-                                    </p>
-                                </td>
-                            </tr>
-                        </table>
-                    </div>
+                    <table class="form-table">
+                        <tr>
+                            <th scope="row">
+                                <label for="dexpress_clean_uninstall"><?php _e('Clean Uninstall', 'd-express-woo'); ?></label>
+                            </th>
+                            <td>
+                                <label>
+                                    <input type="checkbox"
+                                        id="dexpress_clean_uninstall"
+                                        name="dexpress_clean_uninstall"
+                                        value="yes"
+                                        <?php checked(get_option('dexpress_clean_uninstall'), 'yes'); ?>>
+                                    <span>
+                                        <strong><?php _e('Obriši sve podatke pri brisanju plugina', 'd-express-woo'); ?></strong>
+                                    </span>
+                                </label>
+                                <p class="description" style="color: red;">
+                                    <?php _e('UPOZORENJE: Ako je ova opcija označena, svi podaci plugina (uključujući sve tabele u bazi) će biti obrisani kada se plugin obriše.', 'd-express-woo'); ?>
+                                </p>
+                            </td>
+                        </tr>
+                    </table>
                 </div>
                 <!-- Dugmad za akcije -->
                 <div class="dexpress-settings-actions">
@@ -736,7 +671,6 @@ class D_Express_Admin
         </script>
         <?php
     }
-
     /**
      * Poboljšana validacija bankovnog računa
      * 

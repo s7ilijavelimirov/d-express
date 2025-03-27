@@ -12,10 +12,10 @@ jQuery(document).ready(function ($) {
 
         $icon.pointer({
             content: '<h3>' + labelText + '</h3><p>' + $icon.data('wp-tooltip') + '</p>',
-            position: {
-                edge: 'left',
-                align: 'center'
-            }
+            // position: {
+            //     edge: 'left',
+            //     align: 'center'
+            // }
         });
 
         $icon.on('mouseenter', function () {
