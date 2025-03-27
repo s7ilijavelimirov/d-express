@@ -162,28 +162,31 @@
     margin-right: 10px;
 }
 
-
-.dexpress-tooltip {
-    cursor: help;
-    color: #888;
-    transition: color 0.2s ease;
-    margin-left: 5px;
-    display: inline-block;
-    padding: 2px 4px;
-    position: relative;
-    z-index: 100;
+/* Tab stil */
+.nav-tab-wrapper {
+    margin-bottom: 20px;
 }
 
-.dexpress-tooltip:hover {
-    color: #555;
+.nav-tab {
+    margin-bottom: -1px;
 }
 
-/* Overlay za bolju hover zonu */
-.dexpress-tooltip::after {
-    content: '';
-    position: absolute;
-    left: -5px;
-    top: -5px;
-    right: -5px;
-    bottom: -5px;
+.nav-tab-active {
+    border-bottom: 1px solid #f1f1f1;
+    background: #f1f1f1;
+}
+
+.dexpress-settings-section {
+    background: #fff;
+    padding: 20px;
+    border: 1px solid #e5e5e5;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+    margin-bottom: 20px;
+}
+
+.dexpress-settings-section h2 {
+    margin-top: 0;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+    font-size: 18px;
 }

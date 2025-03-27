@@ -177,14 +177,22 @@ class D_Express_Admin
         $return_doc = get_option('dexpress_return_doc', '0');
         $default_content = get_option('dexpress_default_content', __('Roba iz web prodavnice', 'd-express-woo'));
         $webhook_secret = get_option('dexpress_webhook_secret', wp_generate_password(32, false));
+
         // Dodajte ovo u deo gde se inicijalizuju opcije
         $buyout_account = get_option('dexpress_buyout_account', '');
+
         // Dobijanje WooCommerce statusa narudžbina
         $order_statuses = wc_get_order_statuses();
 
         // Dobijanje lista gradova za dropdown
         $towns_options = dexpress_get_towns_options();
 
+        // Odredi aktivni tab
+        $active_tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'api';
+        $allowed_tabs = ['api', 'codes', 'auto', 'sender', 'shipment', 'webhook', 'uninstall'];
+        if (!in_array($active_tab, $allowed_tabs)) {
+            $active_tab = 'api';
+        }
         // HTML za stranicu podešavanja
 ?>
         <div class="wrap">
@@ -225,11 +233,34 @@ class D_Express_Admin
                     <p><?php _e('Nedostaju API kredencijali. Molimo unesite korisničko ime, lozinku i client ID.', 'd-express-woo'); ?></p>
                 </div>
             <?php endif; ?>
-            <form method="post" action="" class="dexpress-settings-form">
+
+            <!-- Navigacija tabova -->
+            <h2 class="nav-tab-wrapper">
+                <?php foreach ($allowed_tabs as $tab): ?>
+                    <a href="<?php echo admin_url('admin.php?page=dexpress-settings&tab=' . $tab); ?>"
+                        class="nav-tab <?php echo $active_tab === $tab ? 'nav-tab-active' : ''; ?>">
+                        <?php
+                        $tab_titles = [
+                            'api' => __('API Podešavanja', 'd-express-woo'),
+                            'codes' => __('Kodovi pošiljki', 'd-express-woo'),
+                            'auto' => __('Automatsko kreiranje', 'd-express-woo'),
+                            'sender' => __('Podaci pošiljaoca', 'd-express-woo'),
+                            'shipment' => __('Podešavanja pošiljke', 'd-express-woo'),
+                            'webhook' => __('Webhook podešavanja', 'd-express-woo'),
+                            'uninstall' => __('Clean Uninstall', 'd-express-woo')
+                        ];
+                        echo esc_html($tab_titles[$tab]);
+                        ?>
+                    </a>
+                <?php endforeach; ?>
+            </h2>
+
+            <form method="post" action="<?php echo admin_url('admin.php?page=dexpress-settings&tab=' . $active_tab); ?>" class="dexpress-settings-form">
                 <?php wp_nonce_field('dexpress_settings_nonce'); ?>
 
                 <!-- API Podešavanja -->
-                <div class="dexpress-settings-section">
+
+                <div class="dexpress-settings-section" style="display: <?php echo $active_tab === 'api' ? 'block' : 'none'; ?>">
                     <h2><?php _e('API Podešavanja', 'd-express-woo'); ?></h2>
 
                     <table class="form-table">
@@ -285,9 +316,9 @@ class D_Express_Admin
                         </tr>
                     </table>
                 </div>
-
                 <!-- Podešavanja kodova pošiljki -->
-                <div class="dexpress-settings-section">
+
+                <div class="dexpress-settings-section" style="display: <?php echo $active_tab === 'codes' ? 'block' : 'none'; ?>">
                     <h2><?php _e('Kodovi pošiljki', 'd-express-woo'); ?></h2>
 
                     <table class="form-table">
@@ -323,9 +354,9 @@ class D_Express_Admin
                         </tr>
                     </table>
                 </div>
-
                 <!-- Podešavanja automatske kreacije pošiljki -->
-                <div class="dexpress-settings-section">
+
+                <div class="dexpress-settings-section" style="display: <?php echo $active_tab === 'auto' ? 'block' : 'none'; ?>">
                     <h2><?php _e('Automatsko kreiranje pošiljki', 'd-express-woo'); ?></h2>
 
                     <table class="form-table">
@@ -367,9 +398,9 @@ class D_Express_Admin
                         </tr>
                     </table>
                 </div>
-
                 <!-- Podešavanja pošiljaoca -->
-                <div class="dexpress-settings-section">
+
+                <div class="dexpress-settings-section" style="display: <?php echo $active_tab === 'sender' ? 'block' : 'none'; ?>">
                     <h2><?php _e('Podaci pošiljaoca', 'd-express-woo'); ?></h2>
 
                     <table class="form-table">
@@ -470,9 +501,9 @@ class D_Express_Admin
                         </tr>
                     </table>
                 </div>
-
                 <!-- Podešavanja pošiljke -->
-                <div class="dexpress-settings-section">
+
+                <div class="dexpress-settings-section" style="display: <?php echo $active_tab === 'shipment' ? 'block' : 'none'; ?>">
                     <h2><?php _e('Podešavanja pošiljke', 'd-express-woo'); ?></h2>
 
                     <table class="form-table">
@@ -544,9 +575,9 @@ class D_Express_Admin
                         </tr>
                     </table>
                 </div>
-
                 <!-- Webhook podešavanja -->
-                <div class="dexpress-settings-section">
+
+                <div class="dexpress-settings-section" style="display: <?php echo $active_tab === 'webhook' ? 'block' : 'none'; ?>">
                     <h2><?php _e('Webhook podešavanja', 'd-express-woo'); ?></h2>
 
                     <table class="form-table">
@@ -603,7 +634,8 @@ class D_Express_Admin
                     </table>
                 </div>
                 <!-- Clean Uninstall podešavanja -->
-                <div class="dexpress-settings-section">
+
+                <div class="dexpress-settings-section" style="display: <?php echo $active_tab === 'uninstall' ? 'block' : 'none'; ?>">
                     <h2><?php _e('Clean Uninstall Podešavanja', 'd-express-woo'); ?></h2>
 
                     <table class="form-table">
@@ -629,18 +661,19 @@ class D_Express_Admin
                         </tr>
                     </table>
                 </div>
-                <!-- Dugmad za akcije -->
+
+                <!-- Dugmad za akcije su ista za sve tabove -->
                 <div class="dexpress-settings-actions">
                     <button type="submit" name="dexpress_save_settings" class="button button-primary">
                         <?php _e('Sačuvaj podešavanja', 'd-express-woo'); ?>
                     </button>
 
-                    <a href="<?php echo esc_url(admin_url('admin.php?page=dexpress-settings&action=update_indexes')); ?>" class="button button-secondary">
+                    <a href="<?php echo esc_url(admin_url('admin.php?page=dexpress-settings&tab=' . $active_tab . '&action=update_indexes')); ?>" class="button button-secondary">
                         <?php _e('Ažuriraj šifarnike', 'd-express-woo'); ?>
                     </a>
 
                     <?php if (dexpress_is_test_mode()): ?>
-                        <a href="<?php echo esc_url(admin_url('admin.php?page=dexpress-settings&action=test_connection')); ?>" class="button button-secondary">
+                        <a href="<?php echo esc_url(admin_url('admin.php?page=dexpress-settings&tab=' . $active_tab . '&action=test_connection')); ?>" class="button button-secondary">
                             <?php _e('Testiraj konekciju', 'd-express-woo'); ?>
                         </a>
                     <?php endif; ?>
@@ -823,8 +856,9 @@ class D_Express_Admin
             dexpress_log('Podešavanja su ažurirana od strane korisnika ID: ' . get_current_user_id(), 'info');
         }
 
-        // Redirekcija nazad na stranicu podešavanja sa porukom o uspehu
-        wp_redirect(add_query_arg('settings-updated', 'true', admin_url('admin.php?page=dexpress-settings')));
+        // Dodati ovo na kraj funkcije za zadržavanje aktivnog taba
+        $active_tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'api';
+        wp_redirect(add_query_arg(['settings-updated' => 'true', 'tab' => $active_tab], admin_url('admin.php?page=dexpress-settings')));
         exit;
     }
     /**
@@ -1157,6 +1191,9 @@ class D_Express_Admin
             wp_die(__('Nemate dozvolu za pristup ovoj stranici.', 'd-express-woo'));
         }
 
+        // Dodati ovo za zadržavanje aktivnog taba
+        $active_tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'api';
+
         // Kreiranje instance API klase
         $api = new D_Express_API();
 
@@ -1164,6 +1201,7 @@ class D_Express_Admin
         if (!$api->has_credentials()) {
             wp_redirect(add_query_arg(array(
                 'page' => 'dexpress-settings',
+                'tab' => $active_tab,  // Dodato zadržavanje taba
                 'error' => 'missing_credentials',
             ), admin_url('admin.php')));
             exit;
@@ -1176,12 +1214,14 @@ class D_Express_Admin
             // Uspešno ažuriranje
             wp_redirect(add_query_arg(array(
                 'page' => 'dexpress-settings',
+                'tab' => $active_tab,  // Dodato zadržavanje taba
                 'indexes-updated' => 'success',
             ), admin_url('admin.php')));
         } else {
             // Greška pri ažuriranju
             wp_redirect(add_query_arg(array(
                 'page' => 'dexpress-settings',
+                'tab' => $active_tab,  // Dodato zadržavanje taba
                 'indexes-updated' => 'error',
             ), admin_url('admin.php')));
         }
@@ -1201,10 +1241,14 @@ class D_Express_Admin
         // Kreiranje instance API klase
         $api = new D_Express_API();
 
+        // Dodati ovo za zadržavanje aktivnog taba
+        $active_tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'api';
+
         // Provera API kredencijala
         if (!$api->has_credentials()) {
             wp_redirect(add_query_arg(array(
                 'page' => 'dexpress-settings',
+                'tab' => $active_tab,  // Dodato zadržavanje taba
                 'connection-test' => 'missing_credentials',
             ), admin_url('admin.php')));
             exit;
@@ -1223,6 +1267,7 @@ class D_Express_Admin
 
             wp_redirect(add_query_arg(array(
                 'page' => 'dexpress-settings',
+                'tab' => $active_tab,  // Dodato zadržavanje taba
                 'connection-test' => 'success',
             ), admin_url('admin.php')));
         } else {
@@ -1235,6 +1280,7 @@ class D_Express_Admin
 
             wp_redirect(add_query_arg(array(
                 'page' => 'dexpress-settings',
+                'tab' => $active_tab,  // Dodato zadržavanje taba
                 'connection-test' => 'error',
                 'error-message' => urlencode($result->get_error_message()),
             ), admin_url('admin.php')));
