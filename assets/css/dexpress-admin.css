@@ -239,3 +239,236 @@
     background: #f0f0f0;
     color: #888888;
 }
+
+.dexpress-timeline-container {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+    position: relative;
+    background: #fff;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+/* Zaglavlje timeline-a sa statusom */
+.dexpress-timeline-header {
+    padding: 16px;
+    border-radius: 3px 3px 0 0;
+    position: relative;
+    border-bottom: 1px solid #eee;
+}
+
+.dexpress-timeline-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+}
+
+/* Stilovi za različite tipove statusa u headeru */
+.dexpress-timeline-header.status-completed {
+    background-color: #f0f9eb;
+    border-left: 4px solid #7ad03a;
+}
+
+.dexpress-timeline-header.status-failed {
+    background-color: #fef7f1;
+    border-left: 4px solid #dd3d36;
+}
+
+.dexpress-timeline-header.status-current {
+    background-color: #f0f6fc;
+    border-left: 4px solid #2271b1;
+}
+
+.dexpress-timeline-header.status-pending {
+    background-color: #f8f5e6;
+    border-left: 4px solid #f0c33c;
+}
+
+.dexpress-timeline-header.status-delayed {
+    background-color: #f6f7f7;
+    border-left: 4px solid #82878c;
+}
+
+.dexpress-timeline-header.status-cancelled {
+    background-color: #f6f7f7;
+    border-left: 4px solid #aaa;
+}
+
+/* Detalji pošiljke */
+.dexpress-shipment-details {
+    padding: 16px;
+    background: #fcfcfc;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.dexpress-tracking-info {
+    flex: 1 1 calc(50% - 16px);
+    min-width: 250px;
+}
+
+.dexpress-shipment-meta {
+    flex: 1 1 calc(50% - 16px);
+    min-width: 250px;
+}
+
+.dexpress-detail-label {
+    font-weight: 600;
+    margin-right: 8px;
+    color: #23282d;
+}
+
+.dexpress-tracking-link {
+    text-decoration: none;
+    color: #2271b1;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: color 0.2s ease;
+}
+
+.dexpress-tracking-link:hover {
+    color: #135e96;
+}
+
+.dexpress-tracking-link .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+}
+
+.dexpress-tracking-number {
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* WooCommerce tag za test */
+.woocommerce-tag.is-core-test {
+    background: #f0f6fc;
+    border: 1px solid #c3c4c7;
+    color: #50575e;
+    display: inline-flex;
+    font-size: 12px;
+    padding: 0 8px;
+    border-radius: 3px;
+}
+
+/* Sekcija sa akcijama */
+.dexpress-actions {
+    padding: 16px;
+    background: #f9f9f9;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.dexpress-actions .button {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.dexpress-actions .button .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+}
+
+/* Timeline */
+.dexpress-timeline {
+    position: relative;
+    padding: 16px;
+}
+
+.dexpress-timeline::before {
+    content: "";
+    position: absolute;
+    top: 20px;
+    bottom: 20px;
+    left: 32px;
+    width: 2px;
+    background: #e5e5e5;
+    z-index: 1;
+}
+
+/* Timeline stavke */
+.dexpress-timeline-item {
+    position: relative;
+    margin-bottom: 24px;
+    padding-left: 40px;
+}
+
+.dexpress-timeline-item:last-child {
+    margin-bottom: 0;
+}
+
+/* Marker i ikone statusa */
+.dexpress-timeline-marker {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #f6f7f7;
+    border: 2px solid #e5e5e5;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dexpress-timeline-icon {
+    color: #82878c;
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+}
+
+/* Varijante za različite statuse */
+.dexpress-timeline-item.status-completed .dexpress-timeline-marker {
+    background: #7ad03a;
+    border-color: #6eb62b;
+}
+
+.dexpress-timeline-item.status-completed .dexpress-timeline-icon {
+    color: #fff;
+}
+
+.dexpress-timeline-item.status-failed .dexpress-timeline-marker {
+    background: #dd3d36;
+    border-color: #c92c26;
+}
+
+.dexpress-timeline-item.status-failed .dexpress-timeline-icon {
+    color: #fff;
+}
+
+.dexpress-timeline-item.status-current .dexpress-timeline-marker {
+    background: #2271b1;
+    border-color: #135e96;
+}
+
+.dexpress-timeline-item.status-current .dexpress-timeline-icon {
+    color: #fff;
+}
+
+.dexpress-timeline-item.status-pending .dexpress-timeline-marker {
+    background: #f0c33c;
+    border-color: #e2b32c;
+}
+
+.dexpress-timeline-item.status-pending .dexpress-timeline-icon {
+    color: #fff;
+}
+
+.dexpress-timeline-item.status-delayed .dexpress-timeline-marker {
+    background: #aaa;
+}
