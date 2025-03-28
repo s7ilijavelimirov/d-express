@@ -1220,13 +1220,32 @@ class D_Express_Admin
             if ($shipment) {
                 // Prikazujemo tracking broj i status ako postoji
                 echo '<a href="https://www.dexpress.rs/rs/pracenje-posiljaka/' . esc_attr($shipment->tracking_number) . '" 
-                    target="_blank" class="dexpress-tracking-number">' .
+                target="_blank" class="dexpress-tracking-number">' .
                     esc_html($shipment->tracking_number) . '</a>';
 
                 if (!empty($shipment->status_code)) {
-                    $status_class = ($shipment->status_code == '130') ? 'dexpress-status-delivered' : (($shipment->status_code == '131') ? 'dexpress-status-failed' : 'dexpress-status-transit');
+                    // Dobijanje grupe statusa
+                    $status_group = 'transit'; // Podrazumevana grupa
+                    $all_statuses = dexpress_get_all_status_codes();
 
-                    echo '<br><span class="dexpress-status-badge ' . $status_class . '">' .
+                    if (isset($all_statuses[$shipment->status_code])) {
+                        $status_group = $all_statuses[$shipment->status_code]['group'];
+                    }
+
+                    // Mapiranje grupa na CSS klase
+                    $group_classes = [
+                        'delivered' => 'dexpress-status-delivered',
+                        'failed' => 'dexpress-status-failed',
+                        'returned' => 'dexpress-status-failed',
+                        'problem' => 'dexpress-status-problem',
+                        'transit' => 'dexpress-status-transit',
+                        'out_for_delivery' => 'dexpress-status-transit',
+                        'pending' => 'dexpress-status-pending',
+                    ];
+
+                    $class = isset($group_classes[$status_group]) ? $group_classes[$status_group] : 'dexpress-status-transit';
+
+                    echo '<br><span class="dexpress-status-badge ' . $class . '">' .
                         esc_html(dexpress_get_status_name($shipment->status_code)) . '</span>';
                 }
             } else {

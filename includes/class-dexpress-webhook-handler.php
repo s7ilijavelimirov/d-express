@@ -96,7 +96,17 @@ class D_Express_Webhook_Handler
 
         // Dobijanje podataka iz zahteva
         $data = $request->get_json_params();
+        $status_id = $data['sID'];
 
+        // Proverite da li je status validan
+        $status_exists = $wpdb->get_var($wpdb->prepare(
+            "SELECT id FROM {$wpdb->prefix}dexpress_statuses_index WHERE id = %s",
+            $status_id
+        ));
+
+        if (!$status_exists) {
+            dexpress_log('Webhook: Nepoznat status ID: ' . $status_id, 'warning');
+        }
         // Provera da li su svi potrebni parametri prisutni
         if (
             !isset($data['cc']) || !isset($data['nID']) || !isset($data['code']) ||

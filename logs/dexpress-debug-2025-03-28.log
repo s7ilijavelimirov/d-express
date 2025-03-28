@@ -1,0 +1,30 @@
+[2025-03-28 09:50:24] Checkout order processed: 808
+[2025-03-28 09:50:25] Has D Express shipping: Yes
+[2025-03-28 09:50:25] Automatic shipment creation is disabled or status does not match. Auto create: Enabled, Current status: pending, Required status: processing
+[2025-03-28 09:50:27] [SHIPPING] Započinjem kreiranje pošiljke za narudžbinu #808
+[2025-03-28 09:50:27] [SHIPPING] Priprema podataka za narudžbinu #808
+[2025-03-28 09:50:27] Using address type: shipping
+[2025-03-28 09:50:27] Street: Grčkoškolska, Number: 15, City ID: 802824
+[2025-03-28 09:50:27] Payment method: cod, Is COD: Yes
+[2025-03-28 09:50:27] Using BuyOut: 88900, Account: 170-0010364556000-77
+[2025-03-28 09:50:27] [WEIGHT DEBUG] Početak izračunavanja težine za narudžbinu #808
+[2025-03-28 09:50:27] [WEIGHT DEBUG] Proizvod: Beanie, Težina: 11.5kg, Količina: 1, Ukupno: 11.5kg
+[2025-03-28 09:50:27] [WEIGHT DEBUG] Ukupna težina u kg pre konverzije: 11.5
+[2025-03-28 09:50:27] [WEIGHT DEBUG] Konačna težina u gramima: 11500
+[2025-03-28 09:50:27] [WEIGHT DEBUG] Težina iz calculate_order_weight: 11500 grama
+[2025-03-28 09:50:27] [WEIGHT DEBUG] Težina nakon formatiranja za API: 11500 grama
+[2025-03-28 09:50:27] [WEIGHT DEBUG] Početak izračunavanja težine za narudžbinu #808
+[2025-03-28 09:50:27] [WEIGHT DEBUG] Proizvod: Beanie, Težina: 11.5kg, Količina: 1, Ukupno: 11.5kg
+[2025-03-28 09:50:27] [WEIGHT DEBUG] Ukupna težina u kg pre konverzije: 11.5
+[2025-03-28 09:50:27] [WEIGHT DEBUG] Konačna težina u gramima: 11500
+[2025-03-28 09:50:27] Final BuyOut amount: 88900
+[2025-03-28 09:50:27] Final BuyOutAccount: 170-0010364556000-77
+[2025-03-28 09:50:27] Final RAddressNum: bb
+[2025-03-28 09:50:27] Final RTownID: 802158
+[2025-03-28 09:50:27] Final RCPhone: 381603995506
+[2025-03-28 09:50:27] [SHIPPING] Šaljem zahtev ka D-Express API-ju
+[2025-03-28 09:50:27] [SHIPPING] API odgovor primljen uspešno
+[2025-03-28 09:50:27] [SHIPPING] API odgovor: TEST
+[2025-03-28 09:50:27] [SHIPPING] Tracking broj: TT0000000003, Shipment ID: TT0000000003
+[2025-03-28 09:50:27] [SHIPPING] Čuvanje pošiljke u bazu podataka
+[2025-03-28 09:50:27] [SHIPPING] Pošiljka uspešno kreirana sa ID: 19

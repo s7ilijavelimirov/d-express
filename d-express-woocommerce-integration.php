@@ -212,6 +212,10 @@ class D_Express_WooCommerce
 
         $shipment_service = new D_Express_Shipment_Service();
         $shipment_service->register_ajax_handlers();
+
+        // Inicijalizacija timeline-a
+        $timeline = new D_Express_Order_Timeline();
+        $timeline->init();
     }
 
     /**
@@ -303,6 +307,32 @@ class D_Express_WooCommerce
     public function update_indexes()
     {
         $api = new D_Express_API();
+
+        // Ažuriranje statusa
+        $statuses = $api->get_statuses();
+        if (!is_wp_error($statuses) && is_array($statuses)) {
+            global $wpdb;
+            $table_name = $wpdb->prefix . 'dexpress_statuses_index';
+
+            foreach ($statuses as $status) {
+                $wpdb->replace(
+                    $table_name,
+                    array(
+                        'id' => $status['ID'],
+                        'name' => $status['Name'],
+                        'description' => isset($status['NameEn']) ? $status['NameEn'] : null,
+                        'last_updated' => current_time('mysql')
+                    ),
+                    array('%d', '%s', '%s', '%s')
+                );
+            }
+
+            dexpress_log('Uspešno ažurirani statusi iz API-ja. Ukupno: ' . count($statuses), 'info');
+        } else {
+            dexpress_log('Greška pri ažuriranju statusa: ' . (is_wp_error($statuses) ? $statuses->get_error_message() : 'Nepoznata greška'), 'error');
+        }
+
+        // Pozivanje ostalih metoda za ažuriranje ostalih šifarnika
         $api->update_all_indexes();
     }
 

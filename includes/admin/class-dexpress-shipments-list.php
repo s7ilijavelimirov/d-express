@@ -320,14 +320,33 @@ class D_Express_Shipments_List extends WP_List_Table
     {
         $status_code = $item['status_code'];
 
+        // Dobijanje imena statusa
         $status_name = dexpress_get_status_name($status_code);
 
-        $status_classes = [
-            '130' => 'dexpress-status-delivered',  // Isporučeno
-            '131' => 'dexpress-status-failed',     // Neisporučeno
+        // Dobijanje grupe statusa
+        $status_group = 'transit'; // Podrazumevana grupa
+        $all_statuses = dexpress_get_all_status_codes();
+
+        if (isset($all_statuses[$status_code])) {
+            $status_group = $all_statuses[$status_code]['group'];
+        }
+
+        // Mapiranje grupa na CSS klase
+        $group_classes = [
+            'delivered' => 'dexpress-status-delivered',
+            'failed' => 'dexpress-status-failed',
+            'returned' => 'dexpress-status-failed',
+            'returning' => 'dexpress-status-failed',
+            'problem' => 'dexpress-status-problem',
+            'delayed' => 'dexpress-status-delayed',
+            'pending_pickup' => 'dexpress-status-pickup',
+            'transit' => 'dexpress-status-transit',
+            'out_for_delivery' => 'dexpress-status-transit',
+            'pending' => 'dexpress-status-pending',
+            'cancelled' => 'dexpress-status-cancelled'
         ];
 
-        $class = isset($status_classes[$status_code]) ? $status_classes[$status_code] : 'dexpress-status-transit';
+        $class = isset($group_classes[$status_group]) ? $group_classes[$status_group] : 'dexpress-status-transit';
 
         return sprintf(
             '<span class="dexpress-status-badge %s">%s</span>',

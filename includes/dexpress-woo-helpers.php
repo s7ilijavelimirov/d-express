@@ -118,6 +118,13 @@ function dexpress_get_streets_for_town($town_id)
  */
 function dexpress_get_status_name($status_code)
 {
+    // Prvo proveriti da li postoji u mapi svih statusa
+    $all_statuses = dexpress_get_all_status_codes();
+    if (isset($all_statuses[$status_code])) {
+        return $all_statuses[$status_code]['name'];
+    }
+
+    // Ako ne postoji u mapi, proveriti u bazi
     global $wpdb;
 
     $status = $wpdb->get_var($wpdb->prepare(
@@ -341,4 +348,62 @@ function dexpress_convert_price_to_para($price)
 
     // Konverzija u para (1 RSD = 100 para)
     return intval($price_rsd * 100);
+}
+/**
+ * Vraća mapu svih mogućih D Express statusa sa njihovim grupama
+ *
+ * @return array Mapa statusa
+ */
+function dexpress_get_all_status_codes()
+{
+    return [
+        '-13' => ['name' => 'Nepovratno izgubljena', 'group' => 'failed'],
+        '-12' => ['name' => 'Totalno oštećena', 'group' => 'failed'],
+        '-11' => ['name' => 'Zaplenjena od strane inspekcije', 'group' => 'failed'],
+        '-2' => ['name' => 'Obrisana pošiljka', 'group' => 'cancelled'],
+        '-1' => ['name' => 'Storno isporuke', 'group' => 'cancelled'],
+        '0' => ['name' => 'Čeka na preuzimanje', 'group' => 'pending'],
+        '1' => ['name' => 'Pošiljka je isporučena primaocu', 'group' => 'delivered'],
+        '3' => ['name' => 'Pošiljka je preuzeta od pošiljaoca', 'group' => 'transit'],
+        '4' => ['name' => 'Pošiljka zadužena za isporuku', 'group' => 'out_for_delivery'],
+        '5' => ['name' => 'Pošiljka je odbijena od strane primaoca', 'group' => 'failed'],
+        '6' => ['name' => 'Pokušana isporuka, nema nikoga na adresi', 'group' => 'delayed'],
+        '7' => ['name' => 'Pokušana isporuka, primalac je na godišnjem odmoru', 'group' => 'delayed'],
+        '8' => ['name' => 'Pokušana isporuka, netačna je adresa primaoca', 'group' => 'problem'],
+        '9' => ['name' => 'Pokušana isporuka, primalac nema novac', 'group' => 'problem'],
+        '10' => ['name' => 'Sadržaj pošiljke nije odgovarajući', 'group' => 'problem'],
+        '11' => ['name' => 'Pošiljka je oštećena-reklamacioni postupak', 'group' => 'problem'],
+        '12' => ['name' => 'Isporuka odložena u dogovoru sa primaocem', 'group' => 'delayed'],
+        '17' => ['name' => 'Isporuka samo određenim danima', 'group' => 'delayed'],
+        '18' => ['name' => 'Primalac će doći po paket u magacin', 'group' => 'pending_pickup'],
+        '19' => ['name' => 'Telefon primaoca netačan', 'group' => 'problem'],
+        '20' => ['name' => 'Pošiljka je vraćena pošiljaocu', 'group' => 'returned'],
+        '21' => ['name' => 'Pošiljka se vraća pošiljaocu', 'group' => 'returning'],
+        '22' => ['name' => 'Ukinut povrat pošiljke', 'group' => 'transit'],
+        '23' => ['name' => 'Zahtevan povrat po nalogu pošiljaoca', 'group' => 'returning'],
+        '25' => ['name' => 'Primalac se ne javlja na telefonski poziv', 'group' => 'problem'],
+        '30' => ['name' => 'Međunarodna pošiljka - u tranzitu', 'group' => 'transit'],
+        // Ponovni pokušaji (105-125) - ista grupa kao originalni kodovi
+        '105' => ['name' => 'Pošiljka je odbijena od strane primaoca', 'group' => 'failed'],
+        '106' => ['name' => 'Ponovni pokušaj isporuke, nema nikoga na adresi', 'group' => 'delayed'],
+        '107' => ['name' => 'Ponovni pokušaj isporuke, primalac je na odmoru', 'group' => 'delayed'],
+        '108' => ['name' => 'Ponovni pokušaj isporuke, netačna adresa primaoca', 'group' => 'problem'],
+        '109' => ['name' => 'Ponovni pokušaj isporuke, primalac nema novac', 'group' => 'problem'],
+        '110' => ['name' => 'Sadržaj pošiljke nije odgovarajući', 'group' => 'problem'],
+        '111' => ['name' => 'Pošiljka je oštećena-reklamacioni postupak', 'group' => 'problem'],
+        '112' => ['name' => 'Isporuka odložena u dogovoru sa primaocem', 'group' => 'delayed'],
+        '118' => ['name' => 'Primalac će doći po paket u magacin', 'group' => 'pending_pickup'],
+        '119' => ['name' => 'Telefon primaoca netačan', 'group' => 'problem'],
+        '123' => ['name' => 'Zahtevan povrat po nalogu pošiljaoca', 'group' => 'returning'],
+        '125' => ['name' => 'Primalac se ne javlja na telefonski poziv', 'group' => 'problem'],
+        // Paketomat statusi (820-843)
+        '820' => ['name' => 'Preusmerena na paketomat', 'group' => 'transit'],
+        '822' => ['name' => 'Pošiljka ne može biti ispručena putem paketomata', 'group' => 'problem'],
+        '830' => ['name' => 'Paket ostavljen u paketomatu', 'group' => 'pending_pickup'],
+        '831' => ['name' => 'Paket izvađen iz paketomata', 'group' => 'delivered'],
+        '840' => ['name' => 'Preusmerena na paket šop', 'group' => 'transit'],
+        '841' => ['name' => 'Pošiljka ne može biti ispručena putem paket šopa', 'group' => 'problem'],
+        '842' => ['name' => 'Pošiljka ostavljena u paket šopu', 'group' => 'pending_pickup'],
+        '843' => ['name' => 'Pošiljka iznešena iz paket šopa', 'group' => 'delivered'],
+    ];
 }
