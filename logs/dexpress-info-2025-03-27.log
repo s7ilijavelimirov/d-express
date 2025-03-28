@@ -1,302 +1,6 @@
-[2025-03-27 09:20:39] [API DEBUG] Inicijalna vrednost telefona iz WC: +381603995503
-[2025-03-27 09:20:39] [PAKETOMAT] Koristi se paketomat ID: 273, Adresa: Šumatovačka bb, Town: Aleksinac
-[2025-03-27 09:20:39] [PAKETOMAT] Postavljanje payment_type na 2 (Faktura) za paketomat
-[2025-03-27 09:20:39] [API DEBUG] Koristi se sačuvani API format telefona: 381603995503
-[2025-03-27 09:20:39] [PAKETOMAT] Pouzećem kod paketomata - PaymentBy postavljen na 0 (Sender)
-[2025-03-27 09:20:39] [PAKETOMAT API] Finalni zahtev za paketomat:
-[2025-03-27 09:20:39] [PAKETOMAT API] DispenserID: 273
-[2025-03-27 09:20:39] [PAKETOMAT API] RAddress: Šumatovačka bb
-[2025-03-27 09:20:39] [PAKETOMAT API] RTownID: 700614
-[2025-03-27 09:20:39] [PAKETOMAT API] PaymentType: 2
-[2025-03-27 09:20:39] [PAKETOMAT API] PaymentBy: 0
-[2025-03-27 09:20:39] [API DEBUG] Finalni RCPhone za API: 381603995503
-[2025-03-27 09:20:39] [SHIPPING DEBUG] Telefon u API zahtevu: 381603995503
-[2025-03-27 09:20:39] Kreiranje pošiljke. Podaci: Array
-(
-    [CClientID] => UK16967
-    [CName] => s7Code DOO
-    [CAddress] => Bulevar Cara Lazara
-    [CAddressNum] => 106
-    [CTownID] => 802824
-    [CCName] => Ilija Velemirov
-    [CCPhone] => 381603995503
-    [PuClientID] => UK16967
-    [PuName] => s7Code DOO
-    [PuAddress] => Bulevar Cara Lazara
-    [PuAddressNum] => 106
-    [PuTownID] => 802824
-    [PuCName] => Ilija Velemirov
-    [PuCPhone] => 381603995503
-    [RName] => Marko Mirkovic
-    [RAddress] => Šumatovačka bb
-    [RAddressNum] => bb
-    [RAddressDesc] => 
-    [RTownID] => 700614
-    [RCName] => Marko Mirkovic
-    [RCPhone] => 381603995503
-    [Note] => 
-    [DlTypeID] => 2
-    [PaymentBy] => 0
-    [PaymentType] => 2
-    [Value] => 88900
-    [Content] => Dokumenta
-    [Mass] => 11000
-    [ReferenceID] => ORDER-804-1743067239
-    [ReturnDoc] => 0
-    [BuyOut] => 88900
-    [BuyOutFor] => 0
-    [BuyOutAccount] => 170-0010364556000-77
-    [SelfDropOff] => 0
-    [PackageList] => Array
-        (
-            [0] => Array
-                (
-                    [Code] => TT0000000098
-                    [Mass] => 11000
-                    [DimX] => 400
-                    [DimY] => 470
-                    [DimZ] => 430
-                )
-
-        )
-
-    [DispenserID] => 273
-)
-
-[2025-03-27 09:20:39] [PAKETOMAT DEBUG] Kreiranje pošiljke za paketomat ID: 273
-[2025-03-27 09:20:39] [PAKETOMAT DEBUG] Kompletan zahtev: Array
-(
-    [CClientID] => UK16967
-    [CName] => s7Code DOO
-    [CAddress] => Bulevar Cara Lazara
-    [CAddressNum] => 106
-    [CTownID] => 802824
-    [CCName] => Ilija Velemirov
-    [CCPhone] => 381603995503
-    [PuClientID] => UK16967
-    [PuName] => s7Code DOO
-    [PuAddress] => Bulevar Cara Lazara
-    [PuAddressNum] => 106
-    [PuTownID] => 802824
-    [PuCName] => Ilija Velemirov
-    [PuCPhone] => 381603995503
-    [RName] => Marko Mirkovic
-    [RAddress] => Šumatovačka bb
-    [RAddressNum] => bb
-    [RAddressDesc] => 
-    [RTownID] => 700614
-    [RCName] => Marko Mirkovic
-    [RCPhone] => 381603995503
-    [Note] => 
-    [DlTypeID] => 2
-    [PaymentBy] => 0
-    [PaymentType] => 2
-    [Value] => 88900
-    [Content] => Dokumenta
-    [Mass] => 11000
-    [ReferenceID] => ORDER-804-1743067239
-    [ReturnDoc] => 0
-    [BuyOut] => 88900
-    [BuyOutFor] => 0
-    [BuyOutAccount] => 170-0010364556000-77
-    [SelfDropOff] => 0
-    [PackageList] => Array
-        (
-            [0] => Array
-                (
-                    [Code] => TT0000000098
-                    [Mass] => 11000
-                    [DimX] => 400
-                    [DimY] => 470
-                    [DimZ] => 430
-                )
-
-        )
-
-    [DispenserID] => 273
-)
-
-[2025-03-27 09:20:39] [PAYMENT] Vrednost dexpress_payment_type iz opcija: 2
-[2025-03-27 09:20:39] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/addshipment, Metod: POST, Podaci: {
-    "CClientID": "UK16967",
-    "CName": "s7Code DOO",
-    "CAddress": "Bulevar Cara Lazara",
-    "CAddressNum": "106",
-    "CTownID": 802824,
-    "CCName": "Ilija Velemirov",
-    "CCPhone": "381603995503",
-    "PuClientID": "UK16967",
-    "PuName": "s7Code DOO",
-    "PuAddress": "Bulevar Cara Lazara",
-    "PuAddressNum": "106",
-    "PuTownID": 802824,
-    "PuCName": "Ilija Velemirov",
-    "PuCPhone": "381603995503",
-    "RName": "Marko Mirkovic",
-    "RAddress": "\u0160umatova\u010dka bb",
-    "RAddressNum": "bb",
-    "RAddressDesc": "",
-    "RTownID": "700614",
-    "RCName": "Marko Mirkovic",
-    "RCPhone": "381603995503",
-    "Note": "",
-    "DlTypeID": 2,
-    "PaymentBy": 0,
-    "PaymentType": 2,
-    "Value": 88900,
-    "Content": "Dokumenta",
-    "Mass": 11000,
-    "ReferenceID": "ORDER-804-1743067239",
-    "ReturnDoc": 0,
-    "BuyOut": 88900,
-    "BuyOutFor": 0,
-    "BuyOutAccount": "170-0010364556000-77",
-    "SelfDropOff": 0,
-    "PackageList": [
-        {
-            "Code": "TT0000000098",
-            "Mass": 11000,
-            "DimX": 400,
-            "DimY": 470,
-            "DimZ": 430
-        }
-    ],
-    "DispenserID": 273
-}
-[2025-03-27 09:20:40] API Odgovor (kod 200)
-[2025-03-27 09:20:40] [PAKETOMAT DEBUG] Odgovor API-ja: TEST
-[2025-03-27 09:39:14] [API DEBUG] Inicijalna vrednost telefona iz WC: +381603995503
-[2025-03-27 09:39:14] [API DEBUG] Koristi se sačuvani API format telefona: 381603995503
-[2025-03-27 09:39:14] [API DEBUG] Finalni RCPhone za API: 381603995503
-[2025-03-27 09:39:14] [SHIPPING DEBUG] Telefon u API zahtevu: 381603995503
-[2025-03-27 09:39:14] Kreiranje pošiljke. Podaci: Array
-(
-    [CClientID] => UK16967
-    [CName] => s7Code DOO
-    [CAddress] => Bulevar Cara Lazara
-    [CAddressNum] => 106
-    [CTownID] => 802824
-    [CCName] => Ilija Velemirov
-    [CCPhone] => 381603995503
-    [PuClientID] => UK16967
-    [PuName] => s7Code DOO
-    [PuAddress] => Bulevar Cara Lazara
-    [PuAddressNum] => 106
-    [PuTownID] => 802824
-    [PuCName] => Ilija Velemirov
-    [PuCPhone] => 381603995503
-    [RName] => Marko Mirkovic
-    [RAddress] => Grčića Milenka
-    [RAddressNum] => 1
-    [RAddressDesc] => Dodatne informacije o adresi (optional)
-    [RTownID] => 740527
-    [RCName] => Marko Mirkovic
-    [RCPhone] => 381603995503
-    [Note] => Order notes optional
-    [DlTypeID] => 2
-    [PaymentBy] => 1
-    [PaymentType] => 2
-    [Value] => 148000
-    [Content] => Dokumenta
-    [Mass] => 23000
-    [ReferenceID] => ORDER-805-1743068354
-    [ReturnDoc] => 0
-    [BuyOut] => 148000
-    [BuyOutFor] => 0
-    [BuyOutAccount] => 170-0010364556000-77
-    [SelfDropOff] => 0
-    [PackageList] => Array
-        (
-            [0] => Array
-                (
-                    [Code] => TT0000000099
-                    [Mass] => 23000
-                    [DimX] => 400
-                    [DimY] => 470
-                    [DimZ] => 430
-                )
-
-        )
-
-)
-
-[2025-03-27 09:39:14] [PAYMENT] Vrednost dexpress_payment_type iz opcija: 2
-[2025-03-27 09:39:14] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/addshipment, Metod: POST, Podaci: {
-    "CClientID": "UK16967",
-    "CName": "s7Code DOO",
-    "CAddress": "Bulevar Cara Lazara",
-    "CAddressNum": "106",
-    "CTownID": 802824,
-    "CCName": "Ilija Velemirov",
-    "CCPhone": "381603995503",
-    "PuClientID": "UK16967",
-    "PuName": "s7Code DOO",
-    "PuAddress": "Bulevar Cara Lazara",
-    "PuAddressNum": "106",
-    "PuTownID": 802824,
-    "PuCName": "Ilija Velemirov",
-    "PuCPhone": "381603995503",
-    "RName": "Marko Mirkovic",
-    "RAddress": "Gr\u010di\u0107a Milenka",
-    "RAddressNum": "1",
-    "RAddressDesc": "Dodatne informacije o adresi (optional)",
-    "RTownID": 740527,
-    "RCName": "Marko Mirkovic",
-    "RCPhone": "381603995503",
-    "Note": "Order notes optional",
-    "DlTypeID": 2,
-    "PaymentBy": 1,
-    "PaymentType": 2,
-    "Value": 148000,
-    "Content": "Dokumenta",
-    "Mass": 23000,
-    "ReferenceID": "ORDER-805-1743068354",
-    "ReturnDoc": 0,
-    "BuyOut": 148000,
-    "BuyOutFor": 0,
-    "BuyOutAccount": "170-0010364556000-77",
-    "SelfDropOff": 0,
-    "PackageList": [
-        {
-            "Code": "TT0000000099",
-            "Mass": 23000,
-            "DimX": 400,
-            "DimY": 470,
-            "DimZ": 430
-        }
-    ]
-}
-[2025-03-27 09:39:14] API Odgovor (kod 200)
-[2025-03-27 11:13:18] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/statuses, Metod: GET, Podaci: nema
-[2025-03-27 11:13:18] API Odgovor (kod 200)
-[2025-03-27 11:13:18] Test konekcije uspešan. Dobijeno 46 statusa.
-[2025-03-27 11:48:44] Podešavanja su ažurirana od strane korisnika ID: 1
-[2025-03-27 13:40:45] Podešavanja su ažurirana od strane korisnika ID: 1
-[2025-03-27 13:48:50] Podešavanja su ažurirana od strane korisnika ID: 1
-[2025-03-27 13:51:37] Podešavanja su ažurirana od strane korisnika ID: 1
-[2025-03-27 13:56:30] Podešavanja su ažurirana od strane korisnika ID: 1
-[2025-03-27 13:56:44] Podešavanja su ažurirana od strane korisnika ID: 1
-[2025-03-27 13:56:53] Podešavanja su ažurirana od strane korisnika ID: 1
-[2025-03-27 13:57:43] Podešavanja su ažurirana od strane korisnika ID: 1
-[2025-03-27 13:57:48] Podešavanja su ažurirana od strane korisnika ID: 1
-[2025-03-27 13:58:03] Podešavanja su ažurirana od strane korisnika ID: 1
-[2025-03-27 13:58:11] Podešavanja su ažurirana od strane korisnika ID: 1
-[2025-03-27 13:58:17] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/statuses, Metod: GET, Podaci: nema
-[2025-03-27 13:58:17] API Odgovor (kod 200)
-[2025-03-27 13:58:17] Test konekcije uspešan. Dobijeno 46 statusa.
-[2025-03-27 13:58:22] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/shops, Metod: GET, Podaci: nema
-[2025-03-27 13:58:22] API Odgovor (kod 200)
-[2025-03-27 13:58:23] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/locations, Metod: GET, Podaci: nema
-[2025-03-27 13:58:23] API Odgovor (kod 200)
-[2025-03-27 13:58:24] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/municipalities?date=20000101000000, Metod: GET, Podaci: nema
-[2025-03-27 13:58:24] API Odgovor (kod 200)
-[2025-03-27 13:58:24] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/towns?date=20000101000000, Metod: GET, Podaci: nema
-[2025-03-27 13:58:25] API Odgovor (kod 200)
-[2025-03-27 13:58:33] Updating streets...
-[2025-03-27 13:58:33] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/streets?date=20000101000000, Metod: GET, Podaci: nema
-[2025-03-27 13:58:36] API Odgovor (kod 200)
-[2025-03-27 13:58:36] Got 39339 streets, starting update...
-[2025-03-27 13:58:36] First street data: Array
+[2025-03-27 14:32:31] Updating streets...
+[2025-03-27 14:32:33] Got 39339 streets, starting update...
+[2025-03-27 14:32:33] First street data: Array
 (
     [Id] => 1
     [Name] => Aberdareva
@@ -304,89 +8,190 @@
     [Del] => 
 )
 
-[2025-03-27 13:58:36] Streets update progress: 500/39339
-[2025-03-27 13:58:36] Streets update progress: 1000/39339
-[2025-03-27 13:58:36] Streets update progress: 1500/39339
-[2025-03-27 13:58:36] Streets update progress: 2000/39339
-[2025-03-27 13:58:36] Streets update progress: 2500/39339
-[2025-03-27 13:58:36] Streets update progress: 3000/39339
-[2025-03-27 13:58:36] Streets update progress: 3500/39339
-[2025-03-27 13:58:36] Streets update progress: 4000/39339
-[2025-03-27 13:58:36] Streets update progress: 4500/39339
-[2025-03-27 13:58:36] Streets update progress: 5000/39339
-[2025-03-27 13:58:36] Streets update progress: 5500/39339
-[2025-03-27 13:58:36] Streets update progress: 6000/39339
-[2025-03-27 13:58:36] Streets update progress: 6500/39339
-[2025-03-27 13:58:36] Streets update progress: 7000/39339
-[2025-03-27 13:58:36] Streets update progress: 7500/39339
-[2025-03-27 13:58:36] Streets update progress: 8000/39339
-[2025-03-27 13:58:36] Streets update progress: 8500/39339
-[2025-03-27 13:58:36] Streets update progress: 9000/39339
-[2025-03-27 13:58:36] Streets update progress: 9500/39339
-[2025-03-27 13:58:36] Streets update progress: 10000/39339
-[2025-03-27 13:58:36] Streets update progress: 10500/39339
-[2025-03-27 13:58:36] Streets update progress: 11000/39339
-[2025-03-27 13:58:36] Streets update progress: 11500/39339
-[2025-03-27 13:58:36] Streets update progress: 12000/39339
-[2025-03-27 13:58:36] Streets update progress: 12500/39339
-[2025-03-27 13:58:36] Streets update progress: 13000/39339
-[2025-03-27 13:58:36] Streets update progress: 13500/39339
-[2025-03-27 13:58:36] Streets update progress: 14000/39339
-[2025-03-27 13:58:36] Streets update progress: 14500/39339
-[2025-03-27 13:58:36] Streets update progress: 15000/39339
-[2025-03-27 13:58:36] Streets update progress: 15500/39339
-[2025-03-27 13:58:36] Streets update progress: 16000/39339
-[2025-03-27 13:58:36] Streets update progress: 16500/39339
-[2025-03-27 13:58:36] Streets update progress: 17000/39339
-[2025-03-27 13:58:37] Streets update progress: 17500/39339
-[2025-03-27 13:58:37] Streets update progress: 18000/39339
-[2025-03-27 13:58:37] Streets update progress: 18500/39339
-[2025-03-27 13:58:37] Streets update progress: 19000/39339
-[2025-03-27 13:58:37] Streets update progress: 19500/39339
-[2025-03-27 13:58:37] Streets update progress: 20000/39339
-[2025-03-27 13:58:37] Streets update progress: 20500/39339
-[2025-03-27 13:58:37] Streets update progress: 21000/39339
-[2025-03-27 13:58:37] Streets update progress: 21500/39339
-[2025-03-27 13:58:37] Streets update progress: 22000/39339
-[2025-03-27 13:58:37] Streets update progress: 22500/39339
-[2025-03-27 13:58:37] Streets update progress: 23000/39339
-[2025-03-27 13:58:37] Streets update progress: 23500/39339
-[2025-03-27 13:58:37] Streets update progress: 24000/39339
-[2025-03-27 13:58:37] Streets update progress: 24500/39339
-[2025-03-27 13:58:37] Streets update progress: 25000/39339
-[2025-03-27 13:58:37] Streets update progress: 25500/39339
-[2025-03-27 13:58:37] Streets update progress: 26000/39339
-[2025-03-27 13:58:37] Streets update progress: 26500/39339
-[2025-03-27 13:58:37] Streets update progress: 27000/39339
-[2025-03-27 13:58:37] Streets update progress: 27500/39339
-[2025-03-27 13:58:37] Streets update progress: 28000/39339
-[2025-03-27 13:58:37] Streets update progress: 28500/39339
-[2025-03-27 13:58:37] Streets update progress: 29000/39339
-[2025-03-27 13:58:37] Streets update progress: 29500/39339
-[2025-03-27 13:58:37] Streets update progress: 30000/39339
-[2025-03-27 13:58:37] Streets update progress: 30500/39339
-[2025-03-27 13:58:37] Streets update progress: 31000/39339
-[2025-03-27 13:58:37] Streets update progress: 31500/39339
-[2025-03-27 13:58:37] Streets update progress: 32000/39339
-[2025-03-27 13:58:37] Streets update progress: 32500/39339
-[2025-03-27 13:58:37] Streets update progress: 33000/39339
-[2025-03-27 13:58:37] Streets update progress: 33500/39339
-[2025-03-27 13:58:37] Streets update progress: 34000/39339
-[2025-03-27 13:58:37] Streets update progress: 34500/39339
-[2025-03-27 13:58:37] Streets update progress: 35000/39339
-[2025-03-27 13:58:37] Streets update progress: 35500/39339
-[2025-03-27 13:58:37] Streets update progress: 36000/39339
-[2025-03-27 13:58:37] Streets update progress: 36500/39339
-[2025-03-27 13:58:37] Streets update progress: 37000/39339
-[2025-03-27 13:58:37] Streets update progress: 37500/39339
-[2025-03-27 13:58:37] Streets update progress: 38000/39339
-[2025-03-27 13:58:37] Streets update progress: 38500/39339
-[2025-03-27 13:58:37] Streets update progress: 39000/39339
-[2025-03-27 13:58:37] Streets update progress: 39339/39339
-[2025-03-27 13:58:37] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/statuses, Metod: GET, Podaci: nema
-[2025-03-27 13:58:37] API Odgovor (kod 200)
-[2025-03-27 13:58:37] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/dispensers, Metod: GET, Podaci: nema
-[2025-03-27 13:58:38] API Odgovor (kod 200)
-[2025-03-27 13:58:38] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/centres, Metod: GET, Podaci: nema
-[2025-03-27 13:58:38] API Odgovor (kod 200)
-[2025-03-27 13:58:38] Index update completed successfully
+[2025-03-27 14:32:33] Streets update progress: 500/39339
+[2025-03-27 14:32:33] Streets update progress: 1000/39339
+[2025-03-27 14:32:33] Streets update progress: 1500/39339
+[2025-03-27 14:32:33] Streets update progress: 2000/39339
+[2025-03-27 14:32:33] Streets update progress: 2500/39339
+[2025-03-27 14:32:33] Streets update progress: 3000/39339
+[2025-03-27 14:32:33] Streets update progress: 3500/39339
+[2025-03-27 14:32:33] Streets update progress: 4000/39339
+[2025-03-27 14:32:33] Streets update progress: 4500/39339
+[2025-03-27 14:32:33] Streets update progress: 5000/39339
+[2025-03-27 14:32:33] Streets update progress: 5500/39339
+[2025-03-27 14:32:33] Streets update progress: 6000/39339
+[2025-03-27 14:32:33] Streets update progress: 6500/39339
+[2025-03-27 14:32:33] Streets update progress: 7000/39339
+[2025-03-27 14:32:33] Streets update progress: 7500/39339
+[2025-03-27 14:32:33] Streets update progress: 8000/39339
+[2025-03-27 14:32:33] Streets update progress: 8500/39339
+[2025-03-27 14:32:33] Streets update progress: 9000/39339
+[2025-03-27 14:32:33] Streets update progress: 9500/39339
+[2025-03-27 14:32:33] Streets update progress: 10000/39339
+[2025-03-27 14:32:33] Streets update progress: 10500/39339
+[2025-03-27 14:32:33] Streets update progress: 11000/39339
+[2025-03-27 14:32:33] Streets update progress: 11500/39339
+[2025-03-27 14:32:33] Streets update progress: 12000/39339
+[2025-03-27 14:32:33] Streets update progress: 12500/39339
+[2025-03-27 14:32:33] Streets update progress: 13000/39339
+[2025-03-27 14:32:33] Streets update progress: 13500/39339
+[2025-03-27 14:32:33] Streets update progress: 14000/39339
+[2025-03-27 14:32:33] Streets update progress: 14500/39339
+[2025-03-27 14:32:33] Streets update progress: 15000/39339
+[2025-03-27 14:32:33] Streets update progress: 15500/39339
+[2025-03-27 14:32:33] Streets update progress: 16000/39339
+[2025-03-27 14:32:33] Streets update progress: 16500/39339
+[2025-03-27 14:32:33] Streets update progress: 17000/39339
+[2025-03-27 14:32:33] Streets update progress: 17500/39339
+[2025-03-27 14:32:33] Streets update progress: 18000/39339
+[2025-03-27 14:32:33] Streets update progress: 18500/39339
+[2025-03-27 14:32:33] Streets update progress: 19000/39339
+[2025-03-27 14:32:33] Streets update progress: 19500/39339
+[2025-03-27 14:32:33] Streets update progress: 20000/39339
+[2025-03-27 14:32:33] Streets update progress: 20500/39339
+[2025-03-27 14:32:33] Streets update progress: 21000/39339
+[2025-03-27 14:32:33] Streets update progress: 21500/39339
+[2025-03-27 14:32:33] Streets update progress: 22000/39339
+[2025-03-27 14:32:33] Streets update progress: 22500/39339
+[2025-03-27 14:32:33] Streets update progress: 23000/39339
+[2025-03-27 14:32:34] Streets update progress: 23500/39339
+[2025-03-27 14:32:34] Streets update progress: 24000/39339
+[2025-03-27 14:32:34] Streets update progress: 24500/39339
+[2025-03-27 14:32:34] Streets update progress: 25000/39339
+[2025-03-27 14:32:34] Streets update progress: 25500/39339
+[2025-03-27 14:32:34] Streets update progress: 26000/39339
+[2025-03-27 14:32:34] Streets update progress: 26500/39339
+[2025-03-27 14:32:34] Streets update progress: 27000/39339
+[2025-03-27 14:32:34] Streets update progress: 27500/39339
+[2025-03-27 14:32:34] Streets update progress: 28000/39339
+[2025-03-27 14:32:34] Streets update progress: 28500/39339
+[2025-03-27 14:32:34] Streets update progress: 29000/39339
+[2025-03-27 14:32:34] Streets update progress: 29500/39339
+[2025-03-27 14:32:34] Streets update progress: 30000/39339
+[2025-03-27 14:32:34] Streets update progress: 30500/39339
+[2025-03-27 14:32:34] Streets update progress: 31000/39339
+[2025-03-27 14:32:34] Streets update progress: 31500/39339
+[2025-03-27 14:32:34] Streets update progress: 32000/39339
+[2025-03-27 14:32:34] Streets update progress: 32500/39339
+[2025-03-27 14:32:34] Streets update progress: 33000/39339
+[2025-03-27 14:32:34] Streets update progress: 33500/39339
+[2025-03-27 14:32:34] Streets update progress: 34000/39339
+[2025-03-27 14:32:34] Streets update progress: 34500/39339
+[2025-03-27 14:32:34] Streets update progress: 35000/39339
+[2025-03-27 14:32:34] Streets update progress: 35500/39339
+[2025-03-27 14:32:34] Streets update progress: 36000/39339
+[2025-03-27 14:32:34] Streets update progress: 36500/39339
+[2025-03-27 14:32:34] Streets update progress: 37000/39339
+[2025-03-27 14:32:34] Streets update progress: 37500/39339
+[2025-03-27 14:32:34] Streets update progress: 38000/39339
+[2025-03-27 14:32:34] Streets update progress: 38500/39339
+[2025-03-27 14:32:34] Streets update progress: 39000/39339
+[2025-03-27 14:32:34] Streets update progress: 39339/39339
+[2025-03-27 14:32:35] Index update completed successfully
+[2025-03-27 14:32:49] Podešavanja su ažurirana od strane korisnika ID: 1
+[2025-03-27 14:35:16] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/shops, Metod: GET, Podaci: nema
+[2025-03-27 14:35:16] API Odgovor (kod 200)
+[2025-03-27 14:35:16] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/locations, Metod: GET, Podaci: nema
+[2025-03-27 14:35:17] API Odgovor (kod 200)
+[2025-03-27 14:35:17] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/municipalities?date=20000101000000, Metod: GET, Podaci: nema
+[2025-03-27 14:35:17] API Odgovor (kod 200)
+[2025-03-27 14:35:18] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/towns?date=20000101000000, Metod: GET, Podaci: nema
+[2025-03-27 14:35:18] API Odgovor (kod 200)
+[2025-03-27 14:35:29] Updating streets...
+[2025-03-27 14:35:29] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/streets?date=20000101000000, Metod: GET, Podaci: nema
+[2025-03-27 14:35:30] API Odgovor (kod 200)
+[2025-03-27 14:35:30] Got 39339 streets, starting update...
+[2025-03-27 14:35:30] First street data: Array
+(
+    [Id] => 1
+    [Name] => Aberdareva
+    [TId] => 791075
+    [Del] => 
+)
+
+[2025-03-27 14:35:30] Streets update progress: 500/39339
+[2025-03-27 14:35:30] Streets update progress: 1000/39339
+[2025-03-27 14:35:30] Streets update progress: 1500/39339
+[2025-03-27 14:35:30] Streets update progress: 2000/39339
+[2025-03-27 14:35:30] Streets update progress: 2500/39339
+[2025-03-27 14:35:30] Streets update progress: 3000/39339
+[2025-03-27 14:35:30] Streets update progress: 3500/39339
+[2025-03-27 14:35:30] Streets update progress: 4000/39339
+[2025-03-27 14:35:30] Streets update progress: 4500/39339
+[2025-03-27 14:35:30] Streets update progress: 5000/39339
+[2025-03-27 14:35:30] Streets update progress: 5500/39339
+[2025-03-27 14:35:30] Streets update progress: 6000/39339
+[2025-03-27 14:35:30] Streets update progress: 6500/39339
+[2025-03-27 14:35:30] Streets update progress: 7000/39339
+[2025-03-27 14:35:30] Streets update progress: 7500/39339
+[2025-03-27 14:35:30] Streets update progress: 8000/39339
+[2025-03-27 14:35:30] Streets update progress: 8500/39339
+[2025-03-27 14:35:30] Streets update progress: 9000/39339
+[2025-03-27 14:35:30] Streets update progress: 9500/39339
+[2025-03-27 14:35:30] Streets update progress: 10000/39339
+[2025-03-27 14:35:30] Streets update progress: 10500/39339
+[2025-03-27 14:35:30] Streets update progress: 11000/39339
+[2025-03-27 14:35:30] Streets update progress: 11500/39339
+[2025-03-27 14:35:30] Streets update progress: 12000/39339
+[2025-03-27 14:35:30] Streets update progress: 12500/39339
+[2025-03-27 14:35:30] Streets update progress: 13000/39339
+[2025-03-27 14:35:30] Streets update progress: 13500/39339
+[2025-03-27 14:35:30] Streets update progress: 14000/39339
+[2025-03-27 14:35:30] Streets update progress: 14500/39339
+[2025-03-27 14:35:30] Streets update progress: 15000/39339
+[2025-03-27 14:35:30] Streets update progress: 15500/39339
+[2025-03-27 14:35:30] Streets update progress: 16000/39339
+[2025-03-27 14:35:30] Streets update progress: 16500/39339
+[2025-03-27 14:35:30] Streets update progress: 17000/39339
+[2025-03-27 14:35:30] Streets update progress: 17500/39339
+[2025-03-27 14:35:30] Streets update progress: 18000/39339
+[2025-03-27 14:35:30] Streets update progress: 18500/39339
+[2025-03-27 14:35:30] Streets update progress: 19000/39339
+[2025-03-27 14:35:30] Streets update progress: 19500/39339
+[2025-03-27 14:35:30] Streets update progress: 20000/39339
+[2025-03-27 14:35:30] Streets update progress: 20500/39339
+[2025-03-27 14:35:30] Streets update progress: 21000/39339
+[2025-03-27 14:35:30] Streets update progress: 21500/39339
+[2025-03-27 14:35:30] Streets update progress: 22000/39339
+[2025-03-27 14:35:30] Streets update progress: 22500/39339
+[2025-03-27 14:35:30] Streets update progress: 23000/39339
+[2025-03-27 14:35:30] Streets update progress: 23500/39339
+[2025-03-27 14:35:30] Streets update progress: 24000/39339
+[2025-03-27 14:35:30] Streets update progress: 24500/39339
+[2025-03-27 14:35:30] Streets update progress: 25000/39339
+[2025-03-27 14:35:30] Streets update progress: 25500/39339
+[2025-03-27 14:35:30] Streets update progress: 26000/39339
+[2025-03-27 14:35:30] Streets update progress: 26500/39339
+[2025-03-27 14:35:30] Streets update progress: 27000/39339
+[2025-03-27 14:35:30] Streets update progress: 27500/39339
+[2025-03-27 14:35:30] Streets update progress: 28000/39339
+[2025-03-27 14:35:30] Streets update progress: 28500/39339
+[2025-03-27 14:35:30] Streets update progress: 29000/39339
+[2025-03-27 14:35:30] Streets update progress: 29500/39339
+[2025-03-27 14:35:30] Streets update progress: 30000/39339
+[2025-03-27 14:35:30] Streets update progress: 30500/39339
+[2025-03-27 14:35:30] Streets update progress: 31000/39339
+[2025-03-27 14:35:30] Streets update progress: 31500/39339
+[2025-03-27 14:35:30] Streets update progress: 32000/39339
+[2025-03-27 14:35:30] Streets update progress: 32500/39339
+[2025-03-27 14:35:31] Streets update progress: 33000/39339
+[2025-03-27 14:35:31] Streets update progress: 33500/39339
+[2025-03-27 14:35:31] Streets update progress: 34000/39339
+[2025-03-27 14:35:31] Streets update progress: 34500/39339
+[2025-03-27 14:35:31] Streets update progress: 35000/39339
+[2025-03-27 14:35:31] Streets update progress: 35500/39339
+[2025-03-27 14:35:31] Streets update progress: 36000/39339
+[2025-03-27 14:35:31] Streets update progress: 36500/39339
+[2025-03-27 14:35:31] Streets update progress: 37000/39339
+[2025-03-27 14:35:31] Streets update progress: 37500/39339
+[2025-03-27 14:35:31] Streets update progress: 38000/39339
+[2025-03-27 14:35:31] Streets update progress: 38500/39339
+[2025-03-27 14:35:31] Streets update progress: 39000/39339
+[2025-03-27 14:35:31] Streets update progress: 39339/39339
+[2025-03-27 14:35:31] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/statuses, Metod: GET, Podaci: nema
+[2025-03-27 14:35:31] API Odgovor (kod 200)
+[2025-03-27 14:35:31] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/dispensers, Metod: GET, Podaci: nema
+[2025-03-27 14:35:31] API Odgovor (kod 200)
+[2025-03-27 14:35:31] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/centres, Metod: GET, Podaci: nema
+[2025-03-27 14:35:31] API Odgovor (kod 200)
+[2025-03-27 14:35:31] Index update completed successfully
