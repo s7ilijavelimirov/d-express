@@ -127,6 +127,9 @@ class D_Express_WooCommerce
 
         // Dodavanje REST API ruta za webhook
         add_action('rest_api_init', array($this, 'register_rest_routes'));
+
+        // Dodavanje webhook obrade za cron
+        add_action('dexpress_process_notification', array($this, 'process_notification'));
     }
 
     /**
@@ -360,6 +363,189 @@ class D_Express_WooCommerce
                 '9.6'
             ) .
             '</p></div>';
+    }
+    /**
+     * Obrada webhook notifikacije (poziva se iz cron-a)
+     * 
+     * @param int $notification_id ID notifikacije u bazi
+     */
+    public function process_notification($notification_id)
+    {
+        global $wpdb;
+
+        dexpress_log('Započeta obrada notifikacije ID: ' . $notification_id, 'debug');
+
+        // Dohvatanje podataka o notifikaciji
+        $notification = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}dexpress_statuses WHERE id = %d AND is_processed = 0",
+            $notification_id
+        ));
+
+        if (!$notification) {
+            dexpress_log('Notifikacija ID: ' . $notification_id . ' nije pronađena ili je već obrađena', 'warning');
+            return;
+        }
+
+        // Dohvatanje pošiljke na osnovu reference_id ili shipment_code
+        $shipment = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}dexpress_shipments 
+        WHERE reference_id = %s OR shipment_id = %s",
+            $notification->reference_id,
+            $notification->shipment_code
+        ));
+
+        if (!$shipment) {
+            dexpress_log('Nije pronađena pošiljka za notifikaciju ID: ' . $notification_id, 'warning');
+            // Označi kao obrađenu iako nije pronađena pošiljka
+            $wpdb->update(
+                $wpdb->prefix . 'dexpress_statuses',
+                array('is_processed' => 1),
+                array('id' => $notification_id)
+            );
+            return;
+        }
+
+        // Ažuriranje statusa pošiljke
+        $wpdb->update(
+            $wpdb->prefix . 'dexpress_shipments',
+            array(
+                'status_code' => $notification->status_id,
+                'status_description' => dexpress_get_status_name($notification->status_id),
+                'updated_at' => current_time('mysql')
+            ),
+            array('id' => $shipment->id)
+        );
+
+        // Označi notifikaciju kao obrađenu
+        $wpdb->update(
+            $wpdb->prefix . 'dexpress_statuses',
+            array('is_processed' => 1),
+            array('id' => $notification_id)
+        );
+
+        // Dohvatanje narudžbine
+        $order = wc_get_order($shipment->order_id);
+        if ($order) {
+            // Dodavanje napomene o promeni statusa
+            $order->add_order_note(
+                sprintf(
+                    __('D Express status ažuriran: %s', 'd-express-woo'),
+                    dexpress_get_status_name($notification->status_id)
+                )
+            );
+
+            // Obrada specifičnih statusa - isporučeno, neisporučeno itd.
+            $this->process_status_notification($notification, $shipment, $order);
+        }
+
+        dexpress_log('Notifikacija ID: ' . $notification_id . ' uspešno obrađena', 'debug');
+    }
+
+    /**
+     * Obrada specifičnih statusa notifikacije
+     * 
+     * @param object $notification Podaci o notifikaciji
+     * @param object $shipment Podaci o pošiljci
+     * @param WC_Order $order WooCommerce narudžbina
+     */
+    private function process_status_notification($notification, $shipment, $order)
+    {
+        // U zavisnosti od statusa, možemo menjati status narudžbine ili slati notifikacije
+        $status_id = $notification->status_id;
+
+        switch ($status_id) {
+            // Isporučeno
+            case '1':
+            case '130':
+            case '831':
+            case '843':
+                // Pošiljka dostavljena / isporučena
+                if ($order->get_status() === 'processing' || $order->get_status() === 'on-hold') {
+                    // Promeni status narudžbine na 'completed'
+                    $order->update_status('completed', __('D Express pošiljka isporučena.', 'd-express-woo'));
+                }
+
+                // Opciono: Pošalji email korisniku
+                $this->send_status_email($shipment, $order, 'delivered');
+                break;
+
+            // Neuspešna isporuka / vraćeno
+            case '5':
+            case '131':
+                // Promeni status narudžbine na 'failed'
+                if ($order->get_status() !== 'failed' && $order->get_status() !== 'cancelled') {
+                    $order->update_status('failed', __('D Express nije uspeo da isporuči pošiljku.', 'd-express-woo'));
+                }
+
+                // Opciono: Pošalji email korisniku
+                $this->send_status_email($shipment, $order, 'failed');
+                break;
+
+            // Pokušana isporuka, nema nikoga na adresi
+            case '6':
+            case '106':
+                // Dodaj napomenu sa info o pokušaju isporuke
+                $order->add_order_note(__('D Express je pokušao isporuku, ali nije bilo nikoga na adresi.', 'd-express-woo'));
+
+                // Opciono: Pošalji email korisniku
+                $this->send_status_email($shipment, $order, 'attempted');
+                break;
+        }
+    }
+
+    /**
+     * Slanje email notifikacije o promeni statusa
+     * 
+     * @param object $shipment Podaci o pošiljci
+     * @param WC_Order $order WooCommerce narudžbina
+     * @param string $status_type Tip statusa (delivered, failed, attempted)
+     */
+    private function send_status_email($shipment, $order, $status_type)
+    {
+        if (get_option('dexpress_enable_status_emails', 'yes') !== 'yes') {
+            return;
+        }
+
+        $mailer = WC()->mailer();
+        $recipient = $order->get_billing_email();
+
+        switch ($status_type) {
+            case 'delivered':
+                $subject = sprintf(__('Vaša porudžbina #%s je isporučena', 'd-express-woo'), $order->get_order_number());
+                $template = 'shipment-delivered.php';
+                break;
+            case 'failed':
+                $subject = sprintf(__('Problem sa isporukom porudžbine #%s', 'd-express-woo'), $order->get_order_number());
+                $template = 'shipment-failed.php';
+                break;
+            case 'attempted':
+                $subject = sprintf(__('Pokušaj isporuke porudžbine #%s', 'd-express-woo'), $order->get_order_number());
+                $template = 'shipment-attempted.php';
+                break;
+            default:
+                $subject = sprintf(__('Ažuriranje statusa pošiljke za porudžbinu #%s', 'd-express-woo'), $order->get_order_number());
+                $template = 'shipment-status-change.php';
+        }
+
+        // Priprema email-a
+        ob_start();
+
+        // Provera da li šablon postoji, ako ne koristi default
+        $template_path = DEXPRESS_WOO_PLUGIN_DIR . 'templates/emails/' . $template;
+        if (file_exists($template_path)) {
+            include $template_path;
+        } else {
+            // Ako specifični šablon ne postoji, koristi generički
+            include DEXPRESS_WOO_PLUGIN_DIR . 'templates/emails/shipment-status-change.php';
+        }
+
+        $email_content = ob_get_clean();
+
+        // Pošalji email
+        $headers = "Content-Type: text/html\r\n";
+        $mailer->send($recipient, $subject, $email_content, $headers);
+
+        dexpress_log('Email o statusu pošiljke poslat na: ' . $recipient . ' (tip: ' . $status_type . ')', 'debug');
     }
 }
 

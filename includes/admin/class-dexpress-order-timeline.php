@@ -87,21 +87,26 @@ class D_Express_Order_Timeline
             return;
         }
 
+        // Dodajemo komentare za debugging
+        error_log('D Express Timeline assets loading for screen: ' . $screen->id . ', hook: ' . $hook);
+
         wp_enqueue_style(
             'dexpress-timeline-css',
             DEXPRESS_WOO_PLUGIN_URL . 'assets/css/dexpress-admin.css',
             array('woocommerce_admin_styles'),
-            DEXPRESS_WOO_VERSION
+            DEXPRESS_WOO_VERSION . '.' . time() // Dodajemo timestamp za eliminisanje keširanje
         );
 
-        wp_enqueue_script(
+        // Registrujemo i dodajemo naš JavaScript fajl
+        wp_register_script(
             'dexpress-timeline-js',
             DEXPRESS_WOO_PLUGIN_URL . 'assets/js/dexpress-timeline.js',
             array('jquery'),
-            DEXPRESS_WOO_VERSION,
+            DEXPRESS_WOO_VERSION . '.' . time(), // Dodajemo timestamp za eliminisanje keširanje
             true
         );
 
+        // Lokalizujemo skriptu sa potrebnim podatcima
         wp_localize_script('dexpress-timeline-js', 'dexpressTimelineL10n', array(
             'ajaxUrl' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('dexpress-refresh-status'),
@@ -110,6 +115,24 @@ class D_Express_Order_Timeline
             'errorMessage' => __('Došlo je do greške prilikom osvežavanja statusa.', 'd-express-woo'),
             'successMessage' => __('Status pošiljke je uspešno ažuriran.', 'd-express-woo')
         ));
+
+        // Učitavamo skriptu
+        wp_enqueue_script('dexpress-timeline-js');
+
+        // Dodajemo inline stilove
+        wp_add_inline_style('dexpress-timeline-css', '
+            .dashicons.rotating {
+                animation: dashicons-spin 1s infinite linear;
+            }
+            @keyframes dashicons-spin {
+                0% {
+                    transform: rotate(0deg);
+                }
+                100% {
+                    transform: rotate(360deg);
+                }
+            }
+        ');
     }
 
     /**
@@ -441,39 +464,194 @@ class D_Express_Order_Timeline
         </div>
 <?php
     }
+    /**
+     * Simulacija statusa za test mode
+     * 
+     * @param int $shipment_id ID pošiljke
+     * @return bool True ako je simulacija uspešna
+     */
+    public function simulate_test_mode_statuses($shipment_id)
+    {
+        global $wpdb;
+
+        $shipment = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}dexpress_shipments WHERE id = %d",
+            $shipment_id
+        ));
+
+        if (!$shipment || !$shipment->is_test) {
+            return false;
+        }
+
+        $created_time = strtotime($shipment->created_at);
+        $current_time = time();
+        $elapsed_hours = ($current_time - $created_time) / 3600;
+        $statuses_added = false;
+
+        // Simuliramo progresivne statuse na osnovu proteklog vremena
+        if ($elapsed_hours > 2 && !$this->status_exists($shipment->shipment_id, '0')) {
+            // Čeka na preuzimanje - 2h nakon kreiranja
+            $this->add_simulated_status($shipment, '0', date('Y-m-d H:i:s', $created_time + 7200));
+            $statuses_added = true;
+        }
+
+        if ($elapsed_hours > 8 && !$this->status_exists($shipment->shipment_id, '3')) {
+            // Pošiljka preuzeta - 8h nakon kreiranja
+            $this->add_simulated_status($shipment, '3', date('Y-m-d H:i:s', $created_time + 28800));
+            $statuses_added = true;
+        }
+
+        if ($elapsed_hours > 24 && !$this->status_exists($shipment->shipment_id, '4')) {
+            // Zadužena za isporuku - 24h nakon kreiranja
+            $this->add_simulated_status($shipment, '4', date('Y-m-d H:i:s', $created_time + 86400));
+            $statuses_added = true;
+        }
+
+        if ($elapsed_hours > 48 && !$this->status_exists($shipment->shipment_id, '1')) {
+            // Isporučena - 48h nakon kreiranja
+            $this->add_simulated_status($shipment, '1', date('Y-m-d H:i:s', $created_time + 172800));
+            $statuses_added = true;
+        }
+
+        return $statuses_added;
+    }
 
     /**
+     * Provera da li postoji određeni status
+     * 
+     * @param string $shipment_code Kod pošiljke
+     * @param string $status_id ID statusa
+     * @return bool True ako status postoji
+     */
+    private function status_exists($shipment_code, $status_id)
+    {
+        global $wpdb;
+
+        $count = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$wpdb->prefix}dexpress_statuses 
+        WHERE shipment_code = %s AND status_id = %s",
+            $shipment_code,
+            $status_id
+        ));
+
+        return ($count > 0);
+    }
+
+    /**
+     * Dodavanje simuliranog statusa u bazu
+     * 
+     * @param object $shipment Podaci o pošiljci
+     * @param string $status_id ID statusa
+     * @param string $status_date Datum statusa
+     */
+    private function add_simulated_status($shipment, $status_id, $status_date)
+    {
+        global $wpdb;
+
+        $status_data = array(
+            'notification_id' => 'SIM' . time() . rand(1000, 9999),
+            'shipment_code' => $shipment->shipment_id,
+            'reference_id' => $shipment->reference_id,
+            'status_id' => $status_id,
+            'status_date' => $status_date,
+            'raw_data' => json_encode(array(
+                'simulated' => true,
+                'shipment_id' => $shipment->shipment_id,
+                'status_id' => $status_id
+            )),
+            'is_processed' => 1,
+            'created_at' => current_time('mysql')
+        );
+
+        $wpdb->insert($wpdb->prefix . 'dexpress_statuses', $status_data);
+        dexpress_log('Simulirani status dodat: ' . $status_id . ' za pošiljku ' . $shipment->shipment_id, 'debug');
+
+        // Ako je to najnoviji status (po statusDate), ažuriraj i pošiljku
+        $wpdb->update(
+            $wpdb->prefix . 'dexpress_shipments',
+            array(
+                'status_code' => $status_id,
+                'status_description' => dexpress_get_status_name($status_id),
+                'updated_at' => current_time('mysql')
+            ),
+            array('id' => $shipment->id)
+        );
+
+        dexpress_log('Pošiljka ažurirana sa statusom: ' . $status_id, 'debug');
+    }
+    /**
      * AJAX handler za osvežavanje statusa pošiljke.
-     *
-     * @return void
      */
     public function ajax_refresh_status()
     {
         // Provera nonce-a
         if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'dexpress-refresh-status')) {
             wp_send_json_error(array('message' => __('Sigurnosna provera nije uspela.', 'd-express-woo')));
+            return;
         }
 
         // Provera dozvola
         if (!current_user_can('manage_woocommerce')) {
             wp_send_json_error(array('message' => __('Nemate dozvolu za ovu akciju.', 'd-express-woo')));
+            return;
         }
 
         // Provera ID-a pošiljke
         if (!isset($_POST['shipment_id']) || empty($_POST['shipment_id'])) {
             wp_send_json_error(array('message' => __('ID pošiljke je obavezan.', 'd-express-woo')));
+            return;
         }
 
         $shipment_id = intval($_POST['shipment_id']);
+        dexpress_log('Pokrenuto osvežavanje statusa za pošiljku ID: ' . $shipment_id, 'debug');
 
-        // Kreiranje instance shipment servisa i sinhronizacija statusa
-        $shipment_service = new D_Express_Shipment_Service();
-        $result = $shipment_service->sync_shipment_status($shipment_id);
+        try {
+            global $wpdb;
+            $shipment = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM {$wpdb->prefix}dexpress_shipments WHERE id = %d",
+                $shipment_id
+            ));
 
-        if (is_wp_error($result)) {
-            wp_send_json_error(array('message' => $result->get_error_message()));
-        } else {
-            wp_send_json_success(array('message' => __('Status pošiljke je uspešno ažuriran.', 'd-express-woo')));
+            if (!$shipment) {
+                wp_send_json_error(array('message' => __('Pošiljka nije pronađena.', 'd-express-woo')));
+                return;
+            }
+
+            $result = false;
+
+            // U test režimu, simuliraj statuse
+            if ($shipment->is_test) {
+                dexpress_log('Pokrenuta simulacija statusa za test pošiljku ID: ' . $shipment_id, 'debug');
+                $result = $this->simulate_test_mode_statuses($shipment_id);
+
+                if ($result) {
+                    dexpress_log('Simulacija statusa uspešna za pošiljku ID: ' . $shipment_id, 'debug');
+                    wp_send_json_success(array('message' => __('Status pošiljke je uspešno ažuriran (test režim).', 'd-express-woo')));
+                } else {
+                    dexpress_log('Nema novih simuliranih statusa za pošiljku ID: ' . $shipment_id, 'debug');
+                    wp_send_json_success(array('message' => __('Pošiljka je već u najnovijem statusu (test režim).', 'd-express-woo')));
+                }
+                return;
+            }
+
+            // U produkcijskom režimu, pokušaj sinhronizaciju
+            require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/services/class-dexpress-shipment-service.php';
+            $shipment_service = new D_Express_Shipment_Service();
+            $result = $shipment_service->sync_shipment_status($shipment_id);
+
+            if (is_wp_error($result)) {
+                dexpress_log('Greška pri sinhronizaciji statusa: ' . $result->get_error_message(), 'error');
+                wp_send_json_error(array('message' => $result->get_error_message()));
+            } else {
+                dexpress_log('Uspešna sinhronizacija statusa za pošiljku ID: ' . $shipment_id, 'debug');
+                wp_send_json_success(array('message' => __('Status pošiljke je uspešno ažuriran.', 'd-express-woo')));
+            }
+        } catch (Exception $e) {
+            dexpress_log('Izuzetak pri ažuriranju statusa: ' . $e->getMessage(), 'error');
+            wp_send_json_error(array(
+                'message' => __('Došlo je do greške prilikom ažuriranja statusa.', 'd-express-woo'),
+                'error' => $e->getMessage()
+            ));
         }
     }
 }

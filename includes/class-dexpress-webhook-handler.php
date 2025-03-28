@@ -18,16 +18,29 @@ class D_Express_Webhook_Handler
      */
     public function check_permission(WP_REST_Request $request)
     {
+        // Logging za debug
+        dexpress_log('Webhook zahtev primljen: ' . json_encode($request->get_params()), 'debug');
+
         $data = $request->get_json_params();
 
+        // Ako nema JSON body-ja, proveri URL parametre (za PUT metodu)
+        if (empty($data)) {
+            $data = $request->get_params();
+        }
+
+        dexpress_log('Webhook podaci: ' . json_encode($data), 'debug');
+
+        // Validacija passcode-a (webhook secret)
         if (!isset($data['cc']) || $data['cc'] !== get_option('dexpress_webhook_secret')) {
+            dexpress_log('Webhook: Nevažeći webhook secret (cc): ' . ($data['cc'] ?? 'nije postavljen'), 'error');
             return new WP_Error('invalid_request', 'Invalid webhook secret', ['status' => 403]);
         }
 
-        // Osnovna provera obaveznih parametara
+        // Validacija obaveznih parametara
         $required_params = ['nID', 'code', 'rID', 'sID', 'dt'];
         foreach ($required_params as $param) {
             if (!isset($data[$param])) {
+                dexpress_log('Webhook: Nedostaje obavezan parametar: ' . $param, 'error');
                 return new WP_Error('invalid_request', "Missing parameter: {$param}", ['status' => 400]);
             }
         }
@@ -42,8 +55,6 @@ class D_Express_Webhook_Handler
      */
     private function get_allowed_ips()
     {
-        // Implementiraj opciju za čuvanje i definisanje dozvoljenih IP adresa
-        // Za sad koristimo praznu listu što znači da su sve IP adrese dozvoljene
         $allowed_ips = get_option('dexpress_allowed_webhook_ips', '');
 
         if (empty($allowed_ips)) {
@@ -60,7 +71,6 @@ class D_Express_Webhook_Handler
      */
     private function get_client_ip()
     {
-        // Dobijanje stvarne IP adrese klijenta i iza proxy-ja
         if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
             $ip_array = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
             $ip = trim($ip_array[0]);
@@ -86,45 +96,50 @@ class D_Express_Webhook_Handler
         // Validacija zahteva 
         $permission_check = $this->check_permission($request);
         if (is_wp_error($permission_check)) {
+            dexpress_log('Webhook: Neuspela provera dozvole: ' . $permission_check->get_error_message(), 'error');
             return new WP_REST_Response('ERROR: ' . $permission_check->get_error_message(), 403);
         }
 
-        // Logovanje dolazećih podataka (samo u test modu)
-        if (dexpress_is_test_mode()) {
-            $this->log_webhook_request($request);
-        }
+        // Log dolazećih podataka
+        dexpress_log('Webhook: Zahtev prošao validaciju, obrađujem...', 'debug');
 
         // Dobijanje podataka iz zahteva
         $data = $request->get_json_params();
-        $status_id = $data['sID'];
 
-        // Proverite da li je status validan
+        // Ako nema JSON body-ja, koristi URL parametre (za PUT metodu)
+        if (empty($data)) {
+            $data = $request->get_params();
+        }
+
+        // Parametri
+        $notification_id = sanitize_text_field($data['nID']);
+        $shipment_code = sanitize_text_field($data['code']);
+        $reference_id = sanitize_text_field($data['rID']);
+        $status_id = sanitize_text_field($data['sID']);
+        $status_date = $this->format_date($data['dt']);
+
+        // Provera da li status postoji u šifarniku
         $status_exists = $wpdb->get_var($wpdb->prepare(
-            "SELECT id FROM {$wpdb->prefix}dexpress_statuses_index WHERE id = %s",
+            "SELECT COUNT(*) FROM {$wpdb->prefix}dexpress_statuses_index WHERE id = %s",
             $status_id
         ));
 
         if (!$status_exists) {
-            dexpress_log('Webhook: Nepoznat status ID: ' . $status_id, 'warning');
-        }
-        // Provera da li su svi potrebni parametri prisutni
-        if (
-            !isset($data['cc']) || !isset($data['nID']) || !isset($data['code']) ||
-            !isset($data['rID']) || !isset($data['sID']) || !isset($data['dt'])
-        ) {
-            dexpress_log('Webhook: Nedostaju obavezni parametri', 'error');
-            return new WP_REST_Response('ERROR: Invalid data structure', 400);
-        }
-
-        // Validacija tipova podataka
-        if (!is_string($data['nID']) || !is_string($data['code']) || !is_string($data['rID'])) {
-            dexpress_log('Webhook: Neispravni tipovi podataka', 'error');
-            return new WP_REST_Response('ERROR: Invalid data types', 400);
+            dexpress_log('Webhook: Nepoznat status ID: ' . $status_id . ', dodajem ga u bazu...', 'warning');
+            // Dodaj status u šifarnik sa generičkim imenom
+            $wpdb->insert(
+                $wpdb->prefix . 'dexpress_statuses_index',
+                array(
+                    'id' => $status_id,
+                    'name' => 'Status ID ' . $status_id,
+                    'last_updated' => current_time('mysql')
+                ),
+                array('%s', '%s', '%s')
+            );
         }
 
         // Provera da li već imamo ovaj nID (duplikat)
         $table_name = $wpdb->prefix . 'dexpress_statuses';
-        $notification_id = $wpdb->_real_escape($data['nID']);
 
         $existing_notification = $wpdb->get_var($wpdb->prepare(
             "SELECT id FROM $table_name WHERE notification_id = %s",
@@ -133,19 +148,17 @@ class D_Express_Webhook_Handler
 
         if ($existing_notification) {
             // Ako je duplikat, vraćamo OK (prema specifikaciji API-ja)
-            dexpress_log('Webhook: Duplikat notifikacije ' . $notification_id, 'info');
+            dexpress_log('Webhook: Duplikat notifikacije ' . $notification_id . ', vraćam OK', 'info');
             return new WP_REST_Response('OK', 200);
         }
 
         try {
             // Ubacivanje u bazu podataka
-            $status_date = $this->format_date($data['dt']);
-
             $status_data = [
                 'notification_id' => $notification_id,
-                'shipment_code' => $wpdb->_real_escape($data['code']),
-                'reference_id' => $wpdb->_real_escape($data['rID']),
-                'status_id' => $wpdb->_real_escape($data['sID']),
+                'shipment_code' => $shipment_code,
+                'reference_id' => $reference_id,
+                'status_id' => $status_id,
                 'status_date' => $status_date,
                 'raw_data' => json_encode($data),
                 'is_processed' => 0,
@@ -168,7 +181,7 @@ class D_Express_Webhook_Handler
             );
 
             if ($inserted === false) {
-                dexpress_log('Greška pri ubacivanju webhook podataka u bazu: ' . $wpdb->last_error, 'error');
+                dexpress_log('Webhook: Greška pri ubacivanju podataka u bazu: ' . $wpdb->last_error, 'error');
                 return new WP_REST_Response('ERROR: Database error', 500);
             }
 
@@ -180,7 +193,7 @@ class D_Express_Webhook_Handler
 
             return new WP_REST_Response('OK', 200);
         } catch (Exception $e) {
-            dexpress_log('Exception u webhook handleru: ' . $e->getMessage(), 'error');
+            dexpress_log('Webhook: Exception u webhook handleru: ' . $e->getMessage(), 'error');
             return new WP_REST_Response('ERROR: ' . $e->getMessage(), 500);
         }
     }
@@ -188,8 +201,8 @@ class D_Express_Webhook_Handler
     /**
      * Formatiranje datuma iz D Express formata u MySQL format
      * 
-     * @param string $date_string Datum u D Express formatu
-     * @return string Datum u MySQL formatu
+     * @param string $date_string Datum u D Express formatu (yyyyMMddHHmmss)
+     * @return string Datum u MySQL formatu (Y-m-d H:i:s)
      */
     private function format_date($date_string)
     {

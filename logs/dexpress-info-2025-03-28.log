@@ -1,0 +1,199 @@
+[2025-03-28 11:59:49] [API DEBUG] Inicijalna vrednost telefona iz WC: +381603995506
+[2025-03-28 11:59:49] [API DEBUG] Koristi se sačuvani API format telefona: 381603995506
+[2025-03-28 11:59:49] [API DEBUG] Finalni RCPhone za API: 381603995506
+[2025-03-28 11:59:49] [SHIPPING DEBUG] Telefon u API zahtevu: 381603995506
+[2025-03-28 11:59:49] Kreiranje pošiljke. Podaci: Array
+(
+    [CClientID] => UK16967
+    [CName] => s7CodeDesign
+    [CAddress] => Bulevar Cara Lazara
+    [CAddressNum] => 106
+    [CTownID] => 802824
+    [CCName] => Ilija Velemirov
+    [CCPhone] => 381603995503
+    [PuClientID] => UK16967
+    [PuName] => s7CodeDesign
+    [PuAddress] => Bulevar Cara Lazara
+    [PuAddressNum] => 106
+    [PuTownID] => 802824
+    [PuCName] => Ilija Velemirov
+    [PuCPhone] => 381603995503
+    [RName] => Ilija Velemirov
+    [RAddress] => Grčića Milenka
+    [RAddressNum] => 5
+    [RAddressDesc] => Ispred Zgrade
+    [RTownID] => 740527
+    [RCName] => Ilija Velemirov
+    [RCPhone] => 381603995506
+    [Note] => 
+    [DlTypeID] => 2
+    [PaymentBy] => 1
+    [PaymentType] => 2
+    [Value] => 100600
+    [Content] => Roba iz web prodavnice
+    [Mass] => 11500
+    [ReferenceID] => ORDER-809-1743163189
+    [ReturnDoc] => 0
+    [BuyOut] => 100600
+    [BuyOutFor] => 0
+    [BuyOutAccount] => 170-0010364556000-77
+    [SelfDropOff] => 0
+    [PackageList] => Array
+        (
+            [0] => Array
+                (
+                    [Code] => TT0000000004
+                    [Mass] => 11500
+                    [DimX] => 400
+                    [DimY] => 470
+                    [DimZ] => 430
+                )
+
+        )
+
+)
+
+[2025-03-28 11:59:49] [PAYMENT] Vrednost dexpress_payment_type iz opcija: 2
+[2025-03-28 11:59:49] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/addshipment, Metod: POST, Podaci: {
+    "CClientID": "UK16967",
+    "CName": "s7CodeDesign",
+    "CAddress": "Bulevar Cara Lazara",
+    "CAddressNum": "106",
+    "CTownID": 802824,
+    "CCName": "Ilija Velemirov",
+    "CCPhone": "381603995503",
+    "PuClientID": "UK16967",
+    "PuName": "s7CodeDesign",
+    "PuAddress": "Bulevar Cara Lazara",
+    "PuAddressNum": "106",
+    "PuTownID": 802824,
+    "PuCName": "Ilija Velemirov",
+    "PuCPhone": "381603995503",
+    "RName": "Ilija Velemirov",
+    "RAddress": "Gr\u010di\u0107a Milenka",
+    "RAddressNum": "5",
+    "RAddressDesc": "Ispred Zgrade",
+    "RTownID": 740527,
+    "RCName": "Ilija Velemirov",
+    "RCPhone": "381603995506",
+    "Note": "",
+    "DlTypeID": 2,
+    "PaymentBy": 1,
+    "PaymentType": 2,
+    "Value": 100600,
+    "Content": "Roba iz web prodavnice",
+    "Mass": 11500,
+    "ReferenceID": "ORDER-809-1743163189",
+    "ReturnDoc": 0,
+    "BuyOut": 100600,
+    "BuyOutFor": 0,
+    "BuyOutAccount": "170-0010364556000-77",
+    "SelfDropOff": 0,
+    "PackageList": [
+        {
+            "Code": "TT0000000004",
+            "Mass": 11500,
+            "DimX": 400,
+            "DimY": 470,
+            "DimZ": 430
+        }
+    ]
+}
+[2025-03-28 11:59:49] API Odgovor (kod 200)
+[2025-03-28 12:01:13] Podešavanja su ažurirana od strane korisnika ID: 1
+[2025-03-28 12:01:58] [API DEBUG] Inicijalna vrednost telefona iz WC: +381603995506
+[2025-03-28 12:01:58] [API DEBUG] Koristi se sačuvani API format telefona: 381603995506
+[2025-03-28 12:01:58] [API DEBUG] Finalni RCPhone za API: 381603995506
+[2025-03-28 12:01:58] [SHIPPING DEBUG] Telefon u API zahtevu: 381603995506
+[2025-03-28 12:01:58] Kreiranje pošiljke. Podaci: Array
+(
+    [CClientID] => UK16967
+    [CName] => s7CodeDesign
+    [CAddress] => Bulevar Cara Lazara
+    [CAddressNum] => 106
+    [CTownID] => 802824
+    [CCName] => Ilija Velemirov
+    [CCPhone] => 381603995503
+    [PuClientID] => UK16967
+    [PuName] => s7CodeDesign
+    [PuAddress] => Bulevar Cara Lazara
+    [PuAddressNum] => 106
+    [PuTownID] => 802824
+    [PuCName] => Ilija Velemirov
+    [PuCPhone] => 381603995503
+    [RName] => Ilija Velemirov
+    [RAddress] => Grada Piteštija
+    [RAddressNum] => 12
+    [RAddressDesc] => 1
+    [RTownID] => 718980
+    [RCName] => Ilija Velemirov
+    [RCPhone] => 381603995506
+    [Note] => 
+    [DlTypeID] => 2
+    [PaymentBy] => 1
+    [PaymentType] => 2
+    [Value] => 51800
+    [Content] => Roba iz web prodavnice
+    [Mass] => 100
+    [ReferenceID] => ORDER-810-1743163318
+    [ReturnDoc] => 0
+    [BuyOut] => 51800
+    [BuyOutFor] => 0
+    [BuyOutAccount] => 170-0010364556000-77
+    [SelfDropOff] => 0
+    [PackageList] => Array
+        (
+            [0] => Array
+                (
+                    [Code] => TT0000000005
+                    [Mass] => 100
+                )
+
+        )
+
+)
+
+[2025-03-28 12:01:58] [PAYMENT] Vrednost dexpress_payment_type iz opcija: 2
+[2025-03-28 12:01:58] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/addshipment, Metod: POST, Podaci: {
+    "CClientID": "UK16967",
+    "CName": "s7CodeDesign",
+    "CAddress": "Bulevar Cara Lazara",
+    "CAddressNum": "106",
+    "CTownID": 802824,
+    "CCName": "Ilija Velemirov",
+    "CCPhone": "381603995503",
+    "PuClientID": "UK16967",
+    "PuName": "s7CodeDesign",
+    "PuAddress": "Bulevar Cara Lazara",
+    "PuAddressNum": "106",
+    "PuTownID": 802824,
+    "PuCName": "Ilija Velemirov",
+    "PuCPhone": "381603995503",
+    "RName": "Ilija Velemirov",
+    "RAddress": "Grada Pite\u0161tija",
+    "RAddressNum": "12",
+    "RAddressDesc": "1",
+    "RTownID": 718980,
+    "RCName": "Ilija Velemirov",
+    "RCPhone": "381603995506",
+    "Note": "",
+    "DlTypeID": 2,
+    "PaymentBy": 1,
+    "PaymentType": 2,
+    "Value": 51800,
+    "Content": "Roba iz web prodavnice",
+    "Mass": 100,
+    "ReferenceID": "ORDER-810-1743163318",
+    "ReturnDoc": 0,
+    "BuyOut": 51800,
+    "BuyOutFor": 0,
+    "BuyOutAccount": "170-0010364556000-77",
+    "SelfDropOff": 0,
+    "PackageList": [
+        {
+            "Code": "TT0000000005",
+            "Mass": 100
+        }
+    ]
+}
+[2025-03-28 12:01:59] API Odgovor (kod 200)
