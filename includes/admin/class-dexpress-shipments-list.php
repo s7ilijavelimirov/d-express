@@ -246,6 +246,29 @@ class D_Express_Shipments_List extends WP_List_Table
             $item['shipment_id'],
             $this->row_actions($actions)
         );
+        $html = '<div class="dexpress-mobile-view" style="display:none;">
+        <strong>' . __('Tracking broj:', 'd-express-woo') . '</strong> ' . $this->column_tracking_number($item) . '<br>
+        <strong>' . __('Status:', 'd-express-woo') . '</strong> ' . $this->column_status_code($item) . '<br>
+        <strong>' . __('Datum:', 'd-express-woo') . '</strong> ' . $this->column_created_at($item) . '
+    </div>';
+
+        // Dodaj responsive CSS
+        add_action('admin_footer', function () {
+            echo '<style>
+            @media screen and (max-width: 782px) {
+                .dexpress-mobile-view { display: block !important; margin-top: 10px; padding: 8px; background: #f9f9f9; border-radius: 3px; }
+                .column-tracking_number, .column-status_code, .column-created_at { display: none !important; }
+            }
+        </style>';
+        });
+
+        return sprintf(
+            '<strong><a href="%s">%s</a></strong> %s %s',
+            admin_url(sprintf('admin.php?page=dexpress-view-shipment&id=%s', $item['id'])),
+            $item['shipment_id'],
+            $this->row_actions($actions),
+            $html
+        );
     }
 
     /**

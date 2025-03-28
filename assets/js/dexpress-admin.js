@@ -1,43 +1,30 @@
 jQuery(document).ready(function ($) {
-    // Pratimo da li je forma promenjena
-    var formChanged = false;
-
-    // Pratimo promene u formi
-    $('.dexpress-settings-form :input').on('change input', function () {
-        formChanged = true;
-    });
-
-    // Pratimo klik na tab linkove
-    $('.nav-tab').on('click', function (e) {
-        if (formChanged) {
-            // Sprečavamo prelazak na tab
-            e.preventDefault();
-
-            // Prikazujemo confirm dijalog sa lokalizovanim tekstom
-            if (confirm(dexpressL10n.save_alert)) {
-                // Ako korisnik potvrdi, nastavljamo sa promenom taba
-                formChanged = false;
-                window.location.href = $(this).attr('href');
-            }
-        }
-    });
-
-    // Resetujemo flag kada se forma šalje
-    $('.dexpress-settings-form').on('submit', function () {
-        formChanged = false;
-    });
-
+    // Dodaj u assets/js/dexpress-admin.js
     $('.dexpress-tooltip').each(function () {
         var $icon = $(this);
         var $label = $icon.closest('tr').find('th label');
         var labelText = $label.length ? $label.text().trim() : 'Informacija';
+
+        // Poboljšaj izgled ikonice
+        $icon.css({
+            'color': '#0073aa',
+            'cursor': 'pointer',
+            'font-size': '18px',
+            'vertical-align': 'middle',
+            'margin-left': '5px',
+            'transition': 'transform 0.2s ease-in-out'
+        }).hover(
+            function () { $(this).css('transform', 'scale(1.2)'); },
+            function () { $(this).css('transform', 'scale(1)'); }
+        );
 
         $icon.pointer({
             content: '<h3>' + labelText + '</h3><p>' + $icon.data('wp-tooltip') + '</p>',
             position: {
                 edge: 'left',
                 align: 'center'
-            }
+            },
+            pointerClass: 'wp-pointer dexpress-custom-pointer'
         });
 
         $icon.on('mouseenter', function () {
@@ -45,23 +32,5 @@ jQuery(document).ready(function ($) {
         }).on('mouseleave', function () {
             $(this).pointer('close');
         });
-    });
-     $('.wp-hide-pw').on('click', function() {
-        var $this = $(this);
-        var $passwordField = $this.prev('input');
-        
-        if ($passwordField.attr('type') === 'password') {
-            $passwordField.attr('type', 'text');
-            $this.find('.dashicons')
-                .removeClass('dashicons-visibility')
-                .addClass('dashicons-hidden');
-            $this.attr('aria-label', 'Sakrij lozinku');
-        } else {
-            $passwordField.attr('type', 'password');
-            $this.find('.dashicons')
-                .removeClass('dashicons-hidden')
-                .addClass('dashicons-visibility');
-            $this.attr('aria-label', 'Prikaži lozinku');
-        }
     });
 });

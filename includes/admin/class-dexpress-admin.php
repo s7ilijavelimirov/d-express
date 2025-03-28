@@ -1136,6 +1136,8 @@ class D_Express_Admin
 
             echo '</div>';
         }
+        // TIMELINE
+        do_action('dexpress_after_order_metabox', $order);
     }
 
 

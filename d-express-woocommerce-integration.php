@@ -77,6 +77,9 @@ class D_Express_WooCommerce
         // Validator
         require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/class-dexpress-validator.php';
 
+        // Timeline
+        require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/admin/class-dexpress-order-timeline.php';
+
         // Admin klase
         if (is_admin()) {
             require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/admin/class-dexpress-admin.php';
