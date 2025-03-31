@@ -266,7 +266,12 @@ class D_Express_Admin
         // HTML za stranicu podešavanja
 ?>
         <div class="wrap">
-            <h1><?php echo __('D Express Podešavanja', 'd-express-woo'); ?></h1>
+            <h1 class="dexpress-settings-title">
+                <span><?php echo __('D Express Podešavanja', 'd-express-woo'); ?></span>
+                <img src="<?php echo plugin_dir_url(__FILE__) . '../../assets/images/Dexpress-logo.jpg'; ?>" alt="Logo" height="50" class="dexpress-settings-logo">
+            </h1>
+
+            <hr><br>
 
             <?php if (isset($_GET['settings-updated']) && $_GET['settings-updated'] === 'true'): ?>
                 <div class="notice notice-success is-dismissible">
@@ -347,7 +352,9 @@ class D_Express_Admin
                                     <input type="text" id="dexpress_api_username" name="dexpress_api_username"
                                         value="<?php echo esc_attr($api_username); ?>" class="regular-text">
                                     <p class="description"><?php _e('Korisničko ime dobijeno od D Express-a.', 'd-express-woo'); ?>
-                                        <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Unesite korisničko ime koje ste dobili od D Express-a za pristup njihovom API-ju. Ovo je jedinstveni identifikator u formatu UUID (npr. e778530c-fee6-492a-b8be-4da0fd851ba8). D Express vam dodeljuje posebne kredencijale za test i produkciono okruženje.', 'd-express-woo'); ?>"></span>
+                                        <span class="dexpress-tooltip dashicons dashicons-info"
+                                            data-wp-tooltip="<?php _e('Unesite korisničko ime koje ste dobili od D Express-a za pristup njihovom API-ju. Ovo je jedinstveni identifikator u formatu UUID (npr. XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXX).<br><br> D Express vam dodeljuje posebne kredencijale za test i produkciono okruženje.', 'd-express-woo'); ?>">
+                                        </span>
                                     </p>
                                 </td>
                             </tr>
@@ -863,33 +870,6 @@ class D_Express_Admin
                 </div>
             </div>
         </div>
-
-        <!-- <script>
-            // Minimalni JavaScript za prebacivanje tabova bez reloada stranice
-            function switchTab(e, tabName) {
-                e.preventDefault();
-
-                // Sakrijemo sve tabove
-                document.querySelectorAll('.dexpress-tab').forEach(function(tab) {
-                    tab.classList.remove('active');
-                });
-
-                // Prikažemo izabrani tab
-                document.getElementById('tab-' + tabName).classList.add('active');
-
-                // Ažuriramo aktivne klase linkova
-                document.querySelectorAll('.dexpress-tab-link').forEach(function(link) {
-                    link.classList.remove('active');
-                });
-                e.target.classList.add('active');
-
-                // Postavimo vrednost hidden polja za aktivni tab
-                document.querySelector('input[name="active_tab"]').value = tabName;
-
-                // Ažuriramo URL u address baru bez reloada
-                window.history.pushState({}, '', '?page=dexpress-settings&tab=' + tabName);
-            }
-        </script> -->
         <?php
     }
     /**
@@ -1262,11 +1242,11 @@ class D_Express_Admin
     /**
      * Dodavanje akcija za narudžbine
      */
-    public function add_order_actions($actions)
-    {
-        $actions['dexpress_create_shipment'] = __('Kreiraj D Express pošiljku', 'd-express-woo');
-        return $actions;
-    }
+    // public function add_order_actions($actions)
+    // {
+    //     $actions['dexpress_create_shipment'] = __('Kreiraj D Express pošiljku', 'd-express-woo');
+    //     return $actions;
+    // }
 
     /**
      * Obrada akcije kreiranja pošiljke

@@ -922,7 +922,7 @@
     text-decoration: none;
     white-space: nowrap;
     border: 1px solid #c3c4c7;
-    border-bottom: none;
+    border-bottom: 1px solid #c3c4c7;
     border-top-left-radius: 3px;
     border-top-right-radius: 3px;
 }
@@ -935,7 +935,15 @@
 .dexpress-tab-link.active {
     background: #fff;
     color: #000;
-    border-bottom: 1px solid #fff;
+    border: 1px solid #2271b1;
+    border-bottom: none !important;
+    /* uklanja crticu kada je tab aktivan */
+    z-index: 2;
+    position: relative;
+}
+
+.dexpress-tab-link:focus {
+    box-shadow: none !important;
 }
 
 .dexpress-tab {
@@ -1108,10 +1116,6 @@
 /**
  * WP Pointer stilovi
  */
-.wp-pointer-content {
-    padding: 12px;
-}
-
 .wp-pointer-content h3 {
     background: #2271b1;
     border: 1px solid #2271b1;
@@ -1167,10 +1171,10 @@
 
 /* Sekcija sa tabovima */
 .dexpress-tabs {
-    margin-top: -1px;
+    margin-top: -2px;
     background: #fff;
-    border: 1px solid #c3c4c7;
-    border-top: none;
+    border: 1px solid #2271b1;
+    /* border-top: none; */
     border-radius: 0 0 3px 3px;
     padding: 20px;
 }
@@ -1267,19 +1271,8 @@
     }
 }
 
-/* Ikona za D Express u WooCommerce menu */
-#adminmenu li.woocommerce_page_dexpress-settings .wp-menu-image::before,
-#adminmenu li.woocommerce_page_dexpress-shipments .wp-menu-image::before,
-#adminmenu li.woocommerce_page_dexpress-diagnostics .wp-menu-image::before,
-#adminmenu li.woocommerce_page_dexpress-reports .wp-menu-image::before {
-    content: "\\f545";
-    /* WordPress Dashicons kod za kamion za dostavu */
-    font-family: dashicons;
-}
-
-/* Uvučeni stavke menija */
-#adminmenu li.woocommerce_page_dexpress-shipments .wp-menu-name,
-#adminmenu li.woocommerce_page_dexpress-diagnostics .wp-menu-name,
-#adminmenu li.woocommerce_page_dexpress-reports .wp-menu-name {
-    padding-left: 8px;
+.dexpress-settings-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }

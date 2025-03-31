@@ -444,7 +444,7 @@ function dexpress_shipments_list()
         <a href="<?php echo admin_url('admin.php?page=dexpress-sync-shipments'); ?>" class="page-title-action"><?php _e('Sinhronizuj statuse', 'd-express-woo'); ?></a>
 
         <!-- Dodajte ovo direktno dugme za štampanje -->
-        <!-- <button type="button" id="dexpress-bulk-print-top" class="page-title-action"><?php _e('Štampaj odabrane', 'd-express-woo'); ?></button> -->
+        <button type="button" id="dexpress-bulk-print-top" class="page-title-action"><?php _e('Štampaj odabrane', 'd-express-woo'); ?></button>
 
         <form method="post" id="dexpress-shipments-form">
             <input type="hidden" name="page" value="<?php echo $_REQUEST['page']; ?>" />
