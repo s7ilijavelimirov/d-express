@@ -109,6 +109,8 @@ class D_Express_WooCommerce
 
         // U d-express-woocommerce-integration.php dodati ovu liniju u includes funkciji:
         require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/woocommerce/class-dexpress-dispenser-shipping-method.php';
+
+        require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/admin/class-dexpress-diagnostics.php';
     }
 
     /**

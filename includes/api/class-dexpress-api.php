@@ -1157,7 +1157,24 @@ class D_Express_API
 
         return $grams;
     }
+    /**
+     * Test konekcije sa API-em
+     * 
+     * @return bool|WP_Error True ako je konekcija uspešna, WP_Error ako nije
+     */
+    public function test_connection()
+    {
+        // Pokušavamo da dobavimo statuse kao jednostavan test
+        $result = $this->get_statuses();
 
+        // Ako je rezultat array, konekcija je uspešna
+        if (is_array($result)) {
+            return true;
+        }
+
+        // Inače, vraćamo error
+        return $result;
+    }
     /**
      * Dobijanje iznosa otkupnine ako je plaćanje pouzećem
      */

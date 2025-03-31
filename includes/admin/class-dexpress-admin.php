@@ -80,40 +80,105 @@ class D_Express_Admin
      */
     public function add_admin_menu()
     {
+
         // Koristimo statičku promenljivu da sprečimo duplo dodavanje
         static $added = false;
         if ($added) {
             return;
         }
         $added = true;
+        $icon_url = DEXPRESS_WOO_PLUGIN_URL . 'assets/images/dexpress-icon.svg';
 
-        add_submenu_page(
-            'woocommerce',
-            __('D Express', 'd-express-woo'),
-            __('D Express', 'd-express-woo'),
+        // Dodajemo glavni meni sa SVG ikonicom
+        add_menu_page(
+            __('D Express Podešavanja', 'd-express-woo'),  // Naslov stranice
+            __('D Express', 'd-express-woo'),              // Tekst glavnog menija
             'manage_woocommerce',
-            'dexpress-settings',
+            'dexpress-settings',                           // Slug za glavni meni
+            array($this, 'render_settings_page'),
+            $icon_url,
+            56
+        );
+
+        // Dodajemo prvi podmeni koji vodi na istu stranicu kao glavni meni
+        // ali sa različitim tekstom
+        add_submenu_page(
+            'dexpress-settings',                           // Parent slug
+            __('D Express Podešavanja', 'd-express-woo'),  // Naslov stranice
+            __('Podešavanja', 'd-express-woo'),            // Tekst podmenija - biće "Podešavanja"
+            'manage_woocommerce',
+            'dexpress-settings',                           // Isti slug kao glavni meni
             array($this, 'render_settings_page')
         );
 
+        // Dodajemo podmenije direktno pod D Express glavni meni
+
+        // Dodajemo ostale podmenije
         add_submenu_page(
-            'woocommerce',
+            'dexpress-settings',                      // Parent slug je sada settings
             __('D Express Pošiljke', 'd-express-woo'),
-            __('D Express Pošiljke', 'd-express-woo'),
+            __('Pošiljke', 'd-express-woo'),
             'manage_woocommerce',
             'dexpress-shipments',
             array($this, 'render_shipments_page')
         );
-    }
 
+        add_submenu_page(
+            'dexpress-settings',                      // Parent slug je sada settings
+            __('D Express Dijagnostika', 'd-express-woo'),
+            __('Dijagnostika', 'd-express-woo'),
+            'manage_woocommerce',
+            'dexpress-diagnostics',
+            'dexpress_render_diagnostics_page'
+        );
+
+        // Izveštaji
+        if (class_exists('D_Express_Reports')) {
+            $reports = new D_Express_Reports();
+            if (method_exists($reports, 'render_reports_page')) {
+                add_submenu_page(
+                    'dexpress-settings',                  // Parent slug je sada settings
+                    __('D Express Izveštaji', 'd-express-woo'),
+                    __('Izveštaji', 'd-express-woo'),
+                    'manage_woocommerce',
+                    'dexpress-reports',
+                    array($reports, 'render_reports_page')
+                );
+            }
+        }
+    }
+    /**
+     * Renderuje glavnu dashboard stranicu za D Express
+     * Dodajte ovu metodu u D_Express_Admin klasu
+     */
+    public function render_dashboard_page()
+    {
+        // Redirekcija na podešavanja (možete promeniti na bilo koju drugu stranicu)
+        wp_redirect(admin_url('admin.php?page=dexpress-settings'));
+        exit;
+    }
     /**
      * Registracija admin stilova i skripti
      */
     public function enqueue_admin_assets($hook)
     {
+        $custom_css = "
+            #adminmenu .toplevel_page_dexpress-settings .wp-menu-image img {
+                padding: 7px 0px !important;
+                width: auto !important;
+                height: auto !important;
+                max-width: 20px !important;
+            }
+        ";
+
+        // Registrujemo i dodajemo inline CSS
+        wp_register_style('dexpress-admin-icon-style', false);
+        wp_enqueue_style('dexpress-admin-icon-style');
+        wp_add_inline_style('dexpress-admin-icon-style', $custom_css);
         // Učitavaj stilove i skripte samo na D Express stranicama
         if (
             strpos($hook, 'dexpress') !== false ||
+            $hook === 'toplevel_page_dexpress' ||  // Dodato za pristup 1
             (isset($_GET['page']) && strpos($_GET['page'], 'dexpress') !== false)
         ) {
             // Dodajemo WP Pointer skriptu i stilove
@@ -239,541 +304,592 @@ class D_Express_Admin
                 </div>
             <?php endif; ?>
 
-            <!-- Navigacija tabova -->
-            <h2 class="nav-tab-wrapper">
-                <?php foreach ($allowed_tabs as $tab): ?>
-                    <a href="<?php echo admin_url('admin.php?page=dexpress-settings&tab=' . $tab); ?>"
-                        class="nav-tab <?php echo $active_tab === $tab ? 'nav-tab-active' : ''; ?>">
-                        <?php
-                        $tab_titles = [
-                            'api' => __('API Podešavanja', 'd-express-woo'),
-                            'codes' => __('Kodovi pošiljki', 'd-express-woo'),
-                            'auto' => __('Automatsko kreiranje', 'd-express-woo'),
-                            'sender' => __('Podaci pošiljaoca', 'd-express-woo'),
-                            'shipment' => __('Podešavanja pošiljke', 'd-express-woo'),
-                            'webhook' => __('Webhook podešavanja', 'd-express-woo'),
-                            'uninstall' => __('Clean Uninstall', 'd-express-woo')
-                        ];
-                        echo esc_html($tab_titles[$tab]);
-                        ?>
-                    </a>
-                <?php endforeach; ?>
-            </h2>
-
-            <form method="post" action="<?php echo admin_url('admin.php?page=dexpress-settings&tab=' . $active_tab); ?>" class="dexpress-settings-form">
+            <!-- Forma za sva podešavanja -->
+            <form method="post" action="<?php echo admin_url('admin.php?page=dexpress-settings'); ?>" class="dexpress-settings-form">
                 <?php wp_nonce_field('dexpress_settings_nonce'); ?>
+                <input type="hidden" name="active_tab" value="<?php echo esc_attr($active_tab); ?>">
 
-                <!-- API Podešavanja -->
+                <!-- Navigacija tabova -->
+                <div class="dexpress-tab-links">
+                    <?php
+                    $tab_titles = [
+                        'api' => __('API Podešavanja', 'd-express-woo'),
+                        'codes' => __('Kodovi pošiljki', 'd-express-woo'),
+                        'auto' => __('Automatsko kreiranje', 'd-express-woo'),
+                        'sender' => __('Podaci pošiljaoca', 'd-express-woo'),
+                        'shipment' => __('Podešavanja pošiljke', 'd-express-woo'),
+                        'webhook' => __('Webhook podešavanja', 'd-express-woo'),
+                        'uninstall' => __('Clean Uninstall', 'd-express-woo')
+                    ];
 
-                <div class="dexpress-settings-section" style="display: <?php echo $active_tab === 'api' ? 'block' : 'none'; ?>">
-                    <h2><?php _e('API Podešavanja', 'd-express-woo'); ?></h2>
-
-                    <table class="form-table">
-                        <tr>
-                            <th scope="row">
-                                <label for="dexpress_api_username"><?php _e('API Korisničko ime', 'd-express-woo'); ?></label>
-                            </th>
-                            <td>
-                                <input type="text" id="dexpress_api_username" name="dexpress_api_username"
-                                    value="<?php echo esc_attr($api_username); ?>" class="regular-text">
-                                <p class="description"><?php _e('Korisničko ime dobijeno od D Express-a.', 'd-express-woo'); ?>
-                                    <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Unesite korisničko ime koje ste dobili od D Express-a za pristup njihovom API-ju. Ovo je jedinstveni identifikator u formatu UUID (npr. e778530c-fee6-492a-b8be-4da0fd851ba8). D Express vam dodeljuje posebne kredencijale za test i produkciono okruženje.', 'd-express-woo'); ?>"></span>
-                                </p>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th scope="row">
-                                <label for="dexpress_api_password"><?php _e('API Lozinka', 'd-express-woo'); ?></label>
-                            </th>
-                            <td>
-                                <div class="wp-pwd">
-                                    <input type="password" id="dexpress_api_password" name="dexpress_api_password"
-                                        value="<?php echo esc_attr($api_password); ?>" class="regular-text">
-                                    <button type="button" class="button button-secondary wp-hide-pw hide-if-no-js" data-toggle="0" aria-label="<?php esc_attr_e('Prikaži lozinku', 'd-express-woo'); ?>">
-                                        <span class="dashicons dashicons-visibility" aria-hidden="true"></span>
-                                    </button>
-                                </div>
-                                <p class="description"><?php _e('Lozinka dobijena od D Express-a.', 'd-express-woo'); ?>
-                                    <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Unesite lozinku koju ste dobili od D Express-a. Zajedno sa korisničkim imenom služi za Basic Authentication kod svih API poziva.', 'd-express-woo'); ?>"></span>
-                                </p>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th scope="row">
-                                <label for="dexpress_client_id"><?php _e('Client ID', 'd-express-woo'); ?></label>
-                            </th>
-                            <td>
-                                <input type="text" id="dexpress_client_id" name="dexpress_client_id"
-                                    value="<?php echo esc_attr($client_id); ?>" class="regular-text">
-                                <p class="description"><?php _e('Client ID u formatu UK12345.', 'd-express-woo'); ?>
-                                    <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Vaš jedinstveni identifikator u D Express sistemu u formatu UKXXXXX (npr. UK12345). Ovaj podatak je neophodan i koristi se u svakom API pozivu kao CClientID parametar. Ovaj ID predstavlja vašu kompaniju u D Express sistemu.', 'd-express-woo'); ?>"></span>
-                                </p>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th scope="row">
-                                <label for="dexpress_test_mode"><?php _e('Test režim', 'd-express-woo'); ?></label>
-                            </th>
-                            <td>
-                                <input type="checkbox" id="dexpress_test_mode" name="dexpress_test_mode"
-                                    value="yes" <?php checked($test_mode, 'yes'); ?>>
-                                <p class="description"><?php _e('Aktivirajte test režim tokom razvoja i testiranja.', 'd-express-woo'); ?>
-                                    <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Kada je aktiviran, plugin koristi test nalog za komunikaciju sa D Express API-jem. Pošiljke kreirane u test režimu neće biti fizički isporučene, ali će prolaziti kroz sve faze obrade u API-ju. Idealno za testiranje integracije pre produkcije.', 'd-express-woo'); ?>"></span>
-                                </p>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th scope="row">
-                                <label for="dexpress_enable_logging"><?php _e('Uključi logovanje', 'd-express-woo'); ?></label>
-                            </th>
-                            <td>
-                                <input type="checkbox" id="dexpress_enable_logging" name="dexpress_enable_logging"
-                                    value="yes" <?php checked($enable_logging, 'yes'); ?>>
-                                <p class="description"><?php _e('Aktivirajte logovanje API zahteva i odgovora.', 'd-express-woo'); ?>
-                                    <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Aktivira detaljan zapis (log) svih API komunikacija sa D Express servisom. Log fajlovi se čuvaju u logs/ direktorijumu i sadrže detalje o zahtevima, odgovorima i greškama. Korisno za debagiranje prilikom razvoja i rešavanje problema u produkciji.', 'd-express-woo'); ?>"></span>
-                                </p>
-                            </td>
-                        </tr>
-                    </table>
-                </div>
-                <!-- Podešavanja kodova pošiljki -->
-
-                <div class="dexpress-settings-section" style="display: <?php echo $active_tab === 'codes' ? 'block' : 'none'; ?>">
-                    <h2><?php _e('Kodovi pošiljki', 'd-express-woo'); ?></h2>
-
-                    <table class="form-table">
-                        <tr>
-                            <th scope="row">
-                                <label for="dexpress_code_prefix"><?php _e('Prefiks koda', 'd-express-woo'); ?></label>
-                            </th>
-                            <td>
-                                <input type="text" id="dexpress_code_prefix" name="dexpress_code_prefix"
-                                    value="<?php echo esc_attr($code_prefix); ?>" class="regular-text">
-                                <p class="description"><?php _e('Prefiks koda paketa (npr. TT).', 'd-express-woo'); ?>
-                                    <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Dvoslovni prefiks za kodove paketa koji vam je dodelio D Express (npr. \'TT\' za testiranje). Svaki partner dobija jedinstveni prefiks za produkciju kako bi se izbegle kolizije kodova paketa. Ovaj prefiks se koristi u PackageList.Code parametru.', 'd-express-woo'); ?>"></span>
-                                </p>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th scope="row">
-                                <label for="dexpress_code_range_start"><?php _e('Početak opsega', 'd-express-woo'); ?></label>
-                            </th>
-                            <td>
-                                <input type="number" id="dexpress_code_range_start" name="dexpress_code_range_start"
-                                    value="<?php echo esc_attr($code_range_start); ?>" class="small-text">
-                                <p class="description"><?php _e('Početni broj za kodove paketa.', 'd-express-woo'); ?>
-                                    <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Početni broj u dodeljenom opsegu kodova paketa (obično 1). U kombinaciji sa prefiksom i formatiranjem na 10 cifara formira kompletan kod paketa (npr. TT0000000001). D Express će vam dodeliti produkcioni opseg pre prelaska u produkciju.', 'd-express-woo'); ?>"></span>
-                                </p>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th scope="row">
-                                <label for="dexpress_code_range_end"><?php _e('Kraj opsega', 'd-express-woo'); ?></label>
-                            </th>
-                            <td>
-                                <input type="number" id="dexpress_code_range_end" name="dexpress_code_range_end"
-                                    value="<?php echo esc_attr($code_range_end); ?>" class="small-text">
-                                <p class="description"><?php _e('Krajnji broj za kodove paketa.', 'd-express-woo'); ?>
-                                    <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Krajnji broj u dodeljenom opsegu kodova paketa (npr. 99 za test). Kada brojač dostigne ovu vrednost, resetovaće se na početni broj. Za produkciju ćete dobiti veći opseg. Važno je pratiti korišćenje kako ne biste ponovili već korišćene kodove.', 'd-express-woo'); ?>"></span>
-                                </p>
-                            </td>
-                        </tr>
-                    </table>
-                </div>
-                <!-- Podešavanja automatske kreacije pošiljki -->
-
-                <div class="dexpress-settings-section" style="display: <?php echo $active_tab === 'auto' ? 'block' : 'none'; ?>">
-                    <h2><?php _e('Automatsko kreiranje pošiljki', 'd-express-woo'); ?></h2>
-
-                    <table class="form-table">
-                        <tr>
-                            <th scope="row">
-                                <label for="dexpress_validate_address"><?php _e('Validacija adrese', 'd-express-woo'); ?></label>
-                            </th>
-                            <td>
-                                <input type="checkbox" id="dexpress_validate_address" name="dexpress_validate_address"
-                                    value="yes" <?php checked(get_option('dexpress_validate_address', 'yes'), 'yes'); ?>>
-                                <p class="description"><?php _e('Proveri validnost adrese pre kreiranja pošiljke putem D Express API-ja', 'd-express-woo'); ?>
-                                    <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Proverava validnost adrese primaoca kroz D Express API pozivanjem checkaddress metode pre kreiranja pošiljke. Ovo osigurava da adresa primaoca postoji u D Express sistemu i sprečava greške pri unosu adrese koje bi mogle izazvati probleme prilikom dostave.', 'd-express-woo'); ?>"></span>
-                                </p>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th scope="row">
-                                <label for="dexpress_auto_create_shipment"><?php _e('Automatsko kreiranje', 'd-express-woo'); ?></label>
-                            </th>
-                            <td>
-                                <input type="checkbox" id="dexpress_auto_create_shipment" name="dexpress_auto_create_shipment"
-                                    value="yes" <?php checked($auto_create_shipment, 'yes'); ?>>
-                                <p class="description"><?php _e('Automatski kreiraj pošiljku kada narudžbina dobije određeni status.', 'd-express-woo'); ?>
-                                    <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Automatski kreira D Express pošiljku kada WooCommerce narudžbina pređe u odabrani status. Ovo eliminše potrebu za ručnim kreiranjem pošiljki i integrira proces otpreme direktno u vaš već postojeći workflow upravljanja narudžbinama.', 'd-express-woo'); ?>"></span>
-                                </p>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th scope="row">
-                                <label for="dexpress_auto_create_on_status"><?php _e('Status za kreiranje', 'd-express-woo'); ?></label>
-                            </th>
-                            <td>
-                                <select id="dexpress_auto_create_on_status" name="dexpress_auto_create_on_status">
-                                    <?php foreach ($order_statuses as $status => $name): ?>
-                                        <?php $status_key = str_replace('wc-', '', $status); ?>
-                                        <option value="<?php echo esc_attr($status_key); ?>" <?php selected($auto_create_on_status, $status_key); ?>>
-                                            <?php echo esc_html($name); ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
-                                <p class="description"><?php _e('Izaberite status narudžbine koji će pokrenuti kreiranje pošiljke.', 'd-express-woo'); ?>
-                                    <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Definiše koji status WooCommerce narudžbine pokreće kreiranje D Express pošiljke. Standardna praksa je \'processing\' (u obradi) kada je narudžbina plaćena ali još nije poslata, ili \'completed\' (završeno) kada je pripremljena za slanje.', 'd-express-woo'); ?>"></span>
-                                </p>
-                            </td>
-                        </tr>
-                    </table>
-                </div>
-                <!-- Podešavanja pošiljaoca -->
-
-                <div class="dexpress-settings-section" style="display: <?php echo $active_tab === 'sender' ? 'block' : 'none'; ?>">
-                    <h2><?php _e('Podaci pošiljaoca', 'd-express-woo'); ?></h2>
-
-                    <table class="form-table">
-                        <tr>
-                            <th scope="row">
-                                <label for="dexpress_sender_name"><?php _e('Naziv pošiljaoca', 'd-express-woo'); ?></label>
-                            </th>
-                            <td>
-                                <input type="text" id="dexpress_sender_name" name="dexpress_sender_name"
-                                    value="<?php echo esc_attr($sender_name); ?>" class="regular-text">
-                                <p class="description"><?php _e('Naziv pošiljaoca koji će biti prikazan na pošiljci.', 'd-express-woo'); ?>
-                                    <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Ime firme ili lica koje šalje pošiljku. Ovaj podatak se mapira na CName i PuName parametre u API pozivu i prikazuje se na nalepnici. Mora biti tačno ime pod kojim je registrovan vaš nalog kod D Express-a.', 'd-express-woo'); ?>"></span>
-                                </p>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th scope="row">
-                                <label for="dexpress_sender_address"><?php _e('Ulica', 'd-express-woo'); ?></label>
-                            </th>
-                            <td>
-                                <input type="text" id="dexpress_sender_address" name="dexpress_sender_address"
-                                    value="<?php echo esc_attr($sender_address); ?>" class="regular-text">
-                                <p class="description"><?php _e('Naziv ulice (bez broja).', 'd-express-woo'); ?>
-                                    <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Naziv ulice sa adrese pošiljaoca, bez kućnog broja. Prema D Express standardima, ulica (CAddress/PuAddress) i broj (CAddressNum/PuAddressNum) se šalju kao odvojeni parametri za tačnije geokodiranje adresa.', 'd-express-woo'); ?>"></span>
-                                </p>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th scope="row">
-                                <label for="dexpress_sender_address_num"><?php _e('Broj', 'd-express-woo'); ?></label>
-                            </th>
-                            <td>
-                                <input type="text" id="dexpress_sender_address_num" name="dexpress_sender_address_num"
-                                    value="<?php echo esc_attr($sender_address_num); ?>" class="regular-text">
-                                <p class="description"><?php _e('Kućni broj.', 'd-express-woo'); ?>
-                                    <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Kućni broj sa adrese pošiljaoca. Prihvata standardne formate brojeva (15), brojeva sa slovom (15a), razlomka (23/4) ili oznake \'bb\' za adrese bez broja. Validacija prati D Express pravila za strukture CAddressNum/PuAddressNum polja.', 'd-express-woo'); ?>"></span>
-                                </p>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th scope="row">
-                                <label for="dexpress_sender_town_id"><?php _e('Grad', 'd-express-woo'); ?></label>
-                            </th>
-                            <td>
-                                <select id="dexpress_sender_town_id" name="dexpress_sender_town_id" class="regular-text">
-                                    <option value=""><?php _e('- Izaberite grad -', 'd-express-woo'); ?></option>
-                                    <?php foreach ($towns_options as $id => $name): ?>
-                                        <option value="<?php echo esc_attr($id); ?>" <?php selected($sender_town_id, $id); ?>>
-                                            <?php echo esc_html($name); ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
-                                <p class="description"><?php _e('Izaberite grad iz D Express šifarnika.', 'd-express-woo'); ?>
-                                    <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Izaberite grad pošiljaoca iz liste gradova u D Express sistemu. U API pozivima se ne šalje naziv grada, već samo numerički ID grada (CTownID/PuTownID) iz šifarnika, što garantuje da D Express sistem tačno identifikuje lokaciju.', 'd-express-woo'); ?>"></span>
-                                </p>
-                                <?php if (empty($towns_options)): ?>
-                                    <p class="notice notice-warning">
-                                        <?php _e('Molimo ažurirajte šifarnike klikom na dugme "Ažuriraj šifarnike" na dnu strane.', 'd-express-woo'); ?>
-                                    </p>
-                                <?php endif; ?>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th scope="row">
-                                <label for="dexpress_sender_contact_name"><?php _e('Kontakt osoba', 'd-express-woo'); ?></label>
-                            </th>
-                            <td>
-                                <input type="text" id="dexpress_sender_contact_name" name="dexpress_sender_contact_name"
-                                    value="<?php echo esc_attr($sender_contact_name); ?>" class="regular-text">
-                                <p class="description"><?php _e('Ime i prezime kontakt osobe.', 'd-express-woo'); ?>
-                                    <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Ime i prezime kontakt osobe za pošiljke. Ovo je osoba kojoj će se kurir obratiti prilikom preuzimanja pošiljke. Ovaj podatak se mapira na CCName/PuCName parametre u API pozivu.', 'd-express-woo'); ?>"></span>
-                                </p>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th scope="row">
-                                <label for="dexpress_sender_contact_phone"><?php _e('Kontakt telefon', 'd-express-woo'); ?></label>
-                            </th>
-                            <td>
-                                <input type="text" id="dexpress_sender_contact_phone" name="dexpress_sender_contact_phone"
-                                    value="<?php echo esc_attr($sender_contact_phone); ?>" class="regular-text">
-                                <p class="description"><?php _e('Telefon kontakt osobe (u formatu 381XXXXXXXXX).', 'd-express-woo'); ?>
-                                    <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Telefon kontakt osobe u formatu 381XXXXXXXXX (bez + na početku). Format mora pratiti D Express specifikaciju: državni pozivni broj (381), pa pozivni broj mesta (bez 0) i ostatak broja. Ovo polje se mapira na CCPhone/PuCPhone parametre.', 'd-express-woo'); ?>"></span>
-                                </p>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th scope="row">
-                                <label for="dexpress_require_buyout_account"><?php _e('Obavezan račun za otkupninu', 'd-express-woo'); ?></label>
-                            </th>
-                            <td>
-                                <input type="checkbox" id="dexpress_require_buyout_account" name="dexpress_require_buyout_account"
-                                    value="yes" <?php checked(get_option('dexpress_require_buyout_account', 'no'), 'yes'); ?>>
-                                <p class="description">
-                                    <?php _e('Spreči kreiranje pošiljki sa pouzećem ako bankovni račun nije podešen', 'd-express-woo'); ?>
-                                    <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Kada je aktivirano, pošiljke sa pouzećem neće biti moguće kreirati bez validnog bankovnog računa. Ovo je važno jer BuyOutAccount polje u D Express API-ju mora biti validno za BuyOut > 0, inače će API vratiti grešku.', 'd-express-woo'); ?>"></span>
-                                </p>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th scope="row">
-                                <label for="dexpress_buyout_account"><?php _e('Broj računa za otkupninu', 'd-express-woo'); ?></label>
-                            </th>
-                            <td>
-                                <input type="text" id="dexpress_buyout_account" name="dexpress_buyout_account"
-                                    value="<?php echo esc_attr(get_option('dexpress_buyout_account', '')); ?>"
-                                    class="regular-text"
-                                    placeholder="XXX-XXXXXXXXXX-XX">
-                                <p class="description"><?php _e('Broj računa na koji će D Express uplaćivati iznose prikupljene pouzećem. Format: XXX-XXXXXXXXXX-XX (npr. 160-0000000000-00).', 'd-express-woo'); ?>
-                                    <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Bankovni račun na koji D Express uplaćuje iznose prikupljene pouzećem, u formatu XXX-XXXXXXXXXX-XX. Ovaj račun mora biti validan, jer se koristi u BuyOutAccount polju API poziva za pošiljke sa otkupninom (BuyOut > 0).', 'd-express-woo'); ?>"></span>
-                                </p>
-                            </td>
-                        </tr>
-                    </table>
-                </div>
-                <!-- Podešavanja pošiljke -->
-
-                <div class="dexpress-settings-section" style="display: <?php echo $active_tab === 'shipment' ? 'block' : 'none'; ?>">
-                    <h2><?php _e('Podešavanja pošiljke', 'd-express-woo'); ?></h2>
-
-                    <table class="form-table">
-                        <tr>
-                            <th scope="row">
-                                <label for="dexpress_shipment_type"><?php _e('Tip pošiljke', 'd-express-woo'); ?></label>
-                            </th>
-                            <td>
-                                <select id="dexpress_shipment_type" name="dexpress_shipment_type">
-                                    <?php foreach (dexpress_get_shipment_types() as $type_id => $type_name): ?>
-                                        <option value="<?php echo esc_attr($type_id); ?>" <?php selected($shipment_type, $type_id); ?>>
-                                            <?php echo esc_html($type_name); ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
-                                <p class="description">
-                                    <?php _e('Izaberite tip pošiljke.', 'd-express-woo'); ?>
-                                    <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Određuje prioritet dostave: 1 - Hitna isporuka (za danas, uz dodatnu naplatu i samo u određenim zonama) ili 2 - Redovna isporuka (1-3 dana). Ovaj parametar se mapira na DlTypeID polje u API pozivu i direktno utiče na cenu dostave i brzinu isporuke.', 'd-express-woo'); ?>"></span>
-                                </p>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th scope="row">
-                                <label for="dexpress_payment_by"><?php _e('Ko plaća dostavu', 'd-express-woo'); ?></label>
-                            </th>
-                            <td>
-                                <select id="dexpress_payment_by" name="dexpress_payment_by">
-                                    <?php foreach (dexpress_get_payment_by_options() as $option_id => $option_name): ?>
-                                        <option value="<?php echo esc_attr($option_id); ?>" <?php selected($payment_by, $option_id); ?>>
-                                            <?php echo esc_html($option_name); ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
-                                <p class="description">
-                                    <?php _e('Određuje ko plaća troškove dostave.', 'd-express-woo'); ?>
-                                    <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Određuje ko snosi troškove dostave: 0 - Pošiljalac (vi), 1 - Primalac (kupac) ili 2 - Treća strana. Ovo polje se mapira na PaymentBy parametar u API pozivu i definiše kome će D Express fakturisati uslugu dostave.', 'd-express-woo'); ?>"></span>
-                                </p>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th scope="row">
-                                <label for="dexpress_payment_type"><?php _e('Način plaćanja dostave', 'd-express-woo'); ?></label>
-                            </th>
-                            <td>
-                                <select id="dexpress_payment_type" name="dexpress_payment_type">
-                                    <?php foreach (dexpress_get_payment_type_options() as $type_id => $type_name): ?>
-                                        <option value="<?php echo esc_attr($type_id); ?>" <?php selected($payment_type, $type_id); ?>>
-                                            <?php echo esc_html($type_name); ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
-                                <p class="description">
-                                    <?php _e('Definiše način plaćanja troškova dostave.', 'd-express-woo'); ?>
-                                    <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Definiše način plaćanja troškova dostave: 0 - Gotovina, 1 - Kartica, 2 - Faktura. Ovaj parametar se mapira na PaymentType polje u API pozivu i određuje kako će biti naplaćeni troškovi dostave od strane označene u \'Ko plaća dostavu\'.', 'd-express-woo'); ?>"></span>
-                                </p>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th scope="row">
-                                <label for="dexpress_return_doc"><?php _e('Povraćaj dokumenata', 'd-express-woo'); ?></label>
-                            </th>
-                            <td>
-                                <select id="dexpress_return_doc" name="dexpress_return_doc">
-                                    <?php foreach (dexpress_get_return_doc_options() as $option_id => $option_name): ?>
-                                        <option value="<?php echo esc_attr($option_id); ?>" <?php selected($return_doc, $option_id); ?>>
-                                            <?php echo esc_html($option_name); ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
-                                <p class="description">
-                                    <?php _e('Kontroliše povraćaj potpisanih dokumenata.', 'd-express-woo'); ?>
-                                    <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Upravlja vraćanjem potpisanih dokumenata: 0 - Bez povraćaja, 1 - Obavezan povraćaj, 2 - Povraćaj ako je potrebno. Ovaj parametar se mapira na ReturnDoc polje u API pozivu. Za paketomatsku dostavu mora biti 0 (bez povraćaja).', 'd-express-woo'); ?>"></span>
-                                </p>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th scope="row">
-                                <label for="dexpress_default_content"><?php _e('Podrazumevani sadržaj', 'd-express-woo'); ?></label>
-                            </th>
-                            <td>
-                                <input type="text" id="dexpress_default_content" name="dexpress_default_content"
-                                    value="<?php echo esc_attr($default_content); ?>" class="regular-text">
-                                <p class="description"><?php _e('Podrazumevani opis sadržaja pošiljke.', 'd-express-woo'); ?>
-                                    <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Opis sadržaja pošiljke koji se mapira na Content parametar u API pozivu. Mora zadovoljiti D Express validaciju (alfanumerički, max 50 karaktera). Za standardne web prodavnice, dovoljan je generički opis poput \'Roba iz web prodavnice\'.', 'd-express-woo'); ?>"></span>
-                                </p>
-                            </td>
-                        </tr>
-                    </table>
-                </div>
-                <!-- Webhook podešavanja -->
-
-                <div class="dexpress-settings-section" style="display: <?php echo $active_tab === 'webhook' ? 'block' : 'none'; ?>">
-                    <h2><?php _e('Webhook podešavanja', 'd-express-woo'); ?></h2>
-
-                    <table class="form-table">
-                        <tr>
-                            <th scope="row">
-                                <label for="dexpress_allowed_webhook_ips"><?php _e('Dozvoljene IP adrese', 'd-express-woo'); ?></label>
-                            </th>
-                            <td>
-                                <input type="text" id="dexpress_allowed_webhook_ips" name="dexpress_allowed_webhook_ips"
-                                    value="<?php echo esc_attr(get_option('dexpress_allowed_webhook_ips', '')); ?>" class="regular-text">
-                                <p class="description">
-                                    <?php _e('Lista dozvoljenih IP adresa za webhook, razdvojenih zarezima. Ostavite prazno da dozvolite sve IP adrese.', 'd-express-woo'); ?>
-                                    <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Lista IP adresa D Express servera sa kojih se primaju webhook pozivi. Ograničavanje ove liste povećava sigurnost, sprečavajući da bilo ko drugi može slati lažne notifikacije o statusima. Ostavite prazno za prihvatanje svih IP adresa.', 'd-express-woo'); ?>"></span>
-                                </p>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th scope="row">
-                                <label for="dexpress_webhook_url"><?php _e('Webhook URL', 'd-express-woo'); ?></label>
-                            </th>
-                            <td>
-                                <input type="text" id="dexpress_webhook_url" readonly
-                                    value="<?php echo esc_url(rest_url('dexpress-woo/v1/notify')); ?>" class="regular-text">
-                                <button type="button" class="button button-secondary" onclick="copyToClipboard('#dexpress_webhook_url')">
-                                    <?php _e('Kopiraj', 'd-express-woo'); ?>
-                                </button>
-                                <p class="description"><?php _e('URL koji treba dostaviti D Express-u za primanje notifikacija.', 'd-express-woo'); ?>
-                                    <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Endpoint URL vaše WordPress instalacije koji prihvata D Express webhook notifikacije o statusima pošiljki. Dostavite ovaj URL D Express-u kako bi mogli automatski slati ažuriranja statusa pošiljki (metoda notify). Format je {vaš-sajt}/wp-json/dexpress-woo/v1/notify.', 'd-express-woo'); ?>"></span>
-                                </p>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th scope="row">
-                                <label for="dexpress_webhook_secret"><?php _e('Webhook tajni ključ', 'd-express-woo'); ?></label>
-                            </th>
-                            <td>
-                                <input type="text" id="dexpress_webhook_secret" name="dexpress_webhook_secret"
-                                    value="<?php echo esc_attr($webhook_secret); ?>" class="regular-text">
-                                <button type="button" class="button button-secondary" onclick="generateWebhookSecret()">
-                                    <?php _e('Generiši novi', 'd-express-woo'); ?>
-                                </button>
-                                <p class="description"><?php _e('Tajni ključ koji treba dostaviti D Express-u za verifikaciju notifikacija.', 'd-express-woo'); ?>
-                                    <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Sigurnosni token koji se šalje kao \'cc\' parametar u webhook pozivu za verifikaciju autentičnosti. Dostavite ovaj ključ D Express-u prilikom aktivacije webhook servisa. Služi kao zaštita od lažnih notifikacija.', 'd-express-woo'); ?>"></span>
-                                </p>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th scope="row">
-                                <label for="dexpress_google_maps_api_key"><?php _e('Google Maps API ključ', 'd-express-woo'); ?></label>
-                            </th>
-                            <td>
-                                <input type="text" id="dexpress_google_maps_api_key" name="dexpress_google_maps_api_key"
-                                    value="<?php echo esc_attr(get_option('dexpress_google_maps_api_key', '')); ?>" class="regular-text">
-                                <p class="description">
-                                    <?php _e('Unesite Google Maps API ključ za prikazivanje mape paketomata. Možete ga dobiti na <a href="https://developers.google.com/maps/documentation/javascript/get-api-key" target="_blank">Google Developers Console</a>.', 'd-express-woo'); ?>
-                                    <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Google Maps API ključ za prikazivanje interaktivne mape sa lokacijama paketomata u checkout procesu. Ovaj ključ možete dobiti kroz Google Cloud Console, i neophodan je za korišćenje paketomatske dostave sa mapom za izbor lokacije.', 'd-express-woo'); ?>"></span>
-                                </p>
-                            </td>
-                        </tr>
-                    </table>
-                </div>
-                <!-- Clean Uninstall podešavanja -->
-
-                <div class="dexpress-settings-section" style="display: <?php echo $active_tab === 'uninstall' ? 'block' : 'none'; ?>">
-                    <h2><?php _e('Clean Uninstall Podešavanja', 'd-express-woo'); ?></h2>
-
-                    <table class="form-table">
-                        <tr>
-                            <th scope="row">
-                                <label for="dexpress_clean_uninstall"><?php _e('Clean Uninstall', 'd-express-woo'); ?></label>
-                            </th>
-                            <td>
-                                <label>
-                                    <input type="checkbox"
-                                        id="dexpress_clean_uninstall"
-                                        name="dexpress_clean_uninstall"
-                                        value="yes"
-                                        <?php checked(get_option('dexpress_clean_uninstall'), 'yes'); ?>>
-                                    <span>
-                                        <strong><?php _e('Obriši sve podatke pri brisanju plugina', 'd-express-woo'); ?></strong>
-                                    </span>
-                                </label>
-                                <p class="description" style="color: red;">
-                                    <?php _e('UPOZORENJE: Ako je ova opcija označena, svi podaci plugina (uključujući sve tabele u bazi) će biti obrisani kada se plugin obriše.', 'd-express-woo'); ?>
-                                    <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Kontroliše brisanje podataka prilikom deaktivacije plugina. Kada je aktivirano, prilikom deinstalacije plugina biće obrisane sve tabele (dexpress_shipments, dexpress_packages, dexpress_statuses, itd.) i sva podešavanja.<br><b>UPOZORENJE:</b> Ovo trajno briše istoriju pošiljki i sve konfiguracije!', 'd-express-woo'); ?>"></span>
-                                </p>
-                            </td>
-                        </tr>
-                    </table>
-                </div>
-
-                <!-- Dugmad za akcije su ista za sve tabove -->
-                <div class="dexpress-settings-actions">
-                    <button type="submit" name="dexpress_save_settings" class="button button-primary">
-                        <?php _e('Sačuvaj podešavanja', 'd-express-woo'); ?>
-                    </button>
-
-                    <a href="<?php echo esc_url(admin_url('admin.php?page=dexpress-settings&tab=' . $active_tab . '&action=update_indexes')); ?>" class="button button-secondary">
-                        <?php _e('Ažuriraj šifarnike', 'd-express-woo'); ?>
-                    </a>
-
-                    <?php if (dexpress_is_test_mode()): ?>
-                        <a href="<?php echo esc_url(admin_url('admin.php?page=dexpress-settings&tab=' . $active_tab . '&action=test_connection')); ?>" class="button button-secondary">
-                            <?php _e('Testiraj konekciju', 'd-express-woo'); ?>
+                    foreach ($allowed_tabs as $tab): ?>
+                        <a href="#tab-<?php echo esc_attr($tab); ?>"
+                            class="dexpress-tab-link <?php echo $active_tab === $tab ? 'active' : ''; ?>"
+                            data-tab="<?php echo esc_attr($tab); ?>"
+                            onclick="switchTab(event, '<?php echo esc_attr($tab); ?>')">
+                            <?php echo esc_html($tab_titles[$tab]); ?>
                         </a>
-                    <?php endif; ?>
+                    <?php endforeach; ?>
                 </div>
+
+                <!-- Sadržaj tabova -->
+                <div class="dexpress-tabs">
+                    <!-- API Podešavanja -->
+                    <div id="tab-api" class="dexpress-tab <?php echo $active_tab === 'api' ? 'active' : ''; ?>">
+                        <h2><?php _e('API Podešavanja', 'd-express-woo'); ?></h2>
+
+                        <table class="form-table">
+                            <tr>
+                                <th scope="row">
+                                    <label for="dexpress_api_username"><?php _e('API Korisničko ime', 'd-express-woo'); ?></label>
+                                </th>
+                                <td>
+                                    <input type="text" id="dexpress_api_username" name="dexpress_api_username"
+                                        value="<?php echo esc_attr($api_username); ?>" class="regular-text">
+                                    <p class="description"><?php _e('Korisničko ime dobijeno od D Express-a.', 'd-express-woo'); ?>
+                                        <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Unesite korisničko ime koje ste dobili od D Express-a za pristup njihovom API-ju. Ovo je jedinstveni identifikator u formatu UUID (npr. e778530c-fee6-492a-b8be-4da0fd851ba8). D Express vam dodeljuje posebne kredencijale za test i produkciono okruženje.', 'd-express-woo'); ?>"></span>
+                                    </p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row">
+                                    <label for="dexpress_api_password"><?php _e('API Lozinka', 'd-express-woo'); ?></label>
+                                </th>
+                                <td>
+                                    <div class="wp-pwd">
+                                        <input type="password" id="dexpress_api_password" name="dexpress_api_password"
+                                            value="<?php echo esc_attr($api_password); ?>" class="regular-text">
+                                        <button type="button" class="button button-secondary wp-hide-pw hide-if-no-js" data-toggle="0" aria-label="<?php esc_attr_e('Prikaži lozinku', 'd-express-woo'); ?>">
+                                            <span class="dashicons dashicons-visibility" aria-hidden="true"></span>
+                                        </button>
+                                    </div>
+                                    <p class="description"><?php _e('Lozinka dobijena od D Express-a.', 'd-express-woo'); ?>
+                                        <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Unesite lozinku koju ste dobili od D Express-a. Zajedno sa korisničkim imenom služi za Basic Authentication kod svih API poziva.', 'd-express-woo'); ?>"></span>
+                                    </p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row">
+                                    <label for="dexpress_client_id"><?php _e('Client ID', 'd-express-woo'); ?></label>
+                                </th>
+                                <td>
+                                    <input type="text" id="dexpress_client_id" name="dexpress_client_id"
+                                        value="<?php echo esc_attr($client_id); ?>" class="regular-text">
+                                    <p class="description"><?php _e('Client ID u formatu UK12345.', 'd-express-woo'); ?>
+                                        <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Vaš jedinstveni identifikator u D Express sistemu u formatu UKXXXXX (npr. UK12345). Ovaj podatak je neophodan i koristi se u svakom API pozivu kao CClientID parametar. Ovaj ID predstavlja vašu kompaniju u D Express sistemu.', 'd-express-woo'); ?>"></span>
+                                    </p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row">
+                                    <label for="dexpress_test_mode"><?php _e('Test režim', 'd-express-woo'); ?></label>
+                                </th>
+                                <td>
+                                    <input type="checkbox" id="dexpress_test_mode" name="dexpress_test_mode"
+                                        value="yes" <?php checked($test_mode, 'yes'); ?>>
+                                    <p class="description"><?php _e('Aktivirajte test režim tokom razvoja i testiranja.', 'd-express-woo'); ?>
+                                        <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Kada je aktiviran, plugin koristi test nalog za komunikaciju sa D Express API-jem. Pošiljke kreirane u test režimu neće biti fizički isporučene, ali će prolaziti kroz sve faze obrade u API-ju. Idealno za testiranje integracije pre produkcije.', 'd-express-woo'); ?>"></span>
+                                    </p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row">
+                                    <label for="dexpress_enable_logging"><?php _e('Uključi logovanje', 'd-express-woo'); ?></label>
+                                </th>
+                                <td>
+                                    <input type="checkbox" id="dexpress_enable_logging" name="dexpress_enable_logging"
+                                        value="yes" <?php checked($enable_logging, 'yes'); ?>>
+                                    <p class="description"><?php _e('Aktivirajte logovanje API zahteva i odgovora.', 'd-express-woo'); ?>
+                                        <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Aktivira detaljan zapis (log) svih API komunikacija sa D Express servisom. Log fajlovi se čuvaju u logs/ direktorijumu i sadrže detalje o zahtevima, odgovorima i greškama. Korisno za debagiranje prilikom razvoja i rešavanje problema u produkciji.', 'd-express-woo'); ?>"></span>
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <!-- Podešavanja kodova pošiljki -->
+
+                    <div id="tab-codes" class="dexpress-tab <?php echo $active_tab === 'codes' ? 'active' : ''; ?>">
+                        <h2><?php _e('Kodovi pošiljki', 'd-express-woo'); ?></h2>
+
+                        <table class="form-table">
+                            <tr>
+                                <th scope="row">
+                                    <label for="dexpress_code_prefix"><?php _e('Prefiks koda', 'd-express-woo'); ?></label>
+                                </th>
+                                <td>
+                                    <input type="text" id="dexpress_code_prefix" name="dexpress_code_prefix"
+                                        value="<?php echo esc_attr($code_prefix); ?>" class="regular-text">
+                                    <p class="description"><?php _e('Prefiks koda paketa (npr. TT).', 'd-express-woo'); ?>
+                                        <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Dvoslovni prefiks za kodove paketa koji vam je dodelio D Express (npr. \'TT\' za testiranje). Svaki partner dobija jedinstveni prefiks za produkciju kako bi se izbegle kolizije kodova paketa. Ovaj prefiks se koristi u PackageList.Code parametru.', 'd-express-woo'); ?>"></span>
+                                    </p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row">
+                                    <label for="dexpress_code_range_start"><?php _e('Početak opsega', 'd-express-woo'); ?></label>
+                                </th>
+                                <td>
+                                    <input type="number" id="dexpress_code_range_start" name="dexpress_code_range_start"
+                                        value="<?php echo esc_attr($code_range_start); ?>" class="small-text">
+                                    <p class="description"><?php _e('Početni broj za kodove paketa.', 'd-express-woo'); ?>
+                                        <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Početni broj u dodeljenom opsegu kodova paketa (obično 1). U kombinaciji sa prefiksom i formatiranjem na 10 cifara formira kompletan kod paketa (npr. TT0000000001). D Express će vam dodeliti produkcioni opseg pre prelaska u produkciju.', 'd-express-woo'); ?>"></span>
+                                    </p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row">
+                                    <label for="dexpress_code_range_end"><?php _e('Kraj opsega', 'd-express-woo'); ?></label>
+                                </th>
+                                <td>
+                                    <input type="number" id="dexpress_code_range_end" name="dexpress_code_range_end"
+                                        value="<?php echo esc_attr($code_range_end); ?>" class="small-text">
+                                    <p class="description"><?php _e('Krajnji broj za kodove paketa.', 'd-express-woo'); ?>
+                                        <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Krajnji broj u dodeljenom opsegu kodova paketa (npr. 99 za test). Kada brojač dostigne ovu vrednost, resetovaće se na početni broj. Za produkciju ćete dobiti veći opseg. Važno je pratiti korišćenje kako ne biste ponovili već korišćene kodove.', 'd-express-woo'); ?>"></span>
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <!-- Podešavanja automatske kreacije pošiljki -->
+                    <div id="tab-auto" class="dexpress-tab <?php echo $active_tab === 'auto' ? 'active' : ''; ?>">
+                        <h2><?php _e('Automatsko kreiranje pošiljki', 'd-express-woo'); ?></h2>
+
+                        <table class="form-table">
+                            <tr>
+                                <th scope="row">
+                                    <label for="dexpress_validate_address"><?php _e('Validacija adrese', 'd-express-woo'); ?></label>
+                                </th>
+                                <td>
+                                    <input type="checkbox" id="dexpress_validate_address" name="dexpress_validate_address"
+                                        value="yes" <?php checked(get_option('dexpress_validate_address', 'yes'), 'yes'); ?>>
+                                    <p class="description"><?php _e('Proveri validnost adrese pre kreiranja pošiljke putem D Express API-ja', 'd-express-woo'); ?>
+                                        <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Proverava validnost adrese primaoca kroz D Express API pozivanjem checkaddress metode pre kreiranja pošiljke. Ovo osigurava da adresa primaoca postoji u D Express sistemu i sprečava greške pri unosu adrese koje bi mogle izazvati probleme prilikom dostave.', 'd-express-woo'); ?>"></span>
+                                    </p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row">
+                                    <label for="dexpress_auto_create_shipment"><?php _e('Automatsko kreiranje', 'd-express-woo'); ?></label>
+                                </th>
+                                <td>
+                                    <input type="checkbox" id="dexpress_auto_create_shipment" name="dexpress_auto_create_shipment"
+                                        value="yes" <?php checked($auto_create_shipment, 'yes'); ?>>
+                                    <p class="description"><?php _e('Automatski kreiraj pošiljku kada narudžbina dobije određeni status.', 'd-express-woo'); ?>
+                                        <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Automatski kreira D Express pošiljku kada WooCommerce narudžbina pređe u odabrani status. Ovo eliminše potrebu za ručnim kreiranjem pošiljki i integrira proces otpreme direktno u vaš već postojeći workflow upravljanja narudžbinama.', 'd-express-woo'); ?>"></span>
+                                    </p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row">
+                                    <label for="dexpress_auto_create_on_status"><?php _e('Status za kreiranje', 'd-express-woo'); ?></label>
+                                </th>
+                                <td>
+                                    <select id="dexpress_auto_create_on_status" name="dexpress_auto_create_on_status">
+                                        <?php foreach ($order_statuses as $status => $name): ?>
+                                            <?php $status_key = str_replace('wc-', '', $status); ?>
+                                            <option value="<?php echo esc_attr($status_key); ?>" <?php selected($auto_create_on_status, $status_key); ?>>
+                                                <?php echo esc_html($name); ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <p class="description"><?php _e('Izaberite status narudžbine koji će pokrenuti kreiranje pošiljke.', 'd-express-woo'); ?>
+                                        <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Definiše koji status WooCommerce narudžbine pokreće kreiranje D Express pošiljke. Standardna praksa je \'processing\' (u obradi) kada je narudžbina plaćena ali još nije poslata, ili \'completed\' (završeno) kada je pripremljena za slanje.', 'd-express-woo'); ?>"></span>
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <!-- Podešavanja pošiljaoca -->
+
+                    <div id="tab-sender" class="dexpress-tab <?php echo $active_tab === 'sender' ? 'active' : ''; ?>">
+                        <h2><?php _e('Podaci pošiljaoca', 'd-express-woo'); ?></h2>
+
+                        <table class="form-table">
+                            <tr>
+                                <th scope="row">
+                                    <label for="dexpress_sender_name"><?php _e('Naziv pošiljaoca', 'd-express-woo'); ?></label>
+                                </th>
+                                <td>
+                                    <input type="text" id="dexpress_sender_name" name="dexpress_sender_name"
+                                        value="<?php echo esc_attr($sender_name); ?>" class="regular-text">
+                                    <p class="description"><?php _e('Naziv pošiljaoca koji će biti prikazan na pošiljci.', 'd-express-woo'); ?>
+                                        <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Ime firme ili lica koje šalje pošiljku. Ovaj podatak se mapira na CName i PuName parametre u API pozivu i prikazuje se na nalepnici. Mora biti tačno ime pod kojim je registrovan vaš nalog kod D Express-a.', 'd-express-woo'); ?>"></span>
+                                    </p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row">
+                                    <label for="dexpress_sender_address"><?php _e('Ulica', 'd-express-woo'); ?></label>
+                                </th>
+                                <td>
+                                    <input type="text" id="dexpress_sender_address" name="dexpress_sender_address"
+                                        value="<?php echo esc_attr($sender_address); ?>" class="regular-text">
+                                    <p class="description"><?php _e('Naziv ulice (bez broja).', 'd-express-woo'); ?>
+                                        <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Naziv ulice sa adrese pošiljaoca, bez kućnog broja. Prema D Express standardima, ulica (CAddress/PuAddress) i broj (CAddressNum/PuAddressNum) se šalju kao odvojeni parametri za tačnije geokodiranje adresa.', 'd-express-woo'); ?>"></span>
+                                    </p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row">
+                                    <label for="dexpress_sender_address_num"><?php _e('Broj', 'd-express-woo'); ?></label>
+                                </th>
+                                <td>
+                                    <input type="text" id="dexpress_sender_address_num" name="dexpress_sender_address_num"
+                                        value="<?php echo esc_attr($sender_address_num); ?>" class="regular-text">
+                                    <p class="description"><?php _e('Kućni broj.', 'd-express-woo'); ?>
+                                        <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Kućni broj sa adrese pošiljaoca. Prihvata standardne formate brojeva (15), brojeva sa slovom (15a), razlomka (23/4) ili oznake \'bb\' za adrese bez broja. Validacija prati D Express pravila za strukture CAddressNum/PuAddressNum polja.', 'd-express-woo'); ?>"></span>
+                                    </p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row">
+                                    <label for="dexpress_sender_town_id"><?php _e('Grad', 'd-express-woo'); ?></label>
+                                </th>
+                                <td>
+                                    <select id="dexpress_sender_town_id" name="dexpress_sender_town_id" class="regular-text">
+                                        <option value=""><?php _e('- Izaberite grad -', 'd-express-woo'); ?></option>
+                                        <?php foreach ($towns_options as $id => $name): ?>
+                                            <option value="<?php echo esc_attr($id); ?>" <?php selected($sender_town_id, $id); ?>>
+                                                <?php echo esc_html($name); ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <p class="description"><?php _e('Izaberite grad iz D Express šifarnika.', 'd-express-woo'); ?>
+                                        <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Izaberite grad pošiljaoca iz liste gradova u D Express sistemu. U API pozivima se ne šalje naziv grada, već samo numerički ID grada (CTownID/PuTownID) iz šifarnika, što garantuje da D Express sistem tačno identifikuje lokaciju.', 'd-express-woo'); ?>"></span>
+                                    </p>
+                                    <?php if (empty($towns_options)): ?>
+                                        <p class="notice notice-warning">
+                                            <?php _e('Molimo ažurirajte šifarnike klikom na dugme "Ažuriraj šifarnike" na dnu strane.', 'd-express-woo'); ?>
+                                        </p>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row">
+                                    <label for="dexpress_sender_contact_name"><?php _e('Kontakt osoba', 'd-express-woo'); ?></label>
+                                </th>
+                                <td>
+                                    <input type="text" id="dexpress_sender_contact_name" name="dexpress_sender_contact_name"
+                                        value="<?php echo esc_attr($sender_contact_name); ?>" class="regular-text">
+                                    <p class="description"><?php _e('Ime i prezime kontakt osobe.', 'd-express-woo'); ?>
+                                        <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Ime i prezime kontakt osobe za pošiljke. Ovo je osoba kojoj će se kurir obratiti prilikom preuzimanja pošiljke. Ovaj podatak se mapira na CCName/PuCName parametre u API pozivu.', 'd-express-woo'); ?>"></span>
+                                    </p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row">
+                                    <label for="dexpress_sender_contact_phone"><?php _e('Kontakt telefon', 'd-express-woo'); ?></label>
+                                </th>
+                                <td>
+                                    <input type="text" id="dexpress_sender_contact_phone" name="dexpress_sender_contact_phone"
+                                        value="<?php echo esc_attr($sender_contact_phone); ?>" class="regular-text">
+                                    <p class="description"><?php _e('Telefon kontakt osobe (u formatu 381XXXXXXXXX).', 'd-express-woo'); ?>
+                                        <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Telefon kontakt osobe u formatu 381XXXXXXXXX (bez + na početku). Format mora pratiti D Express specifikaciju: državni pozivni broj (381), pa pozivni broj mesta (bez 0) i ostatak broja. Ovo polje se mapira na CCPhone/PuCPhone parametre.', 'd-express-woo'); ?>"></span>
+                                    </p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row">
+                                    <label for="dexpress_require_buyout_account"><?php _e('Obavezan račun za otkupninu', 'd-express-woo'); ?></label>
+                                </th>
+                                <td>
+                                    <input type="checkbox" id="dexpress_require_buyout_account" name="dexpress_require_buyout_account"
+                                        value="yes" <?php checked(get_option('dexpress_require_buyout_account', 'no'), 'yes'); ?>>
+                                    <p class="description">
+                                        <?php _e('Spreči kreiranje pošiljki sa pouzećem ako bankovni račun nije podešen', 'd-express-woo'); ?>
+                                        <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Kada je aktivirano, pošiljke sa pouzećem neće biti moguće kreirati bez validnog bankovnog računa. Ovo je važno jer BuyOutAccount polje u D Express API-ju mora biti validno za BuyOut > 0, inače će API vratiti grešku.', 'd-express-woo'); ?>"></span>
+                                    </p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row">
+                                    <label for="dexpress_buyout_account"><?php _e('Broj računa za otkupninu', 'd-express-woo'); ?></label>
+                                </th>
+                                <td>
+                                    <input type="text" id="dexpress_buyout_account" name="dexpress_buyout_account"
+                                        value="<?php echo esc_attr(get_option('dexpress_buyout_account', '')); ?>"
+                                        class="regular-text"
+                                        placeholder="XXX-XXXXXXXXXX-XX">
+                                    <p class="description"><?php _e('Broj računa na koji će D Express uplaćivati iznose prikupljene pouzećem. Format: XXX-XXXXXXXXXX-XX (npr. 160-0000000000-00).', 'd-express-woo'); ?>
+                                        <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Bankovni račun na koji D Express uplaćuje iznose prikupljene pouzećem, u formatu XXX-XXXXXXXXXX-XX. Ovaj račun mora biti validan, jer se koristi u BuyOutAccount polju API poziva za pošiljke sa otkupninom (BuyOut > 0).', 'd-express-woo'); ?>"></span>
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <!-- Podešavanja pošiljke -->
+
+                    <div id="tab-shipment" class="dexpress-tab <?php echo $active_tab === 'shipment' ? 'active' : ''; ?>">
+                        <h2><?php _e('Podešavanja pošiljke', 'd-express-woo'); ?></h2>
+
+                        <table class="form-table">
+                            <tr>
+                                <th scope="row">
+                                    <label for="dexpress_shipment_type"><?php _e('Tip pošiljke', 'd-express-woo'); ?></label>
+                                </th>
+                                <td>
+                                    <select id="dexpress_shipment_type" name="dexpress_shipment_type">
+                                        <?php foreach (dexpress_get_shipment_types() as $type_id => $type_name): ?>
+                                            <option value="<?php echo esc_attr($type_id); ?>" <?php selected($shipment_type, $type_id); ?>>
+                                                <?php echo esc_html($type_name); ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <p class="description">
+                                        <?php _e('Izaberite tip pošiljke.', 'd-express-woo'); ?>
+                                        <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Određuje prioritet dostave: 1 - Hitna isporuka (za danas, uz dodatnu naplatu i samo u određenim zonama) ili 2 - Redovna isporuka (1-3 dana). Ovaj parametar se mapira na DlTypeID polje u API pozivu i direktno utiče na cenu dostave i brzinu isporuke.', 'd-express-woo'); ?>"></span>
+                                    </p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row">
+                                    <label for="dexpress_payment_by"><?php _e('Ko plaća dostavu', 'd-express-woo'); ?></label>
+                                </th>
+                                <td>
+                                    <select id="dexpress_payment_by" name="dexpress_payment_by">
+                                        <?php foreach (dexpress_get_payment_by_options() as $option_id => $option_name): ?>
+                                            <option value="<?php echo esc_attr($option_id); ?>" <?php selected($payment_by, $option_id); ?>>
+                                                <?php echo esc_html($option_name); ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <p class="description">
+                                        <?php _e('Određuje ko plaća troškove dostave.', 'd-express-woo'); ?>
+                                        <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Određuje ko snosi troškove dostave: 0 - Pošiljalac (vi), 1 - Primalac (kupac) ili 2 - Treća strana. Ovo polje se mapira na PaymentBy parametar u API pozivu i definiše kome će D Express fakturisati uslugu dostave.', 'd-express-woo'); ?>"></span>
+                                    </p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row">
+                                    <label for="dexpress_payment_type"><?php _e('Način plaćanja dostave', 'd-express-woo'); ?></label>
+                                </th>
+                                <td>
+                                    <select id="dexpress_payment_type" name="dexpress_payment_type">
+                                        <?php foreach (dexpress_get_payment_type_options() as $type_id => $type_name): ?>
+                                            <option value="<?php echo esc_attr($type_id); ?>" <?php selected($payment_type, $type_id); ?>>
+                                                <?php echo esc_html($type_name); ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <p class="description">
+                                        <?php _e('Definiše način plaćanja troškova dostave.', 'd-express-woo'); ?>
+                                        <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Definiše način plaćanja troškova dostave: 0 - Gotovina, 1 - Kartica, 2 - Faktura. Ovaj parametar se mapira na PaymentType polje u API pozivu i određuje kako će biti naplaćeni troškovi dostave od strane označene u \'Ko plaća dostavu\'.', 'd-express-woo'); ?>"></span>
+                                    </p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row">
+                                    <label for="dexpress_return_doc"><?php _e('Povraćaj dokumenata', 'd-express-woo'); ?></label>
+                                </th>
+                                <td>
+                                    <select id="dexpress_return_doc" name="dexpress_return_doc">
+                                        <?php foreach (dexpress_get_return_doc_options() as $option_id => $option_name): ?>
+                                            <option value="<?php echo esc_attr($option_id); ?>" <?php selected($return_doc, $option_id); ?>>
+                                                <?php echo esc_html($option_name); ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <p class="description">
+                                        <?php _e('Kontroliše povraćaj potpisanih dokumenata.', 'd-express-woo'); ?>
+                                        <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Upravlja vraćanjem potpisanih dokumenata: 0 - Bez povraćaja, 1 - Obavezan povraćaj, 2 - Povraćaj ako je potrebno. Ovaj parametar se mapira na ReturnDoc polje u API pozivu. Za paketomatsku dostavu mora biti 0 (bez povraćaja).', 'd-express-woo'); ?>"></span>
+                                    </p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row">
+                                    <label for="dexpress_default_content"><?php _e('Podrazumevani sadržaj', 'd-express-woo'); ?></label>
+                                </th>
+                                <td>
+                                    <input type="text" id="dexpress_default_content" name="dexpress_default_content"
+                                        value="<?php echo esc_attr($default_content); ?>" class="regular-text">
+                                    <p class="description"><?php _e('Podrazumevani opis sadržaja pošiljke.', 'd-express-woo'); ?>
+                                        <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Opis sadržaja pošiljke koji se mapira na Content parametar u API pozivu. Mora zadovoljiti D Express validaciju (alfanumerički, max 50 karaktera). Za standardne web prodavnice, dovoljan je generički opis poput \'Roba iz web prodavnice\'.', 'd-express-woo'); ?>"></span>
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <!-- Webhook podešavanja -->
+
+                    <div id="tab-webhook" class="dexpress-tab <?php echo $active_tab === 'webhook' ? 'active' : ''; ?>">
+                        <h2><?php _e('Webhook podešavanja', 'd-express-woo'); ?></h2>
+
+                        <table class="form-table">
+                            <tr>
+                                <th scope="row">
+                                    <label for="dexpress_allowed_webhook_ips"><?php _e('Dozvoljene IP adrese', 'd-express-woo'); ?></label>
+                                </th>
+                                <td>
+                                    <input type="text" id="dexpress_allowed_webhook_ips" name="dexpress_allowed_webhook_ips"
+                                        value="<?php echo esc_attr(get_option('dexpress_allowed_webhook_ips', '')); ?>" class="regular-text">
+                                    <p class="description">
+                                        <?php _e('Lista dozvoljenih IP adresa za webhook, razdvojenih zarezima. Ostavite prazno da dozvolite sve IP adrese.', 'd-express-woo'); ?>
+                                        <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Lista IP adresa D Express servera sa kojih se primaju webhook pozivi. Ograničavanje ove liste povećava sigurnost, sprečavajući da bilo ko drugi može slati lažne notifikacije o statusima. Ostavite prazno za prihvatanje svih IP adresa.', 'd-express-woo'); ?>"></span>
+                                    </p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row">
+                                    <label for="dexpress_webhook_url"><?php _e('Webhook URL', 'd-express-woo'); ?></label>
+                                </th>
+                                <td>
+                                    <input type="text" id="dexpress_webhook_url" readonly
+                                        value="<?php echo esc_url(rest_url('dexpress-woo/v1/notify')); ?>" class="regular-text">
+                                    <button type="button" class="button button-secondary" onclick="copyToClipboard('#dexpress_webhook_url')">
+                                        <?php _e('Kopiraj', 'd-express-woo'); ?>
+                                    </button>
+                                    <p class="description"><?php _e('URL koji treba dostaviti D Express-u za primanje notifikacija.', 'd-express-woo'); ?>
+                                        <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Endpoint URL vaše WordPress instalacije koji prihvata D Express webhook notifikacije o statusima pošiljki. Dostavite ovaj URL D Express-u kako bi mogli automatski slati ažuriranja statusa pošiljki (metoda notify). Format je {vaš-sajt}/wp-json/dexpress-woo/v1/notify.', 'd-express-woo'); ?>"></span>
+                                    </p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row">
+                                    <label for="dexpress_webhook_secret"><?php _e('Webhook tajni ključ', 'd-express-woo'); ?></label>
+                                </th>
+                                <td>
+                                    <input type="text" id="dexpress_webhook_secret" name="dexpress_webhook_secret"
+                                        value="<?php echo esc_attr($webhook_secret); ?>" class="regular-text">
+                                    <button type="button" class="button button-secondary" onclick="generateWebhookSecret()">
+                                        <?php _e('Generiši novi', 'd-express-woo'); ?>
+                                    </button>
+                                    <p class="description"><?php _e('Tajni ključ koji treba dostaviti D Express-u za verifikaciju notifikacija.', 'd-express-woo'); ?>
+                                        <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Sigurnosni token koji se šalje kao \'cc\' parametar u webhook pozivu za verifikaciju autentičnosti. Dostavite ovaj ključ D Express-u prilikom aktivacije webhook servisa. Služi kao zaštita od lažnih notifikacija.', 'd-express-woo'); ?>"></span>
+                                    </p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row">
+                                    <label for="dexpress_google_maps_api_key"><?php _e('Google Maps API ključ', 'd-express-woo'); ?></label>
+                                </th>
+                                <td>
+                                    <input type="text" id="dexpress_google_maps_api_key" name="dexpress_google_maps_api_key"
+                                        value="<?php echo esc_attr(get_option('dexpress_google_maps_api_key', '')); ?>" class="regular-text">
+                                    <p class="description">
+                                        <?php _e('Unesite Google Maps API ključ za prikazivanje mape paketomata. Možete ga dobiti na <a href="https://developers.google.com/maps/documentation/javascript/get-api-key" target="_blank">Google Developers Console</a>.', 'd-express-woo'); ?>
+                                        <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Google Maps API ključ za prikazivanje interaktivne mape sa lokacijama paketomata u checkout procesu. Ovaj ključ možete dobiti kroz Google Cloud Console, i neophodan je za korišćenje paketomatske dostave sa mapom za izbor lokacije.', 'd-express-woo'); ?>"></span>
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <!-- Clean Uninstall podešavanja -->
+
+                    <div id="tab-uninstall" class="dexpress-tab <?php echo $active_tab === 'uninstall' ? 'active' : ''; ?>">
+                        <h2><?php _e('Clean Uninstall Podešavanja', 'd-express-woo'); ?></h2>
+
+                        <table class="form-table">
+                            <tr>
+                                <th scope="row">
+                                    <label for="dexpress_clean_uninstall"><?php _e('Clean Uninstall', 'd-express-woo'); ?></label>
+                                </th>
+                                <td>
+                                    <label>
+                                        <input type="checkbox"
+                                            id="dexpress_clean_uninstall"
+                                            name="dexpress_clean_uninstall"
+                                            value="yes"
+                                            <?php checked(get_option('dexpress_clean_uninstall'), 'yes'); ?>>
+                                        <span>
+                                            <strong><?php _e('Obriši sve podatke pri brisanju plugina', 'd-express-woo'); ?></strong>
+                                        </span>
+                                    </label>
+                                    <p class="description" style="color: red;">
+                                        <?php _e('UPOZORENJE: Ako je ova opcija označena, svi podaci plugina (uključujući sve tabele u bazi) će biti obrisani kada se plugin obriše.', 'd-express-woo'); ?>
+                                        <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Kontroliše brisanje podataka prilikom deaktivacije plugina. Kada je aktivirano, prilikom deinstalacije plugina biće obrisane sve tabele (dexpress_shipments, dexpress_packages, dexpress_statuses, itd.) i sva podešavanja.<br><b>UPOZORENJE:</b> Ovo trajno briše istoriju pošiljki i sve konfiguracije!', 'd-express-woo'); ?>"></span>
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <!-- Dugmad za akcije za sve tabove -->
+                    <div class="dexpress-settings-actions" style="margin-top: 20px;">
+                        <button type="submit" name="dexpress_save_settings" class="button button-primary">
+                            <?php _e('Sačuvaj podešavanja', 'd-express-woo'); ?>
+                        </button>
+
+                        <a href="<?php echo esc_url(admin_url('admin.php?page=dexpress-settings&action=update_indexes')); ?>" class="button button-secondary">
+                            <?php _e('Ažuriraj šifarnike', 'd-express-woo'); ?>
+                        </a>
+
+                        <?php if (dexpress_is_test_mode()): ?>
+                            <a href="<?php echo esc_url(admin_url('admin.php?page=dexpress-settings&action=test_connection')); ?>" class="button button-secondary">
+                                <?php _e('Testiraj konekciju', 'd-express-woo'); ?>
+                            </a>
+                        <?php endif; ?>
+                    </div>
             </form>
+            <div class="dexpress-support-section">
+                <h2><?php _e('Podrška', 'd-express-woo'); ?></h2>
+
+                <div class="dexpress-support-content">
+                    <div class="dexpress-support-card">
+                        <div class="card-icon">
+                            <span class="dashicons dashicons-email-alt"></span>
+                        </div>
+                        <div class="card-content">
+                            <h3><?php _e('Email podrška', 'd-express-woo'); ?></h3>
+                            <p><?php _e('Imate pitanje ili vam je potrebna pomoć? Pošaljite nam email.', 'd-express-woo'); ?></p>
+                            <p class="support-email"><a href="mailto:podrska@example.com">podrska@example.com</a></p>
+                        </div>
+                    </div>
+
+                    <div class="dexpress-support-card">
+                        <div class="card-icon">
+                            <span class="dashicons dashicons-book"></span>
+                        </div>
+                        <div class="card-content">
+                            <h3><?php _e('Dokumentacija', 'd-express-woo'); ?></h3>
+                            <p><?php _e('Pogledajte našu detaljnu dokumentaciju za pomoć oko korišćenja plugin-a.', 'd-express-woo'); ?></p>
+                            <p><a href="https://example.com/dokumentacija" target="_blank" class="button button-secondary"><?php _e('Dokumentacija', 'd-express-woo'); ?></a></p>
+                        </div>
+                    </div>
+
+                    <div class="dexpress-support-card">
+                        <div class="card-icon">
+                            <span class="dashicons dashicons-phone"></span>
+                        </div>
+                        <div class="card-content">
+                            <h3><?php _e('Telefonska podrška', 'd-express-woo'); ?></h3>
+                            <p><?php _e('Dostupni smo radnim danima od 8-16h za hitna pitanja.', 'd-express-woo'); ?></p>
+                            <p class="support-phone">+381 11 123 4567</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dexpress-version-info">
+                    <p><?php printf(__('D Express WooCommerce Plugin v%s', 'd-express-woo'), DEXPRESS_WOO_VERSION); ?></p>
+                </div>
+            </div>
         </div>
 
-        <script>
-            function copyToClipboard(element) {
-                var $temp = jQuery("<input>");
-                jQuery("body").append($temp);
-                $temp.val(jQuery(element).val()).select();
-                document.execCommand("copy");
-                $temp.remove();
-                alert("<?php _e('URL je kopiran u clipboard!', 'd-express-woo'); ?>");
-            }
+        <!-- <script>
+            // Minimalni JavaScript za prebacivanje tabova bez reloada stranice
+            function switchTab(e, tabName) {
+                e.preventDefault();
 
-            function generateWebhookSecret() {
-                // Generisanje nasumičnog stringa od 32 karaktera
-                var chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-                var secret = '';
-                for (var i = 0; i < 32; i++) {
-                    secret += chars.charAt(Math.floor(Math.random() * chars.length));
-                }
+                // Sakrijemo sve tabove
+                document.querySelectorAll('.dexpress-tab').forEach(function(tab) {
+                    tab.classList.remove('active');
+                });
 
-                jQuery('#dexpress_webhook_secret').val(secret);
+                // Prikažemo izabrani tab
+                document.getElementById('tab-' + tabName).classList.add('active');
+
+                // Ažuriramo aktivne klase linkova
+                document.querySelectorAll('.dexpress-tab-link').forEach(function(link) {
+                    link.classList.remove('active');
+                });
+                e.target.classList.add('active');
+
+                // Postavimo vrednost hidden polja za aktivni tab
+                document.querySelector('input[name="active_tab"]').value = tabName;
+
+                // Ažuriramo URL u address baru bez reloada
+                window.history.pushState({}, '', '?page=dexpress-settings&tab=' + tabName);
             }
-        </script>
+        </script> -->
         <?php
     }
     /**
@@ -929,7 +1045,7 @@ class D_Express_Admin
         }
 
         // Na kraju save_settings funkcije
-        $active_tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'api';
+        $active_tab = isset($_POST['active_tab']) ? sanitize_key($_POST['active_tab']) : 'api';
         wp_redirect(add_query_arg(['settings-updated' => 'true', 'tab' => $active_tab], admin_url('admin.php?page=dexpress-settings')));
         exit;
     }

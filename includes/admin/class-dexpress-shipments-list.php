@@ -443,12 +443,37 @@ function dexpress_shipments_list()
         <h1 class="wp-heading-inline"><?php _e('D Express Pošiljke', 'd-express-woo'); ?></h1>
         <a href="<?php echo admin_url('admin.php?page=dexpress-sync-shipments'); ?>" class="page-title-action"><?php _e('Sinhronizuj statuse', 'd-express-woo'); ?></a>
 
-        <form method="post">
+        <!-- Dodajte ovo direktno dugme za štampanje -->
+        <!-- <button type="button" id="dexpress-bulk-print-top" class="page-title-action"><?php _e('Štampaj odabrane', 'd-express-woo'); ?></button> -->
+
+        <form method="post" id="dexpress-shipments-form">
             <input type="hidden" name="page" value="<?php echo $_REQUEST['page']; ?>" />
             <?php $shipments_list->search_box(__('Pretraži pošiljke', 'd-express-woo'), 'dexpress_search'); ?>
             <?php $shipments_list->display(); ?>
         </form>
     </div>
+
+    <!-- Dodajte JavaScript za novo dugme -->
+    <script type="text/javascript">
+        jQuery(document).ready(function($) {
+            $('#dexpress-bulk-print-top').on('click', function(e) {
+                e.preventDefault();
+
+                var selectedIds = [];
+                $('input[name="shipment[]"]:checked').each(function() {
+                    selectedIds.push($(this).val());
+                });
+
+                if (selectedIds.length === 0) {
+                    alert('<?php _e('Molimo odaberite pošiljke za štampanje.', 'd-express-woo'); ?>');
+                    return;
+                }
+
+                $('#bulk_print_ids').val(selectedIds.join(','));
+                $('#bulk_print_form').submit();
+            });
+        });
+    </script>
 <?php
 }
 
@@ -525,7 +550,7 @@ function dexpress_process_bulk_actions()
         exit;
     }
 }
-add_action('load-woocommerce_page_dexpress-shipments', 'dexpress_process_bulk_actions');
+add_action('load-d-express_page_dexpress-shipments', 'dexpress_process_bulk_actions');
 
 /**
  * Obrada pojedinačnih akcija
@@ -554,7 +579,7 @@ function dexpress_process_single_actions()
 }
 add_action('admin_init', 'dexpress_process_single_actions');
 // Prvo uklonimo print kao bulk akciju
-add_filter('bulk_actions-woocommerce_page_dexpress-shipments', function ($actions) {
+add_filter('bulk_actions-d-express_page_dexpress-shipments', function ($actions) {
     if (isset($actions['print'])) {
         unset($actions['print']); // Ukloni standardnu bulk akciju za štampu
     }
@@ -564,7 +589,11 @@ add_filter('bulk_actions-woocommerce_page_dexpress-shipments', function ($action
 // Dodamo našu custom formu za bulk štampanje
 add_action('admin_footer', function () {
     $screen = get_current_screen();
-    if (!isset($screen->id) || $screen->id !== 'woocommerce_page_dexpress-shipments')
+    if (
+        !isset($screen->id) ||
+        ($screen->id !== 'dexpress-settings_page_dexpress-shipments' &&
+            $screen->id !== 'd-express_page_dexpress-shipments')
+    )
         return;
 ?>
     <form id="bulk_print_form" method="post" action="<?php echo admin_url('admin-ajax.php'); ?>" target="_blank">
