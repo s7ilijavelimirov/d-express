@@ -1,11 +1,33 @@
-[2025-03-31 09:37:47] Pokrenuto osvežavanje statusa za pošiljku ID: 20
-[2025-03-31 09:37:47] Pokrenuta simulacija statusa za test pošiljku ID: 20
-[2025-03-31 09:37:47] Simulirani status dodat: 0 za pošiljku TT0000000004
-[2025-03-31 09:37:47] Pošiljka ažurirana sa statusom: 0
-[2025-03-31 09:37:47] Simulirani status dodat: 3 za pošiljku TT0000000004
-[2025-03-31 09:37:47] Pošiljka ažurirana sa statusom: 3
-[2025-03-31 09:37:47] Simulirani status dodat: 4 za pošiljku TT0000000004
-[2025-03-31 09:37:47] Pošiljka ažurirana sa statusom: 4
-[2025-03-31 09:37:47] Simulirani status dodat: 1 za pošiljku TT0000000004
-[2025-03-31 09:37:47] Pošiljka ažurirana sa statusom: 1
-[2025-03-31 09:37:47] Simulacija statusa uspešna za pošiljku ID: 20
+[2025-03-31 12:52:16] Checkout order processed: 811
+[2025-03-31 12:52:16] Has D Express shipping: Yes
+[2025-03-31 12:52:16] Automatic shipment creation is disabled or status does not match. Auto create: Enabled, Current status: pending, Required status: processing
+[2025-03-31 12:52:19] [SHIPPING] Započinjem kreiranje pošiljke za narudžbinu #811
+[2025-03-31 12:52:19] [SHIPPING] Priprema podataka za narudžbinu #811
+[2025-03-31 12:52:19] Using address type: shipping
+[2025-03-31 12:52:19] Street: Bulevar Nikole Pašića, Number: 12, City ID: 724548
+[2025-03-31 12:52:19] Payment method: cod, Is COD: Yes
+[2025-03-31 12:52:19] Using BuyOut: 99000, Account: 170-0010364556000-77
+[2025-03-31 12:52:19] [WEIGHT DEBUG] Početak izračunavanja težine za narudžbinu #811
+[2025-03-31 12:52:19] [WEIGHT DEBUG] Proizvod: Beanie, Težina: 11.5kg, Količina: 1, Ukupno: 11.5kg
+[2025-03-31 12:52:19] [WEIGHT DEBUG] Ukupna težina u kg pre konverzije: 11.5
+[2025-03-31 12:52:19] [WEIGHT DEBUG] Konačna težina u gramima: 11500
+[2025-03-31 12:52:19] [WEIGHT DEBUG] Težina iz calculate_order_weight: 11500 grama
+[2025-03-31 12:52:19] [WEIGHT DEBUG] Težina nakon formatiranja za API: 11500 grama
+[2025-03-31 12:52:19] [WEIGHT DEBUG] Početak izračunavanja težine za narudžbinu #811
+[2025-03-31 12:52:19] [WEIGHT DEBUG] Proizvod: Beanie, Težina: 11.5kg, Količina: 1, Ukupno: 11.5kg
+[2025-03-31 12:52:19] [WEIGHT DEBUG] Ukupna težina u kg pre konverzije: 11.5
+[2025-03-31 12:52:19] [WEIGHT DEBUG] Konačna težina u gramima: 11500
+[2025-03-31 12:52:19] Final BuyOut amount: 99000
+[2025-03-31 12:52:19] Final BuyOutAccount: 170-0010364556000-77
+[2025-03-31 12:52:19] Final RAddressNum: 12
+[2025-03-31 12:52:19] Final RTownID: 724548
+[2025-03-31 12:52:19] Final RCPhone: 381603995503
+[2025-03-31 12:52:19] [SHIPPING] Šaljem zahtev ka D-Express API-ju
+[2025-03-31 12:52:19] [SHIPPING] API odgovor primljen uspešno
+[2025-03-31 12:52:19] [SHIPPING] API odgovor: TEST
+[2025-03-31 12:52:19] [SHIPPING] Tracking broj: TT0000000006, Shipment ID: TT0000000006
+[2025-03-31 12:52:19] [SHIPPING] Čuvanje pošiljke u bazu podataka
+[2025-03-31 12:52:19] [SHIPPING] Pošiljka uspešno kreirana sa ID: 22
+[2025-03-31 12:55:44] Pokrenuto osvežavanje statusa za pošiljku ID: 22
+[2025-03-31 12:55:44] Pokrenuta simulacija statusa za test pošiljku ID: 22
+[2025-03-31 12:55:44] Nema novih simuliranih statusa za pošiljku ID: 22

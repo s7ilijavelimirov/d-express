@@ -30,7 +30,6 @@ class D_Express_Admin
         add_action('add_meta_boxes', array($this, 'add_order_metabox'));
 
         // Dodavanje akcija za narudžbine
-        add_action('woocommerce_order_actions', array($this, 'add_order_actions'));
         add_action('woocommerce_order_action_dexpress_create_shipment', array($this, 'process_create_shipment_action'));
 
         // Dodavanje kolone za praćenje u listi narudžbina
@@ -1236,18 +1235,6 @@ class D_Express_Admin
         do_action('dexpress_after_order_metabox', $order);
     }
 
-
-
-
-    /**
-     * Dodavanje akcija za narudžbine
-     */
-    // public function add_order_actions($actions)
-    // {
-    //     $actions['dexpress_create_shipment'] = __('Kreiraj D Express pošiljku', 'd-express-woo');
-    //     return $actions;
-    // }
-
     /**
      * Obrada akcije kreiranja pošiljke
      */
@@ -1384,7 +1371,7 @@ class D_Express_Admin
         $active_tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'api';
 
         // Kreiranje instance API klase
-        $api = new D_Express_API();
+        $api = D_Express_API::get_instance();
 
         // Provera API kredencijala
         if (!$api->has_credentials()) {
@@ -1428,7 +1415,7 @@ class D_Express_Admin
         }
 
         // Kreiranje instance API klase
-        $api = new D_Express_API();
+        $api = D_Express_API::get_instance();
 
         // Dodati ovo za zadržavanje aktivnog taba
         $active_tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'api';

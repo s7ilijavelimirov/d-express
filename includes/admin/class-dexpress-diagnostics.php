@@ -210,7 +210,7 @@ class D_Express_Diagnostics
      */
     private function check_api_connection()
     {
-        $api = new D_Express_API();
+        $api = D_Express_API::get_instance();
 
         if (!$api->has_credentials()) {
             $status = false;

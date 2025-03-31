@@ -20,6 +20,12 @@ class D_Express_Validator
      */
     public static function validate_order($order)
     {
+        // Keširanje često korišćenih vrednosti
+        static $test_mode = null;
+
+        if ($test_mode === null) {
+            $test_mode = get_option('dexpress_test_mode', 'yes') === 'yes';
+        }
         try {
             // 1. Validacija adrese
             $address_validation = self::validate_order_address($order);

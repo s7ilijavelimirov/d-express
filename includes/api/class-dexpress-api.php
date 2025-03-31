@@ -20,7 +20,21 @@ class D_Express_API
     private $username;
     private $password;
     private $client_id;
+    /**
+     * Singleton instanca
+     */
+    private static $instance = null;
 
+    /**
+     * Dobijanje singleton instance
+     */
+    public static function get_instance()
+    {
+        if (self::$instance === null) {
+            self::$instance = new self();
+        }
+        return self::$instance;
+    }
     /**
      * Test mode flag
      */
@@ -738,6 +752,11 @@ class D_Express_API
      */
     public function prepare_shipment_data_from_order($order)
     {
+        static $default_content = null;
+
+        if ($default_content === null) {
+            $default_content = get_option('dexpress_default_content', __('Roba iz web prodavnice', 'd-express-woo'));
+        }
         if (!$order instanceof WC_Order) {
             return new WP_Error('invalid_order', __('Nevažeća narudžbina', 'd-express-woo'));
         }

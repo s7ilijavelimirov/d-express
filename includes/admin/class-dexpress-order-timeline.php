@@ -515,21 +515,6 @@ class D_Express_Order_Timeline
 
         return $statuses_added;
     }
-    function simulate_api_errors($endpoint, $request_data)
-    {
-        // Na osnovu posebnog parametra u kodu (npr. $_GET['simulate_error'])
-        $error_type = isset($_GET['simulate_error']) ? $_GET['simulate_error'] : '';
-
-        if ($error_type === 'connection') {
-            return new WP_Error('connection_error', 'Simulirana greška konekcije');
-        } else if ($error_type === 'validation') {
-            return new WP_Error('validation_error', 'Neispravan format podataka');
-        } else if ($error_type === 'authentication') {
-            return new WP_Error('auth_error', 'Neispravni API kredencijali');
-        }
-
-        return false; // Nema simulirane greške
-    }
     /**
      * Provera da li postoji određeni status
      * 

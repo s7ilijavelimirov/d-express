@@ -124,14 +124,14 @@ class D_Express_WooCommerce
         // Deaktivacija plugin-a
         register_deactivation_hook(__FILE__, array($this, 'deactivate'));
 
-        // Inicijalizacija nakon učitavanja svih plugin-a
-        add_action('plugins_loaded', array($this, 'init'), 0);
-
-        // Dodavanje REST API ruta za webhook
+        // Dodavanje REST API ruta za webhook - pomereno pre plugins_loaded
         add_action('rest_api_init', array($this, 'register_rest_routes'));
 
-        // Dodavanje webhook obrade za cron
+        // Dodavanje webhook obrade za cron - pomereno pre plugins_loaded
         add_action('dexpress_process_notification', array($this, 'process_notification'));
+
+        // Inicijalizacija nakon učitavanja svih plugin-a
+        add_action('plugins_loaded', array($this, 'init'), 0);
     }
 
     /**
@@ -311,7 +311,7 @@ class D_Express_WooCommerce
      */
     public function update_indexes()
     {
-        $api = new D_Express_API();
+        $api = D_Express_API::get_instance();
 
         // Ažuriranje statusa
         $statuses = $api->get_statuses();

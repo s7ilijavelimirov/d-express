@@ -14,7 +14,14 @@ defined('ABSPATH') || exit;
  */
 function dexpress_log($message, $type = 'info')
 {
-    if (get_option('dexpress_enable_logging', 'no') !== 'yes') {
+    static $logging_enabled = null;
+
+    // Keširanje provere da li je logovanje uključeno
+    if ($logging_enabled === null) {
+        $logging_enabled = (get_option('dexpress_enable_logging', 'no') === 'yes');
+    }
+
+    if (!$logging_enabled) {
         return;
     }
 
