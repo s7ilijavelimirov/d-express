@@ -685,6 +685,10 @@ class D_Express_Label_Generator
         }
 
         echo '</div></body></html>';
+        if (isset($order) && $order) {
+            update_post_meta($order->get_id(), '_dexpress_label_printed', 'yes');
+            update_post_meta($order->get_id(), '_dexpress_label_printed_date', current_time('mysql'));
+        }
         exit;
     }
 

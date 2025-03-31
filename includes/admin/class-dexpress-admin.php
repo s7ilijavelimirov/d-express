@@ -37,6 +37,14 @@ class D_Express_Admin
         add_action('manage_shop_order_posts_custom_column', array($this, 'show_order_tracking_column_data'), 10, 2);
 
         add_filter('woocommerce_get_order_address', array($this, 'format_order_address_phone'), 10, 3);
+
+        // Za WooCommerce Orders HPOS prikaz
+        add_filter('manage_woocommerce_page_wc-orders_columns', array($this, 'add_wc_orders_label_printed_column'), 20);
+        add_action('manage_woocommerce_page_wc-orders_custom_column', array($this, 'show_wc_orders_label_printed_column'), 20, 2);
+
+        // Za WooCommerce Orders (stari način)
+        add_filter('manage_edit-shop_order_columns', array($this, 'add_wc_orders_label_printed_column'), 20);
+        add_action('manage_shop_order_posts_custom_column', array($this, 'show_wc_orders_label_printed_column'), 20, 2);
     }
     public function __construct()
     {
@@ -169,7 +177,24 @@ class D_Express_Admin
                 max-width: 20px !important;
             }
         ";
-
+        wp_add_inline_style('dexpress-admin-css', "
+        .column-dexpress_label_printed {
+            width: 120px;
+            text-align: center;
+        }
+        
+        .dexpress-label-printed,
+        .dexpress-label-not-printed {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .dexpress-label-printed .dashicons,
+        .dexpress-label-not-printed .dashicons {
+            margin-right: 5px;
+        }
+    ");
         // Registrujemo i dodajemo inline CSS
         wp_register_style('dexpress-admin-icon-style', false);
         wp_enqueue_style('dexpress-admin-icon-style');
@@ -1462,5 +1487,61 @@ class D_Express_Admin
             ), admin_url('admin.php')));
         }
         exit;
+    }
+    public function add_wc_orders_label_printed_column($columns)
+    {
+        // Ubaci našu kolonu pred kraj (pre akcija)
+        $new_columns = array();
+
+        foreach ($columns as $key => $value) {
+            $new_columns[$key] = $value;
+
+            // Dodaj našu kolonu pre actions ili pred sam kraj
+            if (
+                $key === 'order_total' || $key === 'wc_actions' || $key === 'actions' ||
+                (count($new_columns) === count($columns) - 1)
+            ) {
+                $new_columns['dexpress_label_printed'] = __('D Express nalepnica', 'd-express-woo');
+            }
+        }
+
+        // Ako nije ubačena, dodaj na kraj
+        if (!isset($new_columns['dexpress_label_printed'])) {
+            $new_columns['dexpress_label_printed'] = __('D Express nalepnica', 'd-express-woo');
+        }
+
+        return $new_columns;
+    }
+
+    // 2. Prikaz sadržaja kolone
+    public function show_wc_orders_label_printed_column($column, $post_or_order_id)
+    {
+        if ($column !== 'dexpress_label_printed') {
+            return;
+        }
+
+        // Dobijanje ID-a narudžbine (radi i sa objektom i sa ID-em)
+        $order_id = is_object($post_or_order_id) ? $post_or_order_id->get_id() : $post_or_order_id;
+
+        global $wpdb;
+        $shipment = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}dexpress_shipments WHERE order_id = %d",
+            $order_id
+        ));
+
+        if (!$shipment) {
+            echo '<span class="dexpress-no-shipment">-</span>';
+            return;
+        }
+
+        $is_printed = get_post_meta($order_id, '_dexpress_label_printed', true);
+
+        if ($is_printed === 'yes') {
+            echo '<span style="color:#5cb85c;font-size:16px;vertical-align:middle;" title="' .
+                esc_attr__('Nalepnica odštampana', 'd-express-woo') . '">✓</span>';
+        } else {
+            echo '<span style="color:#999;font-size:16px;vertical-align:middle;" title="' .
+                esc_attr__('Nije štampana', 'd-express-woo') . '">✗</span>';
+        }
     }
 }
