@@ -524,6 +524,16 @@ class D_Express_Checkout
                 <p class="dexpress-dispenser-description"><?php echo wp_kses_post($settings['description_text']); ?></p>
                 <p class="dexpress-dispenser-price"><?php echo esc_html($price_text); ?></p>
 
+                <!-- Slika paketomata -->
+                <div class="dexpress-dispenser-image" style="margin: 15px 0; text-align: center;">
+                    <img src="<?php echo plugin_dir_url(__FILE__) . '../../assets/images/paketomat-picture.jpg'; ?>"
+                        alt="<?php esc_attr_e('Dimenzije paketomata', 'd-express-woo'); ?>"
+                        style="max-width: 100%; height: auto;">
+                    <p class="dexpress-image-caption" style="font-size: 0.9em; text-align: center; margin-top: 5px;">
+                        <?php esc_html_e('Dimenzije paketomata (S, M, L veličine)', 'd-express-woo'); ?>
+                    </p>
+                </div>
+
                 <!-- Vreme isporuke -->
                 <div class="dexpress-delivery-time" style="margin: 10px 0; text-align: right; font-weight: bold;">
                     <?php echo esc_html($settings['delivery_time_text']); ?>
