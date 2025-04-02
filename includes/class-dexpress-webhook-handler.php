@@ -10,6 +10,7 @@ defined('ABSPATH') || exit;
 
 class D_Express_Webhook_Handler
 {
+
     /**
      * Provera dozvole za pristup webhook-u
      * 
@@ -303,5 +304,16 @@ class D_Express_Webhook_Handler
         }
 
         return $headers;
+    }
+    /**
+     * Registracija notifikacije o uspešnom prijemu
+     */
+    public function send_receipt_confirmation($notification_id)
+    {
+        // Šalje potvrdu D Expressu da je notifikacija primljena i obrađena
+        $api = new D_Express_API();
+        $api->confirm_notification_receipt($notification_id);
+
+        dexpress_log('Potvrda o primanju notifikacije #' . $notification_id . ' poslata D Expressu', 'info');
     }
 }

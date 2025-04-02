@@ -315,8 +315,11 @@ class D_Express_Order_Timeline
         ));
 
         if (!$shipment) {
-            echo '<div class="dexpress-timeline-empty">';
+            echo '<div class="dexpress-panel-empty">';
+            echo '<div class="dexpress-empty-message">';
+            echo '<span class="dashicons dashicons-info-outline"></span>';
             echo '<p>' . esc_html__('Za ovu narudžbinu još uvek ne postoji D Express pošiljka.', 'd-express-woo') . '</p>';
+            echo '</div>';
             echo '</div>';
             return;
         }
@@ -324,8 +327,8 @@ class D_Express_Order_Timeline
         // Dobavljanje statusa pošiljke
         $db_statuses = $wpdb->get_results($wpdb->prepare(
             "SELECT * FROM {$wpdb->prefix}dexpress_statuses 
-            WHERE (shipment_code = %s OR reference_id = %s) 
-            ORDER BY status_date DESC",
+        WHERE (shipment_code = %s OR reference_id = %s) 
+        ORDER BY status_date DESC",
             $shipment->shipment_id,
             $shipment->reference_id
         ));
@@ -351,116 +354,155 @@ class D_Express_Order_Timeline
             $timeline_statuses = $this->map_statuses($db_statuses, $all_status_definitions);
         }
 
-        // Sortiranje statusa po datumu (najnoviji prvo za prikazivanje na timeline-u)
+        // Sortiranje statusa po datumu (najnoviji prvo)
         usort($timeline_statuses, function ($a, $b) {
             return strtotime($b['status_date']) - strtotime($a['status_date']);
         });
 
+        // Najnoviji status za prikaz u zaglavlju
+        $latest_status = !empty($timeline_statuses) ? $timeline_statuses[0] : null;
+
         // Početak HTML-a
 ?>
-        <div class="dexpress-timeline-container woocommerce-order-data">
-            <?php
-            // Prikazivanje header-a sa poslednjim statusom
-            if (!empty($timeline_statuses)) {
-                $latest_status = $timeline_statuses[0]; // Najnoviji status
+        <div class="dexpress-shipment-panel woocommerce-order-data">
+            <?php if ($latest_status) :
                 $status_class = 'status-' . $latest_status['status_type'];
-
-                // Početak sekcije sa detaljima pošiljke
+                $status_badge_class = 'dexpress-status-badge dexpress-status-' . $latest_status['status_type'];
             ?>
-                <div class="dexpress-timeline-header <?php echo esc_attr($status_class); ?>">
-                    <h3><?php echo esc_html($latest_status['status_name']); ?></h3>
-                </div>
-
-                <div class="dexpress-shipment-details">
-                    <div class="dexpress-tracking-info">
-                        <span class="dexpress-detail-label"><?php esc_html_e('Tracking broj:', 'd-express-woo'); ?></span>
+                <!-- Zaglavlje sa trenutnim statusom -->
+                <div class="dexpress-panel-header <?php echo esc_attr($status_class); ?>">
+                    <h3>
+                        <span class="<?php echo esc_attr($status_badge_class); ?>"><?php echo esc_html($latest_status['status_name']); ?></span>
                         <?php if ($shipment->is_test) : ?>
-                            <span class="dexpress-tracking-number">
-                                <?php echo esc_html($shipment->tracking_number); ?>
-                                <span class="woocommerce-tag is-core-test"><?php esc_html_e('Test', 'd-express-woo'); ?></span>
-                            </span>
-                        <?php else : ?>
-                            <a href="https://www.dexpress.rs/rs/pracenje-posiljaka/<?php echo esc_attr($shipment->tracking_number); ?>"
-                                target="_blank" class="dexpress-tracking-link">
-                                <?php echo esc_html($shipment->tracking_number); ?>
-                                <span class="dashicons dashicons-external"></span>
-                            </a>
+                            <span class="dexpress-test-badge"><?php esc_html_e('Test', 'd-express-woo'); ?></span>
                         <?php endif; ?>
-                    </div>
-
-                    <div class="dexpress-shipment-meta">
-                        <span class="dexpress-detail-label"><?php esc_html_e('Reference ID:', 'd-express-woo'); ?></span>
-                        <span><?php echo esc_html($shipment->reference_id); ?></span>
-                    </div>
-
-                    <div class="dexpress-shipment-meta">
-                        <span class="dexpress-detail-label"><?php esc_html_e('Datum kreiranja:', 'd-express-woo'); ?></span>
-                        <span><?php echo esc_html(date_i18n(get_option('date_format') . ' ' . get_option('time_format'), strtotime($shipment->created_at))); ?></span>
-                    </div>
+                    </h3>
                 </div>
 
-                <div class="dexpress-actions">
-                    <?php
-                    // Kreiraj URL za štampanje nalepnice
-                    $nonce = wp_create_nonce('dexpress-download-label');
-                    $label_url = admin_url('admin-ajax.php?action=dexpress_download_label&shipment_id=' . $shipment->id . '&nonce=' . $nonce);
-                    ?>
-                    <a href="<?php echo esc_url($label_url); ?>" class="button button-secondary" target="_blank">
-                        <span class="dashicons dashicons-printer"></span>
-                        <?php esc_html_e('Preuzmi nalepnicu', 'd-express-woo'); ?>
-                    </a>
-
-                    <button type="button" class="button dexpress-refresh-status"
-                        data-id="<?php echo esc_attr($shipment->id); ?>"
-                        data-nonce="<?php echo esc_attr(wp_create_nonce('dexpress-refresh-status')); ?>">
-                        <span class="dashicons dashicons-update"></span>
-                        <?php esc_html_e('Osveži status', 'd-express-woo'); ?>
-                    </button>
-                </div>
-            <?php
-            }
-            ?>
-
-            <div class="dexpress-timeline">
-                <?php
-                // Prikaz statusa na timeline-u
-                if (!empty($timeline_statuses)) :
-                    foreach ($timeline_statuses as $index => $status) :
-                        $status_date = date_i18n(get_option('date_format') . ' ' . get_option('time_format'), strtotime($status['status_date']));
-                        $status_class = 'status-' . esc_attr($status['status_type']);
-                        $is_latest = ($index === 0);
-
-                        // Dodatne klase za prvi i poslednji element
-                        $extra_class = $is_latest ? ' is-latest' : '';
-                        $extra_class .= ($index === count($timeline_statuses) - 1) ? ' is-first' : '';
-                ?>
-
-                        <div class="dexpress-timeline-item <?php echo esc_attr($status_class . $extra_class); ?>">
-                            <div class="dexpress-timeline-marker">
-                                <span class="dexpress-timeline-icon dashicons <?php echo esc_attr($status['icon']); ?>"></span>
-                            </div>
-
-                            <div class="dexpress-timeline-content">
-                                <div class="dexpress-timeline-header">
-                                    <span class="dexpress-timeline-date"><?php echo esc_html($status_date); ?></span>
-                                </div>
-
-                                <div class="dexpress-timeline-body">
-                                    <span class="dexpress-timeline-status"><?php echo esc_html($status['status_name']); ?></span>
-                                </div>
+                <!-- Informacije o pošiljci -->
+                <div class="dexpress-panel-content">
+                    <div class="dexpress-shipment-info-grid">
+                        <div class="dexpress-info-item">
+                            <span class="dexpress-label"><?php esc_html_e('Tracking broj', 'd-express-woo'); ?></span>
+                            <div class="dexpress-value">
+                                <?php if (!$shipment->is_test) : ?>
+                                    <a href="https://www.dexpress.rs/rs/pracenje-posiljaka/<?php echo esc_attr($shipment->tracking_number); ?>"
+                                        target="_blank" class="dexpress-tracking-link">
+                                        <?php echo esc_html($shipment->tracking_number); ?>
+                                        <span class="dashicons dashicons-external"></span>
+                                    </a>
+                                <?php else : ?>
+                                    <span class="dexpress-tracking-number"><?php echo esc_html($shipment->tracking_number); ?></span>
+                                <?php endif; ?>
                             </div>
                         </div>
-                    <?php
-                    endforeach;
-                else :
-                    ?>
-                    <div class="dexpress-timeline-empty-state">
-                        <p><?php esc_html_e('Još uvek nema informacija o statusu pošiljke.', 'd-express-woo'); ?></p>
+
+                        <div class="dexpress-info-item">
+                            <span class="dexpress-label"><?php esc_html_e('Reference ID', 'd-express-woo'); ?></span>
+                            <div class="dexpress-value"><?php echo esc_html($shipment->reference_id); ?></div>
+                        </div>
+
+                        <div class="dexpress-info-item">
+                            <span class="dexpress-label"><?php esc_html_e('Datum kreiranja', 'd-express-woo'); ?></span>
+                            <div class="dexpress-value">
+                                <?php echo esc_html(date_i18n(get_option('date_format') . ' ' . get_option('time_format'), strtotime($shipment->created_at))); ?>
+                            </div>
+                        </div>
+
+                        <div class="dexpress-info-item dexpress-actions-item">
+                            <div class="dexpress-actions">
+                                <?php
+                                // Kreiraj URL za štampanje nalepnice
+                                $nonce = wp_create_nonce('dexpress-download-label');
+                                $label_url = admin_url('admin-ajax.php?action=dexpress_download_label&shipment_id=' . $shipment->id . '&nonce=' . $nonce);
+                                ?>
+                                <a href="<?php echo esc_url($label_url); ?>" class="button button-secondary" target="_blank">
+                                    <span class="dashicons dashicons-printer"></span>
+                                    <?php esc_html_e('Preuzmi nalepnicu', 'd-express-woo'); ?>
+                                </a>
+                            </div>
+                        </div>
                     </div>
-                <?php
-                endif;
-                ?>
-            </div>
+                </div>
+
+                <!-- Horizontalni timeline -->
+                <div class="dexpress-timeline-wrapper">
+                    <?php if (!empty($timeline_statuses)) :
+                        // Određivanje najvišeg tipa statusa za progress liniju
+                        $highest_status_type = 'pending';
+                        $progress_percentage = 0;
+
+                        foreach ($timeline_statuses as $status) {
+                            if ($status['status_type'] === 'completed' || $status['status_type'] === 'delivered') {
+                                $highest_status_type = 'completed';
+                                $progress_percentage = 100;
+                                break;
+                            } elseif ($status['status_type'] === 'current' || $status['status_type'] === 'transit') {
+                                $highest_status_type = 'transit';
+                                $progress_percentage = 65;
+                            } elseif ($status['status_type'] === 'failed' || $status['status_type'] === 'returned') {
+                                if ($highest_status_type !== 'transit') {
+                                    $highest_status_type = 'failed';
+                                    $progress_percentage = 50;
+                                }
+                            }
+                        }
+
+                        // Okretanje redosleda za horizontalni timeline (najstariji prvo)
+                        $sorted_timeline_statuses = array_reverse($timeline_statuses);
+                    ?>
+                        <div class="dexpress-timeline">
+                            <div class="dexpress-timeline-progress-bar">
+                                <div class="dexpress-timeline-track">
+                                    <div class="dexpress-timeline-progress dexpress-progress-<?php echo esc_attr($highest_status_type); ?>"
+                                        style="width: <?php echo esc_attr($progress_percentage); ?>%"></div>
+                                </div>
+                            </div>
+
+                            <div class="dexpress-timeline-items">
+                                <?php foreach ($sorted_timeline_statuses as $index => $status) :
+                                    // Formatiranje datuma
+                                    $date_obj = new DateTime($status['status_date']);
+                                    $formatted_date = $date_obj->format('j. F Y.');
+                                    $formatted_time = $date_obj->format('H:i');
+
+                                    $status_class = 'dexpress-timeline-step status-' . esc_attr($status['status_type']);
+
+                                    // Dodaj klasu ako je status već dostignut
+                                    $completed_class = '';
+                                    if (
+                                        $index < count($sorted_timeline_statuses) - 1 ||
+                                        in_array($status['status_type'], ['completed', 'delivered'])
+                                    ) {
+                                        $completed_class = ' step-completed';
+                                    }
+                                ?>
+                                    <div class="<?php echo esc_attr($status_class . $completed_class); ?>"
+                                        style="--step-index: <?php echo esc_attr($index); ?>; --total-steps: <?php echo esc_attr(count($sorted_timeline_statuses)); ?>">
+                                        <div class="dexpress-step-marker">
+                                            <span class="dexpress-step-icon dashicons <?php echo esc_attr($status['icon']); ?>"></span>
+                                        </div>
+                                        <div class="dexpress-step-content">
+                                            <div class="dexpress-step-date">
+                                                <span class="dexpress-date"><?php echo esc_html($formatted_date); ?></span>
+                                                <span class="dexpress-time"><?php echo esc_html($formatted_time); ?></span>
+                                            </div>
+                                            <div class="dexpress-step-title"><?php echo esc_html($status['status_name']); ?></div>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    <?php else : ?>
+                        <div class="dexpress-timeline-empty">
+                            <div class="dexpress-empty-message">
+                                <span class="dashicons dashicons-info-outline"></span>
+                                <p><?php esc_html_e('Još uvek nema informacija o statusu pošiljke.', 'd-express-woo'); ?></p>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
         </div>
 <?php
     }

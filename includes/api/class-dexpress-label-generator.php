@@ -278,6 +278,10 @@ class D_Express_Label_Generator
             if ($order) {
                 $this->generate_compact_label($shipment, $order, $shipment_index, $total_shipments);
                 $shipment_index++; // Povećavamo indeks za sledeću pošiljku
+
+                // Označimo svaku kao odštampanu
+                update_post_meta($order->get_id(), '_dexpress_label_printed', 'yes');
+                update_post_meta($order->get_id(), '_dexpress_label_printed_date', current_time('mysql'));
             }
         }
 
@@ -468,7 +472,7 @@ class D_Express_Label_Generator
 
         $shipment_id = sanitize_text_field($_GET['shipment_id']);
 
-        // Dobijanje podataka o pošiljci - proširi pretragu na više kolona
+        // Dobijanje podataka o pošiljci
         global $wpdb;
         $shipment = $wpdb->get_row($wpdb->prepare(
             "SELECT * FROM {$wpdb->prefix}dexpress_shipments WHERE id = %d OR shipment_id = %s OR tracking_number = %s",
@@ -485,8 +489,10 @@ class D_Express_Label_Generator
         if (!$order) {
             wp_die(__('Narudžbina nije pronađena.', 'd-express-woo'));
         }
+
         $package_count = $this->get_package_count($shipment);
-        // Koristi isti stil kao za bulk štampanje
+
+        // Generišemo HTML za štampanje (stilovi, skripte, itd.)
         echo '<!DOCTYPE html>
         <html>
         <head>
@@ -676,8 +682,8 @@ class D_Express_Label_Generator
                 <h1>' . __('D Express nalepnica za štampanje', 'd-express-woo') . '</h1>
                 <button onclick="window.print()" class="print-button">' . __('Štampaj nalepnicu', 'd-express-woo') . '</button>
             </div>
-            
-            <div class="print-container">';
+        
+        <div class="print-container">';
 
         // Prikaz nalepnice koristeći istu funkciju kao za bulk štampanje
         for ($i = 1; $i <= $package_count; $i++) {
@@ -685,10 +691,11 @@ class D_Express_Label_Generator
         }
 
         echo '</div></body></html>';
-        if (isset($order) && $order) {
-            update_post_meta($order->get_id(), '_dexpress_label_printed', 'yes');
-            update_post_meta($order->get_id(), '_dexpress_label_printed_date', current_time('mysql'));
-        }
+
+        // Označimo kao odštampano nakon što je HTML generisan
+        update_post_meta($order->get_id(), '_dexpress_label_printed', 'yes');
+        update_post_meta($order->get_id(), '_dexpress_label_printed_date', current_time('mysql'));
+
         exit;
     }
 

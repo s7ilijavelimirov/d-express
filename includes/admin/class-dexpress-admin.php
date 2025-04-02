@@ -45,6 +45,14 @@ class D_Express_Admin
         // Za WooCommerce Orders (stari način)
         add_filter('manage_edit-shop_order_columns', array($this, 'add_wc_orders_label_printed_column'), 20);
         add_action('manage_shop_order_posts_custom_column', array($this, 'show_wc_orders_label_printed_column'), 20, 2);
+
+        // Dodaj ovo u funkciju init() u class-dexpress-admin.php
+        add_filter('manage_edit-shop_order_columns', array($this, 'add_order_shipment_status_column'), 21);
+        add_action('manage_shop_order_posts_custom_column', array($this, 'show_order_shipment_status_column'), 21, 2);
+
+        // Za WooCommerce Orders HPOS prikaz
+        add_filter('manage_woocommerce_page_wc-orders_columns', array($this, 'add_order_shipment_status_column'), 21);
+        add_action('manage_woocommerce_page_wc-orders_custom_column', array($this, 'show_order_shipment_status_column'), 21, 2);
     }
     public function __construct()
     {
@@ -177,24 +185,6 @@ class D_Express_Admin
                 max-width: 20px !important;
             }
         ";
-        wp_add_inline_style('dexpress-admin-css', "
-        .column-dexpress_label_printed {
-            width: 120px;
-            text-align: center;
-        }
-        
-        .dexpress-label-printed,
-        .dexpress-label-not-printed {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .dexpress-label-printed .dashicons,
-        .dexpress-label-not-printed .dashicons {
-            margin-right: 5px;
-        }
-    ");
         // Registrujemo i dodajemo inline CSS
         wp_register_style('dexpress-admin-icon-style', false);
         wp_enqueue_style('dexpress-admin-icon-style');
@@ -1490,33 +1480,79 @@ class D_Express_Admin
     }
     public function add_wc_orders_label_printed_column($columns)
     {
-        // Ubaci našu kolonu pred kraj (pre akcija)
-        $new_columns = array();
+        $new_columns = $columns;
 
-        foreach ($columns as $key => $value) {
-            $new_columns[$key] = $value;
-
-            // Dodaj našu kolonu pre actions ili pred sam kraj
-            if (
-                $key === 'order_total' || $key === 'wc_actions' || $key === 'actions' ||
-                (count($new_columns) === count($columns) - 1)
-            ) {
-                $new_columns['dexpress_label_printed'] = __('D Express nalepnica', 'd-express-woo');
-            }
-        }
-
-        // Ako nije ubačena, dodaj na kraj
-        if (!isset($new_columns['dexpress_label_printed'])) {
-            $new_columns['dexpress_label_printed'] = __('D Express nalepnica', 'd-express-woo');
-        }
+        // Dodaj kolonu na kraj liste
+        $new_columns['dexpress_label_printed'] = __('D Express nalepnica', 'd-express-woo');
 
         return $new_columns;
     }
 
     // 2. Prikaz sadržaja kolone
+    // U class-dexpress-admin.php, modifikujemo funkciju show_wc_orders_label_printed_column
+
     public function show_wc_orders_label_printed_column($column, $post_or_order_id)
     {
         if ($column !== 'dexpress_label_printed') {
+            return;
+        }
+
+        // Dobijanje ID-a narudžbine (radi i sa objektom i sa ID-em)
+        $order_id = is_object($post_or_order_id) ? $post_or_order_id->get_id() : $post_or_order_id;
+
+        global $wpdb;
+        $shipment = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}dexpress_shipments WHERE order_id = %d",
+            $order_id
+        ));
+
+        if (!$shipment) {
+            echo '<div class="dexpress-no-shipment" style="text-align: center; color: #999;">
+                <span class="dashicons dashicons-minus" style="font-size: 24px; width: 24px; height: 24px; margin: 0 auto;"></span>
+                <div style="font-size: 12px; margin-top: 4px;">' . esc_html__('Nema pošiljke', 'd-express-woo') . '</div>
+              </div>';
+            return;
+        }
+
+        $is_printed = get_post_meta($order_id, '_dexpress_label_printed', true);
+
+        if ($is_printed === 'yes') {
+            echo '<div class="dexpress-label-printed" style="text-align: center;">
+                <span class="dashicons dashicons-yes-alt" style="color: #5cb85c; font-size: 28px; width: 28px; height: 28px; margin: 0 auto;"></span>
+                <div style="font-size: 12px; margin-top: 4px;">' . esc_html__('Odštampano', 'd-express-woo') . '</div>
+              </div>';
+        } else {
+            echo '<div class="dexpress-label-not-printed" style="text-align: center;">
+                <span class="dashicons dashicons-no-alt" style="color: red; font-size: 28px; width: 28px; height: 28px; margin: 0 auto;"></span>
+                <div style="font-size: 12px; margin-top: 4px;">' . esc_html__('Nije štampano', 'd-express-woo') . '</div>
+              </div>';
+        }
+    }
+    // Dodaj ove nove funkcije u klasu D_Express_Admin
+    public function add_order_shipment_status_column($columns)
+    {
+        $new_columns = array();
+
+        foreach ($columns as $key => $value) {
+            $new_columns[$key] = $value;
+
+            // Dodaj našu kolonu nakon kolone za D Express nalepnicu
+            if ($key === 'dexpress_label_printed') {
+                $new_columns['dexpress_shipment_status'] = __('Status pošiljke', 'd-express-woo');
+            }
+        }
+
+        // Ako nije ubačena, dodaj na kraj
+        if (!isset($new_columns['dexpress_shipment_status'])) {
+            $new_columns['dexpress_shipment_status'] = __('Status pošiljke', 'd-express-woo');
+        }
+
+        return $new_columns;
+    }
+
+    public function show_order_shipment_status_column($column, $post_or_order_id)
+    {
+        if ($column !== 'dexpress_shipment_status') {
             return;
         }
 
@@ -1534,14 +1570,77 @@ class D_Express_Admin
             return;
         }
 
-        $is_printed = get_post_meta($order_id, '_dexpress_label_printed', true);
+        // Za test režim, simulirajmo status na osnovu vremena kreiranja
+        if ($shipment->is_test) {
+            $created_time = strtotime($shipment->created_at);
+            $current_time = time();
+            $elapsed_hours = ($current_time - $created_time) / 3600;
 
-        if ($is_printed === 'yes') {
-            echo '<span style="color:#5cb85c;font-size:16px;vertical-align:middle;" title="' .
-                esc_attr__('Nalepnica odštampana', 'd-express-woo') . '">✓</span>';
+            // Simulirani status na osnovu proteklog vremena
+            $status_code = $shipment->status_code;
+
+            // Ako nema statusa, postavimo neki početni
+            if (empty($status_code)) {
+                $status_code = '0'; // Čeka na preuzimanje
+            }
+
+            // Ako je prošlo određeno vreme, simuliramo progresiju statusa
+            if ($elapsed_hours > 2 && (!$status_code || $status_code === '0')) {
+                $status_code = '3'; // Pošiljka preuzeta od pošiljaoca
+            }
+
+            if ($elapsed_hours > 8 && ($status_code === '0' || $status_code === '3')) {
+                $status_code = '4'; // Zadužena za isporuku
+            }
+
+            if ($elapsed_hours > 24 && ($status_code === '0' || $status_code === '3' || $status_code === '4')) {
+                $status_code = '130'; // Isporučena
+            }
+
+            // Dodaj oznaku da je test
+            $status_name = dexpress_get_status_name($status_code) . ' [TEST]';
         } else {
-            echo '<span style="color:#999;font-size:16px;vertical-align:middle;" title="' .
-                esc_attr__('Nije štampana', 'd-express-woo') . '">✗</span>';
+            // Normalni režim za produkcione pošiljke
+            $status_code = $shipment->status_code;
+            $status_name = dexpress_get_status_name($status_code);
         }
+
+        // Dobijanje grupe statusa za stilizovanje
+        $status_group = 'transit'; // Podrazumevana grupa
+        $all_statuses = dexpress_get_all_status_codes();
+
+        if (isset($all_statuses[$status_code])) {
+            $status_group = $all_statuses[$status_code]['group'];
+        }
+
+        // Mapiranje grupa na CSS klase i ikone
+        $group_classes = [
+            'delivered' => ['class' => 'dexpress-status-delivered', 'icon' => 'dashicons-yes-alt'],
+            'failed' => ['class' => 'dexpress-status-failed', 'icon' => 'dashicons-dismiss'],
+            'returned' => ['class' => 'dexpress-status-failed', 'icon' => 'dashicons-undo'],
+            'returning' => ['class' => 'dexpress-status-failed', 'icon' => 'dashicons-undo'],
+            'problem' => ['class' => 'dexpress-status-problem', 'icon' => 'dashicons-warning'],
+            'delayed' => ['class' => 'dexpress-status-delayed', 'icon' => 'dashicons-clock'],
+            'pending_pickup' => ['class' => 'dexpress-status-pickup', 'icon' => 'dashicons-clipboard'],
+            'transit' => ['class' => 'dexpress-status-transit', 'icon' => 'dashicons-airplane'],
+            'out_for_delivery' => ['class' => 'dexpress-status-transit', 'icon' => 'dashicons-car'],
+            'pending' => ['class' => 'dexpress-status-pending', 'icon' => 'dashicons-clock'],
+            'cancelled' => ['class' => 'dexpress-status-cancelled', 'icon' => 'dashicons-no']
+        ];
+
+        $class = isset($group_classes[$status_group]) ? $group_classes[$status_group]['class'] : 'dexpress-status-transit';
+        $icon = isset($group_classes[$status_group]) ? $group_classes[$status_group]['icon'] : 'dashicons-airplane';
+
+        // Prikazivanje statusa sa odgovarajućom ikonom i stilom
+        echo '<div class="' . esc_attr($class) . '" style="display:flex; align-items:center; justify-content:center; flex-direction:column;">';
+        echo '<span class="dashicons ' . esc_attr($icon) . '" style="margin-bottom:3px; font-size:20px;"></span>';
+        echo '<span style="font-size:12px; text-align:center; line-height:1.2;">' . esc_html($status_name) . '</span>';
+
+        // Dodaj indikator testa ako je test pošiljka
+        if ($shipment->is_test) {
+            echo '<span class="dexpress-test-badge" style="background:#f8f9fa; color:#6c757d; font-size:10px; padding:1px 4px; border-radius:3px; margin-top:2px;">TEST</span>';
+        }
+
+        echo '</div>';
     }
 }

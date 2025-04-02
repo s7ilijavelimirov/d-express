@@ -132,8 +132,99 @@ class D_Express_WooCommerce
 
         // Inicijalizacija nakon učitavanja svih plugin-a
         add_action('plugins_loaded', array($this, 'init'), 0);
+
+        // Dodaj hook za simulaciju
+        add_action('init', array($this, 'auto_simulate_test_statuses'));
+
+        // Registrujemo česte provere statusa
+        add_action('init', array($this, 'register_frequent_status_checks'));
+    }
+    /**
+     * Registracija češćih provera statusa
+     */
+    public function register_frequent_status_checks()
+    {
+        // Dodajemo prilagođeni interval za češće provere
+        add_filter('cron_schedules', function ($schedules) {
+            $schedules['five_minutes'] = array(
+                'interval' => 300,
+                'display'  => __('Svakih 5 minuta', 'd-express-woo')
+            );
+            return $schedules;
+        });
+
+        // Registrujemo češće provere
+        if (!wp_next_scheduled('dexpress_check_pending_statuses')) {
+            wp_schedule_event(time(), 'five_minutes', 'dexpress_check_pending_statuses');
+        }
+
+        add_action('dexpress_check_pending_statuses', array($this, 'check_pending_statuses'));
     }
 
+    /**
+     * Provera statusa pošiljki koje su u obradi
+     */
+    public function check_pending_statuses()
+    {
+        global $wpdb;
+
+        // Dohvatamo pošiljke koje su verovatno u procesu ažuriranja statusa
+        $pending_shipments = $wpdb->get_results(
+            "SELECT * FROM {$wpdb->prefix}dexpress_shipments 
+        WHERE (status_code IS NULL OR status_code IN ('0', '3', '4')) 
+        AND created_at > DATE_SUB(NOW(), INTERVAL 2 DAY)
+        ORDER BY created_at DESC
+        LIMIT 20"
+        );
+
+        if (empty($pending_shipments)) {
+            return;
+        }
+
+        dexpress_log('Provera ' . count($pending_shipments) . ' pošiljki koje čekaju na ažuriranje statusa', 'debug');
+
+        require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/services/class-dexpress-shipment-service.php';
+        $shipment_service = new D_Express_Shipment_Service();
+
+        foreach ($pending_shipments as $shipment) {
+            if ($shipment->is_test) {
+                $timeline = new D_Express_Order_Timeline();
+                $timeline->simulate_test_mode_statuses($shipment->id);
+            } else {
+                $shipment_service->sync_shipment_status($shipment->id);
+            }
+        }
+    }
+    /**
+     * Simulacija statusa pošiljki u test režimu
+     */
+    public function auto_simulate_test_statuses()
+    {
+        // Proveravamo da li je test režim aktivan
+        if (!dexpress_is_test_mode()) {
+            return;
+        }
+
+        global $wpdb;
+        dexpress_log('Pokrenuta automatska simulacija statusa pošiljki', 'info');
+
+        // Dohvatamo pošiljke iz test režima koje su nedavno kreirane
+        $test_shipments = $wpdb->get_results(
+            "SELECT * FROM {$wpdb->prefix}dexpress_shipments 
+        WHERE is_test = 1 
+        AND created_at > DATE_SUB(NOW(), INTERVAL 7 DAY)
+        ORDER BY created_at ASC"
+        );
+
+        if (empty($test_shipments)) {
+            return;
+        }
+
+        $timeline = new D_Express_Order_Timeline();
+        foreach ($test_shipments as $shipment) {
+            $timeline->simulate_test_mode_statuses($shipment->id);
+        }
+    }
     /**
      * Aktivacija plugin-a
      */
