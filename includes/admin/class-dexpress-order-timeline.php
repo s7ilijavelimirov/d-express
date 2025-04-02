@@ -238,45 +238,15 @@ class D_Express_Order_Timeline
     private function map_statuses($db_statuses, $all_status_definitions)
     {
         $mapped_statuses = array();
-        $all_status_codes = dexpress_get_all_status_codes();
 
         foreach ($db_statuses as $status) {
             $status_name = isset($all_status_definitions[$status->status_id])
                 ? $all_status_definitions[$status->status_id]
                 : __('Nepoznat status', 'd-express-woo');
 
-            // Određivanje tipa statusa i ikone
-            $status_type = 'current';
-            $icon = 'dashicons-marker';
-
-            // Dohvatanje grupe statusa
-            if (isset($all_status_codes[$status->status_id])) {
-                $status_group = $all_status_codes[$status->status_id]['group'];
-
-                // Mapiranje grupa na tipove statusa
-                if ($status_group === 'delivered') {
-                    $status_type = 'completed';
-                    $icon = 'dashicons-yes-alt';
-                } elseif (in_array($status_group, ['failed', 'returned', 'returning'])) {
-                    $status_type = 'failed';
-                    $icon = 'dashicons-dismiss';
-                } elseif (in_array($status_group, ['transit', 'out_for_delivery'])) {
-                    $status_type = 'current';
-                    $icon = 'dashicons-airplane';
-                } elseif ($status_group === 'pending' || $status_group === 'pending_pickup') {
-                    $status_type = 'pending';
-                    $icon = 'dashicons-clock';
-                } elseif ($status_group === 'delayed') {
-                    $status_type = 'delayed';
-                    $icon = 'dashicons-backup';
-                } elseif ($status_group === 'problem') {
-                    $status_type = 'problem';
-                    $icon = 'dashicons-warning';
-                } elseif ($status_group === 'cancelled') {
-                    $status_type = 'cancelled';
-                    $icon = 'dashicons-no';
-                }
-            }
+            // Koristi pomocne funkcije za dobijanje tipa i ikone
+            $status_type = dexpress_get_status_group($status->status_id);
+            $icon = dexpress_get_status_icon($status->status_id);
 
             $mapped_statuses[] = array(
                 'status_id' => $status->status_id,

@@ -229,15 +229,66 @@ function dexpress_get_status_name($status_code)
         return $all_statuses[$status_code]['name'];
     }
 
-    // Ako ne postoji u mapi, proveriti u bazi
-    global $wpdb;
+    return __('Nepoznat status', 'd-express-woo');
+}
+/**
+ * Vraća CSS klasu za status pošiljke
+ *
+ * @param string $status_code Kod statusa
+ * @return string CSS klasa
+ */
+function dexpress_get_status_css_class($status_code)
+{
+    if (empty($status_code)) {
+        return 'dexpress-status-pending';
+    }
 
-    $status = $wpdb->get_var($wpdb->prepare(
-        "SELECT name FROM {$wpdb->prefix}dexpress_statuses_index WHERE id = %s",
-        $status_code
-    ));
+    $all_statuses = dexpress_get_all_status_codes();
+    if (isset($all_statuses[$status_code])) {
+        return $all_statuses[$status_code]['css_class'];
+    }
 
-    return $status ?: __('Nepoznat status', 'd-express-woo');
+    return 'dexpress-status-transit';
+}
+
+/**
+ * Vraća grupu za status pošiljke
+ *
+ * @param string $status_code Kod statusa
+ * @return string Grupa statusa
+ */
+function dexpress_get_status_group($status_code)
+{
+    if (empty($status_code)) {
+        return 'pending';
+    }
+
+    $all_statuses = dexpress_get_all_status_codes();
+    if (isset($all_statuses[$status_code])) {
+        return $all_statuses[$status_code]['group'];
+    }
+
+    return 'transit';
+}
+
+/**
+ * Vraća ikonu za status pošiljke
+ *
+ * @param string $status_code Kod statusa
+ * @return string Dashicons klasa
+ */
+function dexpress_get_status_icon($status_code)
+{
+    if (empty($status_code)) {
+        return 'dashicons-clock';
+    }
+
+    $all_statuses = dexpress_get_all_status_codes();
+    if (isset($all_statuses[$status_code])) {
+        return $all_statuses[$status_code]['icon'];
+    }
+
+    return 'dashicons-airplane';
 }
 /**
  * Vraća tekst za PaymentBy opciju

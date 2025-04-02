@@ -129,8 +129,8 @@ class D_Express_Tracking
         // Dobijanje statusa
         $statuses = $wpdb->get_results($wpdb->prepare(
             "SELECT * FROM {$wpdb->prefix}dexpress_statuses 
-            WHERE (shipment_code = %s OR reference_id = %s) 
-            ORDER BY status_date DESC",
+        WHERE (shipment_code = %s OR reference_id = %s) 
+        ORDER BY status_date DESC",
             $shipment->shipment_id,
             $shipment->reference_id
         ));
@@ -141,7 +141,15 @@ class D_Express_Tracking
         echo '<table class="dexpress-tracking-details">';
         echo '<tr><th>' . __('Tracking broj:', 'd-express-woo') . '</th><td>' . esc_html($shipment->tracking_number) . '</td></tr>';
         echo '<tr><th>' . __('Referenca:', 'd-express-woo') . '</th><td>' . esc_html($shipment->reference_id) . '</td></tr>';
-        echo '<tr><th>' . __('Status:', 'd-express-woo') . '</th><td>' . ($shipment->status_description ? esc_html($shipment->status_description) : __('U obradi', 'd-express-woo')) . '</td></tr>';
+
+        // Koristi helper funkciju za dohvatanje imena statusa
+        $status_name = dexpress_get_status_name($shipment->status_code);
+        $status_class = dexpress_get_status_css_class($shipment->status_code);
+
+        echo '<tr><th>' . __('Status:', 'd-express-woo') . '</th><td>';
+        echo '<span class="dexpress-status-badge ' . esc_attr($status_class) . '">' . esc_html($status_name) . '</span>';
+        echo '</td></tr>';
+
         echo '<tr><th>' . __('Kreirana:', 'd-express-woo') . '</th><td>' . esc_html(date_i18n(get_option('date_format') . ' ' . get_option('time_format'), strtotime($shipment->created_at))) . '</td></tr>';
         echo '</table>';
 

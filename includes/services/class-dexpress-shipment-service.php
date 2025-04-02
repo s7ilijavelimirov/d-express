@@ -270,7 +270,7 @@ class D_Express_Shipment_Service
                     if ($order) {
                         $order->add_order_note(sprintf(
                             __('D Express status ažuriran: %s (simulirano za test pošiljku)', 'd-express-woo'),
-                            __('Pošiljka isporučena', 'd-express-woo')
+                            dexpress_get_status_name('130')
                         ));
 
                         // Pošalji email o isporuci
@@ -285,8 +285,8 @@ class D_Express_Shipment_Service
             // Dohvatanje poslednjeg statusa iz baze
             $latest_status = $wpdb->get_row($wpdb->prepare(
                 "SELECT * FROM {$wpdb->prefix}dexpress_statuses 
-            WHERE (shipment_code = %s OR reference_id = %s) 
-            ORDER BY status_date DESC LIMIT 1",
+                WHERE (shipment_code = %s OR reference_id = %s) 
+                ORDER BY status_date DESC LIMIT 1",
                 $shipment->shipment_id,
                 $shipment->reference_id
             ));

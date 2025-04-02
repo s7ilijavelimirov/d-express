@@ -1322,29 +1322,11 @@ class D_Express_Admin
                     esc_html($shipment->tracking_number) . '</a>';
 
                 if (!empty($shipment->status_code)) {
-                    // Dobijanje grupe statusa
-                    $status_group = 'transit'; // Podrazumevana grupa
-                    $all_statuses = dexpress_get_all_status_codes();
+                    $status_class = dexpress_get_status_css_class($shipment->status_code);
+                    $status_name = dexpress_get_status_name($shipment->status_code);
 
-                    if (isset($all_statuses[$shipment->status_code])) {
-                        $status_group = $all_statuses[$shipment->status_code]['group'];
-                    }
-
-                    // Mapiranje grupa na CSS klase
-                    $group_classes = [
-                        'delivered' => 'dexpress-status-delivered',
-                        'failed' => 'dexpress-status-failed',
-                        'returned' => 'dexpress-status-failed',
-                        'problem' => 'dexpress-status-problem',
-                        'transit' => 'dexpress-status-transit',
-                        'out_for_delivery' => 'dexpress-status-transit',
-                        'pending' => 'dexpress-status-pending',
-                    ];
-
-                    $class = isset($group_classes[$status_group]) ? $group_classes[$status_group] : 'dexpress-status-transit';
-
-                    echo '<br><span class="dexpress-status-badge ' . $class . '">' .
-                        esc_html(dexpress_get_status_name($shipment->status_code)) . '</span>';
+                    echo '<br><span class="dexpress-status-badge ' . $status_class . '">' .
+                        esc_html($status_name) . '</span>';
                 }
             } else {
                 echo '<span class="dexpress-no-shipment">-</span>';
@@ -1569,39 +1551,20 @@ class D_Express_Admin
             return;
         }
 
-        // Koristi istu logiku za dobijanje statusa kao u metaboxu
+        // Koristi centralizovane funkcije za dobijanje statusa
         $status_code = $shipment->status_code;
-        $all_statuses = dexpress_get_all_status_codes();
-
-        // Status ime i grupa
         $status_name = dexpress_get_status_name($status_code);
-        $status_group = isset($all_statuses[$status_code]) ? $all_statuses[$status_code]['group'] : 'transit';
+        $status_group = dexpress_get_status_group($status_code);
+        $css_class = dexpress_get_status_css_class($status_code);
+        $icon = dexpress_get_status_icon($status_code);
 
         // Za test režim, dodaj [TEST] oznaku
         if ($shipment->is_test) {
             $status_name .= ' [TEST]';
         }
 
-        // Mapiranje grupa na CSS klase i ikone
-        $group_classes = [
-            'delivered' => ['class' => 'dexpress-status-delivered', 'icon' => 'dashicons-yes-alt'],
-            'failed' => ['class' => 'dexpress-status-failed', 'icon' => 'dashicons-dismiss'],
-            'returned' => ['class' => 'dexpress-status-failed', 'icon' => 'dashicons-undo'],
-            'returning' => ['class' => 'dexpress-status-failed', 'icon' => 'dashicons-undo'],
-            'problem' => ['class' => 'dexpress-status-problem', 'icon' => 'dashicons-warning'],
-            'delayed' => ['class' => 'dexpress-status-delayed', 'icon' => 'dashicons-clock'],
-            'pending_pickup' => ['class' => 'dexpress-status-pickup', 'icon' => 'dashicons-clipboard'],
-            'transit' => ['class' => 'dexpress-status-transit', 'icon' => 'dashicons-airplane'],
-            'out_for_delivery' => ['class' => 'dexpress-status-transit', 'icon' => 'dashicons-car'],
-            'pending' => ['class' => 'dexpress-status-pending', 'icon' => 'dashicons-clock'],
-            'cancelled' => ['class' => 'dexpress-status-cancelled', 'icon' => 'dashicons-no']
-        ];
-
-        $class = isset($group_classes[$status_group]) ? $group_classes[$status_group]['class'] : 'dexpress-status-transit';
-        $icon = isset($group_classes[$status_group]) ? $group_classes[$status_group]['icon'] : 'dashicons-airplane';
-
         // Prikazivanje statusa sa odgovarajućom ikonom i stilom
-        echo '<div class="' . esc_attr($class) . '" style="display:flex; align-items:center; justify-content:center; flex-direction:column;">';
+        echo '<div class="' . esc_attr($css_class) . '" style="display:flex; align-items:center; justify-content:center; flex-direction:column;">';
         echo '<span class="dashicons ' . esc_attr($icon) . '" style="margin-bottom:3px; font-size:20px;"></span>';
         echo '<span style="font-size:12px; text-align:center; line-height:1.2;">' . esc_html($status_name) . '</span>';
 
