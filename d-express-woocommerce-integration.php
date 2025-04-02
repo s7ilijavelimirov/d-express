@@ -543,45 +543,63 @@ class D_Express_WooCommerce
      */
     private function process_status_notification($notification, $shipment, $order)
     {
-        // U zavisnosti od statusa, možemo menjati status narudžbine ili slati notifikacije
+        // Dobijanje informacija o statusu
         $status_id = $notification->status_id;
+        $all_statuses = dexpress_get_all_status_codes();
 
-        switch ($status_id) {
+        // Proveri kojoj grupi pripada status
+        $status_group = isset($all_statuses[$status_id]) ? $all_statuses[$status_id]['group'] : 'transit';
+
+        // Obrada na osnovu grupe statusa
+        switch ($status_group) {
             // Isporučeno
-            case '1':
-            case '130':
-            case '831':
-            case '843':
+            case 'delivered':
                 // Pošiljka dostavljena / isporučena
                 if ($order->get_status() === 'processing' || $order->get_status() === 'on-hold') {
                     // Promeni status narudžbine na 'completed'
                     $order->update_status('completed', __('D Express pošiljka isporučena.', 'd-express-woo'));
                 }
 
-                // Opciono: Pošalji email korisniku
+                // Pošalji email korisniku
                 $this->send_status_email($shipment, $order, 'delivered');
                 break;
 
             // Neuspešna isporuka / vraćeno
-            case '5':
-            case '131':
+            case 'failed':
+            case 'returned':
                 // Promeni status narudžbine na 'failed'
                 if ($order->get_status() !== 'failed' && $order->get_status() !== 'cancelled') {
                     $order->update_status('failed', __('D Express nije uspeo da isporuči pošiljku.', 'd-express-woo'));
                 }
 
-                // Opciono: Pošalji email korisniku
+                // Pošalji email korisniku
                 $this->send_status_email($shipment, $order, 'failed');
                 break;
 
-            // Pokušana isporuka, nema nikoga na adresi
-            case '6':
-            case '106':
+            // Pokušana isporuka (npr. nema nikoga kod kuće)
+            case 'delayed':
                 // Dodaj napomenu sa info o pokušaju isporuke
-                $order->add_order_note(__('D Express je pokušao isporuku, ali nije bilo nikoga na adresi.', 'd-express-woo'));
+                $status_name = isset($all_statuses[$status_id]) ? $all_statuses[$status_id]['name'] : '';
+                $order->add_order_note(sprintf(__('D Express status: %s', 'd-express-woo'), $status_name));
 
-                // Opciono: Pošalji email korisniku
+                // Pošalji email korisniku
                 $this->send_status_email($shipment, $order, 'attempted');
+                break;
+
+            // Pošiljka čeka preuzimanje (npr. u paketomatu)
+            case 'pending_pickup':
+                $status_name = isset($all_statuses[$status_id]) ? $all_statuses[$status_id]['name'] : '';
+                $order->add_order_note(sprintf(__('D Express status: %s', 'd-express-woo'), $status_name));
+
+                // Možda pošalji poseban email korisniku za preuzimanje
+                $this->send_status_email($shipment, $order, 'status-change');
+                break;
+
+            // Svi ostali slučajevi
+            default:
+                // Samo dodaj napomenu o promeni statusa
+                $status_name = isset($all_statuses[$status_id]) ? $all_statuses[$status_id]['name'] : '';
+                $order->add_order_note(sprintf(__('D Express status: %s', 'd-express-woo'), $status_name));
                 break;
         }
     }

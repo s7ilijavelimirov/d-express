@@ -73,19 +73,27 @@ class D_Express_Tracking
             'limit' => -1  // Dobavi sve narudžbine
         ));
 
-        $order_ids = array_map(function ($order) {
-            return $order->get_id();
-        }, $customer_orders);
+        $order_ids = array();
+        if (!empty($customer_orders)) {
+            $order_ids = array_map(function ($order) {
+                return $order->get_id();
+            }, $customer_orders);
+        }
 
-        // Modifikujemo ovu liniju - uzimamo SVE pošiljke a ne samo jednu
+        // Dodavanje debag loga da vidimo šta se dešava
+        dexpress_log("Tražim pošiljke za korisnika ID: " . $user_id . ", pronađeno narudžbina: " . count($order_ids), 'debug');
+
         $shipments = array();
         if (!empty($order_ids)) {
-            $shipments = $wpdb->get_results("
-                SELECT * FROM {$wpdb->prefix}dexpress_shipments 
-                WHERE order_id IN (" . implode(',', array_map('intval', $order_ids)) . ")
-                ORDER BY created_at DESC
-            ");
+            $query = "SELECT * FROM {$wpdb->prefix}dexpress_shipments 
+                      WHERE order_id IN (" . implode(',', array_map('intval', $order_ids)) . ")
+                      ORDER BY created_at DESC";
+
+            dexpress_log("SQL upit za pošiljke: " . $query, 'debug');
+            $shipments = $wpdb->get_results($query);
         }
+
+        dexpress_log("Pronađeno pošiljki: " . count($shipments), 'debug');
 
         // Uzimamo prvu kao aktivni shipment ako postoji
         $shipment = !empty($shipments) ? $shipments[0] : null;

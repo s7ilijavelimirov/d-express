@@ -40,9 +40,20 @@ class D_Express_Webhook_Handler
         // Validacija obaveznih parametara
         $required_params = ['nID', 'code', 'rID', 'sID', 'dt'];
         foreach ($required_params as $param) {
-            if (!isset($data[$param])) {
-                dexpress_log('Webhook: Nedostaje obavezan parametar: ' . $param, 'error');
-                return new WP_Error('invalid_request', "Missing parameter: {$param}", ['status' => 400]);
+            if (!isset($data[$param]) || empty($data[$param])) {
+                dexpress_log('Webhook: Nedostaje obavezan parametar ili je prazan: ' . $param, 'error');
+                return new WP_Error('invalid_request', "Missing or empty parameter: {$param}", ['status' => 400]);
+            }
+        }
+
+        // Provera IP ograničenja ako su postavljena
+        $allowed_ips = $this->get_allowed_ips();
+        if (!empty($allowed_ips)) {
+            $client_ip = $this->get_client_ip();
+
+            if (!in_array($client_ip, $allowed_ips)) {
+                dexpress_log('Webhook: Zabranjen pristup sa IP: ' . $client_ip, 'error');
+                return new WP_Error('forbidden_ip', 'Access not allowed from this IP', ['status' => 403]);
             }
         }
 
@@ -117,27 +128,16 @@ class D_Express_Webhook_Handler
         $shipment_code = sanitize_text_field($data['code']);
         $reference_id = sanitize_text_field($data['rID']);
         $status_id = sanitize_text_field($data['sID']);
-        $status_date = $this->format_date($data['dt']);
 
-        // Provera da li status postoji u šifarniku
-        $status_exists = $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM {$wpdb->prefix}dexpress_statuses_index WHERE id = %s",
-            $status_id
-        ));
-
-        if (!$status_exists) {
-            dexpress_log('Webhook: Nepoznat status ID: ' . $status_id . ', dodajem ga u bazu...', 'warning');
-            // Dodaj status u šifarnik sa generičkim imenom
-            $wpdb->insert(
-                $wpdb->prefix . 'dexpress_statuses_index',
-                array(
-                    'id' => $status_id,
-                    'name' => 'Status ID ' . $status_id,
-                    'last_updated' => current_time('mysql')
-                ),
-                array('%s', '%s', '%s')
-            );
+        // Dodatna validacija datuma (format yyyyMMddHHmmss)
+        $date_str = sanitize_text_field($data['dt']);
+        if (!preg_match('/^\d{14}$/', $date_str)) {
+            dexpress_log('Webhook: Neispravan format datuma: ' . $date_str, 'warning');
+            // Iako je format neispravan, vraćamo OK da ne bismo dobijali retries po API specifikaciji
+            return new WP_REST_Response('OK', 200);
         }
+
+        $status_date = $this->format_date($date_str);
 
         // Provera da li već imamo ovaj nID (duplikat)
         $table_name = $wpdb->prefix . 'dexpress_statuses';
@@ -192,6 +192,7 @@ class D_Express_Webhook_Handler
             // Pozivanje asinhronog procesa za obradu notifikacije (ne blokiramo odgovor)
             $this->schedule_notification_processing($insert_id);
 
+            // Prema dokumentaciji, vraćamo OK ako je sve prošlo u redu
             return new WP_REST_Response('OK', 200);
         } catch (Exception $e) {
             dexpress_log('Webhook: Exception u webhook handleru: ' . $e->getMessage(), 'error');
@@ -308,12 +309,11 @@ class D_Express_Webhook_Handler
     /**
      * Registracija notifikacije o uspešnom prijemu
      */
+    // Umesto trenutne implementacije
     public function send_receipt_confirmation($notification_id)
     {
-        // Šalje potvrdu D Expressu da je notifikacija primljena i obrađena
-        $api = new D_Express_API();
-        $api->confirm_notification_receipt($notification_id);
-
-        dexpress_log('Potvrda o primanju notifikacije #' . $notification_id . ' poslata D Expressu', 'info');
+        // Ova funkcija nije potrebna jer već vraćamo "OK" u handle_notify
+        // API dokumentacija ne zahteva dodatnu potvrdu
+        dexpress_log('Notifikacija #' . $notification_id . ' uspešno primljena', 'info');
     }
 }

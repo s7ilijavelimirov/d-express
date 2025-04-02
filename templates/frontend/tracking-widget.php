@@ -11,7 +11,6 @@
 if (!defined('ABSPATH')) {
     exit; // Exit if accessed directly
 }
-
 // Dobijanje tracking broja iz shortcode atributa ili GET parametra
 $tracking_number = '';
 

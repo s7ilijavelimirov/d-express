@@ -1570,47 +1570,17 @@ class D_Express_Admin
             return;
         }
 
-        // Za test režim, simulirajmo status na osnovu vremena kreiranja
-        if ($shipment->is_test) {
-            $created_time = strtotime($shipment->created_at);
-            $current_time = time();
-            $elapsed_hours = ($current_time - $created_time) / 3600;
-
-            // Simulirani status na osnovu proteklog vremena
-            $status_code = $shipment->status_code;
-
-            // Ako nema statusa, postavimo neki početni
-            if (empty($status_code)) {
-                $status_code = '0'; // Čeka na preuzimanje
-            }
-
-            // Ako je prošlo određeno vreme, simuliramo progresiju statusa
-            if ($elapsed_hours > 2 && (!$status_code || $status_code === '0')) {
-                $status_code = '3'; // Pošiljka preuzeta od pošiljaoca
-            }
-
-            if ($elapsed_hours > 8 && ($status_code === '0' || $status_code === '3')) {
-                $status_code = '4'; // Zadužena za isporuku
-            }
-
-            if ($elapsed_hours > 24 && ($status_code === '0' || $status_code === '3' || $status_code === '4')) {
-                $status_code = '130'; // Isporučena
-            }
-
-            // Dodaj oznaku da je test
-            $status_name = dexpress_get_status_name($status_code) . ' [TEST]';
-        } else {
-            // Normalni režim za produkcione pošiljke
-            $status_code = $shipment->status_code;
-            $status_name = dexpress_get_status_name($status_code);
-        }
-
         // Dobijanje grupe statusa za stilizovanje
-        $status_group = 'transit'; // Podrazumevana grupa
+        $status_code = $shipment->status_code;
         $all_statuses = dexpress_get_all_status_codes();
 
-        if (isset($all_statuses[$status_code])) {
-            $status_group = $all_statuses[$status_code]['group'];
+        // Status ime i grupa
+        $status_name = dexpress_get_status_name($status_code);
+        $status_group = isset($all_statuses[$status_code]) ? $all_statuses[$status_code]['group'] : 'transit';
+
+        // Za test režim, dodaj [TEST] oznaku
+        if ($shipment->is_test) {
+            $status_name .= ' [TEST]';
         }
 
         // Mapiranje grupa na CSS klase i ikone

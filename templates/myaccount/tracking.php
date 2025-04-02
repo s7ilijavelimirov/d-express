@@ -11,8 +11,10 @@ defined('ABSPATH') || exit;
 
 <section class="woocommerce-dexpress-tracking">
     <h2><?php esc_html_e('Praćenje pošiljke', 'd-express-woo'); ?></h2>
-
-    <?php if ($shipment): ?>
+    
+    <?php
+    var_dump($shipment);
+    if ($shipment): ?>
         <p>
             <?php esc_html_e('Vaša narudžbina je poslata putem D Express kurirske službe.', 'd-express-woo'); ?>
         </p>

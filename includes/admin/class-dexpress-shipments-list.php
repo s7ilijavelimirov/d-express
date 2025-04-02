@@ -319,17 +319,14 @@ class D_Express_Shipments_List extends WP_List_Table
     public function column_status_code($item)
     {
         $status_code = $item['status_code'];
-
-        // Dobijanje imena statusa
-        $status_name = dexpress_get_status_name($status_code);
-
-        // Dobijanje grupe statusa
-        $status_group = 'transit'; // Podrazumevana grupa
-        $all_statuses = dexpress_get_all_status_codes();
-
-        if (isset($all_statuses[$status_code])) {
-            $status_group = $all_statuses[$status_code]['group'];
+        if (empty($status_code)) {
+            return '<span class="dexpress-status-badge dexpress-status-pending">' . __('U obradi', 'd-express-woo') . '</span>';
         }
+
+        // Dobavljanje grupe status
+        $all_statuses = dexpress_get_all_status_codes();
+        $status_group = isset($all_statuses[$status_code]) ? $all_statuses[$status_code]['group'] : 'transit';
+        $status_name = dexpress_get_status_name($status_code);
 
         // Mapiranje grupa na CSS klase
         $group_classes = [

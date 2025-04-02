@@ -249,7 +249,7 @@ class D_Express_Order_Timeline
             $status_type = 'current';
             $icon = 'dashicons-marker';
 
-            // Dohvatanje grupe statusa ako postoji u mapiranju
+            // Dohvatanje grupe statusa
             if (isset($all_status_codes[$status->status_id])) {
                 $status_group = $all_status_codes[$status->status_id]['group'];
 
@@ -257,7 +257,7 @@ class D_Express_Order_Timeline
                 if ($status_group === 'delivered') {
                     $status_type = 'completed';
                     $icon = 'dashicons-yes-alt';
-                } elseif (in_array($status_group, ['failed', 'returned', 'returning', 'problem'])) {
+                } elseif (in_array($status_group, ['failed', 'returned', 'returning'])) {
                     $status_type = 'failed';
                     $icon = 'dashicons-dismiss';
                 } elseif (in_array($status_group, ['transit', 'out_for_delivery'])) {
@@ -269,6 +269,9 @@ class D_Express_Order_Timeline
                 } elseif ($status_group === 'delayed') {
                     $status_type = 'delayed';
                     $icon = 'dashicons-backup';
+                } elseif ($status_group === 'problem') {
+                    $status_type = 'problem';
+                    $icon = 'dashicons-warning';
                 } elseif ($status_group === 'cancelled') {
                     $status_type = 'cancelled';
                     $icon = 'dashicons-no';
@@ -530,29 +533,24 @@ class D_Express_Order_Timeline
         $elapsed_hours = ($current_time - $created_time) / 3600;
         $statuses_added = false;
 
+        // Niz progresije statusa za simulaciju
+        $simulation_statuses = [
+            ['hours' => 2, 'id' => '0', 'name' => 'Čeka na preuzimanje'],
+            ['hours' => 8, 'id' => '3', 'name' => 'Pošiljka preuzeta od pošiljaoca'],
+            ['hours' => 24, 'id' => '4', 'name' => 'Pošiljka zadužena za isporuku'],
+            ['hours' => 48, 'id' => '1', 'name' => 'Pošiljka isporučena primaocu']
+        ];
+
         // Simuliramo progresivne statuse na osnovu proteklog vremena
-        if ($elapsed_hours > 2 && !$this->status_exists($shipment->shipment_id, '0')) {
-            // Čeka na preuzimanje - 2h nakon kreiranja
-            $this->add_simulated_status($shipment, '0', date('Y-m-d H:i:s', $created_time + 7200));
-            $statuses_added = true;
-        }
-
-        if ($elapsed_hours > 8 && !$this->status_exists($shipment->shipment_id, '3')) {
-            // Pošiljka preuzeta - 8h nakon kreiranja
-            $this->add_simulated_status($shipment, '3', date('Y-m-d H:i:s', $created_time + 28800));
-            $statuses_added = true;
-        }
-
-        if ($elapsed_hours > 24 && !$this->status_exists($shipment->shipment_id, '4')) {
-            // Zadužena za isporuku - 24h nakon kreiranja
-            $this->add_simulated_status($shipment, '4', date('Y-m-d H:i:s', $created_time + 86400));
-            $statuses_added = true;
-        }
-
-        if ($elapsed_hours > 48 && !$this->status_exists($shipment->shipment_id, '1')) {
-            // Isporučena - 48h nakon kreiranja
-            $this->add_simulated_status($shipment, '1', date('Y-m-d H:i:s', $created_time + 172800));
-            $statuses_added = true;
+        foreach ($simulation_statuses as $sim_status) {
+            if ($elapsed_hours > $sim_status['hours'] && !$this->status_exists($shipment->shipment_id, $sim_status['id'])) {
+                $this->add_simulated_status(
+                    $shipment,
+                    $sim_status['id'],
+                    date('Y-m-d H:i:s', $created_time + ($sim_status['hours'] * 3600))
+                );
+                $statuses_added = true;
+            }
         }
 
         return $statuses_added;
