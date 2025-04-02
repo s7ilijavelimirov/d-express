@@ -285,8 +285,8 @@ class D_Express_Shipment_Service
             // Dohvatanje poslednjeg statusa iz baze
             $latest_status = $wpdb->get_row($wpdb->prepare(
                 "SELECT * FROM {$wpdb->prefix}dexpress_statuses 
-                WHERE (shipment_code = %s OR reference_id = %s) 
-                ORDER BY status_date DESC LIMIT 1",
+            WHERE (shipment_code = %s OR reference_id = %s) 
+            ORDER BY status_date DESC LIMIT 1",
                 $shipment->shipment_id,
                 $shipment->reference_id
             ));
@@ -325,10 +325,14 @@ class D_Express_Shipment_Service
                         )
                     );
 
-                    // Slanje email notifikacije kupcima za određene statuse
-                    if ($latest_status->status_id == '130') { // Isporučeno
+                    // Dohvatamo sve statuse i njihove grupe
+                    $all_statuses = dexpress_get_all_status_codes();
+                    $status_group = isset($all_statuses[$latest_status->status_id]) ? $all_statuses[$latest_status->status_id]['group'] : 'transit';
+
+                    // Slanje email notifikacije kupcima za određene grupe statusa
+                    if ($status_group === 'delivered') {
                         $this->send_status_email($shipment, $order, 'delivered');
-                    } elseif ($latest_status->status_id == '131') { // Neuspešna isporuka
+                    } elseif ($status_group === 'failed') {
                         $this->send_status_email($shipment, $order, 'failed');
                     }
 

@@ -1496,11 +1496,10 @@ class D_Express_Admin
         if ($column !== 'dexpress_label_printed') {
             return;
         }
-
+        global $wpdb;
         // Dobijanje ID-a narudžbine (radi i sa objektom i sa ID-em)
         $order_id = is_object($post_or_order_id) ? $post_or_order_id->get_id() : $post_or_order_id;
 
-        global $wpdb;
         $shipment = $wpdb->get_row($wpdb->prepare(
             "SELECT * FROM {$wpdb->prefix}dexpress_shipments WHERE order_id = %d",
             $order_id
@@ -1570,7 +1569,7 @@ class D_Express_Admin
             return;
         }
 
-        // Dobijanje grupe statusa za stilizovanje
+        // Koristi istu logiku za dobijanje statusa kao u metaboxu
         $status_code = $shipment->status_code;
         $all_statuses = dexpress_get_all_status_codes();
 

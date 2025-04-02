@@ -26,7 +26,7 @@ class D_Express_Order_Timeline
         add_action('add_meta_boxes', array($this, 'add_timeline_metabox'));
 
         // AJAX handler za osvežavanje statusa
-        add_action('wp_ajax_dexpress_refresh_shipment_status', array($this, 'ajax_refresh_status'));
+        //add_action('wp_ajax_dexpress_refresh_shipment_status', array($this, 'ajax_refresh_status'));
 
         // Registrovanje stilova za admin
         add_action('admin_enqueue_scripts', array($this, 'register_timeline_assets'));
@@ -533,12 +533,12 @@ class D_Express_Order_Timeline
         $elapsed_hours = ($current_time - $created_time) / 3600;
         $statuses_added = false;
 
-        // Niz progresije statusa za simulaciju
+        // Niz progresije statusa za simulaciju sa grupama
         $simulation_statuses = [
-            ['hours' => 2, 'id' => '0', 'name' => 'Čeka na preuzimanje'],
-            ['hours' => 8, 'id' => '3', 'name' => 'Pošiljka preuzeta od pošiljaoca'],
-            ['hours' => 24, 'id' => '4', 'name' => 'Pošiljka zadužena za isporuku'],
-            ['hours' => 48, 'id' => '1', 'name' => 'Pošiljka isporučena primaocu']
+            ['hours' => 2, 'id' => '0', 'name' => 'Čeka na preuzimanje', 'group' => 'pending'],
+            ['hours' => 8, 'id' => '3', 'name' => 'Pošiljka preuzeta od pošiljaoca', 'group' => 'transit'],
+            ['hours' => 24, 'id' => '4', 'name' => 'Pošiljka zadužena za isporuku', 'group' => 'out_for_delivery'],
+            ['hours' => 48, 'id' => '1', 'name' => 'Pošiljka isporučena primaocu', 'group' => 'delivered']
         ];
 
         // Simuliramo progresivne statuse na osnovu proteklog vremena
@@ -550,6 +550,9 @@ class D_Express_Order_Timeline
                     date('Y-m-d H:i:s', $created_time + ($sim_status['hours'] * 3600))
                 );
                 $statuses_added = true;
+
+                // Dodajemo i grupu statusa u log
+                dexpress_log('Simulirani status dodat: ' . $sim_status['id'] . ' (grupa: ' . $sim_status['group'] . ') za pošiljku ' . $shipment->shipment_id, 'debug');
             }
         }
 

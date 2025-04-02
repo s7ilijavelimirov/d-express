@@ -27,10 +27,28 @@ class D_Express_Dashboard_Widget
     {
         global $wpdb;
 
+        // Dobijanje svih statusa grupisanih
+        $all_statuses = dexpress_get_all_status_codes();
+
+        // Formiranje upita za statuse isporuke
+        $delivered_status_ids = array();
+        $failed_status_ids = array();
+        foreach ($all_statuses as $id => $status_info) {
+            if ($status_info['group'] === 'delivered') {
+                $delivered_status_ids[] = "'" . esc_sql($id) . "'";
+            } elseif ($status_info['group'] === 'failed') {
+                $failed_status_ids[] = "'" . esc_sql($id) . "'";
+            }
+        }
+
+        // Sastavljanje upita
+        $delivered_status_in = !empty($delivered_status_ids) ? implode(',', $delivered_status_ids) : "'130'"; // Fallback
+        $failed_status_in = !empty($failed_status_ids) ? implode(',', $failed_status_ids) : "'131'"; // Fallback
+
         // Dobijanje statistike pošiljki
         $total = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}dexpress_shipments");
-        $delivered = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}dexpress_shipments WHERE status_code = '130'");
-        $failed = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}dexpress_shipments WHERE status_code = '131'");
+        $delivered = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}dexpress_shipments WHERE status_code IN ({$delivered_status_in})");
+        $failed = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}dexpress_shipments WHERE status_code IN ({$failed_status_in})");
         $in_transit = $total - $delivered - $failed;
 
         // Prikaz statistike

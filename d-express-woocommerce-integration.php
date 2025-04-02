@@ -168,15 +168,32 @@ class D_Express_WooCommerce
     {
         global $wpdb;
 
-        // Dohvatamo pošiljke koje su verovatno u procesu ažuriranja statusa
+        // Dohvatamo sve statuse i njihove grupe
+        $all_statuses = dexpress_get_all_status_codes();
+
+        // Prikupljamo ID-ove statusa koji pripadaju grupama u tranzitu ili čekanju
+        $pending_status_ids = array();
+        foreach ($all_statuses as $id => $status_info) {
+            if (in_array($status_info['group'], ['pending', 'transit', 'out_for_delivery'])) {
+                $pending_status_ids[] = "'" . esc_sql($id) . "'";
+            }
+        }
+
+        // Dodajemo NULL za nove pošiljke
+        $status_condition = "(status_code IS NULL";
+        if (!empty($pending_status_ids)) {
+            $status_condition .= " OR status_code IN (" . implode(',', $pending_status_ids) . ")";
+        }
+        $status_condition .= ")";
+
+        // Dohvatamo pošiljke koje su u procesu
         $pending_shipments = $wpdb->get_results(
             "SELECT * FROM {$wpdb->prefix}dexpress_shipments 
-        WHERE (status_code IS NULL OR status_code IN ('0', '3', '4')) 
-        AND created_at > DATE_SUB(NOW(), INTERVAL 2 DAY)
-        ORDER BY created_at DESC
-        LIMIT 20"
+            WHERE $status_condition 
+            AND created_at > DATE_SUB(NOW(), INTERVAL 2 DAY)
+            ORDER BY created_at DESC
+            LIMIT 100"
         );
-
         if (empty($pending_shipments)) {
             return;
         }
