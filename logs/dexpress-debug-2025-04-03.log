@@ -10,3 +10,34 @@
 [2025-04-03 08:11:59] Provera 3 pošiljki koje čekaju na ažuriranje statusa
 [2025-04-03 08:16:29] Provera 3 pošiljki koje čekaju na ažuriranje statusa
 [2025-04-03 08:21:11] Provera 3 pošiljki koje čekaju na ažuriranje statusa
+[2025-04-03 08:55:20] Checkout order processed: 817
+[2025-04-03 08:55:20] Has D Express shipping: Yes
+[2025-04-03 08:55:20] Automatic shipment creation is disabled or status does not match. Auto create: Enabled, Current status: pending, Required status: processing
+[2025-04-03 08:55:22] [SHIPPING] Započinjem kreiranje pošiljke za narudžbinu #817
+[2025-04-03 08:55:22] [SHIPPING] Priprema podataka za narudžbinu #817
+[2025-04-03 08:55:22] Using address type: shipping
+[2025-04-03 08:55:22] Street: Grčkoškolska, Number: 9, City ID: 802824
+[2025-04-03 08:55:22] Payment method: cod, Is COD: Yes
+[2025-04-03 08:55:22] Using BuyOut: 99000, Account: 170-0010364556000-77
+[2025-04-03 08:55:22] [WEIGHT DEBUG] Početak izračunavanja težine za narudžbinu #817
+[2025-04-03 08:55:22] [WEIGHT DEBUG] Proizvod: Beanie, Težina: 11.5kg, Količina: 1, Ukupno: 11.5kg
+[2025-04-03 08:55:22] [WEIGHT DEBUG] Ukupna težina u kg pre konverzije: 11.5
+[2025-04-03 08:55:22] [WEIGHT DEBUG] Konačna težina u gramima: 11500
+[2025-04-03 08:55:22] [WEIGHT DEBUG] Težina iz calculate_order_weight: 11500 grama
+[2025-04-03 08:55:22] [WEIGHT DEBUG] Težina nakon formatiranja za API: 11500 grama
+[2025-04-03 08:55:22] [WEIGHT DEBUG] Početak izračunavanja težine za narudžbinu #817
+[2025-04-03 08:55:22] [WEIGHT DEBUG] Proizvod: Beanie, Težina: 11.5kg, Količina: 1, Ukupno: 11.5kg
+[2025-04-03 08:55:22] [WEIGHT DEBUG] Ukupna težina u kg pre konverzije: 11.5
+[2025-04-03 08:55:22] [WEIGHT DEBUG] Konačna težina u gramima: 11500
+[2025-04-03 08:55:22] Final BuyOut amount: 99000
+[2025-04-03 08:55:22] Final BuyOutAccount: 170-0010364556000-77
+[2025-04-03 08:55:22] Final RAddressNum: 9
+[2025-04-03 08:55:22] Final RTownID: 802824
+[2025-04-03 08:55:22] Final RCPhone: 381603995503
+[2025-04-03 08:55:22] [SHIPPING] Šaljem zahtev ka D-Express API-ju
+[2025-04-03 08:55:22] [SHIPPING] API odgovor primljen uspešno
+[2025-04-03 08:55:22] [SHIPPING] API odgovor: TEST
+[2025-04-03 08:55:22] [SHIPPING] Tracking broj: TT0000000015, Shipment ID: TT0000000015
+[2025-04-03 08:55:22] [SHIPPING] Čuvanje pošiljke u bazu podataka
+[2025-04-03 08:55:22] [SHIPPING] Pošiljka uspešno kreirana sa ID: 4
+[2025-04-03 08:56:10] Provera 1 pošiljki koje čekaju na ažuriranje statusa

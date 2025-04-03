@@ -168,49 +168,83 @@ class D_Express_WooCommerce
     {
         global $wpdb;
 
-        // Dohvatamo sve statuse i njihove grupe
+        // 1. Optimizovano dohvatanje pošiljki koje zaista treba proveriti
         $all_statuses = dexpress_get_all_status_codes();
-
-        // Prikupljamo ID-ove statusa koji pripadaju grupama u tranzitu ili čekanju
         $pending_status_ids = array();
+
         foreach ($all_statuses as $id => $status_info) {
+            // Ažuriramo SAMO pošiljke u tranzitu ili čekanju, a ne sve
             if (in_array($status_info['group'], ['pending', 'transit', 'out_for_delivery'])) {
                 $pending_status_ids[] = "'" . esc_sql($id) . "'";
             }
         }
 
-        // Dodajemo NULL za nove pošiljke
+        // 2. Efikasnije dohvatanje po batch-evima
+        $batch_size = 50; // Manji batch za efikasnije izvršavanje
+        $max_batches = 10; // Maksimalno 500 pošiljki po cron izvršavanju
+        $offset = 0;
+        $batch_count = 0;
+
+        // 3. Pametnije filtriranje - samo najnovije pošiljke i one u određenim statusima
         $status_condition = "(status_code IS NULL";
         if (!empty($pending_status_ids)) {
             $status_condition .= " OR status_code IN (" . implode(',', $pending_status_ids) . ")";
         }
         $status_condition .= ")";
 
-        // Dohvatamo pošiljke koje su u procesu
-        $pending_shipments = $wpdb->get_results(
-            "SELECT * FROM {$wpdb->prefix}dexpress_shipments 
-            WHERE $status_condition 
-            AND created_at > DATE_SUB(NOW(), INTERVAL 2 DAY)
-            ORDER BY created_at DESC
-            LIMIT 100"
-        );
-        if (empty($pending_shipments)) {
-            return;
-        }
+        do {
+            // 4. Dohvati pošiljke po batch-evima
+            $pending_shipments = $wpdb->get_results(
+                $wpdb->prepare(
+                    "SELECT id, order_id, shipment_id, tracking_number, reference_id, 
+                            status_code, is_test, created_at
+                     FROM {$wpdb->prefix}dexpress_shipments 
+                     WHERE %s 
+                     AND created_at > DATE_SUB(NOW(), INTERVAL 7 DAY)
+                     ORDER BY created_at DESC
+                     LIMIT %d, %d",
+                    $status_condition,
+                    $offset,
+                    $batch_size
+                )
+            );
 
-        dexpress_log('Provera ' . count($pending_shipments) . ' pošiljki koje čekaju na ažuriranje statusa', 'debug');
-
-        require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/services/class-dexpress-shipment-service.php';
-        $shipment_service = new D_Express_Shipment_Service();
-
-        foreach ($pending_shipments as $shipment) {
-            if ($shipment->is_test) {
-                $timeline = new D_Express_Order_Timeline();
-                $timeline->simulate_test_mode_statuses($shipment->id);
-            } else {
-                $shipment_service->sync_shipment_status($shipment->id);
+            if (empty($pending_shipments)) {
+                break;
             }
-        }
+
+            dexpress_log('Obrada batch-a pošiljki: ' . count($pending_shipments), 'debug');
+
+            // 5. Efikasnije procesiranje statusa
+            require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/services/class-dexpress-shipment-service.php';
+            $shipment_service = new D_Express_Shipment_Service();
+
+            foreach ($pending_shipments as $shipment) {
+                // 6. Izbegavanje API poziva za testirane pošiljke
+                if ($shipment->is_test) {
+                    $timeline = new D_Express_Order_Timeline();
+                    $timeline->simulate_test_mode_statuses($shipment->id);
+                } else {
+                    // 7. Pametnije ažuriranje - proverimo vreme poslednjeg ažuriranja
+                    $last_check = get_post_meta($shipment->order_id, '_dexpress_last_status_check', true);
+                    $current_time = time();
+
+                    // Ažuriraj status samo ako je prošlo više od 30 minuta od poslednje provere
+                    if (empty($last_check) || ($current_time - intval($last_check)) > 1800) {
+                        $shipment_service->sync_shipment_status($shipment->id);
+                        update_post_meta($shipment->order_id, '_dexpress_last_status_check', $current_time);
+                    }
+                }
+            }
+
+            $offset += $batch_size;
+            $batch_count++;
+
+            // 8. Preveniranje preopterećenja - ograničenje maksimalnog broja batch-eva po izvršavanju
+            if ($batch_count >= $max_batches) {
+                break;
+            }
+        } while (count($pending_shipments) == $batch_size);
     }
     /**
      * Simulacija statusa pošiljki u test režimu

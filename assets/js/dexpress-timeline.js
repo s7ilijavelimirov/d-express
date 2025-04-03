@@ -1,13 +1,11 @@
 jQuery(document).ready(function($) {
     'use strict';
     
-    // Funkcija za osvežavanje statusa
     $('.dexpress-refresh-status').on('click', function(e) {
         e.preventDefault(); // Sprečavamo podrazumevano ponašanje
         
         var button = $(this);
-        var shipmentId = button.data('id');
-        var nonce = button.data('nonce');
+        var shipmentId = button.data('shipment-id'); // Ispravljeno - koristi shipment-id umesto id
         var originalText = button.html();
         
         // Vizuelni feedback
@@ -21,9 +19,9 @@ jQuery(document).ready(function($) {
             type: 'POST',
             dataType: 'json',
             data: {
-                action: 'dexpress_refresh_shipment_status',
+                action: 'dexpress_refresh_shipment_status', // Proveri da li ovo odgovara PHP hooku
                 shipment_id: shipmentId,
-                nonce: nonce
+                nonce: dexpressTimelineL10n.nonce // Koristi nonce iz lokalizovanih podataka
             },
             success: function(response) {
                 if (response.success) {
