@@ -42,7 +42,7 @@ class D_Express_Dashboard_Widget
         }
 
         // Sastavljanje upita
-        $delivered_status_in = !empty($delivered_status_ids) ? implode(',', $delivered_status_ids) : "'130'"; // Fallback
+        $delivered_status_in = !empty($delivered_status_ids) ? implode(',', $delivered_status_ids) : "'1'"; // Fallback
         $failed_status_in = !empty($failed_status_ids) ? implode(',', $failed_status_ids) : "'131'"; // Fallback
 
         // Dobijanje statistike pošiljki

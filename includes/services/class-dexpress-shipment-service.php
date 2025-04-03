@@ -262,15 +262,15 @@ class D_Express_Shipment_Service
                 $current_time = time();
 
                 // Ako je prošlo više od 2 dana, označavamo kao isporučeno
-                if (($current_time - $created_time) > (2 * 24 * 60 * 60) && $shipment->status_code != '130') {
-                    $this->db->update_shipment_status($shipment->shipment_id, '130', __('Pošiljka isporučena (simulirano)', 'd-express-woo'));
+                if (($current_time - $created_time) > (2 * 24 * 60 * 60) && $shipment->status_code != '1') {
+                    $this->db->update_shipment_status($shipment->shipment_id, '1', __('Pošiljka isporučena (simulirano)', 'd-express-woo'));
 
                     // Dobavi narudžbinu i dodaj napomenu
                     $order = wc_get_order($shipment->order_id);
                     if ($order) {
                         $order->add_order_note(sprintf(
                             __('D Express status ažuriran: %s (simulirano za test pošiljku)', 'd-express-woo'),
-                            dexpress_get_status_name('130')
+                            dexpress_get_status_name('1')
                         ));
 
                         // Pošalji email o isporuci

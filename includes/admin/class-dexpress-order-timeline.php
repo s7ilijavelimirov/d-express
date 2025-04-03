@@ -216,7 +216,7 @@ class D_Express_Order_Timeline
             if (time() - $created_time > 172800) { // 48 sati
                 // Status "Pošiljka isporučena primaocu" - 2 dana nakon kreiranja
                 $default_statuses[] = array(
-                    'status_id' => '130', // Stvarni kod za isporučeno
+                    'status_id' => '1', // Stvarni kod za isporučeno
                     'status_date' => date('Y-m-d H:i:s', $created_time + 172800),
                     'status_name' => __('Pošiljka isporučena primaocu', 'd-express-woo'),
                     'status_type' => 'completed',

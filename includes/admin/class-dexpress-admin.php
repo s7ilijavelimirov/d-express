@@ -1135,7 +1135,7 @@ class D_Express_Admin
             // Dobijanje statusa ako postoji
             $status_text = '';
             if (!empty($shipment->status_code)) {
-                $status_class = ($shipment->status_code == '130') ? 'dexpress-status-delivered' : (($shipment->status_code == '131') ? 'dexpress-status-failed' : 'dexpress-status-transit');
+                $status_class = ($shipment->status_code == '1') ? 'dexpress-status-delivered' : (($shipment->status_code == '131') ? 'dexpress-status-failed' : 'dexpress-status-transit');
                 $status_text = '<span class="dexpress-status-badge ' . $status_class . '">' .
                     esc_html(dexpress_get_status_name($shipment->status_code)) . '</span>';
             }

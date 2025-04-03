@@ -223,7 +223,7 @@ class D_Express_WooCommerce
         }
 
         global $wpdb;
-        dexpress_log('Pokrenuta automatska simulacija statusa pošiljki', 'info');
+        //dexpress_log('Pokrenuta automatska simulacija statusa pošiljki', 'info');
 
         // Dohvatamo pošiljke iz test režima koje su nedavno kreirane
         $test_shipments = $wpdb->get_results(
