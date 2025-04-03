@@ -41,10 +41,20 @@ class D_Express_Tracking
     public function add_tracking_endpoint()
     {
         add_rewrite_endpoint('dexpress-tracking', EP_ROOT | EP_PAGES);
-    }
 
+        // Provjeri ako su pravila već osvježena
+        $rules_option = get_option('rewrite_rules');
+        if (!$rules_option || !array_key_exists('(.?.+?)/dexpress-tracking(/(.*))?/?$', $rules_option)) {
+            flush_rewrite_rules();
+        }
+    }
     public function add_tracking_menu_item($items)
     {
+        // Proverite da li je opcija uključena
+        if (get_option('dexpress_enable_myaccount_tracking', 'yes') !== 'yes') {
+            return $items;
+        }
+
         // Dodavanje nakon narudžbina
         $new_items = array();
 
@@ -80,31 +90,20 @@ class D_Express_Tracking
             }, $customer_orders);
         }
 
-        // Dodavanje debag loga da vidimo šta se dešava
-        dexpress_log("Tražim pošiljke za korisnika ID: " . $user_id . ", pronađeno narudžbina: " . count($order_ids), 'debug');
-
         $shipments = array();
         if (!empty($order_ids)) {
-            $query = "SELECT * FROM {$wpdb->prefix}dexpress_shipments 
-                      WHERE order_id IN (" . implode(',', array_map('intval', $order_ids)) . ")
-                      ORDER BY created_at DESC";
-
-            dexpress_log("SQL upit za pošiljke: " . $query, 'debug');
-            $shipments = $wpdb->get_results($query);
+            $shipments = $wpdb->get_results(
+                "SELECT * FROM {$wpdb->prefix}dexpress_shipments 
+                WHERE order_id IN (" . implode(',', array_map('intval', $order_ids)) . ")
+                ORDER BY created_at DESC"
+            );
         }
-
-        dexpress_log("Pronađeno pošiljki: " . count($shipments), 'debug');
 
         // Uzimamo prvu kao aktivni shipment ako postoji
         $shipment = !empty($shipments) ? $shipments[0] : null;
 
-        // Uključi šablon i proslijedi podatke
+        // Uključi samo jedan šablon za prikaz
         include DEXPRESS_WOO_PLUGIN_DIR . 'templates/myaccount/tracking.php';
-
-        // Ako imamo više pošiljki, prikazujemo tabelu sa svim pošiljkama
-        if (count($shipments) > 1) {
-            $this->display_user_shipments();
-        }
     }
 
     /**
@@ -243,7 +242,8 @@ class D_Express_Tracking
             echo '<td>' . ($shipment->status_description ? esc_html($shipment->status_description) : __('U obradi', 'd-express-woo')) . '</td>';
             echo '<td>' . esc_html(date_i18n(get_option('date_format'), strtotime($shipment->created_at))) . '</td>';
             echo '<td>';
-            echo '<a href="?tracking_number=' . esc_attr($shipment->tracking_number) . '" class="button button-small">' . __('Prati', 'd-express-woo') . '</a>';
+            // Direktan link ka zvaničnom sajtu za praćenje
+            echo '<a href="https://www.dexpress.rs/rs/pracenje-posiljaka/' . esc_attr($shipment->tracking_number) . '" target="_blank" class="button button-small">' . __('Prati', 'd-express-woo') . '</a>';
             echo '</td>';
             echo '</tr>';
         }

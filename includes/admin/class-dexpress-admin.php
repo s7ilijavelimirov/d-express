@@ -518,6 +518,18 @@ class D_Express_Admin
                                     </p>
                                 </td>
                             </tr>
+                            <tr>
+                                <th scope="row">
+                                    <label for="dexpress_enable_myaccount_tracking"><?php _e('Praćenje u Moj Nalog', 'd-express-woo'); ?></label>
+                                </th>
+                                <td>
+                                    <input type="checkbox" id="dexpress_enable_myaccount_tracking" name="dexpress_enable_myaccount_tracking"
+                                        value="yes" <?php checked(get_option('dexpress_enable_myaccount_tracking', 'yes'), 'yes'); ?>>
+                                    <p class="description"><?php _e('Omogući praćenje pošiljki u "Moj nalog" sekciji na frontend-u.', 'd-express-woo'); ?>
+                                        <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Kada je aktivirano, dodaje tab za praćenje pošiljki u korisničkom nalogu (My Account page) gde korisnici mogu pratiti status svojih pošiljki.', 'd-express-woo'); ?>"></span>
+                                    </p>
+                                </td>
+                            </tr>
                         </table>
                     </div>
                     <!-- Podešavanja pošiljaoca -->
@@ -960,7 +972,7 @@ class D_Express_Admin
         $auto_create_shipment = isset($_POST['dexpress_auto_create_shipment']) ? 'yes' : 'no';
         $auto_create_on_status = isset($_POST['dexpress_auto_create_on_status']) ? sanitize_text_field($_POST['dexpress_auto_create_on_status']) : 'processing';
         $validate_address = isset($_POST['dexpress_validate_address']) ? 'yes' : 'no';
-
+        $enable_myaccount_tracking = isset($_POST['dexpress_enable_myaccount_tracking']) ? 'yes' : 'no';
         // Podaci pošiljaoca
         $sender_name = isset($_POST['dexpress_sender_name']) ? sanitize_text_field($_POST['dexpress_sender_name']) : '';
         $sender_address = isset($_POST['dexpress_sender_address']) ? sanitize_text_field($_POST['dexpress_sender_address']) : '';
@@ -1033,6 +1045,7 @@ class D_Express_Admin
         update_option('dexpress_require_buyout_account', $require_buyout_account);
         update_option('dexpress_clean_uninstall', $clean_uninstall);
         update_option('dexpress_google_maps_api_key', $google_maps_api_key);
+        update_option('dexpress_enable_myaccount_tracking', $enable_myaccount_tracking);
         // Beležimo u log da su podešavanja ažurirana
         if ($enable_logging === 'yes') {
             dexpress_log('Podešavanja su ažurirana od strane korisnika ID: ' . get_current_user_id(), 'info');

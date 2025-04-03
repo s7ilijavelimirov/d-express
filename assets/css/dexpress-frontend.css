@@ -1,0 +1,74 @@
+.dexpress-tracking-container {
+    margin-bottom: 40px;
+}
+
+.dexpress-tracking-active {
+    background-color: #f8f9fa;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    padding: 15px;
+}
+
+.dexpress-tracking-details table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 15px;
+}
+
+.dexpress-tracking-details th {
+    text-align: left;
+    padding: 8px;
+    width: 200px;
+    font-weight: 600;
+}
+
+.dexpress-tracking-details td {
+    padding: 8px;
+}
+
+.dexpress-tracking-actions {
+    margin-top: 15px;
+}
+
+.dexpress-status-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 0.9em;
+}
+
+.dexpress-status-delivered {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.dexpress-status-transit {
+    background-color: #cce5ff;
+    color: #004085;
+}
+
+.dexpress-status-pending {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.dexpress-status-failed {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.dexpress-test-badge {
+    background-color: #6c757d;
+    color: white;
+    font-size: 0.8em;
+    padding: 1px 5px;
+    border-radius: 3px;
+    margin-left: 5px;
+}
+
+.dexpress-test-note {
+    color: #6c757d;
+    font-size: 0.9em;
+    margin-top: 10px;
+}
