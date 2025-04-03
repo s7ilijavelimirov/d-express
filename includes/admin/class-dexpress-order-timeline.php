@@ -4,38 +4,29 @@
  * D Express Order Timeline Class
  * 
  * Klasa za prikaz timeline-a statusa pošiljke u order metabox-u
- * 
  */
 
 defined('ABSPATH') || exit;
 
-/**
- * D_Express_Order_Timeline Class.
- */
 class D_Express_Order_Timeline
 {
-
     /**
-     * Inicijalizacija.
-     *
-     * @return void
+     * Inicijalizacija
      */
     public function init()
     {
         // Dodavanje metabox-a za timeline
         add_action('add_meta_boxes', array($this, 'add_timeline_metabox'));
-
-        // AJAX handler za osvežavanje statusa
-        //add_action('wp_ajax_dexpress_refresh_shipment_status', array($this, 'ajax_refresh_status'));
-
+        
         // Registrovanje stilova za admin
         add_action('admin_enqueue_scripts', array($this, 'register_timeline_assets'));
+        
+        // AJAX handler za osvežavanje statusa
+        add_action('wp_ajax_dexpress_refresh_shipment_status', array($this, 'ajax_refresh_status'));
     }
 
     /**
-     * Dodavanje metabox-a za timeline.
-     *
-     * @return void
+     * Dodavanje metabox-a za timeline
      */
     public function add_timeline_metabox()
     {
@@ -66,10 +57,7 @@ class D_Express_Order_Timeline
     }
 
     /**
-     * Registracija stilova i skripti za timeline.
-     *
-     * @param string $hook Hook suffix.
-     * @return void
+     * Registracija stilova i skripti za timeline
      */
     public function register_timeline_assets($hook)
     {
@@ -87,26 +75,21 @@ class D_Express_Order_Timeline
             return;
         }
 
-        // Dodajemo komentare za debugging
-        error_log('D Express Timeline assets loading for screen: ' . $screen->id . ', hook: ' . $hook);
-
         wp_enqueue_style(
             'dexpress-timeline-css',
             DEXPRESS_WOO_PLUGIN_URL . 'assets/css/dexpress-admin.css',
             array('woocommerce_admin_styles'),
-            DEXPRESS_WOO_VERSION . '.' . time() // Dodajemo timestamp za eliminisanje keširanje
+            DEXPRESS_WOO_VERSION
         );
 
-        // Registrujemo i dodajemo naš JavaScript fajl
         wp_register_script(
             'dexpress-timeline-js',
             DEXPRESS_WOO_PLUGIN_URL . 'assets/js/dexpress-timeline.js',
             array('jquery'),
-            DEXPRESS_WOO_VERSION . '.' . time(), // Dodajemo timestamp za eliminisanje keširanje
+            DEXPRESS_WOO_VERSION,
             true
         );
 
-        // Lokalizujemo skriptu sa potrebnim podatcima
         wp_localize_script('dexpress-timeline-js', 'dexpressTimelineL10n', array(
             'ajaxUrl' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('dexpress-refresh-status'),
@@ -116,155 +99,25 @@ class D_Express_Order_Timeline
             'successMessage' => __('Status pošiljke je uspešno ažuriran.', 'd-express-woo')
         ));
 
-        // Učitavamo skriptu
         wp_enqueue_script('dexpress-timeline-js');
-
-        // Dodajemo inline stilove
-        wp_add_inline_style('dexpress-timeline-css', '
-            .dashicons.rotating {
-                animation: dashicons-spin 1s infinite linear;
-            }
-            @keyframes dashicons-spin {
-                0% {
-                    transform: rotate(0deg);
-                }
-                100% {
-                    transform: rotate(360deg);
-                }
-            }
-        ');
     }
 
     /**
-     * Dobavlja sve statuse iz baze i vraća mapirane po ID-u.
-     *
-     * @return array Mapirani statusi.
+     * Definisanje predefinisanih statusa za timeline
      */
-    private function get_all_statuses()
+    private function get_predefined_statuses()
     {
-        global $wpdb;
-
-        $statuses = $wpdb->get_results("SELECT id, name FROM {$wpdb->prefix}dexpress_statuses_index ORDER BY id");
-
-        $status_map = array();
-        foreach ($statuses as $status) {
-            $status_map[$status->id] = $status->name;
-        }
-
-        return $status_map;
+        return [
+            ['id' => 'created', 'name' => __('Pošiljka kreirana', 'd-express-woo'), 'group' => 'created', 'icon' => 'dashicons-plus-alt'],
+            ['id' => '0', 'name' => __('Čeka na preuzimanje', 'd-express-woo'), 'group' => 'pending', 'icon' => 'dashicons-clock'],
+            ['id' => '3', 'name' => __('Preuzeta od pošiljaoca', 'd-express-woo'), 'group' => 'transit', 'icon' => 'dashicons-car'],
+            ['id' => '4', 'name' => __('Zadužena za isporuku', 'd-express-woo'), 'group' => 'out_for_delivery', 'icon' => 'dashicons-arrow-right-alt'],
+            ['id' => '1', 'name' => __('Isporučena primaocu', 'd-express-woo'), 'group' => 'delivered', 'icon' => 'dashicons-yes-alt'],
+        ];
     }
 
     /**
-     * Kreira pseudo timeline da simulira statuse isporuke
-     * kada nema pravih statusa u bazi.
-     *
-     * @param object $shipment Podaci o pošiljci.
-     * @return array Timeline statusi.
-     */
-    private function create_default_timeline($shipment)
-    {
-        // Definisanje koraka dostave
-        $default_statuses = array(
-            array(
-                'status_id' => 'created',
-                'status_date' => $shipment->created_at,
-                'status_name' => __('Pošiljka kreirana', 'd-express-woo'),
-                'status_type' => 'current',
-                'icon' => 'dashicons-plus-alt'
-            )
-        );
-
-        // Ako je test pošiljka, dodajemo još nekoliko simuliranih statusa
-        if ($shipment->is_test) {
-            // Dodavanje osnovnih statusa sa različitim vremenima
-            $created_time = strtotime($shipment->created_at);
-
-            // Status "Čeka na preuzimanje" - 2 sata nakon kreiranja
-            $default_statuses[] = array(
-                'status_id' => 'waiting',
-                'status_date' => date('Y-m-d H:i:s', $created_time + 7200),
-                'status_name' => __('Čeka na preuzimanje', 'd-express-woo'),
-                'status_type' => 'pending',
-                'icon' => 'dashicons-clock'
-            );
-
-            // Ako je pošiljka starija od 6 sati, dodaj još statusa
-            if (time() - $created_time > 21600) { // 6 sati
-                // Status "Pošiljka preuzeta od pošiljaoca" - 6 sati nakon kreiranja
-                $default_statuses[] = array(
-                    'status_id' => 'picked_up',
-                    'status_date' => date('Y-m-d H:i:s', $created_time + 21600),
-                    'status_name' => __('Pošiljka preuzeta od pošiljaoca', 'd-express-woo'),
-                    'status_type' => 'current',
-                    'icon' => 'dashicons-cart'
-                );
-            }
-
-            // Ako je pošiljka starija od 24 sata (1 dan)
-            if (time() - $created_time > 86400) { // 24 sata
-                // Status "Pošiljka zadužena za isporuku" - 1 dan nakon kreiranja
-                $default_statuses[] = array(
-                    'status_id' => 'for_delivery',
-                    'status_date' => date('Y-m-d H:i:s', $created_time + 86400),
-                    'status_name' => __('Pošiljka zadužena za isporuku', 'd-express-woo'),
-                    'status_type' => 'pending',
-                    'icon' => 'dashicons-arrow-right-alt'
-                );
-            }
-
-            // Ako je pošiljka starija od 48 sati (2 dana)
-            if (time() - $created_time > 172800) { // 48 sati
-                // Status "Pošiljka isporučena primaocu" - 2 dana nakon kreiranja
-                $default_statuses[] = array(
-                    'status_id' => '1', // Stvarni kod za isporučeno
-                    'status_date' => date('Y-m-d H:i:s', $created_time + 172800),
-                    'status_name' => __('Pošiljka isporučena primaocu', 'd-express-woo'),
-                    'status_type' => 'completed',
-                    'icon' => 'dashicons-yes-alt'
-                );
-            }
-        }
-
-        return $default_statuses;
-    }
-
-    /**
-     * Mapira statuse iz baze na odgovarajuće objekte za timeline.
-     *
-     * @param array $db_statuses Status podaci iz baze.
-     * @param array $all_status_definitions Definicije svih statusa.
-     * @return array Mapirani statusi.
-     */
-    private function map_statuses($db_statuses, $all_status_definitions)
-    {
-        $mapped_statuses = array();
-
-        foreach ($db_statuses as $status) {
-            $status_name = isset($all_status_definitions[$status->status_id])
-                ? $all_status_definitions[$status->status_id]
-                : __('Nepoznat status', 'd-express-woo');
-
-            // Koristi pomocne funkcije za dobijanje tipa i ikone
-            $status_type = dexpress_get_status_group($status->status_id);
-            $icon = dexpress_get_status_icon($status->status_id);
-
-            $mapped_statuses[] = array(
-                'status_id' => $status->status_id,
-                'status_date' => $status->status_date,
-                'status_name' => $status_name,
-                'status_type' => $status_type,
-                'icon' => $icon
-            );
-        }
-
-        return $mapped_statuses;
-    }
-
-    /**
-     * Render timeline-a.
-     *
-     * @param WP_Post|WC_Order $post_or_order Post ili Order objekat.
-     * @return void
+     * Render timeline-a
      */
     public function render_timeline($post_or_order)
     {
@@ -280,7 +133,6 @@ class D_Express_Order_Timeline
             return;
         }
 
-        // Dobavljanje podataka o pošiljci
         global $wpdb;
         $shipment = $wpdb->get_row($wpdb->prepare(
             "SELECT * FROM {$wpdb->prefix}dexpress_shipments WHERE order_id = %d",
@@ -297,193 +149,244 @@ class D_Express_Order_Timeline
             return;
         }
 
-        // Dobavljanje statusa pošiljke
+        // Dohvatanje stvarnih statusa iz baze
         $db_statuses = $wpdb->get_results($wpdb->prepare(
             "SELECT * FROM {$wpdb->prefix}dexpress_statuses 
-        WHERE (shipment_code = %s OR reference_id = %s) 
-        ORDER BY status_date DESC",
+            WHERE (shipment_code = %s OR reference_id = %s) 
+            ORDER BY status_date ASC",
             $shipment->shipment_id,
             $shipment->reference_id
         ));
 
-        // Ako nema statusa, pokušaj dobaviti iz shipment tabele
-        if (empty($db_statuses) && !empty($shipment->status_code)) {
-            $db_statuses = [
-                (object)[
-                    'status_id' => $shipment->status_code,
-                    'status_date' => $shipment->updated_at
-                ]
+        // Kreiraj timeline sa fiksnim statusima i označavanje trenutnog
+        $this->render_improved_timeline($shipment, $db_statuses);
+    }
+
+    /**
+     * Renderuje poboljšani timeline sa fiksnim statusima i trenutnim progresom
+     */
+    private function render_improved_timeline($shipment, $db_statuses)
+    {
+        // Predefinisani statusi koje uvek prikazujemo
+        $predefined_statuses = $this->get_predefined_statuses();
+        
+        // Kreiranje mape trenutnih statusa
+        $status_map = [];
+        if (!empty($db_statuses)) {
+            foreach ($db_statuses as $status) {
+                $status_map[$status->status_id] = [
+                    'date' => $status->status_date,
+                    'reached' => true
+                ];
+            }
+        }
+
+        // Dodaj status pošiljke kreiran ako postoji
+        if (!isset($status_map['created'])) {
+            $status_map['created'] = [
+                'date' => $shipment->created_at,
+                'reached' => true
             ];
         }
 
-        // Dobavi sve definicije statusa iz baze
-        $all_status_definitions = $this->get_all_statuses();
-
-        // Ako nemamo statuse, kreiramo podrazumevani timeline
-        if (empty($db_statuses)) {
-            $timeline_statuses = $this->create_default_timeline($shipment);
-        } else {
-            // Mapiraj stvarne statuse
-            $timeline_statuses = $this->map_statuses($db_statuses, $all_status_definitions);
+        // Dobijanje trenutne faze na osnovu poslednjeg statusa
+        $current_phase = 0;
+        $current_status_code = $shipment->status_code;
+        
+        if (empty($current_status_code) && !empty($db_statuses)) {
+            $last_status = end($db_statuses);
+            $current_status_code = $last_status->status_id;
+        }
+        
+        // Procesiranje predefinisanih statusa i određivanje trenutne faze
+        for ($i = 0; $i < count($predefined_statuses); $i++) {
+            $status = $predefined_statuses[$i];
+            
+            // Ako je status postignut ili postoji u mapi statusa
+            if (isset($status_map[$status['id']]) || 
+                ($status['id'] === $current_status_code) ||
+                ($status['group'] === dexpress_get_status_group($current_status_code))) {
+                $current_phase = max($current_phase, $i);
+            }
         }
 
-        // Sortiranje statusa po datumu (najnoviji prvo)
-        usort($timeline_statuses, function ($a, $b) {
-            return strtotime($b['status_date']) - strtotime($a['status_date']);
-        });
-
-        // Najnoviji status za prikaz u zaglavlju
-        $latest_status = !empty($timeline_statuses) ? $timeline_statuses[0] : null;
-
-        // Početak HTML-a
-?>
-        <div class="dexpress-shipment-panel woocommerce-order-data">
-            <?php if ($latest_status) :
-                $status_class = 'status-' . $latest_status['status_type'];
-                $status_badge_class = 'dexpress-status-badge dexpress-status-' . $latest_status['status_type'];
-            ?>
-                <!-- Zaglavlje sa trenutnim statusom -->
-                <div class="dexpress-panel-header <?php echo esc_attr($status_class); ?>">
-                    <h3>
-                        <span class="<?php echo esc_attr($status_badge_class); ?>"><?php echo esc_html($latest_status['status_name']); ?></span>
-                        <?php if ($shipment->is_test) : ?>
-                            <span class="dexpress-test-badge"><?php esc_html_e('Test', 'd-express-woo'); ?></span>
+        // Prikazivanje detalja o pošiljci
+        $tracking_number = !empty($shipment->tracking_number) ? $shipment->tracking_number : '';
+        ?>
+        
+        <div class="dexpress-timeline-container">
+            <!-- Informacije o pošiljci -->
+            <div class="dexpress-shipment-info">
+                <div class="dexpress-info-grid">
+                    <div class="dexpress-info-item">
+                        <span class="dexpress-info-label"><?php esc_html_e('Tracking broj', 'd-express-woo'); ?>:</span>
+                        <?php if (!$shipment->is_test): ?>
+                            <a href="https://www.dexpress.rs/rs/pracenje-posiljaka/<?php echo esc_attr($tracking_number); ?>" 
+                               target="_blank" class="dexpress-tracking-link">
+                                <?php echo esc_html($tracking_number); ?>
+                                <span class="dashicons dashicons-external"></span>
+                            </a>
+                        <?php else: ?>
+                            <span><?php echo esc_html($tracking_number); ?> <span class="dexpress-test-badge"><?php esc_html_e('Test', 'd-express-woo'); ?></span></span>
                         <?php endif; ?>
-                    </h3>
+                    </div>
+                    
+                    <div class="dexpress-info-item">
+                        <span class="dexpress-info-label"><?php esc_html_e('Status', 'd-express-woo'); ?>:</span>
+                        <span class="dexpress-status-badge dexpress-status-<?php echo esc_attr(dexpress_get_status_group($current_status_code)); ?>">
+                            <?php echo esc_html(dexpress_get_status_name($current_status_code)); ?>
+                        </span>
+                    </div>
+                    
+                    <div class="dexpress-info-item">
+                        <span class="dexpress-info-label"><?php esc_html_e('Kreirano', 'd-express-woo'); ?>:</span>
+                        <span><?php echo esc_html(date_i18n(get_option('date_format') . ' ' . get_option('time_format'), strtotime($shipment->created_at))); ?></span>
+                    </div>
+                    
+                    <div class="dexpress-info-item">
+                        <button type="button" class="button dexpress-refresh-status" data-shipment-id="<?php echo esc_attr($shipment->id); ?>">
+                            <span class="dashicons dashicons-update"></span>
+                            <?php esc_html_e('Osveži status', 'd-express-woo'); ?>
+                        </button>
+                    </div>
                 </div>
-
-                <!-- Informacije o pošiljci -->
-                <div class="dexpress-panel-content">
-                    <div class="dexpress-shipment-info-grid">
-                        <div class="dexpress-info-item">
-                            <span class="dexpress-label"><?php esc_html_e('Tracking broj', 'd-express-woo'); ?></span>
-                            <div class="dexpress-value">
-                                <?php if (!$shipment->is_test) : ?>
-                                    <a href="https://www.dexpress.rs/rs/pracenje-posiljaka/<?php echo esc_attr($shipment->tracking_number); ?>"
-                                        target="_blank" class="dexpress-tracking-link">
-                                        <?php echo esc_html($shipment->tracking_number); ?>
-                                        <span class="dashicons dashicons-external"></span>
-                                    </a>
-                                <?php else : ?>
-                                    <span class="dexpress-tracking-number"><?php echo esc_html($shipment->tracking_number); ?></span>
+            </div>
+            
+            <!-- Timeline -->
+            <div class="dexpress-timeline-wrapper">
+                <!-- Progres linija -->
+                <div class="dexpress-progress-track">
+                    <div class="dexpress-progress-bar" style="width: <?php echo esc_attr(min(100, ($current_phase / (count($predefined_statuses) - 1)) * 100)); ?>%"></div>
+                </div>
+                
+                <!-- Statusi -->
+                <div class="dexpress-timeline-steps">
+                    <?php foreach ($predefined_statuses as $i => $status): 
+                        $is_reached = $i <= $current_phase;
+                        $status_class = $is_reached ? 'dexpress-step-reached' : 'dexpress-step-pending';
+                        $status_date = '';
+                        
+                        // Ako status postoji u mapi, prikažemo datum
+                        if (isset($status_map[$status['id']])) {
+                            $status_date = date_i18n(get_option('date_format') . ' ' . get_option('time_format'), strtotime($status_map[$status['id']]['date']));
+                        }
+                    ?>
+                        <div class="dexpress-timeline-step <?php echo esc_attr($status_class); ?>">
+                            <div class="dexpress-step-marker">
+                                <span class="dashicons <?php echo esc_attr($status['icon']); ?>"></span>
+                            </div>
+                            <div class="dexpress-step-content">
+                                <div class="dexpress-step-title"><?php echo esc_html($status['name']); ?></div>
+                                <?php if (!empty($status_date)): ?>
+                                    <div class="dexpress-step-date"><?php echo esc_html($status_date); ?></div>
                                 <?php endif; ?>
                             </div>
                         </div>
-
-                        <div class="dexpress-info-item">
-                            <span class="dexpress-label"><?php esc_html_e('Reference ID', 'd-express-woo'); ?></span>
-                            <div class="dexpress-value"><?php echo esc_html($shipment->reference_id); ?></div>
-                        </div>
-
-                        <div class="dexpress-info-item">
-                            <span class="dexpress-label"><?php esc_html_e('Datum kreiranja', 'd-express-woo'); ?></span>
-                            <div class="dexpress-value">
-                                <?php echo esc_html(date_i18n(get_option('date_format') . ' ' . get_option('time_format'), strtotime($shipment->created_at))); ?>
-                            </div>
-                        </div>
-
-                        <div class="dexpress-info-item dexpress-actions-item">
-                            <div class="dexpress-actions">
-                                <?php
-                                // Kreiraj URL za štampanje nalepnice
-                                $nonce = wp_create_nonce('dexpress-download-label');
-                                $label_url = admin_url('admin-ajax.php?action=dexpress_download_label&shipment_id=' . $shipment->id . '&nonce=' . $nonce);
-                                ?>
-                                <a href="<?php echo esc_url($label_url); ?>" class="button button-secondary" target="_blank">
-                                    <span class="dashicons dashicons-printer"></span>
-                                    <?php esc_html_e('Preuzmi nalepnicu', 'd-express-woo'); ?>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
+                    <?php endforeach; ?>
                 </div>
-
-                <!-- Horizontalni timeline -->
-                <div class="dexpress-timeline-wrapper">
-                    <?php if (!empty($timeline_statuses)) :
-                        // Određivanje najvišeg tipa statusa za progress liniju
-                        $highest_status_type = 'pending';
-                        $progress_percentage = 0;
-
-                        foreach ($timeline_statuses as $status) {
-                            if ($status['status_type'] === 'completed' || $status['status_type'] === 'delivered') {
-                                $highest_status_type = 'completed';
-                                $progress_percentage = 100;
-                                break;
-                            } elseif ($status['status_type'] === 'current' || $status['status_type'] === 'transit') {
-                                $highest_status_type = 'transit';
-                                $progress_percentage = 65;
-                            } elseif ($status['status_type'] === 'failed' || $status['status_type'] === 'returned') {
-                                if ($highest_status_type !== 'transit') {
-                                    $highest_status_type = 'failed';
-                                    $progress_percentage = 50;
-                                }
-                            }
-                        }
-
-                        // Okretanje redosleda za horizontalni timeline (najstariji prvo)
-                        $sorted_timeline_statuses = array_reverse($timeline_statuses);
-                    ?>
-                        <div class="dexpress-timeline">
-                            <div class="dexpress-timeline-progress-bar">
-                                <div class="dexpress-timeline-track">
-                                    <div class="dexpress-timeline-progress dexpress-progress-<?php echo esc_attr($highest_status_type); ?>"
-                                        style="width: <?php echo esc_attr($progress_percentage); ?>%"></div>
+            </div>
+            
+            <!-- Istorija svih statusa -->
+            <?php if (!empty($db_statuses)): ?>
+                <div class="dexpress-status-history">
+                    <h4><?php esc_html_e('Istorija statusa', 'd-express-woo'); ?></h4>
+                    <div class="dexpress-status-history-items">
+                        <?php 
+                        // Sortiraj statuse po datumu, najnoviji prvo
+                        usort($db_statuses, function($a, $b) {
+                            return strtotime($b->status_date) - strtotime($a->status_date);
+                        });
+                        
+                        foreach ($db_statuses as $status): 
+                            $status_name = dexpress_get_status_name($status->status_id);
+                            $status_group = dexpress_get_status_group($status->status_id);
+                            $status_date = date_i18n(get_option('date_format') . ' ' . get_option('time_format'), strtotime($status->status_date));
+                        ?>
+                            <div class="dexpress-status-history-item">
+                                <div class="dexpress-status-history-date"><?php echo esc_html($status_date); ?></div>
+                                <div class="dexpress-status-history-info">
+                                    <span class="dexpress-status-badge dexpress-status-<?php echo esc_attr($status_group); ?>">
+                                        <?php echo esc_html($status_name); ?>
+                                    </span>
                                 </div>
                             </div>
-
-                            <div class="dexpress-timeline-items">
-                                <?php foreach ($sorted_timeline_statuses as $index => $status) :
-                                    // Formatiranje datuma
-                                    $date_obj = new DateTime($status['status_date']);
-                                    $formatted_date = $date_obj->format('j. F Y.');
-                                    $formatted_time = $date_obj->format('H:i');
-
-                                    $status_class = 'dexpress-timeline-step status-' . esc_attr($status['status_type']);
-
-                                    // Dodaj klasu ako je status već dostignut
-                                    $completed_class = '';
-                                    if (
-                                        $index < count($sorted_timeline_statuses) - 1 ||
-                                        in_array($status['status_type'], ['completed', 'delivered'])
-                                    ) {
-                                        $completed_class = ' step-completed';
-                                    }
-                                ?>
-                                    <div class="<?php echo esc_attr($status_class . $completed_class); ?>"
-                                        style="--step-index: <?php echo esc_attr($index); ?>; --total-steps: <?php echo esc_attr(count($sorted_timeline_statuses)); ?>">
-                                        <div class="dexpress-step-marker">
-                                            <span class="dexpress-step-icon dashicons <?php echo esc_attr($status['icon']); ?>"></span>
-                                        </div>
-                                        <div class="dexpress-step-content">
-                                            <div class="dexpress-step-date">
-                                                <span class="dexpress-date"><?php echo esc_html($formatted_date); ?></span>
-                                                <span class="dexpress-time"><?php echo esc_html($formatted_time); ?></span>
-                                            </div>
-                                            <div class="dexpress-step-title"><?php echo esc_html($status['status_name']); ?></div>
-                                        </div>
-                                    </div>
-                                <?php endforeach; ?>
-                            </div>
-                        </div>
-                    <?php else : ?>
-                        <div class="dexpress-timeline-empty">
-                            <div class="dexpress-empty-message">
-                                <span class="dashicons dashicons-info-outline"></span>
-                                <p><?php esc_html_e('Još uvek nema informacija o statusu pošiljke.', 'd-express-woo'); ?></p>
-                            </div>
-                        </div>
-                    <?php endif; ?>
+                        <?php endforeach; ?>
+                    </div>
                 </div>
             <?php endif; ?>
         </div>
-<?php
+        <?php
     }
+
+    /**
+     * AJAX handler za osvežavanje statusa pošiljke
+     */
+    public function ajax_refresh_status()
+    {
+        // Provera nonce-a
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'dexpress-refresh-status')) {
+            wp_send_json_error(['message' => __('Sigurnosna provera nije uspela.', 'd-express-woo')]);
+            return;
+        }
+
+        // Provera dozvola
+        if (!current_user_can('manage_woocommerce')) {
+            wp_send_json_error(['message' => __('Nemate dozvolu za ovu akciju.', 'd-express-woo')]);
+            return;
+        }
+
+        // Provera ID-a pošiljke
+        if (!isset($_POST['shipment_id']) || empty($_POST['shipment_id'])) {
+            wp_send_json_error(['message' => __('ID pošiljke je obavezan.', 'd-express-woo')]);
+            return;
+        }
+
+        $shipment_id = intval($_POST['shipment_id']);
+
+        try {
+            global $wpdb;
+            $shipment = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM {$wpdb->prefix}dexpress_shipments WHERE id = %d",
+                $shipment_id
+            ));
+
+            if (!$shipment) {
+                wp_send_json_error(['message' => __('Pošiljka nije pronađena.', 'd-express-woo')]);
+                return;
+            }
+
+            // U test režimu, simuliraj statuse
+            if ($shipment->is_test) {
+                $result = $this->simulate_test_mode_statuses($shipment_id);
+                
+                if ($result) {
+                    wp_send_json_success(['message' => __('Status pošiljke je uspešno ažuriran (test režim).', 'd-express-woo')]);
+                } else {
+                    wp_send_json_success(['message' => __('Pošiljka je već u najnovijem statusu (test režim).', 'd-express-woo')]);
+                }
+                return;
+            }
+
+            // U produkcijskom režimu, pokušaj sinhronizaciju
+            require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/services/class-dexpress-shipment-service.php';
+            $shipment_service = new D_Express_Shipment_Service();
+            $result = $shipment_service->sync_shipment_status($shipment_id);
+
+            if (is_wp_error($result)) {
+                wp_send_json_error(['message' => $result->get_error_message()]);
+            } else {
+                wp_send_json_success(['message' => __('Status pošiljke je uspešno ažuriran.', 'd-express-woo')]);
+            }
+        } catch (Exception $e) {
+            wp_send_json_error([
+                'message' => __('Došlo je do greške prilikom ažuriranja statusa.', 'd-express-woo'),
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
     /**
      * Simulacija statusa za test mode
-     * 
-     * @param int $shipment_id ID pošiljke
-     * @return bool True ako je simulacija uspešna
      */
     public function simulate_test_mode_statuses($shipment_id)
     {
@@ -503,15 +406,14 @@ class D_Express_Order_Timeline
         $elapsed_hours = ($current_time - $created_time) / 3600;
         $statuses_added = false;
 
-        // Niz progresije statusa za simulaciju sa grupama
+        // Simulacija statusa prema proteklom vremenu
         $simulation_statuses = [
             ['hours' => 2, 'id' => '0', 'name' => 'Čeka na preuzimanje', 'group' => 'pending'],
             ['hours' => 8, 'id' => '3', 'name' => 'Pošiljka preuzeta od pošiljaoca', 'group' => 'transit'],
-            ['hours' => 24, 'id' => '4', 'name' => 'Pošiljka zadužena za isporuku', 'group' => 'out_for_delivery'],
-            ['hours' => 48, 'id' => '1', 'name' => 'Pošiljka isporučena primaocu', 'group' => 'delivered']
+            ['hours' => 10, 'id' => '4', 'name' => 'Pošiljka zadužena za isporuku', 'group' => 'out_for_delivery'],
+            ['hours' => 15, 'id' => '1', 'name' => 'Pošiljka isporučena primaocu', 'group' => 'delivered']
         ];
 
-        // Simuliramo progresivne statuse na osnovu proteklog vremena
         foreach ($simulation_statuses as $sim_status) {
             if ($elapsed_hours > $sim_status['hours'] && !$this->status_exists($shipment->shipment_id, $sim_status['id'])) {
                 $this->add_simulated_status(
@@ -520,20 +422,14 @@ class D_Express_Order_Timeline
                     date('Y-m-d H:i:s', $created_time + ($sim_status['hours'] * 3600))
                 );
                 $statuses_added = true;
-
-                // Dodajemo i grupu statusa u log
-                dexpress_log('Simulirani status dodat: ' . $sim_status['id'] . ' (grupa: ' . $sim_status['group'] . ') za pošiljku ' . $shipment->shipment_id, 'debug');
             }
         }
 
         return $statuses_added;
     }
+
     /**
      * Provera da li postoji određeni status
-     * 
-     * @param string $shipment_code Kod pošiljke
-     * @param string $status_id ID statusa
-     * @return bool True ako status postoji
      */
     private function status_exists($shipment_code, $status_id)
     {
@@ -541,7 +437,7 @@ class D_Express_Order_Timeline
 
         $count = $wpdb->get_var($wpdb->prepare(
             "SELECT COUNT(*) FROM {$wpdb->prefix}dexpress_statuses 
-        WHERE shipment_code = %s AND status_id = %s",
+            WHERE shipment_code = %s AND status_id = %s",
             $shipment_code,
             $status_id
         ));
@@ -551,10 +447,6 @@ class D_Express_Order_Timeline
 
     /**
      * Dodavanje simuliranog statusa u bazu
-     * 
-     * @param object $shipment Podaci o pošiljci
-     * @param string $status_id ID statusa
-     * @param string $status_date Datum statusa
      */
     private function add_simulated_status($shipment, $status_id, $status_date)
     {
@@ -566,19 +458,14 @@ class D_Express_Order_Timeline
             'reference_id' => $shipment->reference_id,
             'status_id' => $status_id,
             'status_date' => $status_date,
-            'raw_data' => json_encode(array(
-                'simulated' => true,
-                'shipment_id' => $shipment->shipment_id,
-                'status_id' => $status_id
-            )),
+            'raw_data' => json_encode(['simulated' => true]),
             'is_processed' => 1,
             'created_at' => current_time('mysql')
         );
 
         $wpdb->insert($wpdb->prefix . 'dexpress_statuses', $status_data);
-        dexpress_log('Simulirani status dodat: ' . $status_id . ' za pošiljku ' . $shipment->shipment_id, 'debug');
 
-        // Ako je to najnoviji status (po statusDate), ažuriraj i pošiljku
+        // Ažuriranje statusa pošiljke
         $wpdb->update(
             $wpdb->prefix . 'dexpress_shipments',
             array(
@@ -588,81 +475,13 @@ class D_Express_Order_Timeline
             ),
             array('id' => $shipment->id)
         );
-
-        dexpress_log('Pošiljka ažurirana sa statusom: ' . $status_id, 'debug');
-    }
-    /**
-     * AJAX handler za osvežavanje statusa pošiljke.
-     */
-    public function ajax_refresh_status()
-    {
-        // Provera nonce-a
-        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'dexpress-refresh-status')) {
-            wp_send_json_error(array('message' => __('Sigurnosna provera nije uspela.', 'd-express-woo')));
-            return;
-        }
-
-        // Provera dozvola
-        if (!current_user_can('manage_woocommerce')) {
-            wp_send_json_error(array('message' => __('Nemate dozvolu za ovu akciju.', 'd-express-woo')));
-            return;
-        }
-
-        // Provera ID-a pošiljke
-        if (!isset($_POST['shipment_id']) || empty($_POST['shipment_id'])) {
-            wp_send_json_error(array('message' => __('ID pošiljke je obavezan.', 'd-express-woo')));
-            return;
-        }
-
-        $shipment_id = intval($_POST['shipment_id']);
-        dexpress_log('Pokrenuto osvežavanje statusa za pošiljku ID: ' . $shipment_id, 'debug');
-
-        try {
-            global $wpdb;
-            $shipment = $wpdb->get_row($wpdb->prepare(
-                "SELECT * FROM {$wpdb->prefix}dexpress_shipments WHERE id = %d",
-                $shipment_id
-            ));
-
-            if (!$shipment) {
-                wp_send_json_error(array('message' => __('Pošiljka nije pronađena.', 'd-express-woo')));
-                return;
-            }
-
-            $result = false;
-
-            // U test režimu, simuliraj statuse
-            if ($shipment->is_test) {
-                dexpress_log('Pokrenuta simulacija statusa za test pošiljku ID: ' . $shipment_id, 'debug');
-                $result = $this->simulate_test_mode_statuses($shipment_id);
-
-                if ($result) {
-                    dexpress_log('Simulacija statusa uspešna za pošiljku ID: ' . $shipment_id, 'debug');
-                    wp_send_json_success(array('message' => __('Status pošiljke je uspešno ažuriran (test režim).', 'd-express-woo')));
-                } else {
-                    dexpress_log('Nema novih simuliranih statusa za pošiljku ID: ' . $shipment_id, 'debug');
-                    wp_send_json_success(array('message' => __('Pošiljka je već u najnovijem statusu (test režim).', 'd-express-woo')));
-                }
-                return;
-            }
-
-            // U produkcijskom režimu, pokušaj sinhronizaciju
-            require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/services/class-dexpress-shipment-service.php';
-            $shipment_service = new D_Express_Shipment_Service();
-            $result = $shipment_service->sync_shipment_status($shipment_id);
-
-            if (is_wp_error($result)) {
-                dexpress_log('Greška pri sinhronizaciji statusa: ' . $result->get_error_message(), 'error');
-                wp_send_json_error(array('message' => $result->get_error_message()));
-            } else {
-                dexpress_log('Uspešna sinhronizacija statusa za pošiljku ID: ' . $shipment_id, 'debug');
-                wp_send_json_success(array('message' => __('Status pošiljke je uspešno ažuriran.', 'd-express-woo')));
-            }
-        } catch (Exception $e) {
-            dexpress_log('Izuzetak pri ažuriranju statusa: ' . $e->getMessage(), 'error');
-            wp_send_json_error(array(
-                'message' => __('Došlo je do greške prilikom ažuriranja statusa.', 'd-express-woo'),
-                'error' => $e->getMessage()
+        
+        // Dodaj napomenu u narudžbinu
+        $order = wc_get_order($shipment->order_id);
+        if ($order) {
+            $order->add_order_note(sprintf(
+                __('D Express status ažuriran: %s (simulirano za test pošiljku)', 'd-express-woo'),
+                dexpress_get_status_name($status_id)
             ));
         }
     }

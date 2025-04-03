@@ -1100,9 +1100,6 @@ class D_Express_Admin
      * Render metabox-a na stranici narudžbine
      */
 
-    /**
-     * Render metabox-a na stranici narudžbine
-     */
     public function render_order_metabox($post_or_order) // ← Promeni ime parametra ovde
     {
         // Provera da li je prosleđen WP_Post ili WC_Order
@@ -1135,9 +1132,10 @@ class D_Express_Admin
             // Dobijanje statusa ako postoji
             $status_text = '';
             if (!empty($shipment->status_code)) {
-                $status_class = ($shipment->status_code == '1') ? 'dexpress-status-delivered' : (($shipment->status_code == '131') ? 'dexpress-status-failed' : 'dexpress-status-transit');
+                $status_class = dexpress_get_status_css_class($shipment->status_code);
+                $status_name = dexpress_get_status_name($shipment->status_code);
                 $status_text = '<span class="dexpress-status-badge ' . $status_class . '">' .
-                    esc_html(dexpress_get_status_name($shipment->status_code)) . '</span>';
+                    esc_html($status_name) . '</span>';
             }
 
             echo '<div class="dexpress-shipment-details">';
