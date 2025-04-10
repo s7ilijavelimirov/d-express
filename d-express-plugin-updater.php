@@ -120,7 +120,7 @@ class D_Express_GitHub_Updater {
                 }
             }
         }
-
+    
         // Fallback na GitHub download archive
         return "https://github.com/{$this->username}/{$this->repository}/archive/refs/tags/{$release['tag_name']}.zip";
     }
