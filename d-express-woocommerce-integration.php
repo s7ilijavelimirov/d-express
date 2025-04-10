@@ -3,7 +3,7 @@
 /**
  * Plugin Name: D Express WooCommerce Integration
  * Description: Integracija D Express dostave sa WooCommerce prodavnicama
- * Version: 1.0.2
+ * Version: 1.0.3
  * Author: S7Code&Design
  * Text Domain: d-express-woo
  * Domain Path: /languages
