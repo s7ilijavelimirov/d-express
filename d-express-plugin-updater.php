@@ -12,10 +12,20 @@ class D_Express_GitHub_Updater {
         $this->username = $username;
         $this->repository = $repository;
 
+        // DEBUG: Log API poziva
+        add_action('init', [$this, 'debug_update_check']);
+
         // Dodaj filtere za update proveru
         add_filter('pre_set_site_transient_update_plugins', [$this, 'modify_transient'], 10, 1);
         add_filter('plugins_api', [$this, 'plugin_popup'], 10, 3);
         add_filter('upgrader_post_install', [$this, 'after_install'], 10, 3);
+    }
+
+    // DEBUG funkcija za praćenje API poziva
+    public function debug_update_check() {
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            $this->get_repository_release();
+        }
     }
 
     // Provera GitHub Release-a
@@ -30,15 +40,29 @@ class D_Express_GitHub_Updater {
         $response = wp_remote_get($remote_url, [
             'headers' => [
                 'Accept' => 'application/vnd.github.v3+json'
-            ]
+            ],
+            'timeout' => 10  // Povećan timeout
         ]);
 
+        // Logovanje greške
         if (is_wp_error($response)) {
+            error_log('GitHub API Error: ' . $response->get_error_message());
+            return false;
+        }
+
+        $response_code = wp_remote_retrieve_response_code($response);
+        if ($response_code !== 200) {
+            error_log('GitHub API HTTP Error: ' . $response_code);
             return false;
         }
 
         $response_body = wp_remote_retrieve_body($response);
         $this->github_response = json_decode($response_body, true);
+
+        // Dodatno logovanje
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('GitHub Release Data: ' . print_r($this->github_response, true));
+        }
 
         return $this->github_response;
     }
@@ -62,12 +86,20 @@ class D_Express_GitHub_Updater {
         $latest_version = ltrim($release['tag_name'], 'v');
 
         if (version_compare($current_version, $latest_version, '<')) {
+            // Provera da li postoji ZIP asset
+            $download_url = $this->get_download_url($release);
+
+            if (!$download_url) {
+                error_log('Nije pronađen download URL za plugin');
+                return $transient;
+            }
+
             $transient->response[$this->plugin_slug] = (object) [
                 'slug' => $this->repository,
                 'plugin' => $this->plugin_slug,
                 'new_version' => $latest_version,
                 'url' => $release['html_url'],
-                'package' => $release['assets'][0]['browser_download_url'],
+                'package' => $download_url,
                 'icons' => [
                     '1x' => DEXPRESS_WOO_PLUGIN_URL . 'assets/images/icon-128x128.png',
                     '2x' => DEXPRESS_WOO_PLUGIN_URL . 'assets/images/icon-256x256.png',
@@ -76,6 +108,21 @@ class D_Express_GitHub_Updater {
         }
 
         return $transient;
+    }
+
+    // Pronalaženje download URL-a
+    private function get_download_url($release) {
+        // Pokušaj da nađeš ZIP asset
+        if (isset($release['assets']) && is_array($release['assets'])) {
+            foreach ($release['assets'] as $asset) {
+                if (strtolower(pathinfo($asset['name'], PATHINFO_EXTENSION)) === 'zip') {
+                    return $asset['browser_download_url'];
+                }
+            }
+        }
+
+        // Fallback na GitHub download archive
+        return "https://github.com/{$this->username}/{$this->repository}/archive/refs/tags/{$release['tag_name']}.zip";
     }
 
     // Popup prozor sa informacijama o update-u
@@ -101,7 +148,7 @@ class D_Express_GitHub_Updater {
                 'description' => $release['body'],
                 'changelog' => $this->parse_changelog($release['body'])
             ],
-            'download_link' => $release['assets'][0]['browser_download_url']
+            'download_link' => $this->get_download_url($release)
         ];
 
         return $popup;
@@ -134,3 +181,4 @@ class D_Express_GitHub_Updater {
         return $result;
     }
 }
+?>
