@@ -3,7 +3,7 @@
 /**
  * Plugin Name: D Express WooCommerce Integration
  * Description: Integracija D Express dostave sa WooCommerce prodavnicama
- * Version: 1.0.1
+ * Version: 1.0.2
  * Author: S7Code&Design
  * Text Domain: d-express-woo
  * Domain Path: /languages
@@ -111,10 +111,17 @@ class D_Express_WooCommerce
         require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/woocommerce/class-dexpress-dispenser-shipping-method.php';
 
         require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/admin/class-dexpress-diagnostics.php';
-        // Plugin Updater
-        require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/class-dexpress-plugin-updater.php';
-    }
 
+        require_once DEXPRESS_WOO_PLUGIN_DIR . 'd-express-plugin-updater.php';
+    }
+    public function init_github_updates()
+    {
+        new D_Express_GitHub_Updater(
+            __FILE__,           // Putanja do glavnog plugin fajla
+            's7ilijavelimirov', // GitHub username
+            'd-express'         // GitHub repository ime
+        );
+    }
     /**
      * Inicijalizacija hook-ova
      */
@@ -141,24 +148,9 @@ class D_Express_WooCommerce
         // Registrujemo česte provere statusa
         add_action('init', array($this, 'register_frequent_status_checks'));
 
-        // Registrujemo Inicijalizacija updater-a
-        add_action('init', array($this, 'dexpress_init_updater'));
+        add_action('init', [$this, 'init_github_updates']);
     }
-    /**
-     * Inicijalizacija updater-a
-     */
-    function dexpress_init_updater()
-    {
-        if (!class_exists('D_Express_Plugin_Updater')) {
-            return;
-        }
 
-        // Inicijalizacija updater-a
-        new D_Express_Plugin_Updater(
-            __FILE__,
-            'https://github.com/s7ilijavelimirov/d-express'
-        );
-    }
     /**
      * Registracija češćih provera statusa
      */
