@@ -598,8 +598,20 @@ class D_Express_WooCommerce
         $status_id = $notification->status_id;
         $all_statuses = dexpress_get_all_status_codes();
 
+        // Provera opcije za automatske email-ove
+        $send_emails = get_option('dexpress_auto_status_emails', 'yes') === 'yes';
+
         // Proveri kojoj grupi pripada status
         $status_group = isset($all_statuses[$status_id]) ? $all_statuses[$status_id]['group'] : 'transit';
+        $status_name = isset($all_statuses[$status_id]) ? $all_statuses[$status_id]['name'] : '';
+
+        // Dodaj napomenu u narudžbinu
+        $order->add_order_note(sprintf(__('D Express status: %s', 'd-express-woo'), $status_name));
+
+        // Ako su email-ovi isključeni, samo izađi
+        if (!$send_emails) {
+            return;
+        }
 
         // Obrada na osnovu grupe statusa
         switch ($status_group) {
@@ -610,9 +622,24 @@ class D_Express_WooCommerce
                     // Promeni status narudžbine na 'completed'
                     $order->update_status('completed', __('D Express pošiljka isporučena.', 'd-express-woo'));
                 }
-
                 // Pošalji email korisniku
                 $this->send_status_email($shipment, $order, 'delivered');
+                break;
+
+            // Preuzeta od pošiljaoca
+            case 'transit':
+                if ($status_id == '3') {  // '3' je kod za "Preuzeto od pošiljaoca"
+                    // Pošalji email da je kurir preuzeo pošiljku
+                    $this->send_status_email($shipment, $order, 'picked_up');
+                } else {
+                    // Pošalji generalni email za pošiljke u tranzitu
+                    $this->send_status_email($shipment, $order, 'in_transit');
+                }
+                break;
+
+            // Pošiljka spremna za isporuku
+            case 'out_for_delivery':
+                $this->send_status_email($shipment, $order, 'out_for_delivery');
                 break;
 
             // Neuspešna isporuka / vraćeno
@@ -622,35 +649,18 @@ class D_Express_WooCommerce
                 if ($order->get_status() !== 'failed' && $order->get_status() !== 'cancelled') {
                     $order->update_status('failed', __('D Express nije uspeo da isporuči pošiljku.', 'd-express-woo'));
                 }
-
                 // Pošalji email korisniku
                 $this->send_status_email($shipment, $order, 'failed');
                 break;
 
             // Pokušana isporuka (npr. nema nikoga kod kuće)
             case 'delayed':
-                // Dodaj napomenu sa info o pokušaju isporuke
-                $status_name = isset($all_statuses[$status_id]) ? $all_statuses[$status_id]['name'] : '';
-                $order->add_order_note(sprintf(__('D Express status: %s', 'd-express-woo'), $status_name));
-
-                // Pošalji email korisniku
                 $this->send_status_email($shipment, $order, 'attempted');
                 break;
 
             // Pošiljka čeka preuzimanje (npr. u paketomatu)
             case 'pending_pickup':
-                $status_name = isset($all_statuses[$status_id]) ? $all_statuses[$status_id]['name'] : '';
-                $order->add_order_note(sprintf(__('D Express status: %s', 'd-express-woo'), $status_name));
-
-                // Možda pošalji poseban email korisniku za preuzimanje
-                $this->send_status_email($shipment, $order, 'status-change');
-                break;
-
-            // Svi ostali slučajevi
-            default:
-                // Samo dodaj napomenu o promeni statusa
-                $status_name = isset($all_statuses[$status_id]) ? $all_statuses[$status_id]['name'] : '';
-                $order->add_order_note(sprintf(__('D Express status: %s', 'd-express-woo'), $status_name));
+                $this->send_status_email($shipment, $order, 'ready_for_pickup');
                 break;
         }
     }
@@ -664,7 +674,7 @@ class D_Express_WooCommerce
      */
     private function send_status_email($shipment, $order, $status_type)
     {
-        if (get_option('dexpress_enable_status_emails', 'yes') !== 'yes') {
+        if (get_option('dexpress_auto_status_emails', 'yes') !== 'yes') {
             return;
         }
 
@@ -680,19 +690,55 @@ class D_Express_WooCommerce
                 $subject = sprintf(__('Problem sa isporukom porudžbine #%s', 'd-express-woo'), $order->get_order_number());
                 $template = 'shipment-failed.php';
                 break;
+            case 'picked_up':
+                $subject = sprintf(__('Vaša porudžbina #%s je preuzeta od strane kurira', 'd-express-woo'), $order->get_order_number());
+                $template = 'shipment-picked-up.php';
+                break;
+            case 'in_transit':
+                $subject = sprintf(__('Vaša porudžbina #%s je u tranzitu', 'd-express-woo'), $order->get_order_number());
+                $template = 'shipment-in-transit.php';
+                break;
+            case 'out_for_delivery':
+                $subject = sprintf(__('Vaša porudžbina #%s je spremna za isporuku danas', 'd-express-woo'), $order->get_order_number());
+                $template = 'shipment-out-for-delivery.php';
+                break;
             case 'attempted':
                 $subject = sprintf(__('Pokušaj isporuke porudžbine #%s', 'd-express-woo'), $order->get_order_number());
                 $template = 'shipment-attempted.php';
+                break;
+            case 'ready_for_pickup':
+                $subject = sprintf(__('Vaša porudžbina #%s je spremna za preuzimanje', 'd-express-woo'), $order->get_order_number());
+                $template = 'shipment-ready-for-pickup.php';
                 break;
             default:
                 $subject = sprintf(__('Ažuriranje statusa pošiljke za porudžbinu #%s', 'd-express-woo'), $order->get_order_number());
                 $template = 'shipment-status-change.php';
         }
 
-        // Priprema email-a
+        $email_heading = $subject;
+
+        // Pripremamo podatke za šablon
+        $tracking_number = $shipment->tracking_number;
+        $status_name = dexpress_get_status_name($shipment->status_code);
+
+        // Dohvati paketomat ako je paketomat dostava
+        $dispenser = null;
+        $dispenser_id = get_post_meta($order->get_id(), '_dexpress_dispenser_id', true);
+        if (!empty($dispenser_id)) {
+            global $wpdb;
+            $dispenser = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM {$wpdb->prefix}dexpress_dispensers WHERE id = %d",
+                intval($dispenser_id)
+            ));
+        }
+
+        // Kreiramo email objekat
+        $email = new WC_Email();
+
+        // Učitavanje sadržaja emaila iz šablona
         ob_start();
 
-        // Provera da li šablon postoji, ako ne koristi default
+        // Provera da li šablon postoji
         $template_path = DEXPRESS_WOO_PLUGIN_DIR . 'templates/emails/' . $template;
         if (file_exists($template_path)) {
             include $template_path;
@@ -703,11 +749,11 @@ class D_Express_WooCommerce
 
         $email_content = ob_get_clean();
 
-        // Pošalji email
+        // Slanje emaila
         $headers = "Content-Type: text/html\r\n";
         $mailer->send($recipient, $subject, $email_content, $headers);
 
-        dexpress_log('Email o statusu pošiljke poslat na: ' . $recipient . ' (tip: ' . $status_type . ')', 'debug');
+        dexpress_log('[EMAIL] Poslat email o promeni statusa "' . $status_type . '" na: ' . $recipient, 'debug');
     }
 }
 

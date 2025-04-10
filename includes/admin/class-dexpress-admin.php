@@ -530,6 +530,16 @@ class D_Express_Admin
                                     </p>
                                 </td>
                             </tr>
+                            <tr>
+                                <th scope="row">
+                                    <label for="dexpress_auto_status_emails"><?php _e('Automatski email-ovi o statusu', 'd-express-woo'); ?></label>
+                                </th>
+                                <td>
+                                    <input type="checkbox" id="dexpress_auto_status_emails" name="dexpress_auto_status_emails"
+                                        value="yes" <?php checked(get_option('dexpress_auto_status_emails', 'yes'), 'yes'); ?>>
+                                    <p class="description"><?php _e('Automatski šalji email kupcu pri promeni statusa pošiljke.', 'd-express-woo'); ?></p>
+                                </td>
+                            </tr>
                         </table>
                     </div>
                     <!-- Podešavanja pošiljaoca -->

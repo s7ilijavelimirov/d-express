@@ -180,7 +180,39 @@ function dexpress_log($message, $type = 'info')
     // Pisanje u fajl
     file_put_contents($log_file, $log_message, FILE_APPEND);
 }
+/**
+ * Poboljšano logovanje grešaka sa kontekstom
+ *
+ * @param string $message Poruka greške
+ * @param array $context Kontekst greške (opciono)
+ * @return void
+ */
+function dexpress_log_error($message, $context = array())
+{
+    if (get_option('dexpress_enable_logging', 'no') !== 'yes') {
+        return;
+    }
 
+    $log_entry = array(
+        'time' => current_time('mysql'),
+        'message' => $message,
+        'context' => $context
+    );
+
+    $log_dir = DEXPRESS_WOO_PLUGIN_DIR . 'logs/';
+
+    // Kreiranje direktorijuma za logove ako ne postoji
+    if (!file_exists($log_dir)) {
+        wp_mkdir_p($log_dir);
+    }
+
+    $log_file = $log_dir . 'errors-' . date('Y-m-d') . '.log';
+    file_put_contents(
+        $log_file,
+        json_encode($log_entry, JSON_PRETTY_PRINT) . "\n",
+        FILE_APPEND
+    );
+}
 /**
  * Formatiranje statusa pošiljke
  *

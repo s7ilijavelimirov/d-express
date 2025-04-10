@@ -1,0 +1,2328 @@
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: D Express WooCommerce Integration\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-04-03 13:00+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: \n"
+"Language: \n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Loco https://localise.biz/\n"
+"X-Loco-Version: 2.7.1; wp-6.7.2\n"
+"X-Domain: d-express-woo"
+
+#: includes/woocommerce/class-dexpress-dispenser-shipping-method.php:137
+#: includes/woocommerce/class-dexpress-shipping-method.php:95
+#, php-format
+msgid "%s (Besplatna dostava)"
+msgstr ""
+
+#: includes/class-dexpress-validator.php:209
+#, php-format
+msgid "%s je obavezan."
+msgstr ""
+
+#: includes/class-dexpress-validator.php:232
+#, php-format
+msgid "%s mora biti izabran."
+msgstr ""
+
+#: includes/class-dexpress-validator.php:199
+#, php-format
+msgid "%s mora biti izabrana iz padajućeg menija."
+msgstr ""
+
+#: includes/class-dexpress-validator.php:219
+#, php-format
+msgid "%s nije u ispravnom formatu. Podržani formati: 15, bb, 23a, 44/2"
+msgstr ""
+
+#: includes/admin/views/order-metabox.php:34
+msgid "(Test mode)"
+msgstr ""
+
+#: includes/admin/class-dexpress-shipments-list.php:285
+msgid "(Test)"
+msgstr ""
+
+#: includes/woocommerce/class-dexpress-dispenser-shipping-method.php:97
+msgid ""
+"* Rok za preuzimanje pošiljke sa paketomata je 2 radna dana i nakon odabira "
+"ovog tipa dostave pošiljku nije moguće preusmeriti na drugu adresu"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:583
+msgid "- Izaberite grad -"
+msgstr ""
+
+#: includes/woocommerce/class-dexpress-dispenser-shipping-method.php:104
+msgid "3 RADNA DANA"
+msgstr ""
+
+#: includes/woocommerce/class-dexpress-dispenser-shipping-method.php:83
+msgid "5. Preuzmite paket iz ormarića koji će se automatski otvoriti"
+msgstr ""
+
+#: templates/emails/shipment-created-dispenser.php:124
+msgid ""
+"<strong>Pošto plaćate pouzećem</strong>, biće potrebno da na licu mesta "
+"platite iznos."
+msgstr ""
+
+#: includes/api/class-dexpress-api.php:274
+msgid "Adresa nije validna"
+msgstr ""
+
+#: templates/emails/shipment-created.php:95
+msgid "Adresa za dostavu"
+msgstr ""
+
+#: templates/emails/shipment-created-dispenser.php:85
+msgid "Adresa:"
+msgstr ""
+
+#: includes/admin/class-dexpress-diagnostics.php:518
+#: includes/frontend/class-dexpress-tracking.php:233
+#: templates/myaccount/tracking.php:85 templates/myaccount/tracking.php:116
+msgid "Akcije"
+msgstr ""
+
+#: includes/woocommerce/class-dexpress-dispenser-shipping-method.php:69
+#: includes/woocommerce/class-dexpress-shipping-method.php:69
+msgid ""
+"Ako je uključeno, ukupan iznos porudžbine nakon primenjenih kupona će biti "
+"korišćen za određivanje besplatne dostave."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:424
+msgid ""
+"Aktivira detaljan zapis (log) svih API komunikacija sa D Express servisom. "
+"Log fajlovi se čuvaju u logs/ direktorijumu i sadrže detalje o zahtevima, "
+"odgovorima i greškama. Korisno za debagiranje prilikom razvoja i rešavanje "
+"problema u produkciji."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:423
+msgid "Aktivirajte logovanje API zahteva i odgovora."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:411
+msgid "Aktivirajte test režim tokom razvoja i testiranja."
+msgstr ""
+
+#: templates/myaccount/tracking.php:22
+msgid "Aktivna pošiljka"
+msgstr ""
+
+#: includes/api/class-dexpress-api.php:113
+#, php-format
+msgid "API greška: %s"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:363
+msgid "API Korisničko ime"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:377
+msgid "API Lozinka"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:335
+#: includes/admin/class-dexpress-admin.php:358
+msgid "API Podešavanja"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:499
+msgid ""
+"Automatski kreira D Express pošiljku kada WooCommerce narudžbina pređe u "
+"odabrani status. Ovo eliminše potrebu za ručnim kreiranjem pošiljki i "
+"integrira proces otpreme direktno u vaš već postojeći workflow upravljanja "
+"narudžbinama."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:498
+msgid "Automatski kreiraj pošiljku kada narudžbina dobije određeni status."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:337
+#: includes/admin/class-dexpress-admin.php:493
+msgid "Automatsko kreiranje"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:476
+msgid "Automatsko kreiranje pošiljki"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:846
+#: includes/admin/class-dexpress-diagnostics.php:528
+msgid "Ažuriraj šifarnike"
+msgstr ""
+
+#: d-express-woocommerce-integration.php:688
+#: includes/services/class-dexpress-shipment-service.php:209
+#, php-format
+msgid "Ažuriranje statusa pošiljke za porudžbinu #%s"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:647
+msgid ""
+"Bankovni račun na koji D Express uplaćuje iznose prikupljene pouzećem, u "
+"formatu XXX-XXXXXXXXXX-XX. Ovaj račun mora biti validan, jer se koristi u "
+"BuyOutAccount polju API poziva za pošiljke sa otkupninom (BuyOut > 0)."
+msgstr ""
+
+#: includes/woocommerce/class-dexpress-dispenser-shipping-method.php:59
+#: includes/woocommerce/class-dexpress-shipping-method.php:59
+msgid "Besplatna dostava od"
+msgstr ""
+
+#: includes/woocommerce/class-dexpress-dispenser-shipping-method.php:62
+#: includes/woocommerce/class-dexpress-shipping-method.php:62
+msgid ""
+"Besplatna dostava za porudžbine preko ovog iznosa (u RSD). Postavite 0 da "
+"isključite."
+msgstr ""
+
+#: includes/dexpress-woo-helpers.php:361 includes/dexpress-woo-helpers.php:482
+msgid "Bez povraćaja"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:567
+msgid "Broj"
+msgstr ""
+
+#: templates/emails/shipment-delivered.php:17
+#: templates/emails/shipment-failed.php:17
+#: templates/emails/shipment-status-change.php:17
+msgid "Broj pošiljke:"
+msgstr ""
+
+#: includes/admin/views/reports-page.php:58
+#: includes/admin/views/reports-page.php:251
+msgid "Broj pošiljki"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:646
+msgid ""
+"Broj računa na koji će D Express uplaćivati iznose prikupljene pouzećem. "
+"Format: XXX-XXXXXXXXXX-XX (npr. 160-0000000000-00)."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:639
+msgid "Broj računa za otkupninu"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:1004
+msgid "Broj računa za otkupninu mora biti u formatu XXX-XXXXXXXXXX-XX."
+msgstr ""
+
+#: includes/class-dexpress-validator.php:244
+msgid "Broj telefona je obavezan za D Express dostavu."
+msgstr ""
+
+#: includes/class-dexpress-validator.php:251
+msgid "Broj telefona mora biti u formatu +3816XXXXXXXX ili +3811XXXXXXXX."
+msgstr ""
+
+#: includes/frontend/class-dexpress-tracking.php:306
+msgid "Broj za praćenje je obavezan."
+msgstr ""
+
+#: templates/emails/shipment-created-dispenser.php:148
+#: templates/emails/shipment-created.php:27
+#: templates/emails/tracking-info.php:22 templates/myaccount/tracking.php:43
+#: templates/emails/plain/tracking-info.php:19
+msgid "Broj za praćenje:"
+msgstr ""
+
+#: templates/emails/shipment-created-dispenser.php:202
+#: templates/emails/shipment-created.php:56
+msgid "Cena"
+msgstr ""
+
+#: includes/woocommerce/class-dexpress-dispenser-shipping-method.php:53
+#: includes/woocommerce/class-dexpress-shipping-method.php:53
+msgid "Cena dostave"
+msgstr ""
+
+#: includes/woocommerce/class-dexpress-dispenser-shipping-method.php:56
+#: includes/woocommerce/class-dexpress-shipping-method.php:56
+msgid "Cena dostave u RSD"
+msgstr ""
+
+#: includes/woocommerce/class-dexpress-checkout.php:516
+#, php-format
+msgid "Cena isporuke je %s %s."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:341
+#: includes/admin/class-dexpress-admin.php:817
+msgid "Clean Uninstall"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:812
+msgid "Clean Uninstall Podešavanja"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:394
+msgid "Client ID"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:399
+msgid "Client ID u formatu UK12345."
+msgstr ""
+
+#. Naslov stranice
+#: includes/admin/class-dexpress-admin.php:110
+msgid "D Express"
+msgstr ""
+
+#. Parent slug je sada settings
+#: includes/admin/class-dexpress-admin.php:143
+#: includes/admin/class-dexpress-diagnostics.php:458
+msgid "D Express Dijagnostika"
+msgstr ""
+
+#: includes/woocommerce/class-dexpress-dispenser-shipping-method.php:22
+msgid "D Express dostava u paketomat"
+msgstr ""
+
+#. Parent slug je sada settings
+#. Izmenjeno da odgovara novoj strukturi menija
+#: includes/admin/class-dexpress-admin.php:156
+#: includes/admin/class-dexpress-reports.php:26
+#: includes/admin/views/reports-page.php:6
+msgid "D Express Izveštaji"
+msgstr ""
+
+#: includes/woocommerce/class-dexpress-shipping-method.php:21
+#: includes/woocommerce/class-dexpress-shipping-method.php:38
+#: includes/woocommerce/class-dexpress-shipping-method.php:50
+msgid "D Express Kurirska Dostava"
+msgstr ""
+
+#: includes/woocommerce/class-dexpress-shipping-method.php:22
+msgid "D Express kurirska dostava"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:1479
+msgid "D Express nalepnica"
+msgstr ""
+
+#: includes/api/class-dexpress-label-generator.php:682
+msgid "D Express nalepnica za štampanje"
+msgstr ""
+
+#: includes/api/class-dexpress-label-generator.php:265
+msgid "D Express nalepnice za štampanje"
+msgstr ""
+
+#: d-express-woocommerce-integration.php:623
+msgid "D Express nije uspeo da isporuči pošiljku."
+msgstr ""
+
+#: includes/woocommerce/class-dexpress-dispenser-shipping-method.php:21
+#: includes/woocommerce/class-dexpress-dispenser-shipping-method.php:38
+#: includes/woocommerce/class-dexpress-dispenser-shipping-method.php:50
+msgid "D Express Paketomat"
+msgstr ""
+
+#. Parent slug
+#: includes/admin/class-dexpress-admin.php:109
+#: includes/admin/class-dexpress-admin.php:122
+#: includes/admin/class-dexpress-admin.php:284
+msgid "D Express Podešavanja"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:1089
+#: includes/admin/class-dexpress-admin.php:1103
+msgid "D Express Pošiljka"
+msgstr ""
+
+#: d-express-woocommerce-integration.php:611
+msgid "D Express pošiljka isporučena."
+msgstr ""
+
+#: includes/services/class-dexpress-shipment-service.php:113
+#, php-format
+msgid "D Express pošiljka je kreirana. Tracking broj: %s, Reference ID: %s"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:1292
+#, php-format
+msgid "D Express pošiljka uspešno kreirana. ID: %s"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:1277
+msgid "D Express pošiljka već postoji za ovu narudžbinu."
+msgstr ""
+
+#. Parent slug je sada settings
+#: includes/admin/class-dexpress-admin.php:134
+#: includes/admin/class-dexpress-admin.php:1070
+#: includes/admin/class-dexpress-shipments-list.php:422
+msgid "D Express Pošiljke"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:1308
+msgid "D Express Praćenje"
+msgstr ""
+
+#: d-express-woocommerce-integration.php:576
+#: includes/services/class-dexpress-shipment-service.php:323
+#, php-format
+msgid "D Express status ažuriran: %s"
+msgstr ""
+
+#: includes/admin/class-dexpress-order-timeline.php:487
+#: includes/services/class-dexpress-shipment-service.php:272
+#, php-format
+msgid "D Express status ažuriran: %s (simulirano za test pošiljku)"
+msgstr ""
+
+#: includes/admin/class-dexpress-dashboard-widget.php:21
+msgid "D Express Status Pošiljki"
+msgstr ""
+
+#: includes/admin/class-dexpress-order-timeline.php:36
+#: includes/admin/class-dexpress-order-timeline.php:50
+msgid "D Express Status Timeline"
+msgstr ""
+
+#: d-express-woocommerce-integration.php:634
+#: d-express-woocommerce-integration.php:643
+#: d-express-woocommerce-integration.php:653
+#, php-format
+msgid "D Express status: %s"
+msgstr ""
+
+#. Name of the plugin
+msgid "D Express WooCommerce Integration"
+msgstr ""
+
+#: d-express-woocommerce-integration.php:506
+#, php-format
+msgid ""
+"D Express WooCommerce Integration zahteva WooCommerce %s ili noviju verziju. "
+"Molimo nadogradite WooCommerce."
+msgstr ""
+
+#: d-express-woocommerce-integration.php:493
+#, php-format
+msgid ""
+"D Express WooCommerce Integration zahteva WooCommerce plugin. Molimo "
+"%sinstalirajte i aktivirajte WooCommerce%s."
+msgstr ""
+
+#: d-express-woocommerce-integration.php:286
+msgid ""
+"D Express WooCommerce Integration zahteva WooCommerce plugin. Molimo "
+"instalirajte i aktivirajte WooCommerce."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:895
+#, php-format
+msgid "D Express WooCommerce Plugin v%s"
+msgstr ""
+
+#: includes/woocommerce/class-dexpress-dispenser-shipping-method.php:76
+msgid ""
+"D Paketomati su postavljeni na benzinskim stanicama, supermarketima, šoping "
+"centrima i rade 24 časa dnevno, jednostavni su i bezbedni za upotrebu. Svoju "
+"porudžbinu možete preuzeti i u Paket shopu koji Vam najviše odgovara – radno "
+"vreme lokacije je prikazano prilikom odabira!"
+msgstr ""
+
+#: includes/admin/class-dexpress-reports.php:207
+#: includes/admin/class-dexpress-shipments-list.php:356
+msgid "Da"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:223
+#: includes/admin/class-dexpress-shipments-list.php:237
+msgid "Da li ste sigurni da želite da obrišete ovu pošiljku?"
+msgstr ""
+
+#: includes/admin/class-dexpress-reports.php:95
+msgid "Danas"
+msgstr ""
+
+#: includes/frontend/class-dexpress-tracking.php:159
+#: includes/frontend/class-dexpress-tracking.php:232
+#: templates/frontend/tracking-widget.php:83
+#: templates/myaccount/tracking.php:84 templates/myaccount/tracking.php:113
+msgid "Datum"
+msgstr ""
+
+#: templates/emails/shipment-delivered.php:21
+msgid "Datum isporuke:"
+msgstr ""
+
+#: includes/admin/class-dexpress-reports.php:193
+#: includes/admin/class-dexpress-shipments-list.php:161
+msgid "Datum kreiranja"
+msgstr ""
+
+#: templates/emails/tracking-info.php:36 templates/myaccount/tracking.php:55
+#: includes/admin/views/order-metabox.php:54
+#: templates/emails/plain/tracking-info.php:25
+msgid "Datum kreiranja:"
+msgstr ""
+
+#: templates/emails/shipment-failed.php:21
+msgid "Datum pokušaja isporuke:"
+msgstr ""
+
+#: templates/emails/shipment-status-change.php:21
+msgid "Datum promene:"
+msgstr ""
+
+#: templates/emails/shipment-created-dispenser.php:166
+#: templates/emails/shipment-created.php:29
+msgid "Datum slanja:"
+msgstr ""
+
+#: includes/admin/class-dexpress-shipments-list.php:252
+msgid "Datum:"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:517
+msgid ""
+"Definiše koji status WooCommerce narudžbine pokreće kreiranje D Express "
+"pošiljke. Standardna praksa je 'processing' (u obradi) kada je narudžbina "
+"plaćena ali još nije poslata, ili 'completed' (završeno) kada je "
+"pripremljena za slanje."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:708
+msgid "Definiše način plaćanja troškova dostave."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:709
+msgid ""
+"Definiše način plaćanja troškova dostave: 0 - Gotovina, 1 - Kartica, 2 - "
+"Faktura. Ovaj parametar se mapira na PaymentType polje u API pozivu i "
+"određuje kako će biti naplaćeni troškovi dostave od strane označene u 'Ko "
+"plaća dostavu'."
+msgstr ""
+
+#: includes/admin/class-dexpress-diagnostics.php:486
+msgid "Detalji"
+msgstr ""
+
+#: templates/emails/shipment-created-dispenser.php:194
+#: templates/emails/shipment-created.php:49
+msgid "Detalji narudžbine"
+msgstr ""
+
+#: templates/emails/shipment-created.php:24
+msgid "Detalji o pošiljci:"
+msgstr ""
+
+#: templates/emails/shipment-created-dispenser.php:142
+msgid "Detalji pošiljke"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:144
+msgid "Dijagnostika"
+msgstr ""
+
+#: includes/woocommerce/class-dexpress-checkout.php:530
+msgid "Dimenzije paketomata"
+msgstr ""
+
+#: includes/woocommerce/class-dexpress-checkout.php:533
+msgid "Dimenzije paketomata (S, M, L veličine)"
+msgstr ""
+
+#: includes/woocommerce/class-dexpress-checkout.php:142
+msgid "Dodatne informacije o adresi"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:876
+#: includes/admin/class-dexpress-admin.php:878
+msgid "Dokumentacija"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:888
+msgid "Dostupni smo radnim danima od 8-16h za hitna pitanja."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:753
+msgid "Dozvoljene IP adrese"
+msgstr ""
+
+#: includes/admin/class-dexpress-order-timeline.php:386
+msgid "Došlo je do greške prilikom ažuriranja statusa."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:302
+msgid ""
+"Došlo je do greške prilikom ažuriranja šifarnika. Proverite API kredencijale "
+"i pokušajte ponovo."
+msgstr ""
+
+#: includes/admin/class-dexpress-order-timeline.php:98
+msgid "Došlo je do greške prilikom osvežavanja statusa."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:224
+#: includes/admin/class-dexpress-admin.php:1249
+#: includes/frontend/class-dexpress-tracking.php:383
+#: templates/frontend/tracking-widget.php:107
+#: includes/admin/views/order-metabox.php:180
+#: includes/admin/views/order-metabox.php:213
+#: includes/admin/views/order-metabox.php:218
+msgid "Došlo je do greške. Molimo pokušajte ponovo."
+msgstr ""
+
+#: includes/woocommerce/class-dexpress-checkout.php:416
+msgid "Drugo mesto (nije na listi)"
+msgstr ""
+
+#: includes/class-dexpress-validator.php:113
+#, php-format
+msgid "Dužina proizvoda \"%s\" (%d mm) prelazi maksimalno dozvoljenu (%d mm)."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:444
+msgid ""
+"Dvoslovni prefiks za kodove paketa koji vam je dodelio D Express (npr. 'TT' "
+"za testiranje). Svaki partner dobija jedinstveni prefiks za produkciju kako "
+"bi se izbegle kolizije kodova paketa. Ovaj prefiks se koristi u PackageList."
+"Code parametru."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:865
+msgid "Email podrška"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:775
+msgid ""
+"Endpoint URL vaše WordPress instalacije koji prihvata D Express webhook "
+"notifikacije o statusima pošiljki. Dostavite ovaj URL D Express-u kako bi "
+"mogli automatski slati ažuriranja statusa pošiljki (metoda notify). Format "
+"je {vaš-sajt}/wp-json/dexpress-woo/v1/notify."
+msgstr ""
+
+#: includes/dexpress-woo-helpers.php:349 includes/dexpress-woo-helpers.php:470
+msgid "Faktura"
+msgstr ""
+
+#: includes/admin/class-dexpress-shipments-list.php:396
+msgid "Filter"
+msgstr ""
+
+#: includes/admin/views/reports-page.php:33
+msgid "Filtriraj"
+msgstr ""
+
+#: includes/woocommerce/class-dexpress-checkout.php:65
+msgid "Filtrirajte po gradu:"
+msgstr ""
+
+#: includes/admin/views/order-metabox.php:196
+msgid "Generisanje..."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:787
+msgid "Generiši novi"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:796
+msgid "Google Maps API ključ"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:803
+msgid ""
+"Google Maps API ključ za prikazivanje interaktivne mape sa lokacijama "
+"paketomata u checkout procesu. Ovaj ključ možete dobiti kroz Google Cloud "
+"Console, i neophodan je za korišćenje paketomatske dostave sa mapom za izbor "
+"lokacije."
+msgstr ""
+
+#: includes/dexpress-woo-helpers.php:468
+msgid "Gotovina"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:579
+#: includes/woocommerce/class-dexpress-checkout.php:150
+msgid "Grad"
+msgstr ""
+
+#: includes/class-dexpress-validator.php:233
+msgid "Grad za dostavu"
+msgstr ""
+
+#: includes/woocommerce/class-dexpress-checkout.php:151
+msgid "Grad će biti popunjen automatski"
+msgstr ""
+
+#: includes/admin/class-dexpress-diagnostics.php:500
+msgid "Greška"
+msgstr ""
+
+#: includes/services/class-dexpress-shipment-service.php:315
+msgid "Greška pri ažuriranju statusa pošiljke."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:1287
+#, php-format
+msgid "Greška pri kreiranju D Express pošiljke: %s"
+msgstr ""
+
+#: includes/services/class-dexpress-shipment-service.php:152
+msgid "Greška pri upisu pošiljke u bazu."
+msgstr ""
+
+#: includes/api/class-dexpress-api.php:1088
+msgid "Greška u podacima za pošiljku: "
+msgstr ""
+
+#: includes/dexpress-woo-helpers.php:441
+msgid "Hitna isporuka (za danas)"
+msgstr ""
+
+#: templates/emails/shipment-delivered.php:30
+msgid "Hvala Vam na poverenju i nadamo se da ćemo sarađivati ponovo!"
+msgstr ""
+
+#: templates/emails/shipment-created-dispenser.php:247
+#: templates/emails/shipment-created.php:107
+msgid "Hvala što kupujete kod nas."
+msgstr ""
+
+#: includes/admin/class-dexpress-reports.php:190
+msgid "ID Narudžbine"
+msgstr ""
+
+#: includes/services/class-dexpress-shipment-service.php:504
+msgid "ID narudžbine je obavezan."
+msgstr ""
+
+#: includes/admin/class-dexpress-shipments-list.php:157
+msgid "ID Pošiljke"
+msgstr ""
+
+#: includes/admin/class-dexpress-reports.php:187
+msgid "ID pošiljke"
+msgstr ""
+
+#: includes/admin/class-dexpress-order-timeline.php:344
+#: includes/api/class-dexpress-label-generator.php:470
+#: includes/api/class-dexpress-label-generator.php:724
+msgid "ID pošiljke je obavezan."
+msgstr ""
+
+#: includes/admin/views/order-metabox.php:44
+msgid "ID pošiljke:"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:866
+msgid "Imate pitanje ili vam je potrebna pomoć? Pošaljite nam email."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:549
+msgid ""
+"Ime firme ili lica koje šalje pošiljku. Ovaj podatak se mapira na CName i "
+"PuName parametre u API pozivu i prikazuje se na nalepnici. Mora biti tačno "
+"ime pod kojim je registrovan vaš nalog kod D Express-a."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:608
+msgid ""
+"Ime i prezime kontakt osobe za pošiljke. Ovo je osoba kojoj će se kurir "
+"obratiti prilikom preuzimanja pošiljke. Ovaj podatak se mapira na "
+"CCName/PuCName parametre u API pozivu."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:607
+msgid "Ime i prezime kontakt osobe."
+msgstr ""
+
+#: templates/emails/tracking-info.php:16
+#: templates/emails/plain/tracking-info.php:15
+msgid "Informacije o dostavi"
+msgstr ""
+
+#: templates/emails/shipment-created-dispenser.php:71
+msgid "Informacije o paketomatu"
+msgstr ""
+
+#: includes/frontend/class-dexpress-tracking.php:139
+#: templates/emails/shipment-delivered.php:13
+#: templates/emails/shipment-failed.php:13
+#: templates/emails/shipment-status-change.php:13
+#: templates/frontend/tracking-widget.php:72
+msgid "Informacije o pošiljci"
+msgstr ""
+
+#. Description of the plugin
+msgid "Integracija D Express dostave sa WooCommerce prodavnicama"
+msgstr ""
+
+#: includes/admin/class-dexpress-order-timeline.php:115
+msgid "Isporučena primaocu"
+msgstr ""
+
+#: includes/admin/class-dexpress-dashboard-widget.php:57
+msgid "Isporučeno"
+msgstr ""
+
+#: includes/admin/class-dexpress-order-timeline.php:296
+#: includes/frontend/class-dexpress-tracking.php:157
+#: templates/frontend/tracking-widget.php:81
+msgid "Istorija statusa"
+msgstr ""
+
+#: includes/woocommerce/class-dexpress-checkout.php:414
+msgid "Izaberite grad"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:590
+msgid "Izaberite grad iz D Express šifarnika."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:591
+msgid ""
+"Izaberite grad pošiljaoca iz liste gradova u D Express sistemu. U API "
+"pozivima se ne šalje naziv grada, već samo numerički ID grada "
+"(CTownID/PuTownID) iz šifarnika, što garantuje da D Express sistem tačno "
+"identifikuje lokaciju."
+msgstr ""
+
+#: includes/woocommerce/class-dexpress-checkout.php:59
+msgid "Izaberite paketomat za dostavu"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:516
+msgid "Izaberite status narudžbine koji će pokrenuti kreiranje pošiljke."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:672
+msgid "Izaberite tip pošiljke."
+msgstr ""
+
+#: includes/woocommerce/class-dexpress-checkout.php:412
+msgid "Izaberite ulicu"
+msgstr ""
+
+#: includes/api/class-dexpress-api.php:791
+msgid "Izabrani paketomat nije pronađen. Molimo izaberite drugi paketomat."
+msgstr ""
+
+#: includes/admin/views/reports-page.php:35
+msgid "Izvezi CSV"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:157
+#: includes/admin/class-dexpress-reports.php:27
+msgid "Izveštaji"
+msgstr ""
+
+#: includes/frontend/class-dexpress-tracking.php:170
+#: templates/frontend/tracking-widget.php:94
+msgid "Još uvek nema informacija o statusu ove pošiljke."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:1204
+#: includes/admin/views/order-metabox.php:83
+msgid "Još uvek nema pošiljke za ovu narudžbinu."
+msgstr ""
+
+#: includes/admin/class-dexpress-reports.php:96
+msgid "Juče"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:412
+msgid ""
+"Kada je aktiviran, plugin koristi test nalog za komunikaciju sa D Express "
+"API-jem. Pošiljke kreirane u test režimu neće biti fizički isporučene, ali "
+"će prolaziti kroz sve faze obrade u API-ju. Idealno za testiranje "
+"integracije pre produkcije."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:529
+msgid ""
+"Kada je aktivirano, dodaje tab za praćenje pošiljki u korisničkom nalogu (My "
+"Account page) gde korisnici mogu pratiti status svojih pošiljki."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:633
+msgid ""
+"Kada je aktivirano, pošiljke sa pouzećem neće biti moguće kreirati bez "
+"validnog bankovnog računa. Ovo je važno jer BuyOutAccount polje u D Express "
+"API-ju mora biti validno za BuyOut > 0, inače će API vratiti grešku."
+msgstr ""
+
+#: templates/emails/shipment-created-dispenser.php:117
+msgid ""
+"Kada paket stigne u paketomat, <strong>dobićete SMS ili Viber poruku</strong>"
+" sa kodom za preuzimanje."
+msgstr ""
+
+#: templates/emails/shipment-created-dispenser.php:112
+msgid "Kako preuzeti pošiljku"
+msgstr ""
+
+#: includes/dexpress-woo-helpers.php:469
+msgid "Kartica"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:679
+msgid "Ko plaća dostavu"
+msgstr ""
+
+#: includes/admin/views/order-metabox.php:100
+msgid "Ko plaća dostavu:"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:336
+#: includes/admin/class-dexpress-admin.php:433
+msgid "Kodovi pošiljki"
+msgstr ""
+
+#: templates/emails/shipment-created-dispenser.php:201
+#: templates/emails/shipment-created.php:55
+msgid "Količina"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:1074
+msgid "Kompletna stranica za pregled pošiljki još nije implementirana."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:308
+msgid "Konekcija sa D Express API-em je uspešno uspostavljena."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:602
+msgid "Kontakt osoba"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:614
+msgid "Kontakt telefon"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:832
+msgid ""
+"Kontroliše brisanje podataka prilikom deaktivacije plugina. Kada je "
+"aktivirano, prilikom deinstalacije plugina biće obrisane sve tabele "
+"(dexpress_shipments, dexpress_packages, dexpress_statuses, itd.) i sva "
+"podešavanja.<br><b>UPOZORENJE:</b> Ovo trajno briše istoriju pošiljki i sve "
+"konfiguracije!"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:726
+msgid "Kontroliše povraćaj potpisanih dokumenata."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:772
+msgid "Kopiraj"
+msgstr ""
+
+#: includes/admin/class-dexpress-diagnostics.php:546
+msgid "Kopiraj sistemske informacije"
+msgstr ""
+
+#: includes/woocommerce/class-dexpress-dispenser-shipping-method.php:81
+msgid "Koraci za preuzimanje"
+msgstr ""
+
+#: includes/dexpress-woo-helpers.php:429
+msgid "Korisnički status"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:368
+msgid "Korisničko ime dobijeno od D Express-a."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:462
+msgid "Kraj opsega"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:468
+msgid ""
+"Krajnji broj u dodeljenom opsegu kodova paketa (npr. 99 za test). Kada "
+"brojač dostigne ovu vrednost, resetovaće se na početni broj. Za produkciju "
+"ćete dobiti veći opseg. Važno je pratiti korišćenje kako ne biste ponovili "
+"već korišćene kodove."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:467
+msgid "Krajnji broj za kodove paketa."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:1209
+#: includes/admin/class-dexpress-admin.php:1234
+#: includes/admin/class-dexpress-admin.php:1248
+#: includes/admin/views/order-metabox.php:141
+#: includes/admin/views/order-metabox.php:165
+#: includes/admin/views/order-metabox.php:179
+msgid "Kreiraj D Express pošiljku"
+msgstr ""
+
+#: includes/frontend/class-dexpress-tracking.php:152
+#: templates/frontend/tracking-widget.php:77
+msgid "Kreirana:"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:1222
+#: includes/admin/views/order-metabox.php:153
+msgid "Kreiranje..."
+msgstr ""
+
+#: includes/admin/class-dexpress-order-timeline.php:244
+msgid "Kreirano"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:1157
+msgid "Kreirano:"
+msgstr ""
+
+#: includes/woocommerce/class-dexpress-checkout.php:133
+msgid "Kućni broj"
+msgstr ""
+
+#: includes/woocommerce/class-dexpress-checkout.php:420
+msgid "Kućni broj mora biti bez razmaka"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:573
+msgid ""
+"Kućni broj sa adrese pošiljaoca. Prihvata standardne formate brojeva (15), "
+"brojeva sa slovom (15a), razlomka (23/4) ili oznake 'bb' za adrese bez broja."
+" Validacija prati D Express pravila za strukture CAddressNum/PuAddressNum "
+"polja."
+msgstr ""
+
+#: includes/class-dexpress-validator.php:210
+#: includes/class-dexpress-validator.php:220
+msgid "Kućni broj za dostavu"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:572
+msgid "Kućni broj."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:759
+msgid ""
+"Lista dozvoljenih IP adresa za webhook, razdvojenih zarezima. Ostavite "
+"prazno da dozvolite sve IP adrese."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:760
+msgid ""
+"Lista IP adresa D Express servera sa kojih se primaju webhook pozivi. "
+"Ograničavanje ove liste povećava sigurnost, sprečavajući da bilo ko drugi "
+"može slati lažne notifikacije o statusima. Ostavite prazno za prihvatanje "
+"svih IP adresa."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:387
+msgid "Lozinka dobijena od D Express-a."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:595
+msgid ""
+"Molimo ažurirajte šifarnike klikom na dugme \"Ažuriraj šifarnike\" na dnu "
+"strane."
+msgstr ""
+
+#: includes/admin/class-dexpress-shipments-list.php:447
+#: includes/admin/class-dexpress-shipments-list.php:599
+#: includes/admin/class-dexpress-shipments-list.php:618
+msgid "Molimo odaberite pošiljke za štampanje."
+msgstr ""
+
+#: templates/emails/shipment-created.php:46
+msgid "Molimo pripremite tačan iznos za plaćanje kuriru prilikom isporuke."
+msgstr ""
+
+#: templates/emails/shipment-failed.php:11
+msgid "Moramo Vas obavestiti da smo imali problem sa isporukom Vaše pošiljke."
+msgstr ""
+
+#: includes/woocommerce/class-dexpress-checkout.php:575
+msgid "Morate izabrati paketomat za dostavu"
+msgstr ""
+
+#: includes/class-dexpress-validator.php:280
+msgid "Morate izabrati paketomat za dostavu."
+msgstr ""
+
+#: includes/admin/class-dexpress-diagnostics.php:520
+msgid "Možete izvršiti sledeće akcije za rešavanje otkrivenih problema:"
+msgstr ""
+
+#: templates/emails/tracking-info.php:48
+msgid "Možete pratiti status vaše pošiljke klikom na link ispod:"
+msgstr ""
+
+#: templates/emails/shipment-status-change.php:31
+msgid ""
+"Možete pratiti status Vaše pošiljke na D Express sajtu koristeći sledeći "
+"link:"
+msgstr ""
+
+#: templates/emails/plain/tracking-info.php:30
+msgid "Možete pratiti status vaše pošiljke na sledećem linku:"
+msgstr ""
+
+#: templates/emails/shipment-created-dispenser.php:180
+msgid "Možete pratiti vašu pošiljku klikom na link ispod:"
+msgstr ""
+
+#: templates/emails/shipment-created.php:36
+msgid "Možete pratiti vašu pošiljku klikom na sledeći link:"
+msgstr ""
+
+#: templates/emails/shipment-created-dispenser.php:120
+msgid "Na ekranu paketomata unesite dobijeni kod."
+msgstr ""
+
+#: includes/admin/class-dexpress-dashboard-widget.php:66
+msgid "Najnovije pošiljke"
+msgstr ""
+
+#: includes/api/class-dexpress-label-generator.php:748
+msgid "Nalepnica uspešno generisana."
+msgstr ""
+
+#: includes/woocommerce/class-dexpress-dispenser-shipping-method.php:95
+msgid "Napomena"
+msgstr ""
+
+#: includes/admin/class-dexpress-shipments-list.php:159
+#: includes/frontend/class-dexpress-tracking.php:229
+#: templates/myaccount/tracking.php:81 templates/myaccount/tracking.php:93
+msgid "Narudžbina"
+msgstr ""
+
+#: includes/admin/views/order-metabox.php:79
+msgid ""
+"Narudžbina nije plaćena. Preporučujemo da sačekate da kupac izvrši plaćanje "
+"pre kreiranja pošiljke."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:1126
+#: includes/admin/class-dexpress-order-timeline.php:132
+#: includes/api/class-dexpress-label-generator.php:490
+#: includes/api/class-dexpress-label-generator.php:759
+#: includes/services/class-dexpress-shipment-service.php:513
+msgid "Narudžbina nije pronađena."
+msgstr ""
+
+#: templates/myaccount/tracking.php:28
+msgid "Narudžbina:"
+msgstr ""
+
+#: includes/woocommerce/class-dexpress-dispenser-shipping-method.php:48
+#: includes/woocommerce/class-dexpress-shipping-method.php:48
+msgid "Naziv dostave"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:543
+msgid "Naziv pošiljaoca"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:548
+msgid "Naziv pošiljaoca koji će biti prikazan na pošiljci."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:560
+msgid "Naziv ulice (bez broja)."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:561
+msgid ""
+"Naziv ulice sa adrese pošiljaoca, bez kućnog broja. Prema D Express "
+"standardima, ulica (CAddress/PuAddress) i broj (CAddressNum/PuAddressNum) se "
+"šalju kao odvojeni parametri za tačnije geokodiranje adresa."
+msgstr ""
+
+#: templates/emails/shipment-created-dispenser.php:77
+msgid "Naziv:"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:697
+msgid "Način plaćanja dostave"
+msgstr ""
+
+#: includes/admin/views/order-metabox.php:111
+msgid "Način plaćanja dostave:"
+msgstr ""
+
+#: templates/emails/shipment-failed.php:30
+msgid ""
+"Naš kurir će pokušati isporuku ponovo u narednih 1-2 radna dana. Ukoliko "
+"želite da promenite adresu isporuke ili dogovorite drugačije uslove, molimo "
+"Vas da nas kontaktirate što pre."
+msgstr ""
+
+#: includes/admin/class-dexpress-reports.php:207
+#: includes/admin/class-dexpress-shipments-list.php:356
+msgid "Ne"
+msgstr ""
+
+#: includes/api/class-dexpress-api.php:68
+msgid "Nedostaju API kredencijali"
+msgstr ""
+
+#: includes/services/class-dexpress-shipment-service.php:63
+msgid ""
+"Nedostaju API kredencijali. Molimo podesite API kredencijale u podešavanjima."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:322
+msgid ""
+"Nedostaju API kredencijali. Molimo unesite korisničko ime, lozinku i client "
+"ID."
+msgstr ""
+
+#: includes/admin/class-dexpress-dashboard-widget.php:59
+msgid "Neisporučeno"
+msgstr ""
+
+#: includes/class-dexpress-validator.php:387
+#: includes/api/class-dexpress-api.php:913
+msgid "Neispravan format kućnog broja. Prihvatljiv format: bb, 10, 15a, 23/4"
+msgstr ""
+
+#: includes/class-dexpress-validator.php:495
+#: includes/api/class-dexpress-api.php:810
+msgid "Neispravan format telefona. Format treba biti +381XXXXXXXXX"
+msgstr ""
+
+#: includes/class-dexpress-validator.php:382
+#: includes/api/class-dexpress-api.php:908
+msgid "Neispravan format ulice. Molimo unesite ispravnu ulicu."
+msgstr ""
+
+#: includes/class-dexpress-validator.php:392
+#: includes/api/class-dexpress-api.php:918
+msgid "Neispravan grad. Molimo izaberite grad iz liste."
+msgstr ""
+
+#: includes/woocommerce/class-dexpress-checkout.php:660
+msgid "Neispravni podaci o paketomatu."
+msgstr ""
+
+#: includes/admin/views/reports-page.php:82
+msgid "Nema podataka"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:1504
+msgid "Nema pošiljke"
+msgstr ""
+
+#: includes/admin/class-dexpress-shipments-list.php:407
+msgid "Nema pronađenih pošiljki."
+msgstr ""
+
+#: includes/woocommerce/class-dexpress-checkout.php:417
+msgid "Nema rezultata"
+msgstr ""
+
+#: templates/myaccount/tracking.php:16
+msgid "Nemate aktivnih pošiljki za praćenje."
+msgstr ""
+
+#: includes/admin/class-dexpress-order-timeline.php:338
+#: includes/api/class-dexpress-label-generator.php:48
+#: includes/api/class-dexpress-label-generator.php:465
+#: includes/api/class-dexpress-label-generator.php:717
+#: includes/services/class-dexpress-shipment-service.php:497
+msgid "Nemate dozvolu za ovu akciju."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:1375
+#: includes/admin/class-dexpress-admin.php:1422
+msgid "Nemate dozvolu za pristup ovoj stranici."
+msgstr ""
+
+#: includes/dexpress-woo-helpers.php:199 includes/dexpress-woo-helpers.php:267
+msgid "Nepoznat status"
+msgstr ""
+
+#: includes/api/class-dexpress-api.php:221
+#: includes/api/class-dexpress-api.php:761
+msgid "Nevažeća narudžbina"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:313
+msgid "Nije moguće uspostaviti konekciju sa D Express API-em."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:1519
+msgid "Nije štampano"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:217
+msgid ""
+"Niste sačuvali promene. Da li ste sigurni da želite da napustite ovu "
+"stranicu?"
+msgstr ""
+
+#: includes/api/class-dexpress-label-generator.php:53
+#: includes/api/class-dexpress-label-generator.php:60
+msgid "Nisu odabrane pošiljke za štampanje."
+msgstr ""
+
+#: templates/emails/shipment-status-change.php:25
+msgid "Novi status:"
+msgstr ""
+
+#: includes/woocommerce/class-dexpress-checkout.php:181
+msgid "npr. +381(0) 60 123 4567"
+msgstr ""
+
+#: templates/frontend/tracking-widget.php:42
+msgid "npr. DE123456789"
+msgstr ""
+
+#: includes/woocommerce/class-dexpress-checkout.php:134
+msgid "Npr: 15a, 23/4"
+msgstr ""
+
+#: includes/woocommerce/class-dexpress-checkout.php:143
+msgid "Npr: sprat 3, stan 24, interfon 24"
+msgstr ""
+
+#: includes/dexpress-woo-helpers.php:483
+msgid "Obavezan povraćaj"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:626
+msgid "Obavezan račun za otkupninu"
+msgstr ""
+
+#: templates/emails/shipment-status-change.php:11
+msgid "Obaveštavamo Vas da je došlo do promene statusa Vaše pošiljke."
+msgstr ""
+
+#: includes/dexpress-woo-helpers.php:427
+msgid "Obrađuje se"
+msgstr ""
+
+#: includes/admin/class-dexpress-shipments-list.php:194
+#: includes/admin/class-dexpress-shipments-list.php:238
+msgid "Obriši"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:827
+msgid "Obriši sve podatke pri brisanju plugina"
+msgstr ""
+
+#: includes/woocommerce/class-dexpress-dispenser-shipping-method.php:110
+msgid "ODABERITE PAKETOMAT"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:690
+msgid "Određuje ko plaća troškove dostave."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:691
+msgid ""
+"Određuje ko snosi troškove dostave: 0 - Pošiljalac (vi), 1 - Primalac (kupac)"
+" ili 2 - Treća strana. Ovo polje se mapira na PaymentBy parametar u API "
+"pozivu i definiše kome će D Express fakturisati uslugu dostave."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:673
+msgid ""
+"Određuje prioritet dostave: 1 - Hitna isporuka (za danas, uz dodatnu naplatu "
+"i samo u određenim zonama) ili 2 - Redovna isporuka (1-3 dana). Ovaj "
+"parametar se mapira na DlTypeID polje u API pozivu i direktno utiče na cenu "
+"dostave i brzinu isporuke."
+msgstr ""
+
+#: includes/woocommerce/class-dexpress-checkout.php:78
+msgid "Odustani"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:1514
+msgid "Odštampano"
+msgstr ""
+
+#: includes/admin/class-dexpress-diagnostics.php:497
+msgid "OK"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:528
+msgid "Omogući praćenje pošiljki u \"Moj nalog\" sekciji na frontend-u."
+msgstr ""
+
+#: includes/admin/views/order-metabox.php:86
+msgid "Opcije pošiljke:"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:225
+msgid "Operacija uspešno izvršena."
+msgstr ""
+
+#: includes/woocommerce/class-dexpress-dispenser-shipping-method.php:74
+msgid "Opis metode dostave"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:739
+msgid ""
+"Opis sadržaja pošiljke koji se mapira na Content parametar u API pozivu. "
+"Mora zadovoljiti D Express validaciju (alfanumerički, max 50 karaktera). Za "
+"standardne web prodavnice, dovoljan je generički opis poput 'Roba iz web "
+"prodavnice'."
+msgstr ""
+
+#: templates/emails/shipment-created-dispenser.php:128
+msgid "Ormarić sa Vašim paketom će se automatski otvoriti, preuzmite paket."
+msgstr ""
+
+#: includes/admin/class-dexpress-order-timeline.php:96
+msgid "Osvežavanje..."
+msgstr ""
+
+#: includes/admin/class-dexpress-order-timeline.php:97
+#: includes/admin/class-dexpress-order-timeline.php:253
+msgid "Osveži status"
+msgstr ""
+
+#: includes/admin/class-dexpress-reports.php:93
+msgid "Otkaži"
+msgstr ""
+
+#: includes/admin/class-dexpress-diagnostics.php:467
+msgid ""
+"Otkriveno je %d kritičnih problema koji moraju biti rešeni pre korišćenja "
+"plugin-a."
+msgstr ""
+
+#: includes/admin/class-dexpress-diagnostics.php:473
+msgid ""
+"Otkriveno je %d upozorenja koja mogu uticati na funkcionisanje plugin-a."
+msgstr ""
+
+#: includes/admin/views/order-metabox.php:17
+msgid "Ova narudžbina ne koristi D Express dostavu."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:1202
+msgid "Ova narudžbina nema D Express dostavu."
+msgstr ""
+
+#: includes/admin/class-dexpress-reports.php:99
+msgid "Ovaj mesec"
+msgstr ""
+
+#: includes/admin/class-dexpress-diagnostics.php:540
+msgid "Ove informacije će vam biti potrebne pri kontaktiranju podrške:"
+msgstr ""
+
+#: templates/emails/shipment-created-dispenser.php:176
+#: templates/emails/shipment-created.php:33
+msgid ""
+"Ovo je test pošiljka i ne može se pratiti na zvaničnom sajtu D Express "
+"kurira."
+msgstr ""
+
+#: templates/emails/tracking-info.php:45 templates/myaccount/tracking.php:68
+#: templates/emails/plain/tracking-info.php:28
+msgid "Ovo je test pošiljka i ne može se pratiti na zvaničnom sajtu."
+msgstr ""
+
+#: templates/emails/shipment-created.php:43
+msgid ""
+"Očekivano vreme isporuke je 1-3 radna dana, u zavisnosti od vaše lokacije."
+msgstr ""
+
+#: templates/emails/tracking-info.php:53
+#: templates/emails/plain/tracking-info.php:34
+msgid "Očekivano vreme isporuke je 1-3 radna dana."
+msgstr ""
+
+#: includes/admin/views/reports-page.php:13
+msgid "Period:"
+msgstr ""
+
+#: templates/emails/shipment-created.php:46
+msgid "Plaćanje pouzećem:"
+msgstr ""
+
+#: includes/admin/views/order-metabox.php:66
+msgid "Podaci o pošiljci:"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:338
+#: includes/admin/class-dexpress-admin.php:538
+msgid "Podaci pošiljaoca"
+msgstr ""
+
+#. Naslov stranice
+#: includes/admin/class-dexpress-admin.php:123
+msgid "Podešavanja"
+msgstr ""
+
+#: includes/admin/class-dexpress-diagnostics.php:524
+msgid "Podešavanja D Express-a"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:339
+#: includes/admin/class-dexpress-admin.php:656
+msgid "Podešavanja pošiljke"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:292
+msgid "Podešavanja su uspešno sačuvana."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:738
+msgid "Podrazumevani opis sadržaja pošiljke."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:733
+msgid "Podrazumevani sadržaj"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:857
+msgid "Podrška"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:877
+msgid ""
+"Pogledajte našu detaljnu dokumentaciju za pomoć oko korišćenja plugin-a."
+msgstr ""
+
+#: d-express-woocommerce-integration.php:684
+#, php-format
+msgid "Pokušaj isporuke porudžbine #%s"
+msgstr ""
+
+#: includes/admin/class-dexpress-diagnostics.php:532
+msgid "Ponovi testove"
+msgstr ""
+
+#: includes/admin/class-dexpress-reports.php:98
+msgid "Poslednjih 30 dana"
+msgstr ""
+
+#: includes/admin/class-dexpress-reports.php:97
+msgid "Poslednjih 7 dana"
+msgstr ""
+
+#: includes/woocommerce/class-dexpress-checkout.php:421
+msgid "Potvrdi"
+msgstr ""
+
+#: includes/dexpress-woo-helpers.php:484
+msgid "Povraćaj ako je potrebno"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:715
+msgid "Povraćaj dokumenata"
+msgstr ""
+
+#: includes/admin/views/order-metabox.php:122
+msgid "Povraćaj dokumenata:"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:450
+msgid "Početak opsega"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:456
+msgid ""
+"Početni broj u dodeljenom opsegu kodova paketa (obično 1). U kombinaciji sa "
+"prefiksom i formatiranjem na 10 cifara formira kompletan kod paketa (npr. "
+"TT0000000001). D Express će vam dodeliti produkcioni opseg pre prelaska u "
+"produkciju."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:455
+msgid "Početni broj za kodove paketa."
+msgstr ""
+
+#: includes/dexpress-woo-helpers.php:337 includes/dexpress-woo-helpers.php:454
+msgid "Pošiljalac"
+msgstr ""
+
+#: includes/services/class-dexpress-shipment-service.php:266
+msgid "Pošiljka isporučena (simulirano)"
+msgstr ""
+
+#: includes/services/class-dexpress-shipment-service.php:526
+msgid "Pošiljka je uspešno kreirana."
+msgstr ""
+
+#: includes/admin/class-dexpress-order-timeline.php:369
+msgid "Pošiljka je već u najnovijem statusu (test režim)."
+msgstr ""
+
+#: includes/admin/class-dexpress-order-timeline.php:111
+#: includes/admin/views/order-metabox.php:25
+msgid "Pošiljka kreirana"
+msgstr ""
+
+#: includes/services/class-dexpress-shipment-service.php:255
+msgid "Pošiljka nije pronađena u sistemu."
+msgstr ""
+
+#: includes/admin/class-dexpress-order-timeline.php:358
+#: includes/api/class-dexpress-label-generator.php:485
+#: includes/api/class-dexpress-label-generator.php:739
+#: includes/frontend/class-dexpress-tracking.php:384
+msgid "Pošiljka nije pronađena."
+msgstr ""
+
+#: includes/frontend/class-dexpress-tracking.php:321
+msgid "Pošiljka sa tim brojem nije pronađena."
+msgstr ""
+
+#: includes/frontend/class-dexpress-tracking.php:123
+msgid ""
+"Pošiljka sa tim brojem nije pronađena. Proverite broj i pokušajte ponovo."
+msgstr ""
+
+#: includes/services/class-dexpress-shipment-service.php:57
+msgid "Pošiljka već postoji za ovu narudžbinu."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:135
+msgid "Pošiljke"
+msgstr ""
+
+#: includes/api/class-dexpress-label-generator.php:75
+msgid "Pošiljke nisu pronađene."
+msgstr ""
+
+#: includes/admin/views/reports-page.php:46
+msgid "Pošiljke po datumima"
+msgstr ""
+
+#: includes/admin/views/reports-page.php:41
+msgid "Pošiljke po statusima"
+msgstr ""
+
+#: includes/woocommerce/class-dexpress-checkout.php:165
+msgid "Poštanski broj"
+msgstr ""
+
+#: templates/emails/shipment-created-dispenser.php:63
+#: templates/emails/shipment-created.php:20
+#: templates/emails/shipment-delivered.php:9
+#: templates/emails/shipment-failed.php:9
+#: templates/emails/shipment-status-change.php:9
+#, php-format
+msgid "Poštovani %s,"
+msgstr ""
+
+#: includes/frontend/class-dexpress-tracking.php:246
+#: templates/frontend/tracking-widget.php:43
+#: templates/myaccount/tracking.php:120
+msgid "Prati"
+msgstr ""
+
+#: includes/frontend/class-dexpress-tracking.php:177
+#: templates/frontend/tracking-widget.php:97
+#: templates/myaccount/tracking.php:64
+msgid "Prati na D Express sajtu"
+msgstr ""
+
+#: templates/emails/shipment-created-dispenser.php:186
+#: templates/emails/shipment-created.php:38
+#: templates/emails/shipment-status-change.php:33
+msgid "Prati pošiljku"
+msgstr ""
+
+#: templates/emails/tracking-info.php:49
+msgid "Prati pošiljku online"
+msgstr ""
+
+#: templates/frontend/tracking-widget.php:36
+msgid "Praćenje D Express pošiljke"
+msgstr ""
+
+#: includes/frontend/class-dexpress-tracking.php:65
+msgid "Praćenje pošiljke"
+msgstr ""
+
+#: includes/services/class-dexpress-shipment-service.php:451
+#, php-format
+msgid "Praćenje pošiljke za narudžbinu #%s"
+msgstr ""
+
+#: templates/myaccount/tracking.php:12
+msgid "Praćenje pošiljki"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:523
+msgid "Praćenje u Moj Nalog"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:438
+msgid "Prefiks koda"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:443
+msgid "Prefiks koda paketa (npr. TT)."
+msgstr ""
+
+#: includes/admin/class-dexpress-shipments-list.php:219
+msgid "Pregled"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:1071
+msgid "Pregled svih D Express pošiljki."
+msgstr ""
+
+#: includes/woocommerce/class-dexpress-checkout.php:418
+msgid "Pretraga..."
+msgstr ""
+
+#: includes/admin/class-dexpress-shipments-list.php:430
+msgid "Pretraži pošiljke"
+msgstr ""
+
+#: includes/admin/class-dexpress-order-timeline.php:113
+msgid "Preuzeta od pošiljaoca"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:1185
+#: includes/admin/views/order-metabox.php:60
+#: includes/admin/views/order-metabox.php:207
+#: includes/admin/views/order-metabox.php:217
+msgid "Preuzmi nalepnicu"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:383
+msgid "Prikaži lozinku"
+msgstr ""
+
+#: includes/admin/class-dexpress-dashboard-widget.php:81
+msgid "Prikaži sve pošiljke"
+msgstr ""
+
+#: includes/admin/views/order-metabox.php:72
+#: includes/admin/views/order-metabox.php:230
+msgid "Prikaži tehničke podatke"
+msgstr ""
+
+#: includes/admin/class-dexpress-reports.php:94
+msgid "Prilagođeni period"
+msgstr ""
+
+#: includes/dexpress-woo-helpers.php:455
+msgid "Primalac"
+msgstr ""
+
+#: includes/admin/class-dexpress-reports.php:92
+msgid "Primeni"
+msgstr ""
+
+#: d-express-woocommerce-integration.php:680
+#: includes/services/class-dexpress-shipment-service.php:205
+#, php-format
+msgid "Problem sa isporukom porudžbine #%s"
+msgstr ""
+
+#: includes/admin/views/reports-page.php:59
+msgid "Procenat"
+msgstr ""
+
+#: templates/emails/shipment-created-dispenser.php:200
+#: templates/emails/shipment-created.php:54
+msgid "Proizvod"
+msgstr ""
+
+#: includes/woocommerce/class-dexpress-checkout.php:571
+msgid "Promenite paketomat"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:487
+msgid ""
+"Proverava validnost adrese primaoca kroz D Express API pozivanjem "
+"checkaddress metode pre kreiranja pošiljke. Ovo osigurava da adresa primaoca "
+"postoji u D Express sistemu i sprečava greške pri unosu adrese koje bi mogle "
+"izazvati probleme prilikom dostave."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:486
+msgid "Proveri validnost adrese pre kreiranja pošiljke putem D Express API-ja"
+msgstr ""
+
+#: includes/admin/class-dexpress-reports.php:100
+msgid "Prošli mesec"
+msgstr ""
+
+#: includes/woocommerce/class-dexpress-checkout.php:415
+msgid "Prvo unesite ulicu"
+msgstr ""
+
+#: templates/emails/shipment-created-dispenser.php:101
+msgid "Radno vreme:"
+msgstr ""
+
+#: includes/dexpress-woo-helpers.php:442
+msgid "Redovna isporuka"
+msgstr ""
+
+#: includes/admin/class-dexpress-reports.php:189
+msgid "Referenca"
+msgstr ""
+
+#: includes/frontend/class-dexpress-tracking.php:142
+#: templates/frontend/tracking-widget.php:75
+msgid "Referenca:"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:1172
+#: includes/admin/views/order-metabox.php:49
+msgid "Reference ID:"
+msgstr ""
+
+#: templates/emails/shipment-created-dispenser.php:158
+#: templates/emails/shipment-created.php:28
+msgid "Referentni broj:"
+msgstr ""
+
+#: includes/admin/class-dexpress-diagnostics.php:479
+msgid "Rezultati testova"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:262
+#: includes/admin/class-dexpress-admin.php:989
+#: includes/api/class-dexpress-api.php:758
+#: includes/api/class-dexpress-api.php:922
+#: includes/admin/views/order-metabox.php:135
+msgid "Roba iz web prodavnice"
+msgstr ""
+
+#: templates/emails/shipment-created-dispenser.php:135
+msgid ""
+"Rok za preuzimanje paketa je <strong>48 sati (2 dana)</strong> od prijema "
+"obaveštenja. Nakon tog perioda paket će biti vraćen pošiljaocu."
+msgstr ""
+
+#. Author of the plugin
+msgid "S7Code&Design"
+msgstr ""
+
+#: templates/emails/shipment-delivered.php:11
+msgid ""
+"Sa zadovoljstvom Vas obaveštavamo da je Vaša pošiljka uspešno isporučena."
+msgstr ""
+
+#: includes/admin/views/order-metabox.php:133
+msgid "Sadržaj pošiljke:"
+msgstr ""
+
+#: includes/admin/views/order-metabox.php:228
+msgid "Sakrij tehničke podatke"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:842
+msgid "Sačuvaj podešavanja"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:956
+#: includes/admin/class-dexpress-order-timeline.php:332
+#: includes/api/class-dexpress-label-generator.php:43
+#: includes/api/class-dexpress-label-generator.php:460
+#: includes/api/class-dexpress-label-generator.php:710
+#: includes/frontend/class-dexpress-tracking.php:299
+#: includes/services/class-dexpress-shipment-service.php:490
+msgid "Sigurnosna provera nije uspela."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:790
+msgid ""
+"Sigurnosni token koji se šalje kao 'cc' parametar u webhook pozivu za "
+"verifikaciju autentičnosti. Dostavite ovaj ključ D Express-u prilikom "
+"aktivacije webhook servisa. Služi kao zaštita od lažnih notifikacija."
+msgstr ""
+
+#: includes/admin/class-dexpress-shipments-list.php:423
+msgid "Sinhronizuj statuse"
+msgstr ""
+
+#: includes/admin/class-dexpress-diagnostics.php:538
+msgid "Sistemske informacije"
+msgstr ""
+
+#: includes/admin/class-dexpress-diagnostics.php:557
+msgid "Sistemske informacije su kopirane u clipboard!"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:632
+msgid "Spreči kreiranje pošiljki sa pouzećem ako bankovni račun nije podešen"
+msgstr ""
+
+#: includes/admin/class-dexpress-diagnostics.php:485
+#: includes/admin/class-dexpress-order-timeline.php:237
+#: includes/admin/class-dexpress-shipments-list.php:160
+#: includes/frontend/class-dexpress-tracking.php:159
+#: includes/frontend/class-dexpress-tracking.php:231
+#: templates/frontend/tracking-widget.php:83
+#: templates/myaccount/tracking.php:83 templates/myaccount/tracking.php:108
+#: includes/admin/views/reports-page.php:57
+msgid "Status"
+msgstr ""
+
+#: includes/admin/class-dexpress-reports.php:191
+msgid "Status narudžbine"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:1533
+#: includes/admin/class-dexpress-admin.php:1539
+#: includes/admin/class-dexpress-reports.php:192
+msgid "Status pošiljke"
+msgstr ""
+
+#: includes/admin/class-dexpress-order-timeline.php:367
+msgid "Status pošiljke je uspešno ažuriran (test režim)."
+msgstr ""
+
+#: includes/admin/class-dexpress-order-timeline.php:99
+#: includes/admin/class-dexpress-order-timeline.php:382
+msgid "Status pošiljke je uspešno ažuriran."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:505
+msgid "Status za kreiranje"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:1176
+#: includes/admin/class-dexpress-shipments-list.php:251
+#: includes/frontend/class-dexpress-tracking.php:148
+#: templates/emails/shipment-delivered.php:25
+#: templates/emails/shipment-failed.php:25
+#: templates/emails/tracking-info.php:29
+#: templates/frontend/tracking-widget.php:76
+#: templates/myaccount/tracking.php:47 includes/admin/views/reports-page.php:18
+#: templates/emails/plain/tracking-info.php:22
+msgid "Status:"
+msgstr ""
+
+#: includes/admin/views/reports-page.php:52
+msgid "Sumarni podaci"
+msgstr ""
+
+#: d-express-woocommerce-integration.php:151
+msgid "Svakih 5 minuta"
+msgstr ""
+
+#: templates/myaccount/tracking.php:76
+msgid "Sve pošiljke"
+msgstr ""
+
+#: includes/admin/class-dexpress-diagnostics.php:463
+msgid ""
+"Svi kritični testovi su uspešno prošli! Plugin je spreman za korišćenje."
+msgstr ""
+
+#: includes/admin/class-dexpress-shipments-list.php:388
+#: includes/admin/views/reports-page.php:20
+msgid "Svi statusi"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:789
+msgid ""
+"Tajni ključ koji treba dostaviti D Express-u za verifikaciju notifikacija."
+msgstr ""
+
+#: includes/woocommerce/class-dexpress-dispenser-shipping-method.php:108
+msgid "Tekst dugmeta"
+msgstr ""
+
+#: includes/woocommerce/class-dexpress-dispenser-shipping-method.php:77
+msgid "Tekst koji opisuje način dostave putem paketomata."
+msgstr ""
+
+#: includes/woocommerce/class-dexpress-dispenser-shipping-method.php:111
+msgid "Tekst na dugmetu za izbor paketomata."
+msgstr ""
+
+#: includes/woocommerce/class-dexpress-dispenser-shipping-method.php:105
+msgid "Tekst za vreme isporuke."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:619
+msgid "Telefon kontakt osobe (u formatu 381XXXXXXXXX)."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:620
+msgid ""
+"Telefon kontakt osobe u formatu 381XXXXXXXXX (bez + na početku). Format mora "
+"pratiti D Express specifikaciju: državni pozivni broj (381), pa pozivni broj "
+"mesta (bez 0) i ostatak broja. Ovo polje se mapira na CCPhone/PuCPhone "
+"parametre."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:887
+msgid "Telefonska podrška"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:1163
+#: includes/admin/class-dexpress-diagnostics.php:484
+#: includes/admin/class-dexpress-order-timeline.php:232
+#: includes/admin/class-dexpress-reports.php:194
+#: includes/admin/class-dexpress-shipments-list.php:162
+#: templates/myaccount/tracking.php:105 templates/myaccount/tracking.php:123
+msgid "Test"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:406
+msgid "Test režim"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:851
+msgid "Testiraj konekciju"
+msgstr ""
+
+#: includes/class-dexpress-validator.php:409
+msgid "Težina narudžbine mora biti veća od 0."
+msgstr ""
+
+#: includes/class-dexpress-validator.php:417
+#: includes/api/class-dexpress-api.php:944
+#, php-format
+msgid "Težina pošiljke ne može biti veća od %s kg."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:661
+msgid "Tip pošiljke"
+msgstr ""
+
+#: includes/admin/views/order-metabox.php:89
+msgid "Tip pošiljke:"
+msgstr ""
+
+#: includes/admin/class-dexpress-order-timeline.php:224
+#: includes/admin/class-dexpress-reports.php:188
+#: includes/admin/class-dexpress-shipments-list.php:158
+#: includes/frontend/class-dexpress-tracking.php:230
+#: templates/myaccount/tracking.php:82 templates/myaccount/tracking.php:102
+msgid "Tracking broj"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:1161
+#: includes/admin/class-dexpress-shipments-list.php:250
+#: includes/frontend/class-dexpress-tracking.php:141
+#: templates/frontend/tracking-widget.php:74
+#: includes/admin/views/order-metabox.php:31
+msgid "Tracking broj:"
+msgstr ""
+
+#: includes/dexpress-woo-helpers.php:456
+msgid "Treća strana"
+msgstr ""
+
+#: includes/dexpress-woo-helpers.php:258
+#: includes/admin/class-dexpress-shipments-list.php:323
+#: includes/frontend/class-dexpress-tracking.php:242
+#: includes/frontend/class-dexpress-tracking.php:338
+msgid "U obradi"
+msgstr ""
+
+#: includes/admin/class-dexpress-dashboard-widget.php:58
+msgid "U tranzitu"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:418
+msgid "Uključi logovanje"
+msgstr ""
+
+#: includes/class-dexpress-validator.php:301
+#, php-format
+msgid ""
+"Ukupna težina narudžbine ne može biti teža od %s kg za D Express dostavu."
+msgstr ""
+
+#: includes/admin/views/reports-page.php:88
+msgid "Ukupno"
+msgstr ""
+
+#: includes/api/class-dexpress-label-generator.php:266
+msgid "Ukupno %d nalepnica za štampanje."
+msgstr ""
+
+#: includes/admin/class-dexpress-dashboard-widget.php:56
+msgid "Ukupno pošiljki"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:555
+#: includes/woocommerce/class-dexpress-checkout.php:119
+msgid "Ulica"
+msgstr ""
+
+#: includes/class-dexpress-validator.php:200
+msgid "Ulica za dostavu"
+msgstr ""
+
+#: templates/frontend/tracking-widget.php:39
+msgid "Unesite broj za praćenje pošiljke:"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:802
+msgid ""
+"Unesite Google Maps API ključ za prikazivanje mape paketomata. Možete ga "
+"dobiti na <a href=\"https://developers.google."
+"com/maps/documentation/javascript/get-api-key\" target=\"_blank\">Google "
+"Developers Console</a>."
+msgstr ""
+
+#: includes/woocommerce/class-dexpress-dispenser-shipping-method.php:91
+msgid "Unesite korake preuzimanja pošiljke, svaki u novom redu."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:370
+msgid ""
+"Unesite korisničko ime koje ste dobili od D Express-a za pristup njihovom "
+"API-ju. Ovo je jedinstveni identifikator u formatu UUID (npr. XXXXXXXX-XXXX-"
+"XXXX-XXXX-XXXXXXXXXXX).<br><br> D Express vam dodeljuje posebne kredencijale "
+"za test i produkciono okruženje."
+msgstr ""
+
+#: includes/woocommerce/class-dexpress-checkout.php:419
+msgid "Unesite kućni broj"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:388
+msgid ""
+"Unesite lozinku koju ste dobili od D Express-a. Zajedno sa korisničkim "
+"imenom služi za Basic Authentication kod svih API poziva."
+msgstr ""
+
+#: includes/woocommerce/class-dexpress-checkout.php:413
+msgid "Unesite ulicu"
+msgstr ""
+
+#: includes/admin/class-dexpress-diagnostics.php:502
+msgid "Upozorenje"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:831
+msgid ""
+"UPOZORENJE: Ako je ova opcija označena, svi podaci plugina (uključujući sve "
+"tabele u bazi) će biti obrisani kada se plugin obriše."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:727
+msgid ""
+"Upravlja vraćanjem potpisanih dokumenata: 0 - Bez povraćaja, 1 - Obavezan "
+"povraćaj, 2 - Povraćaj ako je potrebno. Ovaj parametar se mapira na "
+"ReturnDoc polje u API pozivu. Za paketomatsku dostavu mora biti 0 (bez "
+"povraćaja)."
+msgstr ""
+
+#: includes/woocommerce/class-dexpress-dispenser-shipping-method.php:67
+#: includes/woocommerce/class-dexpress-shipping-method.php:67
+msgid "Uračunaj iznose kupona u uslov za besplatnu dostavu"
+msgstr ""
+
+#: includes/woocommerce/class-dexpress-dispenser-shipping-method.php:65
+#: includes/woocommerce/class-dexpress-shipping-method.php:65
+msgid "Uračunaj kupone"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:774
+msgid "URL koji treba dostaviti D Express-u za primanje notifikacija."
+msgstr ""
+
+#: templates/frontend/tracking-widget.php:50
+msgid "Učitavanje informacija o pošiljci..."
+msgstr ""
+
+#: includes/frontend/class-dexpress-tracking.php:382
+msgid "Učitavanje..."
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:481
+msgid "Validacija adrese"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:400
+msgid ""
+"Vaš jedinstveni identifikator u D Express sistemu u formatu UKXXXXX (npr. "
+"UK12345). Ovaj podatak je neophodan i koristi se u svakom API pozivu kao "
+"CClientID parametar. Ovaj ID predstavlja vašu kompaniju u D Express sistemu."
+msgstr ""
+
+#: templates/emails/tracking-info.php:17
+#: templates/emails/plain/tracking-info.php:17
+msgid "Vaša narudžbina je poslata putem D Express kurirske službe."
+msgstr ""
+
+#: d-express-woocommerce-integration.php:676
+#: includes/services/class-dexpress-shipment-service.php:201
+#, php-format
+msgid "Vaša porudžbina #%s je isporučena"
+msgstr ""
+
+#: templates/emails/shipment-created-dispenser.php:66
+msgid ""
+"Vaša porudžbina je spremna i biće poslata putem D Express kurirske službe u "
+"izabrani <strong>paketomat</strong>."
+msgstr ""
+
+#: templates/emails/shipment-created.php:22
+msgid "Vaša porudžbina je spremna i poslata putem D Express kurirske službe."
+msgstr ""
+
+#: includes/frontend/class-dexpress-tracking.php:226
+msgid "Vaše nedavne pošiljke"
+msgstr ""
+
+#: includes/woocommerce/class-dexpress-dispenser-shipping-method.php:98
+msgid "Važna napomena za korisnike."
+msgstr ""
+
+#: templates/emails/shipment-created-dispenser.php:134
+msgid "Važna napomena:"
+msgstr ""
+
+#: templates/emails/shipment-created-dispenser.php:93
+msgid "Vidi na mapi"
+msgstr ""
+
+#: includes/class-dexpress-validator.php:131
+#, php-format
+msgid "Visina proizvoda \"%s\" (%d mm) prelazi maksimalno dozvoljenu (%d mm)."
+msgstr ""
+
+#: includes/class-dexpress-validator.php:459
+#: includes/api/class-dexpress-api.php:876
+#, php-format
+msgid "Vrednost otkupnine ne može biti veća od %s RSD za D Express dostavu."
+msgstr ""
+
+#: includes/class-dexpress-validator.php:325
+#, php-format
+msgid ""
+"Vrednost porudžbine za otkupninu ne može biti veća od %s RSD za D Express "
+"dostavu."
+msgstr ""
+
+#: includes/class-dexpress-validator.php:440
+#: includes/api/class-dexpress-api.php:958
+#, php-format
+msgid "Vrednost pošiljke ne može biti veća od %s RSD."
+msgstr ""
+
+#: includes/woocommerce/class-dexpress-dispenser-shipping-method.php:102
+msgid "Vreme isporuke"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:340
+#: includes/admin/class-dexpress-admin.php:748
+msgid "Webhook podešavanja"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:781
+msgid "Webhook tajni ključ"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:766
+msgid "Webhook URL"
+msgstr ""
+
+#: includes/api/class-dexpress-api.php:1027
+msgid "Za dostavu u paketomat dozvoljen je samo jedan paket."
+msgstr ""
+
+#: includes/class-dexpress-validator.php:533
+#: includes/api/class-dexpress-api.php:1039
+msgid "Za dostavu u paketomat nije dozvoljeno vraćanje dokumenata."
+msgstr ""
+
+#: includes/class-dexpress-validator.php:526
+#: includes/api/class-dexpress-api.php:1032
+msgid "Za dostavu u paketomat, otkupnina mora biti manja od 200.000,00 RSD."
+msgstr ""
+
+#: includes/class-dexpress-validator.php:545
+msgid ""
+"Za dostavu u paketomat, potreban je validan mobilni broj telefona "
+"(+3816XXXXXXXX)."
+msgstr ""
+
+#: includes/class-dexpress-validator.php:516
+#: includes/api/class-dexpress-api.php:1044
+msgid "Za dostavu u paketomat, pošiljka mora biti lakša od 20kg."
+msgstr ""
+
+#: includes/class-dexpress-validator.php:294
+msgid ""
+"Za dostavu u paketomat, ukupna težina narudžbine ne može biti teža od 20kg."
+msgstr ""
+
+#: includes/admin/class-dexpress-order-timeline.php:146
+msgid "Za ovu narudžbinu još uvek ne postoji D Express pošiljka."
+msgstr ""
+
+#: includes/class-dexpress-validator.php:471
+#: includes/api/class-dexpress-api.php:899
+msgid ""
+"Za pouzeće je obavezan validan bankovni račun. Podesite ga u D Express "
+"podešavanjima."
+msgstr ""
+
+#: includes/class-dexpress-validator.php:335
+msgid ""
+"Za pouzeće je obavezan validan bankovni račun. Postavite ga u D Express "
+"podešavanjima."
+msgstr ""
+
+#: templates/emails/shipment-failed.php:32
+msgid "Za sva dodatna pitanja, stojimo Vam na raspolaganju."
+msgstr ""
+
+#: templates/emails/shipment-delivered.php:32
+#: templates/emails/shipment-status-change.php:37
+msgid "Za sva eventualna pitanja, molimo Vas da nas kontaktirate."
+msgstr ""
+
+#: includes/admin/class-dexpress-order-timeline.php:114
+msgid "Zadužena za isporuku"
+msgstr ""
+
+#: includes/woocommerce/class-dexpress-checkout.php:120
+msgid "Započnite unos naziva ulice"
+msgstr ""
+
+#: includes/dexpress-woo-helpers.php:428
+msgid "Završeno"
+msgstr ""
+
+#: includes/admin/class-dexpress-order-timeline.php:112
+msgid "Čeka na preuzimanje"
+msgstr ""
+
+#: includes/admin/class-dexpress-admin.php:298
+msgid "Šifarnici su uspešno ažurirani."
+msgstr ""
+
+#: includes/class-dexpress-validator.php:122
+#, php-format
+msgid "Širina proizvoda \"%s\" (%d mm) prelazi maksimalno dozvoljenu (%d mm)."
+msgstr ""
+
+#: includes/admin/class-dexpress-shipments-list.php:228
+msgid "Štampaj"
+msgstr ""
+
+#: includes/api/class-dexpress-label-generator.php:683
+#: includes/api/class-dexpress-label-generator.php:1049
+msgid "Štampaj nalepnicu"
+msgstr ""
+
+#: includes/admin/class-dexpress-shipments-list.php:426
+#: includes/admin/class-dexpress-shipments-list.php:587
+msgid "Štampaj odabrane"
+msgstr ""
+
+#: includes/api/class-dexpress-label-generator.php:267
+msgid "Štampaj sve nalepnice"
+msgstr ""

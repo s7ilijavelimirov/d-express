@@ -485,7 +485,7 @@ class D_Express_Shipment_Service
     public function ajax_create_shipment()
     {
         // Provera nonce-a
-        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'dexpress-admin-nonce')) {
+        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field($_POST['nonce']), 'dexpress-admin-nonce')) {
             wp_send_json_error(array(
                 'message' => __('Sigurnosna provera nije uspela.', 'd-express-woo')
             ));

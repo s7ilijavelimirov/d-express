@@ -17,6 +17,23 @@ class D_Express_DB_Installer
     public function install()
     {
         $this->create_tables();
+
+        // Dodaj indekse za optimizaciju performansi
+        global $wpdb;
+
+        // Proveri da li indeksi već postoje
+        $shipments_index_exists = $wpdb->get_results("SHOW INDEX FROM {$wpdb->prefix}dexpress_shipments WHERE Key_name = 'idx_tracking_number'");
+        $statuses_index_exists = $wpdb->get_results("SHOW INDEX FROM {$wpdb->prefix}dexpress_statuses WHERE Key_name = 'idx_shipment_code'");
+
+        // Dodaj indekse ako ne postoje
+        if (empty($shipments_index_exists)) {
+            $wpdb->query("CREATE INDEX idx_tracking_number ON {$wpdb->prefix}dexpress_shipments(tracking_number)");
+        }
+
+        if (empty($statuses_index_exists)) {
+            $wpdb->query("CREATE INDEX idx_shipment_code ON {$wpdb->prefix}dexpress_statuses(shipment_code)");
+            $wpdb->query("CREATE INDEX idx_reference_id ON {$wpdb->prefix}dexpress_statuses(reference_id)");
+        }
     }
 
     /**
