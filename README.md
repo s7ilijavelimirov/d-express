@@ -1,5 +1,4 @@
-# d-express
-Dexpress plugin za integraciju sa Dexpress dostavom
+# Dexpress plugin za integraciju sa Dexpress dostavom
 
 D-Express WooCommerce Integration
 WooCommerce integracija za D-Express kurirsku službu u Srbiji.
@@ -25,7 +24,7 @@ Izaberite preuzeti ZIP fajl i kliknite na "Install Now"
 Aktivirajte plugin nakon instalacije
 Podesite API kredencijale u Settings > D Express
 
-Podešavanja
+# Podešavanja
 API podešavanja
 
 API Username: Unesite korisničko ime za D-Express API
