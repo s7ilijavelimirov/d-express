@@ -1,0 +1,106 @@
+[2025-04-10 09:04:24] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/statuses, Metod: GET, Podaci: nema
+[2025-04-10 09:04:24] API Odgovor (kod 200)
+[2025-04-10 09:04:32] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/statuses, Metod: GET, Podaci: nema
+[2025-04-10 09:04:32] API Odgovor (kod 200)
+[2025-04-10 09:10:34] [API DEBUG] Inicijalna vrednost telefona iz WC: +381603995503
+[2025-04-10 09:10:34] [API DEBUG] Koristi se sačuvani API format telefona: 381603995503
+[2025-04-10 09:10:34] [API DEBUG] Finalni RCPhone za API: 381603995503
+[2025-04-10 09:10:34] [SHIPPING DEBUG] Telefon u API zahtevu: 381603995503
+[2025-04-10 09:10:34] Kreiranje pošiljke. Podaci: Array
+(
+    [CClientID] => UK16967
+    [CName] => s7Code DOO
+    [CAddress] => Bulevar Cara Lazara
+    [CAddressNum] => 106
+    [CTownID] => 802824
+    [CCName] => Ilija Velemirov
+    [CCPhone] => 381603995503
+    [PuClientID] => UK16967
+    [PuName] => s7Code DOO
+    [PuAddress] => Bulevar Cara Lazara
+    [PuAddressNum] => 106
+    [PuTownID] => 802824
+    [PuCName] => Ilija Velemirov
+    [PuCPhone] => 381603995503
+    [RName] => Ilija Velemirov
+    [RAddress] => 3. predgrađe
+    [RAddressNum] => 3
+    [RAddressDesc] => 2
+    [RTownID] => 801542
+    [RCName] => Ilija Velemirov
+    [RCPhone] => 381603995503
+    [Note] => 
+    [DlTypeID] => 2
+    [PaymentBy] => 1
+    [PaymentType] => 2
+    [Value] => 99000
+    [Content] => Roba iz web prodavnice
+    [Mass] => 11500
+    [ReferenceID] => ORDER-822-1744276234
+    [ReturnDoc] => 0
+    [BuyOut] => 99000
+    [BuyOutFor] => 0
+    [BuyOutAccount] => 170-0010364556000-77
+    [SelfDropOff] => 0
+    [PackageList] => Array
+        (
+            [0] => Array
+                (
+                    [Code] => TT0000000019
+                    [Mass] => 11500
+                    [DimX] => 400
+                    [DimY] => 470
+                    [DimZ] => 430
+                )
+
+        )
+
+)
+
+[2025-04-10 09:10:34] [PAYMENT] Vrednost dexpress_payment_type iz opcija: 2
+[2025-04-10 09:10:34] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/addshipment, Metod: POST, Podaci: {
+    "CClientID": "UK16967",
+    "CName": "s7Code DOO",
+    "CAddress": "Bulevar Cara Lazara",
+    "CAddressNum": "106",
+    "CTownID": 802824,
+    "CCName": "Ilija Velemirov",
+    "CCPhone": "381603995503",
+    "PuClientID": "UK16967",
+    "PuName": "s7Code DOO",
+    "PuAddress": "Bulevar Cara Lazara",
+    "PuAddressNum": "106",
+    "PuTownID": 802824,
+    "PuCName": "Ilija Velemirov",
+    "PuCPhone": "381603995503",
+    "RName": "Ilija Velemirov",
+    "RAddress": "3. predgra\u0111e",
+    "RAddressNum": "3",
+    "RAddressDesc": "2",
+    "RTownID": 801542,
+    "RCName": "Ilija Velemirov",
+    "RCPhone": "381603995503",
+    "Note": "",
+    "DlTypeID": 2,
+    "PaymentBy": 1,
+    "PaymentType": 2,
+    "Value": 99000,
+    "Content": "Roba iz web prodavnice",
+    "Mass": 11500,
+    "ReferenceID": "ORDER-822-1744276234",
+    "ReturnDoc": 0,
+    "BuyOut": 99000,
+    "BuyOutFor": 0,
+    "BuyOutAccount": "170-0010364556000-77",
+    "SelfDropOff": 0,
+    "PackageList": [
+        {
+            "Code": "TT0000000019",
+            "Mass": 11500,
+            "DimX": 400,
+            "DimY": 470,
+            "DimZ": 430
+        }
+    ]
+}
+[2025-04-10 09:10:34] API Odgovor (kod 200)

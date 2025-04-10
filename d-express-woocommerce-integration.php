@@ -3,11 +3,11 @@
 /**
  * Plugin Name: D Express WooCommerce Integration
  * Description: Integracija D Express dostave sa WooCommerce prodavnicama
- * Version: 1.0.0
+ * Version: 1.0.1
  * Author: S7Code&Design
  * Text Domain: d-express-woo
  * Domain Path: /languages
- * Requires at least: 6.7.2
+ * Requires at least: 6.0
  * Requires PHP: 7.2
  * WC requires at least: 9.0
  * WC tested up to: 9.6.2
@@ -111,6 +111,8 @@ class D_Express_WooCommerce
         require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/woocommerce/class-dexpress-dispenser-shipping-method.php';
 
         require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/admin/class-dexpress-diagnostics.php';
+        // Plugin Updater
+        require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/class-dexpress-plugin-updater.php';
     }
 
     /**
@@ -138,6 +140,24 @@ class D_Express_WooCommerce
 
         // Registrujemo česte provere statusa
         add_action('init', array($this, 'register_frequent_status_checks'));
+
+        // Registrujemo Inicijalizacija updater-a
+        add_action('init', array($this, 'dexpress_init_updater'));
+    }
+    /**
+     * Inicijalizacija updater-a
+     */
+    function dexpress_init_updater()
+    {
+        if (!class_exists('D_Express_Plugin_Updater')) {
+            return;
+        }
+
+        // Inicijalizacija updater-a
+        new D_Express_Plugin_Updater(
+            __FILE__,
+            'https://github.com/s7ilijavelimirov/d-express'
+        );
     }
     /**
      * Registracija češćih provera statusa

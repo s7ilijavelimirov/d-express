@@ -33,8 +33,91 @@ class D_Express_Tracking
         add_filter('woocommerce_account_menu_items', array($this, 'add_tracking_menu_item'));
         add_action('init', array($this, 'add_tracking_endpoint'));
         add_action('woocommerce_account_dexpress-tracking_endpoint', array($this, 'tracking_page_content'));
-    }
 
+        add_action('woocommerce_thankyou', array($this, 'display_tracking_on_thankyou'), 10);
+    }
+    /**
+     * Prikazuje informacije o praćenju na thank-you stranici
+     */
+    public function display_tracking_on_thankyou($order_id)
+    {
+        if (!$order_id) {
+            return;
+        }
+
+        $order = wc_get_order($order_id);
+
+        // Provera da li je D Express dostava
+        $has_dexpress = false;
+        foreach ($order->get_shipping_methods() as $method) {
+            if (strpos($method->get_method_id(), 'dexpress') !== false) {
+                $has_dexpress = true;
+                break;
+            }
+        }
+
+        if (!$has_dexpress) {
+            return;
+        }
+
+        // Proveravamo da li već postoji pošiljka
+        global $wpdb;
+        $shipment = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}dexpress_shipments WHERE order_id = %d",
+            $order_id
+        ));
+
+        // Auto-kreiraj pošiljku ako ne postoji i podešavanja dozvoljavaju
+        if (!$shipment && dexpress_is_auto_create_enabled()) {
+            require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/services/class-dexpress-shipment-service.php';
+            $shipment_service = new D_Express_Shipment_Service();
+            $result = $shipment_service->create_shipment($order);
+
+            if (!is_wp_error($result)) {
+                // Dobavi svežu pošiljku nakon kreiranja
+                $shipment = $wpdb->get_row($wpdb->prepare(
+                    "SELECT * FROM {$wpdb->prefix}dexpress_shipments WHERE order_id = %d",
+                    $order_id
+                ));
+            }
+        }
+
+        if ($shipment) {
+            echo '<section class="woocommerce-dexpress-tracking">';
+            echo '<h2>' . esc_html__('Praćenje pošiljke', 'd-express-woo') . '</h2>';
+            echo '<div class="dexpress-tracking-details">';
+            echo '<p>' . esc_html__('Vaša porudžbina će biti isporučena putem D Express kurirske službe.', 'd-express-woo') . '</p>';
+
+            echo '<p><strong>' . esc_html__('Broj za praćenje:', 'd-express-woo') . '</strong> ';
+            if ($shipment->is_test) {
+                echo esc_html($shipment->tracking_number) . ' <span class="dexpress-test-note">(' . esc_html__('Test', 'd-express-woo') . ')</span>';
+            } else {
+                echo '<a href="https://www.dexpress.rs/rs/pracenje-posiljaka/' . esc_attr($shipment->tracking_number) .
+                    '" target="_blank">' . esc_html($shipment->tracking_number) . '</a>';
+            }
+            echo '</p>';
+
+            echo '<p><strong>' . esc_html__('Referentni broj:', 'd-express-woo') . '</strong> ' . esc_html($shipment->reference_id) . '</p>';
+            echo '<p><strong>' . esc_html__('Očekivano vreme isporuke:', 'd-express-woo') . '</strong> ' . esc_html__('1-3 radna dana', 'd-express-woo') . '</p>';
+
+            // Prikaži status ako postoji
+            if (!empty($shipment->status_code)) {
+                echo '<p><strong>' . esc_html__('Status:', 'd-express-woo') . '</strong> ';
+                echo '<span class="dexpress-status-badge ' . dexpress_get_status_css_class($shipment->status_code) . '">';
+                echo esc_html(dexpress_get_status_name($shipment->status_code));
+                echo '</span></p>';
+            }
+
+            echo '</div>';
+            echo '</section>';
+        } else {
+            // Prikaži poruku da će pošiljka biti kreirana uskoro
+            echo '<section class="woocommerce-dexpress-tracking">';
+            echo '<h2>' . esc_html__('Praćenje pošiljke', 'd-express-woo') . '</h2>';
+            echo '<p>' . esc_html__('Vaša porudžbina će biti dostavljena putem D Express kurirske službe. Informacije za praćenje biće dostupne čim administrator obradi vašu porudžbinu.', 'd-express-woo') . '</p>';
+            echo '</section>';
+        }
+    }
     /**
      * Dodavanje endpointa za tracking u My Account
      */
