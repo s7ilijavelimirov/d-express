@@ -20,7 +20,7 @@ defined('ABSPATH') || exit;
 add_action('before_woocommerce_init', function () {
     if (class_exists('\Automattic\WooCommerce\Utilities\FeaturesUtil')) {
         \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility('custom_order_tables', __FILE__, true);
-     }
+    }
 });
 
 
@@ -111,17 +111,8 @@ class D_Express_WooCommerce
         require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/woocommerce/class-dexpress-dispenser-shipping-method.php';
 
         require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/admin/class-dexpress-diagnostics.php';
+    }
 
-        require_once DEXPRESS_WOO_PLUGIN_DIR . 'd-express-plugin-updater.php';
-    }
-    public function init_github_updates()
-    {
-        new D_Express_GitHub_Updater(
-            __FILE__,           // Putanja do glavnog plugin fajla
-            's7ilijavelimirov', // GitHub username
-            'd-express'         // GitHub repository ime
-        );
-    }
     /**
      * Inicijalizacija hook-ova
      */
@@ -147,8 +138,6 @@ class D_Express_WooCommerce
 
         // Registrujemo česte provere statusa
         add_action('init', array($this, 'register_frequent_status_checks'));
-
-        add_action('init', [$this, 'init_github_updates']);
     }
 
     /**
