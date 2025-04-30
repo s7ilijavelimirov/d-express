@@ -74,6 +74,40 @@ class D_Express_Shipment_Service
             // Dobijanje podataka za pošiljku
             dexpress_log('[SHIPPING] Priprema podataka za narudžbinu #' . $order->get_id(), 'debug');
             $shipment_data = $this->api->prepare_shipment_data_from_order($order);
+            if (is_wp_error($shipment_data)) {
+                dexpress_log('[SHIPPING] Greška pri pripremi podataka: ' . $shipment_data->get_error_message(), 'error');
+                return $shipment_data;
+            }
+
+            // DODATNA VALIDACIJA PRE SLANJA API-ju
+            if (empty($shipment_data['RAddress']) || empty($shipment_data['RAddressNum'])) {
+                return new WP_Error('invalid_address', __('Adresa primaoca je nepotpuna.', 'd-express-woo'));
+            }
+
+            if (empty($shipment_data['RCPhone'])) {
+                return new WP_Error('invalid_phone', __('Telefon primaoca je obavezan.', 'd-express-woo'));
+            }
+
+            if (!isset($shipment_data['Mass']) || $shipment_data['Mass'] <= 0) {
+                return new WP_Error('invalid_mass', __('Masa pošiljke mora biti veća od 0.', 'd-express-woo'));
+            }
+
+            if (empty($shipment_data['PackageList']) || !is_array($shipment_data['PackageList'])) {
+                return new WP_Error('missing_package', __('Nedostaju podaci o paketu.', 'd-express-woo'));
+            }
+
+            // Provera validnosti paketa
+            foreach ($shipment_data['PackageList'] as $package) {
+                if (empty($package['Code'])) {
+                    return new WP_Error('invalid_package_code', __('Nedostaje kod paketa.', 'd-express-woo'));
+                }
+            }
+
+            // Ako je otkupnina uključena, proveri bankovni račun
+            if (!empty($shipment_data['BuyOut']) && $shipment_data['BuyOut'] > 0 && empty($shipment_data['BuyOutAccount'])) {
+                return new WP_Error('missing_buyout_account', __('Nedostaje bankovni račun za otkupninu.', 'd-express-woo'));
+            }
+
             dexpress_log('[SHIPPING DEBUG] Telefon u API zahtevu: ' . $shipment_data['RCPhone'], 'info');
             if (is_wp_error($shipment_data)) {
                 dexpress_log('[SHIPPING] Greška pri pripremi podataka: ' . $shipment_data->get_error_message(), 'error');

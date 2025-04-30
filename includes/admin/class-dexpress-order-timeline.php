@@ -121,22 +121,22 @@ class D_Express_Order_Timeline
      */
     public function render_timeline($post_or_order)
     {
-        // Provera da li je prosleđen WP_Post ili WC_Order
+        // HPOS kompatibilnost - uvek dobijamo WC_Order objekat
         if (is_a($post_or_order, 'WP_Post')) {
             $order = wc_get_order($post_or_order->ID);
         } else {
             $order = $post_or_order;
         }
 
-        if (!$order) {
+        if (!$order || is_wp_error($order)) {
             echo '<div class="notice notice-error inline"><p>' . esc_html__('Narudžbina nije pronađena.', 'd-express-woo') . '</p></div>';
             return;
         }
-
+        $order_id = $order->get_id();
         global $wpdb;
         $shipment = $wpdb->get_row($wpdb->prepare(
             "SELECT * FROM {$wpdb->prefix}dexpress_shipments WHERE order_id = %d",
-            $order->get_id()
+            $order_id
         ));
 
         if (!$shipment) {

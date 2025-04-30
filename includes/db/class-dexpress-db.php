@@ -41,6 +41,7 @@ class D_Express_DB
         );
 
         return $result ? $wpdb->insert_id : false;
+        $this->clear_shipment_cache($shipment_data['order_id']);
     }
 
     /**
@@ -91,6 +92,7 @@ class D_Express_DB
             array('%s', '%s', '%s'),
             array('%s')
         ) !== false;
+        $this->clear_shipment_cache($shipment->order_id);
     }
 
     /**
@@ -140,29 +142,42 @@ class D_Express_DB
      * @param int $order_id ID narudžbine
      * @return object|null Podaci o pošiljci
      */
-
     public function get_shipment_by_order_id($order_id)
     {
-        $cache_key = 'shipment_order_' . $order_id;
+        // Jedinstveni cache ključ
+        $cache_key = 'dexpress_shipment_' . $order_id;
 
-        // Proveri da li imamo rezultat u kešu
-        if (isset($this->cache[$cache_key])) {
-            return $this->cache[$cache_key];
+        // Pokušaj učitati iz WordPress transient cache-a
+        $result = get_transient($cache_key);
+
+        // Ako nije u cache-u, učitaj iz baze
+        if ($result === false) {
+            global $wpdb;
+
+            $result = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM {$wpdb->prefix}dexpress_shipments WHERE order_id = %d",
+                $order_id
+            ));
+
+            // Sačuvaj rezultat u cache na 1 sat
+            if ($result) {
+                set_transient($cache_key, $result, HOUR_IN_SECONDS);
+            }
         }
-
-        global $wpdb;
-
-        $result = $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM {$wpdb->prefix}dexpress_shipments WHERE order_id = %d",
-            $order_id
-        ));
-
-        // Sačuvaj rezultat u keš
-        $this->cache[$cache_key] = $result;
 
         return $result;
     }
-    // Dodaj index za order_id u tabeli dexpress_shipments za bolje performanse
+
+    /**
+     * Čišćenje cache-a za pošiljku
+     *
+     * @param int $order_id ID narudžbine
+     */
+    public function clear_shipment_cache($order_id)
+    {
+        delete_transient('dexpress_shipment_' . $order_id);
+    }
+
     public function add_shipment_index()
     {
         global $wpdb;

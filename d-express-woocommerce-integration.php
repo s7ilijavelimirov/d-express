@@ -16,19 +16,19 @@
 /** @var string $WC_VERSION */
 defined('ABSPATH') || exit;
 
-// Deklaracija HPOS kompatibilnosti
-add_action('before_woocommerce_init', function () {
-    if (class_exists('\Automattic\WooCommerce\Utilities\FeaturesUtil')) {
-        \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility('custom_order_tables', __FILE__, true);
-    }
-});
-
-
-define('DEXPRESS_WOO_VERSION', '1.0.0');
+define('DEXPRESS_WOO_VERSION', '1.0.3');
 define('DEXPRESS_WOO_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('DEXPRESS_WOO_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('DEXPRESS_WOO_PLUGIN_BASENAME', plugin_basename(__FILE__));
 
+
+// Deklaracija HPOS kompatibilnosti
+add_action('before_woocommerce_init', function () {
+    if (class_exists('\Automattic\WooCommerce\Utilities\FeaturesUtil')) {
+        \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility('custom_order_tables', __FILE__, true);
+        \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility('cart_checkout_blocks', __FILE__, true);
+    }
+});
 /**
  * Glavna klasa plugin-a
  */
