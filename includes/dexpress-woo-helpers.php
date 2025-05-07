@@ -263,24 +263,6 @@ function dexpress_log_error($message, $context = array())
     );
 }
 /**
- * Formatiranje statusa pošiljke
- *
- * @param string $status_code Kod statusa
- * @return string Formatiran status
- */
-function dexpress_format_status($status_code)
-{
-    global $wpdb;
-
-    $status = $wpdb->get_row($wpdb->prepare(
-        "SELECT * FROM {$wpdb->prefix}dexpress_statuses_index WHERE id = %s",
-        $status_code
-    ));
-
-    return $status ? $status->name : __('Nepoznat status', 'd-express-woo');
-}
-
-/**
  * Vraća opcije za dropdown gradova
  *
  * @return array Opcije za dropdown

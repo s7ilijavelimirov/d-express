@@ -379,8 +379,8 @@ class D_Express_Label_Generator
                 <script>
                     JsBarcode(".barcode-<?php echo esc_js($tracking_number); ?>", "<?php echo esc_js($tracking_number); ?>", {
                         format: "CODE128",
-                        width: 1.5,
-                        height: 40,
+                        width: 2.4,
+                        height: 70,
                         displayValue: false,
                         margin: 0
                     });
@@ -569,9 +569,9 @@ class D_Express_Label_Generator
                 /* Elementi nalepnice */
                 .header {
                     padding: 3px;
+                    font-weight:600;
                     font-size: 8px;
-                    text-align: left;
-                    border-bottom: 1px solid #eee;
+                    text-align: center;
                 }
                 
                 .package-info {

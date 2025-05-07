@@ -84,19 +84,31 @@ class D_Express_Checkout
         </div>
     <?php
     }
+    /**
+     * AJAX: Dobavljanje liste gradova sa paketomatima
+     */
     public function ajax_get_towns_list()
     {
         check_ajax_referer('dexpress-frontend-nonce', 'nonce');
 
-        global $wpdb;
+        // Pokušaj dobiti iz cache-a
+        $towns = get_transient('dexpress_dispenser_towns');
 
-        $towns = $wpdb->get_results("
+        if ($towns === false) {
+            global $wpdb;
+
+            // Dohvati samo gradove koji imaju paketomate
+            $towns = $wpdb->get_results("
             SELECT DISTINCT t.id, t.name, t.postal_code 
             FROM {$wpdb->prefix}dexpress_towns t
             JOIN {$wpdb->prefix}dexpress_dispensers d ON t.id = d.town_id
             WHERE d.deleted != 1
             ORDER BY t.name
         ");
+
+            // Sačuvaj u cache na 24 sata
+            set_transient('dexpress_dispenser_towns', $towns, 24 * HOUR_IN_SECONDS);
+        }
 
         wp_send_json_success(array('towns' => $towns));
     }
@@ -302,27 +314,42 @@ class D_Express_Checkout
     /**
      * AJAX: Dohvatanje grada i poštanskog broja za ulicu
      */
+    // U class-dexpress-checkout.php
     public function ajax_get_town_for_street()
     {
+        // Dodati keš
         check_ajax_referer('dexpress-frontend-nonce', 'nonce');
 
         global $wpdb;
         $street_id = intval($_GET['street_id'] ?? 0);
 
+        // Provera keša
+        $cache_key = 'dexpress_town_for_street_' . $street_id;
+        $cached_town = get_transient($cache_key);
+
+        if ($cached_town !== false) {
+            wp_send_json_success($cached_town);
+            return;
+        }
+
         $town = $wpdb->get_row($wpdb->prepare(
             "SELECT t.id, t.name, t.postal_code
-             FROM {$wpdb->prefix}dexpress_streets s
-             JOIN {$wpdb->prefix}dexpress_towns t ON s.TId = t.id
-             WHERE s.id = %d LIMIT 1",
+         FROM {$wpdb->prefix}dexpress_streets s
+         JOIN {$wpdb->prefix}dexpress_towns t ON s.TId = t.id
+         WHERE s.id = %d LIMIT 1",
             $street_id
         ));
 
         if ($town) {
-            wp_send_json_success([
+            $town_data = [
                 'town_id'     => $town->id,
                 'town_name'   => $town->name,
                 'postal_code' => $town->postal_code,
-            ]);
+            ];
+
+            // Keš na 1 sat
+            set_transient($cache_key, $town_data, HOUR_IN_SECONDS);
+            wp_send_json_success($town_data);
         } else {
             wp_send_json_error(['message' => 'Grad nije pronađen.']);
         }

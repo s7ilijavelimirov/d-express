@@ -328,71 +328,98 @@ class D_Express_API
     {
         return $this->api_request('data/viewpayments?PaymentReference=' . urlencode($payment_reference));
     }
-
     /**
      * Ažurira sve šifarnike
+     * 
+     * @return bool True ako je uspešno, False ako nije
      */
     public function update_all_indexes()
     {
         global $wpdb;
-        $db = new D_Express_DB();
 
         // Preuzimanje poslednjeg datuma ažuriranja
         $last_update = get_option('dexpress_last_index_update', '20000101000000');
+        $current_time = current_time('mysql');
+
+        // Definisanje redosleda ažuriranja i batch veličine za svaki entitet
+        $entities = [
+            'statuses' => ['batch_size' => 100, 'table' => 'dexpress_statuses_index'],
+            'municipalities' => ['batch_size' => 100, 'table' => 'dexpress_municipalities'],
+            'towns' => ['batch_size' => 200, 'table' => 'dexpress_towns'],
+            'centres' => ['batch_size' => 50, 'table' => 'dexpress_centres'],
+            'shops' => ['batch_size' => 100, 'table' => 'dexpress_shops'],
+            'locations' => ['batch_size' => 100, 'table' => 'dexpress_locations'],
+            'dispensers' => ['batch_size' => 100, 'table' => 'dexpress_dispensers'],
+        ];
 
         try {
-            // Ažuriranje prodavnica
-            $shops = $this->get_shops();
-            if (!is_wp_error($shops) && is_array($shops)) {
-                $this->update_shops_index($shops);
-            }
-            // Ažuriranje locations
-            $locations = $this->get_locations();
-            if (!is_wp_error($locations) && is_array($locations)) {
-                $this->update_locations_index($locations);
-            }
-            // Ažuriranje opština
-            $municipalities = $this->get_municipalities($last_update);
-            if (!is_wp_error($municipalities) && is_array($municipalities)) {
-                $this->update_municipalities_index($municipalities);
+            // Inicijalna provera veze
+            $connection_test = $this->test_connection();
+            if (is_wp_error($connection_test)) {
+                dexpress_log('Ažuriranje otkazano - neuspešan test konekcije: ' . $connection_test->get_error_message(), 'error');
+                return false;
             }
 
-            // Ažuriranje gradova
-            $towns = $this->get_towns($last_update);
-            if (!is_wp_error($towns) && is_array($towns)) {
-                $this->update_towns_index($towns);
-            }
+            dexpress_log('Započeto ažuriranje šifarnika', 'info');
 
-            dexpress_log('Updating streets...');
-            // Ažuriranje ulica
-            $streets = $this->get_streets($last_update);
-            if (!is_wp_error($streets) && is_array($streets)) {
-                dexpress_log('Got ' . count($streets) . ' streets, starting update...');
-                // Proverite strukturu prve ulice
-                dexpress_log('First street data: ' . print_r($streets[0], true));
-                $this->update_streets_index($streets);
-            } else {
-                dexpress_log('Error fetching streets: ' . print_r($streets, true));
-            }
-
-            // Ažuriranje statusa
+            // Ažuriranje statusa - ovo je mali skup podataka, ne treba batch
             $statuses = $this->get_statuses();
             if (!is_wp_error($statuses) && is_array($statuses)) {
                 $this->update_statuses_index($statuses);
+                dexpress_log('Uspešno ažuriran šifarnik statusa. Ukupno: ' . count($statuses), 'info');
+            } else {
+                dexpress_log('Greška pri ažuriranju statusa', 'error');
             }
 
-            // Ažuriranje automata za pakete
-            $dispensers = $this->get_dispensers();
-            if (!is_wp_error($dispensers) && is_array($dispensers)) {
-                $this->update_dispensers_index($dispensers);
+            // Ažuriranje organizacija i lokacija
+            $entities_to_update = ['shops', 'locations', 'dispensers', 'centres'];
+            foreach ($entities_to_update as $entity) {
+                $method_name = 'get_' . $entity;
+                $update_method = 'update_' . $entity . '_index';
+
+                if (method_exists($this, $method_name) && method_exists($this, $update_method)) {
+                    $data = $this->$method_name();
+                    if (!is_wp_error($data) && is_array($data)) {
+                        // Batch obrada za veće skupove podataka
+                        $batch_size = $entities[$entity]['batch_size'];
+                        $total = count($data);
+
+                        for ($i = 0; $i < $total; $i += $batch_size) {
+                            $batch = array_slice($data, $i, $batch_size);
+                            $this->$update_method($batch);
+
+                            // Oslobađanje memorije
+                            gc_collect_cycles();
+
+                            dexpress_log(sprintf(
+                                'Ažuriranje %s napredak: %d/%d',
+                                $entity,
+                                min($i + $batch_size, $total),
+                                $total
+                            ), 'debug');
+                        }
+
+                        dexpress_log("Uspešno ažuriran šifarnik za $entity. Ukupno: $total", 'info');
+                    } else {
+                        dexpress_log("Greška pri ažuriranju $entity", 'error');
+                    }
+                }
             }
-            $centres = $this->get_centres();
-            if (!is_wp_error($centres) && is_array($centres)) {
-                $this->update_centres_index($centres);
+
+            // Ulice se obrađuju posebno zbog veličine
+            dexpress_log('Započeto ažuriranje ulica', 'info');
+            $streets = $this->get_streets($last_update);
+            if (!is_wp_error($streets) && is_array($streets)) {
+                $this->update_streets_batch($streets);
+                dexpress_log('Uspešno ažuriran šifarnik ulica. Ukupno: ' . count($streets), 'info');
+            } else {
+                dexpress_log('Greška pri ažuriranju ulica', 'error');
             }
+
             // Ažuriranje vremena poslednjeg ažuriranja
             update_option('dexpress_last_index_update', date('YmdHis'));
-            dexpress_log('Index update completed successfully');
+            dexpress_log('Ažuriranje šifarnika uspešno završeno', 'info');
+
             return true;
         } catch (Exception $e) {
             dexpress_log('Greška pri ažuriranju šifarnika: ' . $e->getMessage(), 'error');
@@ -590,15 +617,18 @@ class D_Express_API
         }
     }
     /**
-     * Ažuriranje indeksa ulica
+     * Ažuriranje ulica u batch režimu za bolju performansu
+     * 
+     * @param array $streets Lista ulica za ažuriranje
+     * @return void
      */
-    private function update_streets_index($streets)
+    private function update_streets_batch($streets)
     {
         global $wpdb;
         $table_name = $wpdb->prefix . 'dexpress_streets';
 
-        // Batch processing - ubacujemo po 500 redova odjednom (smanjio sa 1000)
-        $batch_size = 500;
+        // Manja batch veličina za ulice zbog velikog broja
+        $batch_size = 200;
         $total = count($streets);
 
         // Čistimo memoriju pre obrade
@@ -606,9 +636,9 @@ class D_Express_API
 
         for ($i = 0; $i < $total; $i += $batch_size) {
             $batch = array_slice($streets, $i, $batch_size);
-            $values = array();
-            $place_values = array();
-            $all_params = array();
+            $values = [];
+            $place_values = [];
+            $all_params = [];
 
             foreach ($batch as $street) {
                 $id = intval($street['Id']);
@@ -621,14 +651,14 @@ class D_Express_API
                 array_push($all_params, $id, $name, $tid, $deleted, $date);
             }
 
-            // Pripremi bulk upit
+            // Pripremi bulk upit sa ON DUPLICATE KEY UPDATE
             $query = "INSERT INTO $table_name (id, name, TId, deleted, last_updated) 
-             VALUES " . implode(', ', $place_values) . "
-             ON DUPLICATE KEY UPDATE 
-             name = VALUES(name), 
-             TId = VALUES(TId), 
-             deleted = VALUES(deleted), 
-             last_updated = VALUES(last_updated)";
+                  VALUES " . implode(', ', $place_values) . "
+                  ON DUPLICATE KEY UPDATE 
+                  name = VALUES(name), 
+                  TId = VALUES(TId), 
+                  deleted = VALUES(deleted), 
+                  last_updated = VALUES(last_updated)";
 
             // Pripremljeni upit
             $prepared_query = $wpdb->prepare($query, $all_params);
@@ -648,7 +678,7 @@ class D_Express_API
             gc_collect_cycles();
 
             // Logovanje progresa
-            dexpress_log(sprintf('Streets update progress: %d/%d', min($i + $batch_size, $total), $total));
+            dexpress_log(sprintf('Ažuriranje ulica napredak: %d/%d', min($i + $batch_size, $total), $total));
         }
     }
 

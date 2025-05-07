@@ -366,6 +366,8 @@ class D_Express_WooCommerce
         $timeline->init();
     }
 
+    // U d-express-woocommerce-integration.php - optimizacija cron zadataka
+
     /**
      * Inicijalizacija CRON zadataka
      */
@@ -373,11 +375,72 @@ class D_Express_WooCommerce
     {
         // Dnevno ažuriranje šifarnika
         if (!wp_next_scheduled('dexpress_daily_update_indexes')) {
-            wp_schedule_event(time(), 'daily', 'dexpress_daily_update_indexes');
+            // Postavljamo na 3 ujutru da ne opterećujemo server tokom dana
+            wp_schedule_event(strtotime('tomorrow 3:00 am'), 'daily', 'dexpress_daily_update_indexes');
         }
 
-        // Dodavanje hook-a za ažuriranje šifarnika
-        add_action('dexpress_daily_update_indexes', array($this, 'update_indexes'));
+        // Dodavanje hook-a za ažuriranje šifarnika - sa proverom da li je potrebno
+        add_action('dexpress_daily_update_indexes', function () {
+            // Proveravamo da li je prošlo dovoljno vremena od poslednjeg ažuriranja
+            $last_update_timestamp = strtotime(get_option('dexpress_last_index_update', '20000101000000'));
+            $now = time();
+
+            // Ako je prošlo manje od 23 sata, preskačemo ažuriranje (izbegavamo dupliranje)
+            if (($now - $last_update_timestamp) < (23 * HOUR_IN_SECONDS)) {
+                dexpress_log('Preskakanje ažuriranja šifarnika - prošlo je manje od 23h od poslednjeg ažuriranja', 'info');
+                return;
+            }
+
+            // Proveriti da li su API kredencijali podešeni
+            $api = D_Express_API::get_instance();
+            if (!$api->has_credentials()) {
+                dexpress_log('Preskakanje ažuriranja šifarnika - API kredencijali nisu podešeni', 'warning');
+                return;
+            }
+
+            // Izvršiti ažuriranje
+            $result = $api->update_all_indexes();
+
+            if ($result) {
+                dexpress_log('Automatsko ažuriranje šifarnika uspešno završeno', 'info');
+            } else {
+                dexpress_log('Greška pri automatskom ažuriranju šifarnika', 'error');
+            }
+        });
+
+        // Novi cron job za češću proveru statusa aktivnih pošiljki
+        if (!wp_next_scheduled('dexpress_check_pending_statuses')) {
+            wp_schedule_event(time(), 'hourly', 'dexpress_check_pending_statuses');
+        }
+
+        add_action('dexpress_check_pending_statuses', function () {
+            global $wpdb;
+
+            // Dohvatamo samo pošiljke koje su kreirane u poslednjih 7 dana i nisu isporučene
+            $query = "SELECT id FROM {$wpdb->prefix}dexpress_shipments 
+                 WHERE created_at > DATE_SUB(NOW(), INTERVAL 7 DAY) 
+                 AND (status_code IS NULL OR status_code NOT IN ('1', '831', '843')) 
+                 LIMIT 50";
+
+            $shipments = $wpdb->get_col($query);
+
+            if (empty($shipments)) {
+                return;
+            }
+
+            dexpress_log('Provera statusa za ' . count($shipments) . ' aktivnih pošiljki', 'debug');
+
+            // Inicijalizacija servisa
+            $shipment_service = new D_Express_Shipment_Service();
+
+            // Ažuriranje statusa jedan po jedan
+            foreach ($shipments as $shipment_id) {
+                $shipment_service->sync_shipment_status($shipment_id);
+
+                // Kratka pauza između zahteva da ne preopteretimo API
+                usleep(200000); // 0.2 sekunde
+            }
+        });
     }
 
     /**

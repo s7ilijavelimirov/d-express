@@ -289,11 +289,19 @@ class D_Express_Shipment_Service
                 return new WP_Error('shipment_not_found', __('Pošiljka nije pronađena u sistemu.', 'd-express-woo'));
             }
 
+            // Provera last-modified vremena za prečeste provere statusa
+            $last_update = get_post_meta($shipment->order_id, '_dexpress_last_status_check', true);
+            $current_time = time();
+
+            // Ako je poslednja provera bila u poslednjih 15 minuta, preskačemo
+            if (!empty($last_update) && (($current_time - intval($last_update)) < 900)) {
+                return true; // Preskačemo proveru
+            }
+
             // Ako je test pošiljka, postavićemo samo simluirani status
             if ($shipment->is_test) {
                 // Simuliramo da je pošiljka isporučena nakon određenog vremena
                 $created_time = strtotime($shipment->created_at);
-                $current_time = time();
 
                 // Ako je prošlo više od 2 dana, označavamo kao isporučeno
                 if (($current_time - $created_time) > (2 * 24 * 60 * 60) && $shipment->status_code != '1') {
@@ -310,23 +318,37 @@ class D_Express_Shipment_Service
                         // Pošalji email o isporuci
                         $this->send_status_email($shipment, $order, 'delivered');
                     }
-
-                    return true;
                 }
+
+                // Ažuriramo vreme poslednje provere
+                update_post_meta($shipment->order_id, '_dexpress_last_status_check', $current_time);
                 return true;
             }
 
-            // Dohvatanje poslednjeg statusa iz baze
-            $latest_status = $wpdb->get_row($wpdb->prepare(
-                "SELECT * FROM {$wpdb->prefix}dexpress_statuses 
+            // Dohvatanje poslednjeg statusa iz baze - koristimo keš
+            $cache_key = 'dexpress_status_' . $shipment->shipment_id;
+            $latest_status = get_transient($cache_key);
+
+            if ($latest_status === false) {
+                // Ako nema u kešu, dohvatamo iz baze
+                $latest_status = $wpdb->get_row($wpdb->prepare(
+                    "SELECT * FROM {$wpdb->prefix}dexpress_statuses 
                 WHERE (shipment_code = %s OR reference_id = %s) 
                 ORDER BY status_date DESC LIMIT 1",
-                $shipment->shipment_id,
-                $shipment->reference_id
-            ));
+                    $shipment->shipment_id,
+                    $shipment->reference_id
+                ));
+
+                // Čuvamo u kešu na 15 minuta
+                if ($latest_status) {
+                    set_transient($cache_key, $latest_status, 15 * MINUTE_IN_SECONDS);
+                }
+            }
 
             // Ako nema statusa u tabeli statusa, vraćamo true (nema promene)
             if (!$latest_status) {
+                // Ažuriramo vreme poslednje provere
+                update_post_meta($shipment->order_id, '_dexpress_last_status_check', $current_time);
                 return true;
             }
 
@@ -348,6 +370,10 @@ class D_Express_Shipment_Service
                 if (!$updated) {
                     return new WP_Error('update_failed', __('Greška pri ažuriranju statusa pošiljke.', 'd-express-woo'));
                 }
+
+                // Invalidiramo keš za ovu pošiljku
+                $this->db->clear_shipment_cache($shipment->order_id);
+                delete_transient($cache_key);
 
                 // Dobaviti narudžbinu i dodati napomenu o promeni statusa
                 $order = wc_get_order($shipment->order_id);
@@ -373,9 +399,10 @@ class D_Express_Shipment_Service
                     // Izvršiti hook za custom akcije nakon promene statusa
                     do_action('dexpress_shipment_status_updated', $shipment, $latest_status->status_id, $status_description, $order);
                 }
-
-                return true;
             }
+
+            // Ažuriramo vreme poslednje provere
+            update_post_meta($shipment->order_id, '_dexpress_last_status_check', $current_time);
 
             return true;
         } catch (Exception $e) {

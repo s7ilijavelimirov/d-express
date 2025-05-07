@@ -203,18 +203,31 @@ wp_nonce_field('dexpress_meta_box', 'dexpress_meta_box_nonce');
                         shipment_id: shipment_id,
                         nonce: dexpressAdmin.nonce
                     },
+                    timeout: 30000, // Povećan timeout
                     success: function(response) {
                         btn.prop('disabled', false).text('<?php _e('Preuzmi nalepnicu', 'd-express-woo'); ?>');
 
-                        if (response.success) {
-                            // Otvori nalepnicu u novom tabu
-                            window.open(response.data.url, '_blank');
+                        if (response && response.success && response.data && response.data.url) {
+                            // Otvaramo prozor pre nego što browser može da blokira pop-up
+                            var newWindow = window.open('about:blank', '_blank');
+
+                            // Potvrdimo da je prozor otvoren
+                            if (newWindow) {
+                                // Postavljamo lokaciju prozora
+                                newWindow.location.href = response.data.url;
+                            } else {
+                                alert('<?php _e('Molimo omogućite pop-up prozore za ovu stranicu.', 'd-express-woo'); ?>');
+                            }
                         } else {
-                            alert(response.data.message || '<?php _e('Došlo je do greške. Molimo pokušajte ponovo.', 'd-express-woo'); ?>');
+                            alert(response && response.data && response.data.message ?
+                                response.data.message :
+                                '<?php _e('Došlo je do greške. Molimo pokušajte ponovo.', 'd-express-woo'); ?>');
                         }
                     },
-                    error: function() {
+                    error: function(xhr, status, error) {
                         btn.prop('disabled', false).text('<?php _e('Preuzmi nalepnicu', 'd-express-woo'); ?>');
+
+                        console.error('Error details:', status, error, xhr.responseText);
                         alert('<?php _e('Došlo je do greške. Molimo pokušajte ponovo.', 'd-express-woo'); ?>');
                     }
                 });

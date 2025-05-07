@@ -10,9 +10,6 @@ defined('ABSPATH') || exit;
 
 class D_Express_DB
 {
-
-
-    private $cache = array();
     /**
      * Dodaje novu pošiljku u bazu
      *
