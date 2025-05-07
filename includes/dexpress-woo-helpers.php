@@ -136,16 +136,17 @@ function dexpress_get_all_status_codes()
     return $statuses;
 }
 /**
- * Logovanje poruka u fajl
+ * Unapređena funkcija za strukturirano logovanje
  *
- * @param mixed $message Poruka ili podaci za logovanje
- * @param string $type Tip loga (info, error, debug)
+ * @param string $context Kontekst loga (npr. 'api', 'shipping', 'db')
+ * @param string $message Poruka koja se loguje
+ * @param string $level Nivo logovanja ('debug', 'info', 'warning', 'error')
+ * @param array $data Dodatni podaci za logovanje (opciono)
  */
-function dexpress_log($message, $type = 'info')
+function dexpress_structured_log($context, $message, $level = 'info', $data = [])
 {
+    // Proveravamo da li je logovanje omogućeno
     static $logging_enabled = null;
-
-    // Keširanje provere da li je logovanje uključeno
     if ($logging_enabled === null) {
         $logging_enabled = (get_option('dexpress_enable_logging', 'no') === 'yes');
     }
@@ -154,31 +155,79 @@ function dexpress_log($message, $type = 'info')
         return;
     }
 
-    $log_dir = DEXPRESS_WOO_PLUGIN_DIR . 'logs/';
+    // Proveravamo nivo logovanja
+    $min_level = get_option('dexpress_log_level', 'debug');
+    $levels = ['debug' => 0, 'info' => 1, 'warning' => 2, 'error' => 3];
 
-    // Kreiranje direktorijuma za logove ako ne postoji
+    if (!isset($levels[$level]) || !isset($levels[$min_level])) {
+        $level = 'info';
+        $min_level = 'debug';
+    }
+
+    if ($levels[$level] < $levels[$min_level]) {
+        return; // Preskačemo logovanje za nivoe ispod konfigurisanog minimuma
+    }
+
+    // Formiranje strukturirane poruke
+    $log_data = [
+        'timestamp' => date('Y-m-d H:i:s'),
+        'context' => $context,
+        'level' => $level,
+        'message' => $message
+    ];
+
+    // Dodavanje dodatnih podataka ako postoje
+    if (!empty($data)) {
+        $log_data['data'] = $data;
+    }
+
+    // Kreiranje log fajla sa kontekstom u nazivu (organizacija po kontekstu)
+    $log_dir = DEXPRESS_WOO_PLUGIN_DIR . 'logs/';
     if (!file_exists($log_dir)) {
         wp_mkdir_p($log_dir);
     }
 
-    // Kreiranje .htaccess fajla za sigurnost ako ne postoji
-    if (!file_exists($log_dir . '.htaccess')) {
-        file_put_contents($log_dir . '.htaccess', 'deny from all');
-    }
+    // Različiti fajlovi za različite nivoe logovanja
+    $log_file = $log_dir . "dexpress-{$context}-{$level}-" . date('Y-m-d') . '.log';
 
-    // Format ime fajla: dexpress-{tip}-{datum}.log
-    $log_file = $log_dir . 'dexpress-' . $type . '-' . date('Y-m-d') . '.log';
+    // Zapisivanje u log fajl
+    file_put_contents(
+        $log_file,
+        json_encode($log_data, JSON_UNESCAPED_UNICODE) . "\n",
+        FILE_APPEND
+    );
+}
+/**
+ * Logovanje poruka u fajl - kompatibilnost sa starim kodom
+ *
+ * @param mixed $message Poruka ili podaci za logovanje
+ * @param string $type Tip loga (info, error, debug)
+ */
+function dexpress_log($message, $type = 'info')
+{
+    // Određivanje konteksta na osnovu backtrace-a ili defaultni kontekst
+    $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
+    $caller = isset($backtrace[1]['class']) ? $backtrace[1]['class'] : '';
+    $context = 'general';
+
+    // Pokušaj otkrivanja konteksta iz naziva klase
+    if (strpos($caller, 'D_Express_API') !== false) {
+        $context = 'api';
+    } elseif (strpos($caller, 'D_Express_Shipment') !== false) {
+        $context = 'shipping';
+    } elseif (strpos($caller, 'D_Express_DB') !== false) {
+        $context = 'db';
+    } elseif (strpos($caller, 'D_Express_Checkout') !== false) {
+        $context = 'checkout';
+    }
 
     // Priprema poruke
     if (is_array($message) || is_object($message)) {
         $message = print_r($message, true);
     }
 
-    // Dodavanje timestamp-a
-    $log_message = '[' . date('Y-m-d H:i:s') . '] ' . $message . "\n";
-
-    // Pisanje u fajl
-    file_put_contents($log_file, $log_message, FILE_APPEND);
+    // Pozivanje nove struktuirane funkcije
+    dexpress_structured_log($context, $message, $type);
 }
 /**
  * Poboljšano logovanje grešaka sa kontekstom

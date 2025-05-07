@@ -40,6 +40,9 @@ class D_Express_Checkout
         // Dodaj ovo u init metodu klase D_Express_Checkout
         add_action('wp_ajax_dexpress_get_towns_list', array($this, 'ajax_get_towns_list'));
         add_action('wp_ajax_nopriv_dexpress_get_towns_list', array($this, 'ajax_get_towns_list'));
+
+        add_action('wp_ajax_dexpress_filter_dispensers', array($this, 'ajax_filter_dispensers'));
+        add_action('wp_ajax_nopriv_dexpress_filter_dispensers', array($this, 'ajax_filter_dispensers'));
     }
     /**
      * Dodaje modal za izbor paketomata
@@ -579,6 +582,60 @@ class D_Express_Checkout
 <?php
     }
     /**
+     * Dobavlja listu paketomata sa keširanjem
+     * 
+     * @param int $town_id ID grada za filtriranje (opciono)
+     * @return array Lista paketomata
+     */
+    private function get_cached_dispensers($town_id = null)
+    {
+        // Ključ za keširanje - uključujem town_id ako je prosleđen
+        $cache_key = 'dexpress_dispensers' . ($town_id ? '_town_' . $town_id : '_all');
+
+        // Pokušaj dobiti iz transient cache-a
+        $dispensers = get_transient($cache_key);
+
+        // Ako nema u cache-u, učitaj iz baze
+        if ($dispensers === false) {
+            global $wpdb;
+
+            $query = "
+            SELECT d.id, d.name, d.address, d.town, d.town_id, 
+                   d.work_hours, d.work_days, d.coordinates, 
+                   d.pay_by_cash, d.pay_by_card, t.postal_code
+            FROM {$wpdb->prefix}dexpress_dispensers d
+            LEFT JOIN {$wpdb->prefix}dexpress_towns t ON d.town_id = t.id
+            WHERE d.deleted IS NULL OR d.deleted != 1
+        ";
+
+            // Dodaj filter po gradu ako je prosleđen
+            if ($town_id) {
+                $query .= $wpdb->prepare(" AND d.town_id = %d", $town_id);
+            }
+
+            $query .= " ORDER BY d.town, d.name";
+
+            $dispensers = $wpdb->get_results($query);
+
+            // Sačuvaj u cache na 12 sati (može se izmeniti po potrebi)
+            set_transient($cache_key, $dispensers, 12 * HOUR_IN_SECONDS);
+
+            // Loguj operaciju
+            dexpress_structured_log('checkout', 'Učitani paketomati iz baze', 'debug', [
+                'count' => count($dispensers),
+                'town_id' => $town_id
+            ]);
+        } else {
+            // Loguj cache hit
+            dexpress_structured_log('checkout', 'Učitani paketomati iz cache-a', 'debug', [
+                'count' => count($dispensers),
+                'town_id' => $town_id
+            ]);
+        }
+
+        return $dispensers;
+    }
+    /**
      * Formatira korake kao HTML listu
      */
     private function format_steps_as_html($steps_text)
@@ -604,17 +661,7 @@ class D_Express_Checkout
      */
     private function get_dispensers_list()
     {
-        global $wpdb;
-
-        return $wpdb->get_results("
-        SELECT d.id, d.name, d.address, d.town, d.town_id, 
-               d.work_hours, d.work_days, d.coordinates, 
-               d.pay_by_cash, d.pay_by_card, t.postal_code
-        FROM {$wpdb->prefix}dexpress_dispensers d
-        LEFT JOIN {$wpdb->prefix}dexpress_towns t ON d.town_id = t.id
-        WHERE d.deleted IS NULL OR d.deleted != 1
-        ORDER BY d.town, d.name
-    ");
+        return $this->get_cached_dispensers();
     }
     /**
      * Čuvanje izabranog paketomata u narudžbini
@@ -673,5 +720,20 @@ class D_Express_Checkout
         WC()->session->set('chosen_dispenser', $dispenser);
 
         wp_send_json_success();
+    }
+    /**
+     * AJAX: Filtriranje paketomata po gradu
+     */
+    public function ajax_filter_dispensers()
+    {
+        check_ajax_referer('dexpress-frontend-nonce', 'nonce');
+
+        $town_id = isset($_POST['town_id']) ? intval($_POST['town_id']) : null;
+
+        // Dobavljanje filtriranih paketomata
+        $dispensers = $this->get_cached_dispensers($town_id);
+
+        // Vraćanje rezultata
+        wp_send_json_success(['dispensers' => $dispensers]);
     }
 }

@@ -425,6 +425,22 @@ class D_Express_Admin
                                     </p>
                                 </td>
                             </tr>
+                            <tr>
+                                <th scope="row">
+                                    <label for="dexpress_log_level"><?php _e('Nivo logovanja', 'd-express-woo'); ?></label>
+                                </th>
+                                <td>
+                                    <select id="dexpress_log_level" name="dexpress_log_level">
+                                        <option value="debug" <?php selected(get_option('dexpress_log_level', 'debug'), 'debug'); ?>><?php _e('Debug (sve poruke)', 'd-express-woo'); ?></option>
+                                        <option value="info" <?php selected(get_option('dexpress_log_level', 'debug'), 'info'); ?>><?php _e('Info (informacije i greške)', 'd-express-woo'); ?></option>
+                                        <option value="warning" <?php selected(get_option('dexpress_log_level', 'debug'), 'warning'); ?>><?php _e('Warning (upozorenja i greške)', 'd-express-woo'); ?></option>
+                                        <option value="error" <?php selected(get_option('dexpress_log_level', 'debug'), 'error'); ?>><?php _e('Error (samo greške)', 'd-express-woo'); ?></option>
+                                    </select>
+                                    <p class="description"><?php _e('Odredite koji nivo poruka će biti zabeležen u log fajlovima.', 'd-express-woo'); ?>
+                                        <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Kontroliše količinu informacija u logovima. Debug prikazuje sve poruke, Error prikazuje samo kritične greške. Za produkcione sajtove preporučuje se Info ili Warning nivo.', 'd-express-woo'); ?>"></span>
+                                    </p>
+                                </td>
+                            </tr>
                         </table>
                     </div>
                     <!-- Podešavanja kodova pošiljki -->
@@ -1060,7 +1076,9 @@ class D_Express_Admin
         if ($enable_logging === 'yes') {
             dexpress_log('Podešavanja su ažurirana od strane korisnika ID: ' . get_current_user_id(), 'info');
         }
-
+        // Nivo logovanja
+        $log_level = isset($_POST['dexpress_log_level']) ? sanitize_key($_POST['dexpress_log_level']) : 'debug';
+        update_option('dexpress_log_level', $log_level);
         // Na kraju save_settings funkcije
         $active_tab = isset($_POST['active_tab']) ? sanitize_key($_POST['active_tab']) : 'api';
         wp_redirect(add_query_arg(['settings-updated' => 'true', 'tab' => $active_tab], admin_url('admin.php?page=dexpress-settings')));
