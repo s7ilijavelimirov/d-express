@@ -864,7 +864,15 @@ class D_Express_API
 
             $delivery_note = $clean_note; // Sačuvaj filtriranu vrednost
         }
-
+        if (!empty($address_desc)) {
+            $address_desc = preg_replace('/[^a-zžćčđšA-ZĐŠĆŽČ:,._0-9\-\s]/u', '', $address_desc);
+            $address_desc = preg_replace('/\s+/', ' ', $address_desc);
+            $address_desc = trim($address_desc);
+            $address_desc = preg_replace('/^\./', '', $address_desc);
+            if (mb_strlen($address_desc, 'UTF-8') > 150) {
+                $address_desc = mb_substr($address_desc, 0, 150, 'UTF-8');
+            }
+        }
         // Dohvatite meta podatke za adresu
         $street = $order->get_meta("_{$address_type}_street", true);
         $number = $order->get_meta("_{$address_type}_number", true);

@@ -1,5 +1,0 @@
-{"timestamp":"2025-05-07 13:33:30","context":"shipping","level":"error","message":"[SHIPPING] Greška pri pripremi podataka: Greška u podacima za pošiljku: Neispravan format dodatnog opisa adrese primaoca"}
-{"timestamp":"2025-05-07 13:33:47","context":"shipping","level":"error","message":"[SHIPPING] Greška pri pripremi podataka: Greška u podacima za pošiljku: Neispravan format dodatnog opisa adrese primaoca"}
-{"timestamp":"2025-05-07 13:33:47","context":"shipping","level":"error","message":"[SHIPPING] Greška pri pripremi podataka: Greška u podacima za pošiljku: Neispravan format dodatnog opisa adrese primaoca"}
-{"timestamp":"2025-05-07 13:33:48","context":"shipping","level":"error","message":"[SHIPPING] Greška pri pripremi podataka: Greška u podacima za pošiljku: Neispravan format dodatnog opisa adrese primaoca"}
-{"timestamp":"2025-05-07 13:36:17","context":"shipping","level":"error","message":"[SHIPPING] Greška pri pripremi podataka: Greška u podacima za pošiljku: Neispravan format dodatnog opisa adrese primaoca"}

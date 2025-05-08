@@ -660,22 +660,35 @@ class D_Express_Validator
         // Konverzija u para (1 RSD = 100 para)
         return intval($price_rsd * 100);
     }
+
+    /**
+     * Validacija opisa adrese
+     * 
+     * @param string $description Opis adrese
+     * @return bool True ako je ispravan
+     */
     public static function validate_address_desc($description)
     {
         if (empty($description)) {
             return true; // Nije obavezno polje
         }
-        $pattern = '/^([\-a-zžćčđšA-ZĐŠĆŽČ():\/\\\\,._0-9]+\.?)( [\-a-zžćčđšA-ZĐŠĆŽČ():\/\\\\,._0-9]+\.?)*$/';
-        return preg_match($pattern, $description) && strlen($description) <= 50;
+        $pattern = '/^([\-a-zžćčđšA-ZĐŠĆŽČ:,._0-9]+\.?)( [\-a-zžćčđšA-ZĐŠĆŽČ:,._0-9]+\.?)*$/u';
+        return preg_match($pattern, $description) && mb_strlen($description, 'UTF-8') <= 150;
     }
 
+    /**
+     * Validacija napomene
+     * 
+     * @param string $note Napomena
+     * @return bool True ako je ispravan
+     */
     public static function validate_note($note)
     {
         if (empty($note)) {
             return true; // Nije obavezno polje
         }
-        $pattern = '/^([\-a-zžćčđšA-ZĐŠĆŽČ:,._0-9]+\.?)( [\-a-zžćčđšA-ZĐŠĆŽČ:,._0-9]+\.?)*$/';
-        return preg_match($pattern, $note) && strlen($note) <= 150;
+        $pattern = '/^([\-a-zžćčđšA-ZĐŠĆŽČ:,._0-9]+\.?)( [\-a-zžćčđšA-ZĐŠĆŽČ:,._0-9]+\.?)*$/u';
+        return preg_match($pattern, $note) && mb_strlen($note, 'UTF-8') <= 150;
     }
     /**
      * Validira telefonski broj

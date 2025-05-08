@@ -1,6 +1,14 @@
 (function ($) {
     'use strict';
+    function validateAddressDesc(value) {
+        if (!value) return true; // Polje nije obavezno
 
+        // Validacija prema obrascu 
+        const pattern = /^([\-a-zžćčđšA-ZĐŠĆŽČ:,._0-9]+\.?)( [\-a-zžćčđšA-ZĐŠĆŽČ:,._0-9]+\.?)*$/u;
+
+        // Provera dužine i obrasca
+        return value.length <= 150 && pattern.test(value);
+    }
     var DExpressCheckout = {
         init: function () {
             if (!$('#billing_first_name').length) {
@@ -345,7 +353,19 @@
         },
         initCheckoutValidation: function () {
             var self = this;
-
+            // Validacija pri unosu za polje address_desc
+            $(document).on('blur', 'textarea[name$="_address_desc"], input[name$="_address_desc"]', function () {
+                const value = $(this).val().trim();
+                if (value && !validateAddressDesc(value)) {
+                    self.showFieldError(
+                        $(this),
+                        dexpressCheckout.i18n.invalidAddressDesc || 'Neispravan format dodatnih informacija o adresi. Dozvoljeni su samo slova, brojevi, razmaci i znakovi: , . : - _'
+                    );
+                } else {
+                    $(this).removeClass('dexpress-error woocommerce-invalid');
+                    $(this).next('.dexpress-error-message').remove();
+                }
+            });
             // Validacija prilikom podnošenja forme
             $(document).on('checkout_place_order', function () {
                 var addressType = $('#ship-to-different-address-checkbox').is(':checked') ? 'shipping' : 'billing';
@@ -353,6 +373,14 @@
                 var $phone = $('#billing_phone');
                 var phoneValue = $phone.val().trim();
 
+                // Validacija dodatnih informacija o adresi
+                const $addressDesc = $('#' + addressType + '_address_desc');
+                if ($addressDesc.length && $addressDesc.val().trim() && !validateAddressDesc($addressDesc.val().trim())) {
+                    isValid = self.showFieldError(
+                        $addressDesc,
+                        dexpressCheckout.i18n.invalidAddressDesc || 'Neispravan format dodatnih informacija o adresi. Dozvoljeni su samo slova, brojevi, razmaci i znakovi: , . : - _'
+                    );
+                }
                 if ($phone.length && phoneValue) {
                     if (!$('#dexpress_formatted_phone').length) {
                         $('<input type="hidden" id="dexpress_formatted_phone" name="dexpress_formatted_phone" />')
@@ -441,49 +469,49 @@
 })(jQuery);
 
 // dexpress-validation.js
-jQuery(function($) {
+jQuery(function ($) {
     'use strict';
-    
+
     // Ručno dodajemo validaciju za naša D Express polja
-    $(document.body).on('checkout_error', function() {
+    $(document.body).on('checkout_error', function () {
         // Provera da li je izabran D Express
         let isDExpress = false;
-        $('input.shipping_method:checked, input.shipping_method:hidden').each(function() {
+        $('input.shipping_method:checked, input.shipping_method:hidden').each(function () {
             if ($(this).val() && $(this).val().indexOf('dexpress') !== -1) {
                 isDExpress = true;
                 return false;
             }
         });
-        
+
         if (!isDExpress) return;
-        
+
         // Tip adrese (billing ili shipping)
         const addressType = $('#ship-to-different-address-checkbox').is(':checked') ? 'shipping' : 'billing';
-        
+
         // Lista polja za validaciju
         const fields = [
             addressType + '_street',
             addressType + '_number',
             addressType + '_city'
         ];
-        
+
         // Prolazak kroz poruke o greškama i povezivanje sa poljima
-        $('.woocommerce-error li').each(function() {
+        $('.woocommerce-error li').each(function () {
             let errorText = $(this).text().trim();
-            
+
             // Povezujemo poruke sa odgovarajućim poljima
-            fields.forEach(function(fieldId) {
+            fields.forEach(function (fieldId) {
                 const $field = $('#' + fieldId);
                 const fieldLabel = $field.closest('.form-row').find('label').text().trim();
-                
-                if (errorText.includes(fieldLabel) || 
-                    errorText.includes('Ulica') || 
-                    errorText.includes('Kućni broj') || 
+
+                if (errorText.includes(fieldLabel) ||
+                    errorText.includes('Ulica') ||
+                    errorText.includes('Kućni broj') ||
                     errorText.includes('Grad')) {
-                    
+
                     // Dodajemo klase za invalidaciju
                     $field.addClass('woocommerce-invalid woocommerce-invalid-required-field');
-                    
+
                     // Dodajemo data-id atribut na li element za kompatibilnost
                     $(this).attr('data-id', fieldId);
                 }

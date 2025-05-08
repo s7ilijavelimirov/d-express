@@ -159,6 +159,8 @@ class D_Express_Checkout
                 'required'    => false,
                 'class'       => ['form-row-wide', 'dexpress-address-desc'],
                 'priority'    => 56,
+                'maxlength'   => 150, // Dodajemo maksimalnu dužinu
+                'custom_attributes' => ['pattern' => '[-a-zA-Z0-9:,._\s]+'], // Dodajemo pattern za validaciju na frontendu
             ],
             'city' => [
                 'type'        => 'text',
@@ -242,6 +244,21 @@ class D_Express_Checkout
                 $field_name = "{$type}_{$key}";
                 if (isset($_POST[$field_name])) {
                     $value = sanitize_text_field($_POST[$field_name]);
+
+                    // Posebna sanitizacija za address_desc
+                    if ($key === 'address_desc') {
+                        // Uklanja sve nedozvoljene karaktere
+                        $value = preg_replace('/[^a-zžćčđšA-ZĐŠĆŽČ:,._0-9\-\s]/u', '', $value);
+                        $value = preg_replace('/\s+/', ' ', $value); // Uklanja višestruke razmake
+                        $value = trim($value); // Uklanja razmak na početku i kraju
+                        $value = preg_replace('/^\./', '', $value); // Osigurava da tačka nije na početku
+
+                        // Ograničava dužinu na 150 karaktera
+                        if (mb_strlen($value, 'UTF-8') > 150) {
+                            $value = mb_substr($value, 0, 150, 'UTF-8');
+                        }
+                    }
+
                     $updated_values["_{$field_name}"] = $value;
                 }
             }
@@ -448,7 +465,9 @@ class D_Express_Checkout
                 'searching' => __('Pretraga...', 'd-express-woo'),
                 'enterNumber' => __('Unesite kućni broj', 'd-express-woo'),
                 'numberNoSpaces' => __('Kućni broj mora biti bez razmaka', 'd-express-woo'),
-                'confirm' => __('Potvrdi', 'd-express-woo')
+                'confirm' => __('Potvrdi', 'd-express-woo'),
+                // Dodato za validaciju address_desc
+                'invalidAddressDesc' => __('Neispravan format dodatnih informacija o adresi. Dozvoljeni su samo slova, brojevi, razmaci i znakovi: , . : - _', 'd-express-woo')
             )
         ));
 
