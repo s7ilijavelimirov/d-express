@@ -693,6 +693,7 @@ class D_Express_Checkout
     /**
      * Čuvanje izabranog paketomata u narudžbini
      */
+
     public function save_dispenser_to_order($order_id, $posted_data)
     {
         // Proverava da li je izabran paketomat kao shipping metoda
@@ -714,10 +715,42 @@ class D_Express_Checkout
         $chosen_dispenser = WC()->session->get('chosen_dispenser');
 
         if ($chosen_dispenser) {
+            // Sačuvaj ID paketomata i ostale podatke kao meta
             update_post_meta($order_id, '_dexpress_dispenser_id', $chosen_dispenser['id']);
             update_post_meta($order_id, '_dexpress_dispenser_name', $chosen_dispenser['name']);
             update_post_meta($order_id, '_dexpress_dispenser_address', $chosen_dispenser['address']);
             update_post_meta($order_id, '_dexpress_dispenser_town', $chosen_dispenser['town']);
+
+            // KLJUČNI DEO: Ažuriranje shipping adrese na narudžbini
+            $order = wc_get_order($order_id);
+            if ($order) {
+                // Formatiranje adrese paketomata
+                $address = array(
+                    'first_name' => $order->get_shipping_first_name(),
+                    'last_name'  => $order->get_shipping_last_name(),
+                    'company'    => '',
+                    'address_1'  => $chosen_dispenser['address'] . ' (Paketomat: ' . $chosen_dispenser['name'] . ')',
+                    'address_2'  => '',
+                    'city'       => $chosen_dispenser['town'],
+                    'state'      => '',
+                    'postcode'   => $chosen_dispenser['postal_code'] ?? '',
+                    'country'    => $order->get_shipping_country()
+                );
+
+                // Postavljanje shipping adrese na narudžbini
+                $order->set_address($address, 'shipping');
+                $order->save();
+
+                // Dodaj napomenu u narudžbinu
+                $order->add_order_note(
+                    sprintf(
+                        __('Narudžbina će biti dostavljena na paketomat: %s, Adresa: %s, %s', 'd-express-woo'),
+                        $chosen_dispenser['name'],
+                        $chosen_dispenser['address'],
+                        $chosen_dispenser['town']
+                    )
+                );
+            }
 
             // Oslobađanje resursa sesije
             WC()->session->__unset('chosen_dispenser');
