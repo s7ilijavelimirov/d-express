@@ -451,7 +451,7 @@ class D_Express_Label_Generator
     /**
      * AJAX akcija za preuzimanje nalepnice
      */
-    // U includes/api/class-dexpress-label-generator.php, izmeni ajax_download_label funkciju:
+   
 
     public function ajax_download_label()
     {
