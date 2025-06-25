@@ -3,7 +3,7 @@
 defined('ABSPATH') || exit;
 ?>
 
-<div class="dexpress-tracking-container">
+<div class="dexpress-tracking-container" style="display:none;">
     <h2><?php esc_html_e('Praćenje pošiljki', 'd-express-woo'); ?></h2>
 
     <?php if (empty($shipments)): ?>

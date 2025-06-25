@@ -108,7 +108,7 @@ class D_Express_Label_Generator
             /* Pojedinačna nalepnica */
             .label-container {
                 width: 10cm; /* Oko pola A4 papira širine */
-                height: 14cm; /* Oko trećine A4 papira visine */
+                height: 10cm; /* Oko trećine A4 papira visine */
                 margin: 0.2cm;
                 border: 1px solid #000;
                 page-break-inside: avoid; /* Sprečava prelom nalepnica */
@@ -525,7 +525,7 @@ class D_Express_Label_Generator
                 /* Pojedinačna nalepnica */
                 .label-container {
                     width: 10cm; /* Oko pola A4 papira širine */
-                    height: 14cm; /* Oko trećine A4 papira visine */
+                    height: 10cm; /* Oko trećine A4 papira visine */
                     margin: 0.2cm;
                     border: 1px solid #000;
                     page-break-inside: avoid; /* Sprečava prelom nalepnica */

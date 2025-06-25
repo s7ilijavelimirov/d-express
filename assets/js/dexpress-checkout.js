@@ -368,15 +368,16 @@
             });
             // Validacija prilikom podnošenja forme
             $(document).on('checkout_place_order', function () {
-                var addressType = $('#ship-to-different-address-checkbox').is(':checked') ? 'shipping' : 'billing';
-                var isValid = true;
+                let isValid = true;
+                const addressType = $('#ship-to-different-address-checkbox').is(':checked') ? 'shipping' : 'billing';
                 var $phone = $('#billing_phone');
                 var phoneValue = $phone.val().trim();
 
                 // Validacija dodatnih informacija o adresi
                 const $addressDesc = $('#' + addressType + '_address_desc');
                 if ($addressDesc.length && $addressDesc.val().trim() && !validateAddressDesc($addressDesc.val().trim())) {
-                    isValid = self.showFieldError(
+                    isValid = false;
+                    self.showFieldError(
                         $addressDesc,
                         dexpressCheckout.i18n.invalidAddressDesc || 'Neispravan format dodatnih informacija o adresi. Dozvoljeni su samo slova, brojevi, razmaci i znakovi: , . : - _'
                     );
@@ -434,7 +435,7 @@
                         $('html, body').animate({
                             scrollTop: $('.dexpress-error, .woocommerce-invalid').first().offset().top - 100
                         }, 500);
-                        return false;
+                        return false; // Ovo zaustavlja checkout proces
                     }
                 }
                 return true;
