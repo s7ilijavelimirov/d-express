@@ -16,7 +16,6 @@ class D_Express_Admin
      */
     public function init()
     {
-
         // Dodavanje admin menija
         add_action('admin_menu', array($this, 'add_admin_menu'));
 
@@ -90,6 +89,7 @@ class D_Express_Admin
 
         return $address;
     }
+
     /**
      * Dodavanje admin menija
      */
@@ -227,7 +227,32 @@ class D_Express_Admin
             ));
         }
     }
+    /**
+     * Obrada akcija na stranici podešavanja
+     */
+    public function handle_admin_actions()
+    {
+        if (!isset($_GET['action'])) {
+            return;
+        }
 
+        $action = sanitize_text_field($_GET['action']);
+
+        switch ($action) {
+            case 'update_indexes':
+                $this->update_indexes();
+                break;
+            case 'test_connection':
+                $this->test_connection();
+                break;
+            case 'test_cron':
+                $this->test_cron();
+                break;
+            case 'reset_cron':
+                $this->reset_cron();
+                break;
+        }
+    }
     /**
      * Render stranice za podešavanja
      */
@@ -273,12 +298,13 @@ class D_Express_Admin
 
         // Odredi aktivni tab
         $active_tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'api';
-        $allowed_tabs = ['api', 'codes', 'auto', 'sender', 'shipment', 'webhook', 'uninstall'];
+        $allowed_tabs = ['api', 'codes', 'auto', 'sender', 'shipment', 'webhook', 'cron', 'uninstall'];
         if (!in_array($active_tab, $allowed_tabs)) {
             $active_tab = 'api';
         }
         // HTML za stranicu podešavanja
 ?>
+
         <div class="wrap">
             <h1 class="dexpress-settings-title">
                 <span><?php echo __('D Express Podešavanja', 'd-express-woo'); ?></span>
@@ -322,7 +348,17 @@ class D_Express_Admin
                     <p><?php _e('Nedostaju API kredencijali. Molimo unesite korisničko ime, lozinku i client ID.', 'd-express-woo'); ?></p>
                 </div>
             <?php endif; ?>
+            <?php if (isset($_GET['cron-test']) && $_GET['cron-test'] === 'success'): ?>
+                <div class="notice notice-success is-dismissible">
+                    <p><?php _e('CRON test je uspešno pokrenut. Proverite logove za detalje.', 'd-express-woo'); ?></p>
+                </div>
+            <?php endif; ?>
 
+            <?php if (isset($_GET['cron-reset']) && $_GET['cron-reset'] === 'success'): ?>
+                <div class="notice notice-success is-dismissible">
+                    <p><?php _e('CRON sistem je uspešno resetovan.', 'd-express-woo'); ?></p>
+                </div>
+            <?php endif; ?>
             <!-- Forma za sva podešavanja -->
             <form method="post" action="<?php echo admin_url('admin.php?page=dexpress-settings'); ?>" class="dexpress-settings-form">
                 <?php wp_nonce_field('dexpress_settings_nonce'); ?>
@@ -338,6 +374,7 @@ class D_Express_Admin
                         'sender' => __('Podaci pošiljaoca', 'd-express-woo'),
                         'shipment' => __('Podešavanja pošiljke', 'd-express-woo'),
                         'webhook' => __('Webhook podešavanja', 'd-express-woo'),
+                        'cron' => __('Automatsko ažuriranje', 'd-express-woo'),
                         'uninstall' => __('Clean Uninstall', 'd-express-woo')
                     ];
 
@@ -769,7 +806,6 @@ class D_Express_Admin
                         </table>
                     </div>
                     <!-- Webhook podešavanja -->
-
                     <div id="tab-webhook" class="dexpress-tab <?php echo $active_tab === 'webhook' ? 'active' : ''; ?>">
                         <h2><?php _e('Webhook podešavanja', 'd-express-woo'); ?></h2>
 
@@ -832,8 +868,129 @@ class D_Express_Admin
                             </tr>
                         </table>
                     </div>
-                    <!-- Clean Uninstall podešavanja -->
+                    <!-- NOVI CRON TAB - zameni komplet tab-cron div -->
+                    <div id="tab-cron" class="dexpress-tab <?php echo $active_tab === 'cron' ? 'active' : ''; ?>">
+                        <h2><?php _e('Automatsko ažuriranje', 'd-express-woo'); ?></h2>
 
+                        <!-- Status CRON sistema -->
+                        <div class="dexpress-cron-status">
+                            <h3>Status automatskog ažuriranja</h3>
+                            <?php $cron_status = D_Express_Cron_Manager::get_cron_status(); ?>
+
+                            <table class="widefat">
+                                <thead>
+                                    <tr>
+                                        <th>Sistem</th>
+                                        <th>Status</th>
+                                        <th>Sledeće pokretanje</th>
+                                        <th>Poslednje pokretanje</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><strong>Glavni CRON zadatak</strong></td>
+                                        <td>
+                                            <span class="status-<?php echo $cron_status['is_active'] ? 'active' : 'inactive'; ?>">
+                                                <?php echo $cron_status['is_active'] ? 'Aktivan' : 'Neaktivan'; ?>
+                                            </span>
+                                        </td>
+                                        <td><?php echo esc_html($cron_status['next_run_formatted']); ?></td>
+                                        <td><?php echo esc_html($cron_status['last_run_formatted']); ?></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <div style="margin-top: 15px;">
+                                <a href="<?php echo esc_url(admin_url('admin.php?page=dexpress-settings&action=test_cron')); ?>"
+                                    class="button button-secondary">
+                                    Test CRON zadatka
+                                </a>
+
+                                <a href="<?php echo esc_url(admin_url('admin.php?page=dexpress-settings&action=reset_cron')); ?>"
+                                    class="button button-secondary"
+                                    onclick="return confirm('Da li ste sigurni da želite da resetujete CRON?')">
+                                    Reset CRON sistema
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Poslednja ažuriranja po tipovima -->
+                        <div class="dexpress-last-updates" style="margin-top: 30px;">
+                            <h3>Poslednja ažuriranja po tipovima</h3>
+                            <table class="widefat">
+                                <thead>
+                                    <tr>
+                                        <th>Tip podataka</th>
+                                        <th>Kada se ažurira</th>
+                                        <th>Poslednje ažuriranje</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><strong>Paketi (paketomati)</strong></td>
+                                        <td>Svaki dan u 03:00</td>
+                                        <td><?php echo $this->format_last_update_time('dexpress_last_dispensers_update'); ?></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Ulice</td>
+                                        <td>Nedeljom u 03:00</td>
+                                        <td><?php echo $this->format_last_update_time('dexpress_last_streets_update'); ?></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Mesta i opštine</td>
+                                        <td>1. u mesecu u 03:00</td>
+                                        <td><?php echo $this->format_last_update_time('dexpress_last_locations_update'); ?></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Osnovni šifarnici</td>
+                                        <td>Svaki dan u 03:00</td>
+                                        <td><?php echo $this->format_last_update_time('dexpress_last_unified_update'); ?></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Podešavanja -->
+                        <div class="dexpress-auto-update-settings" style="margin-top: 30px;">
+                            <h3>Podešavanja</h3>
+                            <table class="form-table">
+                                <tr>
+                                    <th scope="row">
+                                        <label for="dexpress_enable_auto_updates"><?php _e('Omogući automatsko ažuriranje', 'd-express-woo'); ?></label>
+                                    </th>
+                                    <td>
+                                        <input type="checkbox" id="dexpress_enable_auto_updates" name="dexpress_enable_auto_updates"
+                                            value="yes" <?php checked(get_option('dexpress_enable_auto_updates', 'yes'), 'yes'); ?>>
+                                        <p class="description">Ako je isključeno, CRON neće automatski ažurirati podatke.</p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">
+                                        <label for="dexpress_batch_size"><?php _e('Veličina batch-a', 'd-express-woo'); ?></label>
+                                    </th>
+                                    <td>
+                                        <input type="number" id="dexpress_batch_size" name="dexpress_batch_size"
+                                            value="<?php echo esc_attr(get_option('dexpress_batch_size', '100')); ?>"
+                                            min="50" max="500" class="small-text">
+                                        <p class="description">Broj zapisa koji se obrađuje odjednom. Preporučeno: 100.</p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <!-- Info o tome kako sistem radi -->
+                        <div class="dexpress-cron-info" style="margin-top: 30px; padding: 15px; background: #f0f8ff; border-left: 4px solid #0073aa;">
+                            <h4>Kako funkcioniše automatsko ažuriranje:</h4>
+                            <ul>
+                                <li><strong>Svaki dan u 03:00:</strong> Ažuriraju se paketi i osnovni šifarnici (najvažnije)</li>
+                                <li><strong>Nedeljom u 03:00:</strong> Dodatno se ažuriraju ulice</li>
+                                <li><strong>1. u mesecu u 03:00:</strong> Dodatno se ažuriraju mesta i opštine</li>
+                                <li><strong>Manuelno:</strong> Dugme "Ažuriraj šifarnike" na vrhu rade sve odjednom</li>
+                            </ul>
+                            <p><em>Ovaj pristup optimizuje performanse tako što često ažurira važne podatke (paketi), a ređe ažurira podatke koji se manje menjaju (mesta, ulice).</em></p>
+                        </div>
+                    </div>
+                    <!-- Clean Uninstall podešavanja -->
                     <div id="tab-uninstall" class="dexpress-tab <?php echo $active_tab === 'uninstall' ? 'active' : ''; ?>">
                         <h2><?php _e('Clean Uninstall Podešavanja', 'd-express-woo'); ?></h2>
 
@@ -972,6 +1129,7 @@ class D_Express_Admin
             substr($digits_only, 3, strlen($digits_only) - 5) . '-' .
             substr($digits_only, -2);
     }
+
     /**
      * Čuvanje podešavanja
      */
@@ -999,6 +1157,10 @@ class D_Express_Admin
         $auto_create_on_status = isset($_POST['dexpress_auto_create_on_status']) ? sanitize_text_field($_POST['dexpress_auto_create_on_status']) : 'processing';
         $validate_address = isset($_POST['dexpress_validate_address']) ? 'yes' : 'no';
         $enable_myaccount_tracking = isset($_POST['dexpress_enable_myaccount_tracking']) ? 'yes' : 'no';
+        // CRON podešavanja  
+        $enable_auto_updates = isset($_POST['dexpress_enable_auto_updates']) ? 'yes' : 'no';
+        $update_time = isset($_POST['dexpress_update_time']) ? sanitize_text_field($_POST['dexpress_update_time']) : '03:00';
+        $batch_size = isset($_POST['dexpress_batch_size']) ? intval($_POST['dexpress_batch_size']) : 100;
         // Podaci pošiljaoca
         $sender_name = isset($_POST['dexpress_sender_name']) ? sanitize_text_field($_POST['dexpress_sender_name']) : '';
         $sender_address = isset($_POST['dexpress_sender_address']) ? sanitize_text_field($_POST['dexpress_sender_address']) : '';
@@ -1072,6 +1234,9 @@ class D_Express_Admin
         update_option('dexpress_clean_uninstall', $clean_uninstall);
         update_option('dexpress_google_maps_api_key', $google_maps_api_key);
         update_option('dexpress_enable_myaccount_tracking', $enable_myaccount_tracking);
+        update_option('dexpress_enable_auto_updates', $enable_auto_updates);
+        update_option('dexpress_update_time', $update_time);
+        update_option('dexpress_batch_size', $batch_size);
         // Beležimo u log da su podešavanja ažurirana
         if ($enable_logging === 'yes') {
             dexpress_log('Podešavanja su ažurirana od strane korisnika ID: ' . get_current_user_id(), 'info');
@@ -1375,75 +1540,35 @@ class D_Express_Admin
     /**
      * Obrada akcija na stranici podešavanja
      */
-    public function handle_admin_actions()
+    public function update_indexes()
     {
-        if (!isset($_GET['action'])) {
-            return;
-        }
-
-        $action = sanitize_text_field($_GET['action']);
-
-        switch ($action) {
-            case 'update_indexes':
-                $this->update_indexes();
-                break;
-            case 'test_connection':
-                $this->test_connection();
-                break;
-        }
-    }
-
-    /**
-     * Ažuriranje šifarnika
-     */
-    private function update_indexes()
-    {
-        // Provera dozvola
         if (!current_user_can('manage_woocommerce')) {
             wp_die(__('Nemate dozvolu za pristup ovoj stranici.', 'd-express-woo'));
         }
 
-        // Dodati ovo za zadržavanje aktivnog taba
+        $result = D_Express_Cron_Manager::manual_update_all();
+
         $active_tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'api';
 
-        // Kreiranje instance API klase
-        $api = D_Express_API::get_instance();
-
-        // Provera API kredencijala
-        if (!$api->has_credentials()) {
-            wp_redirect(add_query_arg(array(
-                'page' => 'dexpress-settings',
-                'tab' => $active_tab,  // Dodato zadržavanje taba
-                'error' => 'missing_credentials',
-            ), admin_url('admin.php')));
-            exit;
-        }
-
-        // Ažuriranje svih šifarnika
-        $result = $api->update_all_indexes();
-
         if ($result === true) {
-            // Uspešno ažuriranje
-            wp_redirect(add_query_arg(array(
+            wp_redirect(add_query_arg([
                 'page' => 'dexpress-settings',
-                'tab' => $active_tab,  // Dodato zadržavanje taba
+                'tab' => $active_tab,
                 'indexes-updated' => 'success',
-            ), admin_url('admin.php')));
+            ], admin_url('admin.php')));
         } else {
-            // Greška pri ažuriranju
-            wp_redirect(add_query_arg(array(
+            wp_redirect(add_query_arg([
                 'page' => 'dexpress-settings',
-                'tab' => $active_tab,  // Dodato zadržavanje taba
+                'tab' => $active_tab,
                 'indexes-updated' => 'error',
-            ), admin_url('admin.php')));
+            ], admin_url('admin.php')));
         }
         exit;
     }
-
     /**
      * Testiranje konekcije sa API-em
      */
-    private function test_connection()
+    public function test_connection()
     {
         // Provera dozvola
         if (!current_user_can('manage_woocommerce')) {
@@ -1613,5 +1738,95 @@ class D_Express_Admin
         }
 
         echo '</div>';
+    }
+
+    private function format_last_update_time($option_name)
+    {
+        $timestamp = get_option($option_name, 0);
+        if (!$timestamp) {
+            return 'Nikad';
+        }
+
+        $time_diff = time() - $timestamp;
+
+        if ($time_diff < HOUR_IN_SECONDS) {
+            return 'Pre ' . round($time_diff / 60) . ' minuta';
+        } elseif ($time_diff < DAY_IN_SECONDS) {
+            return 'Pre ' . round($time_diff / HOUR_IN_SECONDS) . ' sati';
+        } else {
+            return date('d.m.Y H:i', $timestamp);
+        }
+    }
+    /**
+     * Dohvatanje poslednjih logova
+     */
+    private function get_recent_logs()
+    {
+        $log_file = DEXPRESS_WOO_PLUGIN_DIR . 'logs/dexpress.log';
+        if (!file_exists($log_file)) {
+            return 'Log fajl ne postoji.';
+        }
+
+        $lines = file($log_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        if (empty($lines)) {
+            return 'Log fajl je prazan.';
+        }
+
+        // Uzmi poslednih 50 linija
+        $recent_lines = array_slice($lines, -50);
+        $log_content = implode("\n", $recent_lines);
+        if (empty($log_content)) {
+            return 'Nema logova za prikaz.';
+        }
+
+        return nl2br(esc_html($log_content));
+    }
+    /**
+     * Test CRON sistema
+     */
+    public function test_cron()
+    {
+        if (!current_user_can('manage_woocommerce')) {
+            wp_die(__('Nemate dozvolu za pristup ovoj stranici.', 'd-express-woo'));
+        }
+
+        $active_tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'cron';
+
+        dexpress_log('Test CRON sistema pokrenuo admin user', 'info');
+
+        // Pokreni manuelno update
+        D_Express_Cron_Manager::run_daily_updates();
+
+        wp_redirect(add_query_arg([
+            'page' => 'dexpress-settings',
+            'tab' => $active_tab,
+            'cron-test' => 'success',
+        ], admin_url('admin.php')));
+        exit;
+    }
+
+    /**
+     * Reset CRON sistema
+     */
+    public function reset_cron()
+    {
+        if (!current_user_can('manage_woocommerce')) {
+            wp_die(__('Nemate dozvolu za pristup ovoj stranici.', 'd-express-woo'));
+        }
+
+        $active_tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'cron';
+
+        // Obriši sve CRON-ove i ponovo ih kreiraj
+        D_Express_Cron_Manager::clear_all_cron_jobs();
+        D_Express_Cron_Manager::init_cron_jobs();
+
+        dexpress_log('CRON sistem resetovan od strane admin user-a', 'info');
+
+        wp_redirect(add_query_arg([
+            'page' => 'dexpress-settings',
+            'tab' => $active_tab,
+            'cron-reset' => 'success',
+        ], admin_url('admin.php')));
+        exit;
     }
 }
