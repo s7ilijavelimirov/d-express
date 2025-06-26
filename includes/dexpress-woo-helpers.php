@@ -460,23 +460,26 @@ function dexpress_generate_package_code()
     $prefix = get_option('dexpress_code_prefix', 'TT');
     $range_start = intval(get_option('dexpress_code_range_start', 1));
     $range_end = intval(get_option('dexpress_code_range_end', 99));
-
-    // Trenutni indeks
     $current_index = intval(get_option('dexpress_current_code_index', $range_start));
 
-    // Povećanje indeksa
+    // Povećaj index
     $current_index++;
 
-    // Vraćanje na početak ako smo došli do kraja opsega
+    // UKLONI RESETOVANJE! Umesto toga, baci grešku
     if ($current_index > $range_end) {
-        $current_index = $range_start;
+        throw new Exception("Opseg kodova je iscrpljen! Trenutni opseg: {$range_start}-{$range_end}. Molimo proširite opseg u admin panelu.");
     }
 
-    // Čuvanje novog indeksa
+    // Sačuvaj novi index
     update_option('dexpress_current_code_index', $current_index);
 
-    // Formatiranje koda paketa
-    return $prefix . str_pad($current_index, 10, '0', STR_PAD_LEFT);
+    // Formatiraj kod
+    $formatted_code = $prefix . sprintf('%010d', $current_index);
+    
+    // Log generisan kod
+    dexpress_log("Generisan kod paketa: {$formatted_code} (index: {$current_index})", 'debug');
+    
+    return $formatted_code;
 }
 
 /**

@@ -143,11 +143,16 @@ jQuery(document).ready(function ($) {
     };
 
     // Uprošćeno upozorenje pri napuštanju stranice
-    $(window).on('beforeunload', function () {
+    window.onbeforeunload = function () {
+        // Proveri da li je eksplicitno onemogućeno (npr. od strane extendCodeRange funkcije)
+        if (window.dexpressDisableUnloadWarning === true) {
+            return null;
+        }
+
         if (formChanged) {
             return 'Imate nesačuvane promene. Da li ste sigurni da želite da napustite stranicu?';
         }
-    });
+    };
 
     // Upozorenje pri kliku na dugme za akcije sa informacijom o promenama
     $('.dexpress-settings-actions .button-secondary').on('click', function (e) {

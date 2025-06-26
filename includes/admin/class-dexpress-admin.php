@@ -360,6 +360,20 @@ class D_Express_Admin
                 </div>
             <?php endif; ?>
             <!-- Forma za sva podešavanja -->
+            <?php if (isset($_GET['extended']) && $_GET['extended'] === 'success'): ?>
+                <div class="notice notice-success is-dismissible">
+                    <p><strong>Opseg kodova je uspešno proširen!</strong>
+                        Dodano je <?php echo intval($_GET['added']); ?> novih kodova.
+                        Novi opseg: <?php echo get_option('dexpress_code_range_start', 1); ?>-<?php echo get_option('dexpress_code_range_end', 99); ?></p>
+                </div>
+            <?php endif; ?>
+
+            <?php if (isset($_GET['extended']) && $_GET['extended'] === 'error'): ?>
+                <div class="notice notice-error is-dismissible">
+                    <p><strong>Greška pri proširenju opsega kodova:</strong>
+                        <?php echo esc_html(urldecode($_GET['error_message'])); ?></p>
+                </div>
+            <?php endif; ?>
             <form method="post" action="<?php echo admin_url('admin.php?page=dexpress-settings'); ?>" class="dexpress-settings-form">
                 <?php wp_nonce_field('dexpress_settings_nonce'); ?>
                 <input type="hidden" name="active_tab" value="<?php echo esc_attr($active_tab); ?>">
@@ -522,6 +536,131 @@ class D_Express_Admin
                                     </p>
                                 </td>
                             </tr>
+                            <tr>
+                                <th scope="row">
+                                    <label><?php _e('Trenutni status', 'd-express-woo'); ?></label>
+                                </th>
+                                <td>
+                                    <?php
+                                    $current_index = intval(get_option('dexpress_current_code_index', $code_range_start));
+                                    $remaining = $code_range_end - $current_index;
+                                    $total_codes = $code_range_end - $code_range_start + 1;
+                                    $used_percentage = round((($current_index - $code_range_start) / $total_codes) * 100, 1);
+                                    ?>
+                                    <div style="background: #fff; border: 1px solid #ccd0d4; padding: 15px; border-radius: 4px;">
+                                        <p><strong>Sledeći kod:</strong> <code><?php echo $code_prefix . sprintf('%010d', $current_index + 1); ?></code></p>
+                                        <p><strong>Preostalo kodova:</strong> <?php echo $remaining; ?> od <?php echo $total_codes; ?></p>
+                                        <p><strong>Iskorišćeno:</strong> <?php echo $used_percentage; ?>%</p>
+
+                                        <div style="width: 100%; height: 20px; background: #f0f0f0; border-radius: 10px; overflow: hidden; margin: 10px 0;">
+                                            <div style="width: <?php echo $used_percentage; ?>%; height: 100%; background: <?php echo $used_percentage > 80 ? '#dc3545' : ($used_percentage > 50 ? '#ffc107' : '#28a745'); ?>;"></div>
+                                        </div>
+
+                                        <?php if ($remaining <= 10): ?>
+                                            <div class="notice notice-error inline">
+                                                <p><strong>UPOZORENJE:</strong> Ostalo je samo <?php echo $remaining; ?> kodova! Proširi te opseg što pre.</p>
+                                            </div>
+                                        <?php elseif ($used_percentage >= 80): ?>
+                                            <div class="notice notice-warning inline">
+                                                <p><strong>PAŽNJA:</strong> Iskorišćeno je <?php echo $used_percentage; ?>% opsega. Razmislite o proširenju.</p>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <th scope="row">
+                                    <label><?php _e('Proširenje opsega', 'd-express-woo'); ?></label>
+                                </th>
+                                <td>
+                                    <div style="background: #f9f9f9; border: 1px solid #ddd; padding: 15px; border-radius: 4px;">
+                                        <h4><?php _e('Dodaj novi opseg kodova', 'd-express-woo'); ?></h4>
+                                        <p class="description"><?php _e('Kada dobijete novi opseg od D Express-a, ovde možete proširiti postojeći opseg.', 'd-express-woo'); ?></p>
+
+                                        <table style="margin-top: 15px;">
+                                            <tr>
+                                                <td style="padding-right: 15px;">
+                                                    <label for="dexpress_extend_range_end"><?php _e('Novi opseg od D Express-a:', 'd-express-woo'); ?></label><br>
+                                                    <input type="number" id="dexpress_extend_range_end" name="dexpress_extend_range_end"
+                                                        min="<?php echo $code_range_end + 1; ?>" style="width: 120px;"
+                                                        placeholder="<?php _e('Unesite krajnji broj', 'd-express-woo'); ?>">
+                                                    <p class="description" style="margin-top: 5px;">
+                                                        <?php printf(__('Trenutni opseg: %s-%s. Unesite krajnji broj novog opsega koji ste dobili od D Express-a.', 'd-express-woo'), $code_range_start, $code_range_end); ?>
+                                                    </p>
+                                                </td>
+                                                <td style="vertical-align: top; padding-top: 25px;">
+                                                    <div id="extend-preview" style="display: none; background: #e7f3ff; padding: 10px; border-radius: 4px; border: 1px solid #b3d7ff;">
+                                                        <strong><?php _e('Pregled:', 'd-express-woo'); ?></strong><br>
+                                                        <span id="preview-text"></span>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </table>
+
+                                        <div class="notice notice-info inline" style="margin-top: 15px;">
+                                            <p><strong><?php _e('Napomena:', 'd-express-woo'); ?></strong> <?php _e('Unesite novi kraj opsega i kliknite "Sačuvaj podešavanja" na dnu stranice.', 'd-express-woo'); ?></p>
+                                        </div>
+
+
+                                        <div style="margin-top: 15px; padding: 10px; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px;">
+                                            <p style="margin: 0; font-size: 13px;">
+                                                <strong><?php _e('Kako funkcioniše:', 'd-express-woo'); ?></strong><br>
+                                                • <?php _e('Kontaktirajte D Express kada se opseg bliži kraju', 'd-express-woo'); ?><br>
+                                                • <?php _e('Oni će vam dodeliti novi opseg (npr. produžiti do 5000)', 'd-express-woo'); ?><br>
+                                                • <?php _e('Unesite novi KRAJ opsega koji su vam dodelili', 'd-express-woo'); ?><br>
+                                                • <?php _e('Kliknite "Sačuvaj podešavanja" i opseg će biti automatski proširen', 'd-express-woo'); ?><br>
+                                                • <?php _e('Postojeći kodovi ostaju netaknuti - plugin nastavlja odakle je stao', 'd-express-woo'); ?>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+
+                            <script>
+                                // Live preview i validacija
+                                document.getElementById('dexpress_extend_range_end').addEventListener('input', function() {
+                                    const newEnd = parseInt(this.value);
+                                    const currentEnd = <?php echo $code_range_end; ?>;
+                                    const preview = document.getElementById('extend-preview');
+                                    const previewText = document.getElementById('preview-text');
+
+                                    // Resetuj stilove
+                                    this.style.borderColor = '';
+                                    this.style.backgroundColor = '';
+
+                                    if (newEnd) {
+                                        if (newEnd <= currentEnd) {
+                                            // Error - manji ili jednak
+                                            this.style.borderColor = '#dc3545';
+                                            this.style.backgroundColor = '#fff5f5';
+                                            previewText.innerHTML = '<span style="color: #dc3545;">❌ Novi kraj mora biti veći od ' + currentEnd + '</span>';
+                                            preview.style.display = 'block';
+                                            preview.style.background = '#f8d7da';
+                                            preview.style.borderColor = '#dc3545';
+                                        } else if (newEnd > 9999999) {
+                                            // Error - previše velik
+                                            this.style.borderColor = '#dc3545';
+                                            this.style.backgroundColor = '#fff5f5';
+                                            previewText.innerHTML = '<span style="color: #dc3545;">❌ Maksimalno je 9.999.999</span>';
+                                            preview.style.display = 'block';
+                                            preview.style.background = '#f8d7da';
+                                            preview.style.borderColor = '#dc3545';
+                                        } else {
+                                            // Success
+                                            this.style.borderColor = '#28a745';
+                                            this.style.backgroundColor = '#f8fff9';
+                                            const added = newEnd - currentEnd;
+                                            previewText.innerHTML = '<span style="color: #28a745;">✅ Novi opseg: <?php echo $code_range_start; ?>-' + newEnd + '<br>Dodaće se: ' + added.toLocaleString() + ' novih kodova</span>';
+                                            preview.style.display = 'block';
+                                            preview.style.background = '#d4edda';
+                                            preview.style.borderColor = '#28a745';
+                                        }
+                                    } else {
+                                        preview.style.display = 'none';
+                                    }
+                                });
+                            </script>
                         </table>
                     </div>
                     <!-- Podešavanja automatske kreacije pošiljki -->
@@ -803,6 +942,7 @@ class D_Express_Admin
                                     </p>
                                 </td>
                             </tr>
+
                         </table>
                     </div>
                     <!-- Webhook podešavanja -->
@@ -1139,7 +1279,40 @@ class D_Express_Admin
         if (!isset($_POST['_wpnonce']) || !wp_verify_nonce($_POST['_wpnonce'], 'dexpress_settings_nonce')) {
             wp_die(__('Sigurnosna provera nije uspela.', 'd-express-woo'));
         }
+        // Provera za proširenje opsega kodova - SA VALIDACIJOM
+        $extend_range_end = isset($_POST['dexpress_extend_range_end']) ? intval($_POST['dexpress_extend_range_end']) : 0;
+        $current_range_end = intval(get_option('dexpress_code_range_end', 99));
+        $range_extended = false;
+        $added_codes = 0;
+        $range_error = '';
 
+        // Validacija proširenja opsega
+        if ($extend_range_end > 0) {
+            if ($extend_range_end <= $current_range_end) {
+                $range_error = sprintf(
+                    __('Novi kraj opsega (%d) mora biti veći od trenutnog kraja (%d).', 'd-express-woo'),
+                    $extend_range_end,
+                    $current_range_end
+                );
+            } elseif ($extend_range_end > 9999999) {
+                $range_error = __('Novi kraj opsega je previše velik. Maksimalno je 9.999.999.', 'd-express-woo');
+            } else {
+                // Validacija je prošla - proširujemo opseg
+                $added_codes = $extend_range_end - $current_range_end;
+
+                // Čuva istoriju proširenja
+                $extend_log = get_option('dexpress_code_range_history', []);
+                $extend_log[] = [
+                    'date' => current_time('mysql'),
+                    'old_range' => get_option('dexpress_code_range_start', 1) . '-' . $current_range_end,
+                    'new_range' => get_option('dexpress_code_range_start', 1) . '-' . $extend_range_end,
+                    'added_codes' => $added_codes
+                ];
+                update_option('dexpress_code_range_history', $extend_log);
+
+                $range_extended = true;
+            }
+        }
         // API podešavanja
         $api_username = isset($_POST['dexpress_api_username']) ? sanitize_text_field($_POST['dexpress_api_username']) : '';
         $api_password = isset($_POST['dexpress_api_password']) ? sanitize_text_field($_POST['dexpress_api_password']) : '';
@@ -1150,7 +1323,7 @@ class D_Express_Admin
         // Kodovi pošiljki
         $code_prefix = isset($_POST['dexpress_code_prefix']) ? sanitize_text_field($_POST['dexpress_code_prefix']) : '';
         $code_range_start = isset($_POST['dexpress_code_range_start']) ? intval($_POST['dexpress_code_range_start']) : '';
-        $code_range_end = isset($_POST['dexpress_code_range_end']) ? intval($_POST['dexpress_code_range_end']) : '';
+        $code_range_end = $range_extended ? $extend_range_end : (isset($_POST['dexpress_code_range_end']) ? intval($_POST['dexpress_code_range_end']) : '');
 
         // Automatsko kreiranje pošiljki
         $auto_create_shipment = isset($_POST['dexpress_auto_create_shipment']) ? 'yes' : 'no';
@@ -1237,6 +1410,7 @@ class D_Express_Admin
         update_option('dexpress_enable_auto_updates', $enable_auto_updates);
         update_option('dexpress_update_time', $update_time);
         update_option('dexpress_batch_size', $batch_size);
+
         // Beležimo u log da su podešavanja ažurirana
         if ($enable_logging === 'yes') {
             dexpress_log('Podešavanja su ažurirana od strane korisnika ID: ' . get_current_user_id(), 'info');
@@ -1246,7 +1420,18 @@ class D_Express_Admin
         update_option('dexpress_log_level', $log_level);
         // Na kraju save_settings funkcije
         $active_tab = isset($_POST['active_tab']) ? sanitize_key($_POST['active_tab']) : 'api';
-        wp_redirect(add_query_arg(['settings-updated' => 'true', 'tab' => $active_tab], admin_url('admin.php?page=dexpress-settings')));
+        $redirect_params = ['settings-updated' => 'true', 'tab' => $active_tab];
+
+        // Dodaj parametre za proširenje opsega
+        if ($range_extended) {
+            $redirect_params['extended'] = 'success';
+            $redirect_params['added'] = $added_codes;
+        } elseif (!empty($range_error)) {
+            $redirect_params['extended'] = 'error';
+            $redirect_params['error_message'] = urlencode($range_error);
+        }
+
+        wp_redirect(add_query_arg($redirect_params, admin_url('admin.php?page=dexpress-settings')));
         exit;
     }
     /**
