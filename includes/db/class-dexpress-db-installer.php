@@ -132,7 +132,7 @@ class D_Express_DB_Installer
             center_id INT(11) DEFAULT NULL,
             municipality_id INT(11) DEFAULT NULL,
             postal_code INT(11) DEFAULT NULL,
-            order_num INT(11) DEFAULT NULL,  // ← DODAJ OVO!
+            order_num INT(11) DEFAULT NULL,
             delivery_days VARCHAR(100) DEFAULT NULL,
             cut_off_pickup_time VARCHAR(100) DEFAULT NULL,
             last_updated DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

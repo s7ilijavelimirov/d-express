@@ -304,7 +304,6 @@ class D_Express_WooCommerce
 
         // Flush rewrite rules za REST API endpoint
         flush_rewrite_rules();
-
     }
 
     /**
@@ -323,26 +322,37 @@ class D_Express_WooCommerce
      */
     public function init()
     {
-        $label_generator = new D_Express_Label_Generator();
+        // Prvo učitaj prevode
+        load_plugin_textdomain('d-express-woo', false, dirname(DEXPRESS_WOO_PLUGIN_BASENAME) . '/languages');
 
+        // Proveri da li WooCommerce postoji, ali BEZ korišćenja WC funkcija
         if (!class_exists('WooCommerce')) {
             add_action('admin_notices', array($this, 'woocommerce_missing_notice'));
             return;
         }
 
+        // Inicijalizacija samo osnovnih klasa koje ne koriste WooCommerce odmah
+        add_action('woocommerce_loaded', array($this, 'init_after_woocommerce'));
+
+        // Inicijalizacija CRON zadataka (ne zavisi od WooCommerce)
+        $this->init_cron_jobs();
+    }
+
+    /**
+     * Inicijalizacija nakon što se WooCommerce učita
+     */
+    public function init_after_woocommerce()
+    {
+        // Sada je bezbedno koristiti WooCommerce funkcije
+
         // Provera verzije WooCommerce-a
-        $wc_version = WC()->version; // Ovo je sigurniji način
-        if (version_compare($wc_version, '9.6', '<')) {
+        if (version_compare(WC()->version, '9.0', '<')) {
             add_action('admin_notices', array($this, 'woocommerce_version_notice'));
             return;
         }
 
-
-        // Učitavanje prevoda
-        load_plugin_textdomain('d-express-woo', false, dirname(DEXPRESS_WOO_PLUGIN_BASENAME) . '/languages');
-
-        // Inicijalizacija CRON zadataka
-        $this->init_cron_jobs();
+        // Inicijalizacija klasa koje koriste WooCommerce
+        $label_generator = new D_Express_Label_Generator();
 
         // Inicijalizacija checkout klase
         $checkout = new D_Express_Checkout();
@@ -368,8 +378,6 @@ class D_Express_WooCommerce
         $timeline = new D_Express_Order_Timeline();
         $timeline->init();
     }
-
-    // U d-express-woocommerce-integration.php - optimizacija cron zadataka
 
     private function init_cron_jobs()
     {

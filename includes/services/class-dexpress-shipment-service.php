@@ -29,13 +29,8 @@ class D_Express_Shipment_Service
         $this->api = new D_Express_API();
         $this->db = new D_Express_DB();
 
-        $this->register_hooks();
         $this->register_ajax_handlers();
         add_action('dexpress_after_shipment_created', array($this, 'send_tracking_email'), 10, 2);
-    }
-    public function register_hooks()
-    {
-        add_action('woocommerce_order_status_changed', array($this, 'maybe_create_shipment_on_status_change'), 10, 4);
     }
     /**
      * Kreiranje D Express pošiljke
@@ -408,62 +403,6 @@ class D_Express_Shipment_Service
         } catch (Exception $e) {
             dexpress_log('[STATUS] Exception pri sinhronizaciji statusa: ' . $e->getMessage(), 'error');
             return new WP_Error('exception', $e->getMessage());
-        }
-    }
-
-    /**
-     * Obrada funkcije pri promeni statusa narudžbine
-     * 
-     * @param int $order_id ID narudžbine
-     * @param string $from_status Prethodni status
-     * @param string $to_status Novi status
-     * @param WC_Order $order WooCommerce narudžbina
-     * @return void
-     */
-    public function maybe_create_shipment_on_status_change($order_id, $from_status, $to_status, $order)
-    {
-        // Provera da li je automatsko kreiranje pošiljke omogućeno
-        if (get_option('dexpress_auto_create_shipment', 'no') !== 'yes') {
-            return;
-        }
-
-        // Provera da li je novi status onaj koji je postavljen za automatsko kreiranje pošiljke
-        $auto_create_status = get_option('dexpress_auto_create_on_status', 'processing');
-        if ($to_status !== $auto_create_status) {
-            return;
-        }
-
-        // Provera da li pošiljka već postoji
-        $existing = $this->db->get_shipment_by_order_id($order_id);
-        if ($existing) {
-            return;
-        }
-
-        // Provera da li je izabrana D Express dostava
-        $has_dexpress_shipping = false;
-        foreach ($order->get_shipping_methods() as $shipping_method) {
-            if (strpos($shipping_method->get_method_id(), 'dexpress') !== false) {
-                $has_dexpress_shipping = true;
-                break;
-            }
-        }
-
-        if (!$has_dexpress_shipping) {
-            return;
-        }
-
-        // Provera da li je već poslat email za ovu narudžbinu
-        $email_sent = get_post_meta($order_id, '_dexpress_tracking_email_sent', true);
-        if ($email_sent) {
-            return;
-        }
-
-        // Kreiranje pošiljke
-        $result = $this->create_shipment($order);
-
-        // Postavljanje da je email poslat
-        if (!is_wp_error($result)) {
-            update_post_meta($order_id, '_dexpress_tracking_email_sent', 'yes');
         }
     }
     /**

@@ -1,8 +1,0 @@
-{"timestamp":"2025-06-25 13:48:42","context":"general","level":"info","message":"CRON: Svi CRON zadaci obrisani"}
-{"timestamp":"2025-06-25 13:48:42","context":"general","level":"info","message":"CRON sistem resetovan od strane admin user-a"}
-{"timestamp":"2025-06-25 13:49:03","context":"general","level":"info","message":"Test CRON sistema pokrenuo admin user"}
-{"timestamp":"2025-06-25 13:49:03","context":"general","level":"info","message":"CRON: Započeto dnevno ažuriranje"}
-{"timestamp":"2025-06-25 13:49:03","context":"general","level":"info","message":"CRON: Ažuriranje paketomata..."}
-{"timestamp":"2025-06-25 13:49:03","context":"general","level":"info","message":"CRON: Ažurirano 218 paketomata"}
-{"timestamp":"2025-06-25 13:49:04","context":"general","level":"info","message":"CRON: Osnovni šifarnici ažurirani"}
-{"timestamp":"2025-06-25 13:49:04","context":"general","level":"info","message":"CRON: Završeno dnevno ažuriranje"}

@@ -272,8 +272,6 @@ class D_Express_Admin
         $code_range_end = get_option('dexpress_code_range_end', '');
         $test_mode = get_option('dexpress_test_mode', 'yes');
         $enable_logging = get_option('dexpress_enable_logging', 'no');
-        $auto_create_shipment = get_option('dexpress_auto_create_shipment', 'no');
-        $auto_create_on_status = get_option('dexpress_auto_create_on_status', 'processing');
         $sender_name = get_option('dexpress_sender_name', '');
         $sender_address = get_option('dexpress_sender_address', '');
         $sender_address_num = get_option('dexpress_sender_address_num', '');
@@ -384,7 +382,7 @@ class D_Express_Admin
                     $tab_titles = [
                         'api' => __('API Podešavanja', 'd-express-woo'),
                         'codes' => __('Kodovi pošiljki', 'd-express-woo'),
-                        'auto' => __('Automatsko kreiranje', 'd-express-woo'),
+                        'auto' => __('Kreiranje pošiljki', 'd-express-woo'),
                         'sender' => __('Podaci pošiljaoca', 'd-express-woo'),
                         'shipment' => __('Podešavanja pošiljke', 'd-express-woo'),
                         'webhook' => __('Webhook podešavanja', 'd-express-woo'),
@@ -542,10 +540,20 @@ class D_Express_Admin
                                 </th>
                                 <td>
                                     <?php
-                                    $current_index = intval(get_option('dexpress_current_code_index', $code_range_start));
-                                    $remaining = $code_range_end - $current_index;
-                                    $total_codes = $code_range_end - $code_range_start + 1;
-                                    $used_percentage = round((($current_index - $code_range_start) / $total_codes) * 100, 1);
+
+                                    $current_index = intval(get_option('dexpress_current_code_index', intval($code_range_start)));
+                                    $code_range_start = intval($code_range_start);
+                                    $code_range_end = intval($code_range_end);
+
+                                    if ($code_range_end == 0 || $code_range_start == 0) {
+                                        $remaining = 0;
+                                        $total_codes = 0;
+                                        $used_percentage = 0;
+                                    } else {
+                                        $remaining = $code_range_end - $current_index;
+                                        $total_codes = $code_range_end - $code_range_start + 1;
+                                        $used_percentage = round((($current_index - $code_range_start) / $total_codes) * 100, 1);
+                                    }
                                     ?>
                                     <div style="background: #fff; border: 1px solid #ccd0d4; padding: 15px; border-radius: 4px;">
                                         <p><strong>Sledeći kod:</strong> <code><?php echo $code_prefix . sprintf('%010d', $current_index + 1); ?></code></p>
@@ -665,9 +673,21 @@ class D_Express_Admin
                     </div>
                     <!-- Podešavanja automatske kreacije pošiljki -->
                     <div id="tab-auto" class="dexpress-tab <?php echo $active_tab === 'auto' ? 'active' : ''; ?>">
-                        <h2><?php _e('Automatsko kreiranje pošiljki', 'd-express-woo'); ?></h2>
+                        <h2><?php _e('Kreiranje pošiljki', 'd-express-woo'); ?></h2>
 
                         <table class="form-table">
+
+                            <tr>
+                                <th scope="row">
+                                    <label><?php _e('Način kreiranja pošiljki', 'd-express-woo'); ?></label>
+                                </th>
+                                <td>
+                                    <div style="background: #e7f3ff; padding: 15px; border: 1px solid #b3d7ff; border-radius: 4px;">
+                                        <p><strong><?php _e('RUČNO KREIRANJE AKTIVNO', 'd-express-woo'); ?></strong></p>
+                                        <p class="description"><?php _e('Pošiljke se kreiraju isključivo ručno kroz admin panel pojedinačnih porudžbina.', 'd-express-woo'); ?></p>
+                                    </div>
+                                </td>
+                            </tr>
                             <tr>
                                 <th scope="row">
                                     <label for="dexpress_validate_address"><?php _e('Validacija adrese', 'd-express-woo'); ?></label>
@@ -677,36 +697,6 @@ class D_Express_Admin
                                         value="yes" <?php checked(get_option('dexpress_validate_address', 'yes'), 'yes'); ?>>
                                     <p class="description"><?php _e('Proveri validnost adrese pre kreiranja pošiljke putem D Express API-ja', 'd-express-woo'); ?>
                                         <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Proverava validnost adrese primaoca kroz D Express API pozivanjem checkaddress metode pre kreiranja pošiljke. Ovo osigurava da adresa primaoca postoji u D Express sistemu i sprečava greške pri unosu adrese koje bi mogle izazvati probleme prilikom dostave.', 'd-express-woo'); ?>"></span>
-                                    </p>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row">
-                                    <label for="dexpress_auto_create_shipment"><?php _e('Automatsko kreiranje', 'd-express-woo'); ?></label>
-                                </th>
-                                <td>
-                                    <input type="checkbox" id="dexpress_auto_create_shipment" name="dexpress_auto_create_shipment"
-                                        value="yes" <?php checked($auto_create_shipment, 'yes'); ?>>
-                                    <p class="description"><?php _e('Automatski kreiraj pošiljku kada narudžbina dobije određeni status.', 'd-express-woo'); ?>
-                                        <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Automatski kreira D Express pošiljku kada WooCommerce narudžbina pređe u odabrani status. Ovo eliminše potrebu za ručnim kreiranjem pošiljki i integrira proces otpreme direktno u vaš već postojeći workflow upravljanja narudžbinama.', 'd-express-woo'); ?>"></span>
-                                    </p>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row">
-                                    <label for="dexpress_auto_create_on_status"><?php _e('Status za kreiranje', 'd-express-woo'); ?></label>
-                                </th>
-                                <td>
-                                    <select id="dexpress_auto_create_on_status" name="dexpress_auto_create_on_status">
-                                        <?php foreach ($order_statuses as $status => $name): ?>
-                                            <?php $status_key = str_replace('wc-', '', $status); ?>
-                                            <option value="<?php echo esc_attr($status_key); ?>" <?php selected($auto_create_on_status, $status_key); ?>>
-                                                <?php echo esc_html($name); ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                    <p class="description"><?php _e('Izaberite status narudžbine koji će pokrenuti kreiranje pošiljke.', 'd-express-woo'); ?>
-                                        <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Definiše koji status WooCommerce narudžbine pokreće kreiranje D Express pošiljke. Standardna praksa je \'processing\' (u obradi) kada je narudžbina plaćena ali još nije poslata, ili \'completed\' (završeno) kada je pripremljena za slanje.', 'd-express-woo'); ?>"></span>
                                     </p>
                                 </td>
                             </tr>
@@ -793,9 +783,9 @@ class D_Express_Admin
                                         <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Izaberite grad pošiljaoca iz liste gradova u D Express sistemu. U API pozivima se ne šalje naziv grada, već samo numerički ID grada (CTownID/PuTownID) iz šifarnika, što garantuje da D Express sistem tačno identifikuje lokaciju.', 'd-express-woo'); ?>"></span>
                                     </p>
                                     <?php if (empty($towns_options)): ?>
-                                        <p class="notice notice-warning">
-                                            <?php _e('Molimo ažurirajte šifarnike klikom na dugme "Ažuriraj šifarnike" na dnu strane.', 'd-express-woo'); ?>
-                                        </p>
+                                        <div class="notice notice-info">
+                                            <p><?php _e('Molimo kliknite "Ažuriraj šifarnike" da učitate gradove iz D Express sistema.', 'd-express-woo'); ?></p>
+                                        </div>
                                     <?php endif; ?>
                                 </td>
                             </tr>
@@ -1326,8 +1316,7 @@ class D_Express_Admin
         $code_range_end = $range_extended ? $extend_range_end : (isset($_POST['dexpress_code_range_end']) ? intval($_POST['dexpress_code_range_end']) : '');
 
         // Automatsko kreiranje pošiljki
-        $auto_create_shipment = isset($_POST['dexpress_auto_create_shipment']) ? 'yes' : 'no';
-        $auto_create_on_status = isset($_POST['dexpress_auto_create_on_status']) ? sanitize_text_field($_POST['dexpress_auto_create_on_status']) : 'processing';
+
         $validate_address = isset($_POST['dexpress_validate_address']) ? 'yes' : 'no';
         $enable_myaccount_tracking = isset($_POST['dexpress_enable_myaccount_tracking']) ? 'yes' : 'no';
         // CRON podešavanja  
@@ -1387,8 +1376,6 @@ class D_Express_Admin
         update_option('dexpress_code_prefix', $code_prefix);
         update_option('dexpress_code_range_start', $code_range_start);
         update_option('dexpress_code_range_end', $code_range_end);
-        update_option('dexpress_auto_create_shipment', $auto_create_shipment);
-        update_option('dexpress_auto_create_on_status', $auto_create_on_status);
         update_option('dexpress_validate_address', $validate_address);
         update_option('dexpress_sender_name', $sender_name);
         update_option('dexpress_buyout_account', $buyout_account);

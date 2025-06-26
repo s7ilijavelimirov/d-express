@@ -64,30 +64,7 @@ class D_Express_Order_Handler
         if (!$has_dexpress) {
             return;
         }
-
-        // Provera da li je automatsko kreiranje omogućeno
-        $auto_create_enabled = get_option('dexpress_auto_create_shipment', 'no') === 'yes';
-        $auto_create_status = get_option('dexpress_auto_create_on_status', 'processing');
-
-        // Kreiranje pošiljke samo ako je automatsko kreiranje omogućeno i status odgovara
-        // Izbaci "ili ako je u test modu", to je verovatno izazivalo problem
-        if ($auto_create_enabled && $order->get_status() === $auto_create_status) {
-            dexpress_log('Auto-creating shipment for order: ' . $order_id, 'debug');
-
-            // Koristimo već instanciranu service klasu
-            $result = $this->shipment_service->create_shipment($order);
-
-            if (is_wp_error($result)) {
-                dexpress_log('Failed to create shipment: ' . $result->get_error_message(), 'error');
-            } else {
-                dexpress_log('Shipment created successfully, ID: ' . $result, 'debug');
-            }
-        } else {
-            dexpress_log('Automatic shipment creation is disabled or status does not match. Auto create: ' .
-                ($auto_create_enabled ? 'Enabled' : 'Disabled') .
-                ', Current status: ' . $order->get_status() .
-                ', Required status: ' . $auto_create_status, 'debug');
-        }
+        dexpress_log('Order processed - manual shipment creation required: ' . $order_id, 'debug');
     }
 
     /**

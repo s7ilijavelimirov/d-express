@@ -37,8 +37,11 @@ class D_Express_DB
             )
         );
 
-        return $result ? $wpdb->insert_id : false;
-        $this->clear_shipment_cache($shipment_data['order_id']);
+        if ($result) {
+            $this->clear_shipment_cache($shipment_data['order_id']);
+            return $wpdb->insert_id;
+        }
+        return false;
     }
 
     /**
@@ -78,7 +81,7 @@ class D_Express_DB
     {
         global $wpdb;
 
-        return $wpdb->update(
+        $result = $wpdb->update(
             $wpdb->prefix . 'dexpress_shipments',
             array(
                 'status_code' => $status_code,
@@ -89,7 +92,19 @@ class D_Express_DB
             array('%s', '%s', '%s'),
             array('%s')
         ) !== false;
-        $this->clear_shipment_cache($shipment->order_id);
+
+        if ($result) {
+            // Dobij order_id iz shipment_id
+            $order_id = $wpdb->get_var($wpdb->prepare(
+                "SELECT order_id FROM {$wpdb->prefix}dexpress_shipments WHERE shipment_id = %s",
+                $shipment_id
+            ));
+            if ($order_id) {
+                $this->clear_shipment_cache($order_id);
+            }
+        }
+
+        return $result;
     }
 
     /**

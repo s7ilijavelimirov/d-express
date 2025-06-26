@@ -271,16 +271,22 @@ function dexpress_get_towns_options()
 {
     global $wpdb;
 
-    $towns = $wpdb->get_results(
+    // Proveri da li tabela postoji
+    $table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$wpdb->prefix}dexpress_towns'");
+    if (!$table_exists) {
+        return array(); // Vrati prazan niz ako tabela ne postoji
+    }
+
+    $results = $wpdb->get_results(
         "SELECT id, name, display_name, postal_code FROM {$wpdb->prefix}dexpress_towns ORDER BY name ASC"
     );
 
     $options = array();
-
-    foreach ($towns as $town) {
-        $postal_info = $town->postal_code ? " ({$town->postal_code})" : '';
-        $display_name = !empty($town->display_name) ? " - {$town->display_name}" : '';
-        $options[$town->id] = $town->name . $display_name . $postal_info;
+    if ($results) {
+        foreach ($results as $town) {
+            $display_name = !empty($town->display_name) ? $town->display_name : $town->name;
+            $options[$town->id] = $display_name;
+        }
     }
 
     return $options;
@@ -475,10 +481,10 @@ function dexpress_generate_package_code()
 
     // Formatiraj kod
     $formatted_code = $prefix . sprintf('%010d', $current_index);
-    
+
     // Log generisan kod
     dexpress_log("Generisan kod paketa: {$formatted_code} (index: {$current_index})", 'debug');
-    
+
     return $formatted_code;
 }
 
