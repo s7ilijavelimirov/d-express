@@ -1028,7 +1028,7 @@ class D_Express_API
 
             // Vrednost i masa
             'Value' => $value_para,
-            'Content' => $content,
+            'Content' => dexpress_generate_shipment_content($order),
             'Mass' => $weight_grams,
 
             // Reference i opcije

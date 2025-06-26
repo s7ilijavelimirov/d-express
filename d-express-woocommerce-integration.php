@@ -134,7 +134,7 @@ class D_Express_WooCommerce
         add_action('dexpress_process_notification', array($this, 'process_notification'));
 
         // Inicijalizacija nakon učitavanja svih plugin-a
-        add_action('plugins_loaded', array($this, 'init'), 0);
+        add_action('init', array($this, 'init'), 10);
 
         // Dodaj hook za simulaciju
         add_action('init', array($this, 'auto_simulate_test_statuses'));
@@ -322,17 +322,20 @@ class D_Express_WooCommerce
      */
     public function init()
     {
-        // Prvo učitaj prevode
+        // Prvo učitaj prevode DIREKTNO
         load_plugin_textdomain('d-express-woo', false, dirname(DEXPRESS_WOO_PLUGIN_BASENAME) . '/languages');
 
-        // Proveri da li WooCommerce postoji, ali BEZ korišćenja WC funkcija
-        if (!class_exists('WooCommerce')) {
-            add_action('admin_notices', array($this, 'woocommerce_missing_notice'));
+        // Proveri da li WooCommerce postoji
+        if (!$this->check_woocommerce_activation()) {
             return;
         }
 
         // Inicijalizacija samo osnovnih klasa koje ne koriste WooCommerce odmah
-        add_action('woocommerce_loaded', array($this, 'init_after_woocommerce'));
+        if (did_action('woocommerce_loaded')) {
+            $this->init_after_woocommerce();
+        } else {
+            add_action('woocommerce_loaded', array($this, 'init_after_woocommerce'));
+        }
 
         // Inicijalizacija CRON zadataka (ne zavisi od WooCommerce)
         $this->init_cron_jobs();
@@ -669,7 +672,14 @@ class D_Express_WooCommerce
                 break;
         }
     }
-
+    private function check_woocommerce_activation()
+    {
+        if (!class_exists('WooCommerce')) {
+            add_action('admin_notices', array($this, 'woocommerce_missing_notice'));
+            return false;
+        }
+        return true;
+    }
     /**
      * Slanje email notifikacije o promeni statusa
      * 

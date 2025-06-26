@@ -612,3 +612,105 @@ function dexpress_convert_price_to_para($price)
     // Konverzija u para (1 RSD = 100 para)
     return intval($price_rsd * 100);
 }
+/**
+ * Generiše sadržaj pošiljke na osnovu proizvoda u narudžbini
+ * 
+ * @param WC_Order $order WooCommerce narudžbina
+ * @return string Formatiran sadržaj za nalepnicu
+ */
+function dexpress_generate_shipment_content($order)
+{
+    $content_setting = get_option('dexpress_content_type', 'auto');
+    $custom_content = get_option('dexpress_default_content', 'Roba iz web prodavnice');
+
+    // Ako je podešeno na custom, vrati custom sadržaj
+    if ($content_setting === 'custom') {
+        return $custom_content;
+    }
+
+    $items = $order->get_items();
+    $content_parts = array();
+
+    foreach ($items as $item) {
+        // ISPRAVKA: Proveri da li je item stvarno WC_Order_Item_Product
+        if (!($item instanceof WC_Order_Item_Product)) {
+            continue;
+        }
+
+        $product = $item->get_product();
+        if (!$product) {
+            continue;
+        }
+
+        $quantity = $item->get_quantity();
+
+        switch ($content_setting) {
+            case 'name':
+                // Samo naziv proizvoda
+                $name = $product->get_name();
+                $content_parts[] = $quantity > 1 ? "{$quantity}x {$name}" : $name;
+                break;
+
+            case 'category':
+                // Samo kategorija
+                $categories = wp_get_post_terms($product->get_id(), 'product_cat');
+                if (!empty($categories) && !is_wp_error($categories)) {
+                    $category_name = $categories[0]->name;
+                    $content_parts[] = $quantity > 1 ? "{$quantity}x {$category_name}" : $category_name;
+                } else {
+                    // FALLBACK ako nema kategoriju
+                    $content_parts[] = $quantity > 1 ? "{$quantity}x Proizvod" : "Proizvod";
+                }
+                break;
+
+            case 'auto':
+            default:
+                // Automatska kombinacija - kategorija + skraćeni naziv
+                $categories = wp_get_post_terms($product->get_id(), 'product_cat');
+
+                // FALLBACK za kategoriju
+                $category_name = 'Proizvod'; // Default fallback
+                if (!empty($categories) && !is_wp_error($categories)) {
+                    $category_name = $categories[0]->name;
+                }
+
+                $product_name = $product->get_name();
+
+                // Skrati naziv ako je predugačak
+                if (strlen($product_name) > 30) {
+                    $product_name = substr($product_name, 0, 27) . '...';
+                }
+
+                // Ukloni specijalne karaktere i višak space-ova
+                $product_name = preg_replace('/[^\p{L}\p{N}\s\-\.]/u', '', $product_name);
+                $product_name = preg_replace('/\s+/', ' ', trim($product_name));
+
+                // Ako je naziv prazan nakon čišćenja, koristi ID
+                if (empty($product_name)) {
+                    $product_name = 'Proizvod #' . $product->get_id();
+                }
+
+                if ($quantity > 1) {
+                    $content_parts[] = "{$quantity}x {$category_name}: {$product_name}";
+                } else {
+                    $content_parts[] = "{$category_name}: {$product_name}";
+                }
+                break;
+        }
+    }
+
+    // Spoji sve stavke
+    $content = implode(', ', array_unique($content_parts));
+
+    // Ograniči ukupnu dužinu na 100 karaktera (D Express limit)
+    if (strlen($content) > 100) {
+        $content = substr($content, 0, 97) . '...';
+    }
+
+    // GLAVNI FALLBACK ako je sadržaj prazan
+    if (empty($content)) {
+        $content = $custom_content;
+    }
+
+    return $content;
+}

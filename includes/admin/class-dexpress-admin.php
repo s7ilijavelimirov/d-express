@@ -95,13 +95,22 @@ class D_Express_Admin
      */
     public function add_admin_menu()
     {
+        // Provjeri da li je WooCommerce aktivan
+        if (!class_exists('WooCommerce')) {
+            return;
+        }
 
+        // Provjeri dozvole
+        if (!current_user_can('manage_woocommerce')) {
+            return;
+        }
         // Koristimo statičku promenljivu da sprečimo duplo dodavanje
         static $added = false;
         if ($added) {
             return;
         }
         $added = true;
+
         $icon_url = DEXPRESS_WOO_PLUGIN_URL . 'assets/images/dexpress-icon.svg';
 
         // Dodajemo glavni meni sa SVG ikonicom
@@ -932,6 +941,39 @@ class D_Express_Admin
                                     </p>
                                 </td>
                             </tr>
+                            <tr>
+                                <th scope="row">
+                                    <label for="dexpress_content_type"><?php _e('Tip sadržaja pošiljke', 'd-express-woo'); ?></label>
+                                </th>
+                                <td>
+                                    <select id="dexpress_content_type" name="dexpress_content_type">
+                                        <option value="auto" <?php selected(get_option('dexpress_content_type', 'auto'), 'auto'); ?>>
+                                            <?php _e('Automatski (Kategorija + Naziv)', 'd-express-woo'); ?>
+                                        </option>
+                                        <option value="category" <?php selected(get_option('dexpress_content_type', 'auto'), 'category'); ?>>
+                                            <?php _e('Samo kategorija proizvoda', 'd-express-woo'); ?>
+                                        </option>
+                                        <option value="name" <?php selected(get_option('dexpress_content_type', 'auto'), 'name'); ?>>
+                                            <?php _e('Samo naziv proizvoda', 'd-express-woo'); ?>
+                                        </option>
+                                        <option value="custom" <?php selected(get_option('dexpress_content_type', 'auto'), 'custom'); ?>>
+                                            <?php _e('Prilagođeni tekst', 'd-express-woo'); ?>
+                                        </option>
+                                    </select>
+                                    <p class="description">
+                                        <?php _e('Kako da se generiše sadržaj pošiljke na nalepnici.', 'd-express-woo'); ?>
+                                        <span class="dexpress-tooltip dashicons dashicons-info"
+                                            data-wp-tooltip="<?php _e('Automatski: kombinuje kategoriju i naziv (npr. Elektronika: Samsung Galaxy S21). Ako proizvod nema kategoriju, koristi "Proizvod" kao fallback.', 'd-express-woo'); ?>">
+                                        </span>
+                                    </p>
+
+                                    <!-- Preview rezultata -->
+                                    <div id="content-preview" style="margin-top: 10px; padding: 10px; background: #f0f8ff; border-radius: 4px; display: none;">
+                                        <strong><?php _e('Primer rezultata:', 'd-express-woo'); ?></strong>
+                                        <div id="content-preview-text" style="font-family: monospace; margin-top: 5px;"></div>
+                                    </div>
+                                </td>
+                            </tr>
 
                         </table>
                     </div>
@@ -1209,6 +1251,66 @@ class D_Express_Admin
                 </div>
             </div>
         </div>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const contentType = document.getElementById('dexpress_content_type');
+                const customRow = document.getElementById('custom-content-row');
+                const preview = document.getElementById('content-preview');
+                const previewText = document.getElementById('content-preview-text');
+                const customContent = document.getElementById('dexpress_default_content');
+                const charCount = document.getElementById('char-count');
+
+                if (!contentType) return;
+
+                // Show/hide custom content field
+                contentType.addEventListener('change', function() {
+                    if (this.value === 'custom') {
+                        if (customRow) customRow.style.display = 'table-row';
+                        if (preview) preview.style.display = 'none';
+                    } else {
+                        if (customRow) customRow.style.display = 'none';
+                        showPreview();
+                    }
+                });
+
+                // Character count for custom content
+                if (customContent && charCount) {
+                    customContent.addEventListener('input', function() {
+                        const count = this.value.length;
+                        charCount.textContent = `(${count}/100)`;
+                        charCount.style.color = count > 100 ? '#dc3545' : '#666';
+                    });
+                }
+
+                // Show preview for non-custom options
+                function showPreview() {
+                    const type = contentType.value;
+                    let exampleText = '';
+
+                    switch (type) {
+                        case 'auto':
+                            exampleText = 'Elektronika: Samsung Galaxy S21, 2x Proizvod: iPhone 13';
+                            break;
+                        case 'category':
+                            exampleText = 'Elektronika, Proizvod';
+                            break;
+                        case 'name':
+                            exampleText = 'Samsung Galaxy S21, 2x iPhone 13 Pro Max';
+                            break;
+                    }
+
+                    if (exampleText && preview && previewText) {
+                        previewText.textContent = exampleText;
+                        preview.style.display = 'block';
+                    }
+                }
+
+                // Initial setup
+                if (contentType.value !== 'custom') {
+                    showPreview();
+                }
+            });
+        </script>
         <?php
     }
     /**
@@ -1323,6 +1425,7 @@ class D_Express_Admin
         $enable_auto_updates = isset($_POST['dexpress_enable_auto_updates']) ? 'yes' : 'no';
         $update_time = isset($_POST['dexpress_update_time']) ? sanitize_text_field($_POST['dexpress_update_time']) : '03:00';
         $batch_size = isset($_POST['dexpress_batch_size']) ? intval($_POST['dexpress_batch_size']) : 100;
+
         // Podaci pošiljaoca
         $sender_name = isset($_POST['dexpress_sender_name']) ? sanitize_text_field($_POST['dexpress_sender_name']) : '';
         $sender_address = isset($_POST['dexpress_sender_address']) ? sanitize_text_field($_POST['dexpress_sender_address']) : '';
@@ -1337,6 +1440,8 @@ class D_Express_Admin
         $payment_type = isset($_POST['dexpress_payment_type']) ? sanitize_text_field($_POST['dexpress_payment_type']) : '2';
         $return_doc = isset($_POST['dexpress_return_doc']) ? sanitize_text_field($_POST['dexpress_return_doc']) : '0';
         $default_content = isset($_POST['dexpress_default_content']) ? sanitize_text_field($_POST['dexpress_default_content']) : __('Roba iz web prodavnice', 'd-express-woo');
+        // Dodaj ovo sa ostalim opcijama
+        $content_type = isset($_POST['dexpress_content_type']) ? sanitize_text_field($_POST['dexpress_content_type']) : 'auto';
 
         // Clean Uninstall opcija
         $clean_uninstall = isset($_POST['dexpress_clean_uninstall']) ? 'yes' : 'no';
@@ -1397,6 +1502,7 @@ class D_Express_Admin
         update_option('dexpress_enable_auto_updates', $enable_auto_updates);
         update_option('dexpress_update_time', $update_time);
         update_option('dexpress_batch_size', $batch_size);
+        update_option('dexpress_content_type', $content_type);
 
         // Beležimo u log da su podešavanja ažurirana
         if ($enable_logging === 'yes') {
