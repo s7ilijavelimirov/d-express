@@ -422,7 +422,7 @@ class D_Express_Label_Generator
 
                 <div class="detail-row">
                     <span class="detail-label">Sadržaj:</span>
-                    <?php echo esc_html(get_option('dexpress_default_content', 'Roba iz web prodavnice')); ?>
+                    <?php echo esc_html(dexpress_generate_shipment_content($order)); ?>
                 </div>
                 <div class="detail-row">
                     <span class="detail-label">Masa:</span>
@@ -451,7 +451,7 @@ class D_Express_Label_Generator
     /**
      * AJAX akcija za preuzimanje nalepnice
      */
-   
+
 
     public function ajax_download_label()
     {
@@ -1020,7 +1020,7 @@ class D_Express_Label_Generator
 
                     <div class="detail-row">
                         <span class="detail-label">Sadržaj:</span>
-                        <?php echo esc_html(get_option('dexpress_default_content', 'Roba iz web prodavnice')); ?>
+                        <?php echo esc_html(dexpress_generate_shipment_content($order)); ?>
                     </div>
                     <div class="detail-row">
                         <span class="detail-label">Masa:</span>

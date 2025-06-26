@@ -806,7 +806,8 @@ class D_Express_Validator
      */
     public static function validate_content($content)
     {
-        $pattern = '/^([\-,\(\)\/a-zžćčđšA-ZĐŠĆŽČ_0-9]+\.?)( [\-,\(\)\/a-zžćčđšA-ZĐŠĆŽČ_0-9]+\.?)*$/';
+       
+        $pattern = '/^([\-,\(\)\/a-zA-ZžćčđšĐŠĆŽČ_0-9]+\.?)( [\-,\(\)\/a-zA-ZžćčđšĐŠĆŽČ_0-9]+\.?)*$/';
         return preg_match($pattern, $content) && strlen($content) <= 50;
     }
 

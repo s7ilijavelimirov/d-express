@@ -773,11 +773,6 @@ class D_Express_API
      */
     public function prepare_shipment_data_from_order($order)
     {
-        static $default_content = null;
-
-        if ($default_content === null) {
-            $default_content = get_option('dexpress_default_content', __('Roba iz web prodavnice', 'd-express-woo'));
-        }
         if (!$order instanceof WC_Order) {
             return new WP_Error('invalid_order', __('Nevažeća narudžbina', 'd-express-woo'));
         }
@@ -947,12 +942,7 @@ class D_Express_API
             return new WP_Error('invalid_town', __('Neispravan grad. Molimo izaberite grad iz liste.', 'd-express-woo'));
         }
 
-        // Pripremanje sadržaja pošiljke
-        $content = get_option('dexpress_default_content', __('Roba iz web prodavnice', 'd-express-woo'));
-        if (!D_Express_Validator::validate_content($content)) {
-            dexpress_log("WARNING: Invalid content description: {$content}", 'warning');
-            $content = "Roba"; // Default vrednost
-        }
+        $content = dexpress_generate_shipment_content($order);
 
         // Kreiranje reference
         $reference_id = $this->generate_reference_id($order->get_id());

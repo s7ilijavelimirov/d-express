@@ -132,7 +132,7 @@ wp_nonce_field('dexpress_meta_box', 'dexpress_meta_box_nonce');
             <p>
                 <label for="dexpress_content"><?php _e('Sadržaj pošiljke:', 'd-express-woo'); ?></label><br>
                 <input type="text" id="dexpress_content" name="dexpress_content" class="widefat"
-                    value="<?php echo esc_attr(get_post_meta($order->get_id(), '_dexpress_content', true) ?: get_option('dexpress_default_content', __('Roba iz web prodavnice', 'd-express-woo'))); ?>">
+                  value="<?php echo esc_attr(get_post_meta($order->get_id(), '_dexpress_content', true) ?: dexpress_generate_shipment_content($order)); ?>">
             </p>
         </div>
 

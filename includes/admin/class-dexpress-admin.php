@@ -291,7 +291,7 @@ class D_Express_Admin
         $payment_by = get_option('dexpress_payment_by', '0');
         $payment_type = get_option('dexpress_payment_type', '2');
         $return_doc = get_option('dexpress_return_doc', '0');
-        $default_content = get_option('dexpress_default_content', __('Roba iz web prodavnice', 'd-express-woo'));
+        $default_content = get_option('dexpress_default_content', '');
         $webhook_secret = get_option('dexpress_webhook_secret', wp_generate_password(32, false));
 
         // Dodajte ovo u deo gde se inicijalizuju opcije
@@ -931,50 +931,65 @@ class D_Express_Admin
                             </tr>
                             <tr>
                                 <th scope="row">
-                                    <label for="dexpress_default_content"><?php _e('Podrazumevani sadržaj', 'd-express-woo'); ?></label>
-                                </th>
-                                <td>
-                                    <input type="text" id="dexpress_default_content" name="dexpress_default_content"
-                                        value="<?php echo esc_attr($default_content); ?>" class="regular-text">
-                                    <p class="description"><?php _e('Podrazumevani opis sadržaja pošiljke.', 'd-express-woo'); ?>
-                                        <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Opis sadržaja pošiljke koji se mapira na Content parametar u API pozivu. Mora zadovoljiti D Express validaciju (alfanumerički, max 50 karaktera). Za standardne web prodavnice, dovoljan je generički opis poput \'Roba iz web prodavnice\'.', 'd-express-woo'); ?>"></span>
-                                    </p>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row">
-                                    <label for="dexpress_content_type"><?php _e('Tip sadržaja pošiljke', 'd-express-woo'); ?></label>
+                                    <label for="dexpress_content_type"><?php _e('Način opisa sadržaja', 'd-express-woo'); ?></label>
                                 </th>
                                 <td>
                                     <select id="dexpress_content_type" name="dexpress_content_type">
-                                        <option value="auto" <?php selected(get_option('dexpress_content_type', 'auto'), 'auto'); ?>>
-                                            <?php _e('Automatski (Kategorija + Naziv)', 'd-express-woo'); ?>
+                                        <option value="category" <?php selected(get_option('dexpress_content_type', 'category'), 'category'); ?>>
+                                            <?php _e('Kategorije proizvoda (preporučeno)', 'd-express-woo'); ?>
                                         </option>
-                                        <option value="category" <?php selected(get_option('dexpress_content_type', 'auto'), 'category'); ?>>
-                                            <?php _e('Samo kategorija proizvoda', 'd-express-woo'); ?>
+                                        <option value="name" <?php selected(get_option('dexpress_content_type', 'category'), 'name'); ?>>
+                                            <?php _e('Kratki nazivi proizvoda', 'd-express-woo'); ?>
                                         </option>
-                                        <option value="name" <?php selected(get_option('dexpress_content_type', 'auto'), 'name'); ?>>
-                                            <?php _e('Samo naziv proizvoda', 'd-express-woo'); ?>
-                                        </option>
-                                        <option value="custom" <?php selected(get_option('dexpress_content_type', 'auto'), 'custom'); ?>>
+                                        <option value="custom" <?php selected(get_option('dexpress_content_type', 'category'), 'custom'); ?>>
                                             <?php _e('Prilagođeni tekst', 'd-express-woo'); ?>
                                         </option>
                                     </select>
                                     <p class="description">
-                                        <?php _e('Kako da se generiše sadržaj pošiljke na nalepnici.', 'd-express-woo'); ?>
+                                        <?php _e('D Express očekuje kratke opise kao: Elektronika, Odeća, Kozmetika.', 'd-express-woo'); ?>
                                         <span class="dexpress-tooltip dashicons dashicons-info"
-                                            data-wp-tooltip="<?php _e('Automatski: kombinuje kategoriju i naziv (npr. Elektronika: Samsung Galaxy S21). Ako proizvod nema kategoriju, koristi "Proizvod" kao fallback.', 'd-express-woo'); ?>">
+                                            data-wp-tooltip="<?php _e('Kategorije: koristi WooCommerce kategorije (npr. 3x Elektronika). Nazivi: kratki nazivi proizvoda (npr. 3x iPhone...). Prilagođeni: fiksni tekst.', 'd-express-woo'); ?>">
                                         </span>
                                     </p>
-
-                                    <!-- Preview rezultata -->
-                                    <div id="content-preview" style="margin-top: 10px; padding: 10px; background: #f0f8ff; border-radius: 4px; display: none;">
-                                        <strong><?php _e('Primer rezultata:', 'd-express-woo'); ?></strong>
-                                        <div id="content-preview-text" style="font-family: monospace; margin-top: 5px;"></div>
-                                    </div>
                                 </td>
                             </tr>
 
+                            <tr id="custom-content-row" style="<?php echo get_option('dexpress_content_type', 'category') !== 'custom' ? 'display:none;' : ''; ?>">
+                                <th scope="row">
+                                    <label for="dexpress_default_content"><?php _e('Prilagođeni sadržaj', 'd-express-woo'); ?></label>
+                                </th>
+                                <td>
+                                    <input type="text" id="dexpress_default_content" name="dexpress_default_content"
+                                        value="<?php echo esc_attr($default_content); ?>" class="regular-text"
+                                        placeholder="npr. Rezervni delovi, Tekstil, Dokumenti">
+                                    <p class="description">
+                                        <?php _e('Fiksni tekst koji će se koristiti kao opis sadržaja.', 'd-express-woo'); ?>
+                                        <span class="dexpress-tooltip dashicons dashicons-info"
+                                            data-wp-tooltip="<?php _e('Mora sadržavati samo slova, brojevi, crtice, zarezi, zagrade, kose crte. Max 50 karaktera.', 'd-express-woo'); ?>"></span>
+                                    </p>
+                                </td>
+                            </tr>
+
+                            <script>
+                                jQuery(document).ready(function($) {
+                                    function toggleCustomContentField() {
+                                        var contentType = $('#dexpress_content_type').val();
+                                        var $customRow = $('#custom-content-row');
+
+                                        if (contentType === 'custom') {
+                                            $customRow.show();
+                                        } else {
+                                            $customRow.hide();
+                                        }
+                                    }
+
+                                    // Pokreni na početku
+                                    toggleCustomContentField();
+
+                                    // Pokreni kad se promeni dropdown
+                                    $('#dexpress_content_type').change(toggleCustomContentField);
+                                });
+                            </script>
                         </table>
                     </div>
                     <!-- Webhook podešavanja -->
@@ -1439,7 +1454,7 @@ class D_Express_Admin
         $payment_by = isset($_POST['dexpress_payment_by']) ? sanitize_text_field($_POST['dexpress_payment_by']) : '0';
         $payment_type = isset($_POST['dexpress_payment_type']) ? sanitize_text_field($_POST['dexpress_payment_type']) : '2';
         $return_doc = isset($_POST['dexpress_return_doc']) ? sanitize_text_field($_POST['dexpress_return_doc']) : '0';
-        $default_content = isset($_POST['dexpress_default_content']) ? sanitize_text_field($_POST['dexpress_default_content']) : __('Roba iz web prodavnice', 'd-express-woo');
+        $default_content = isset($_POST['dexpress_default_content']) ? sanitize_text_field($_POST['dexpress_default_content']) : '';
         // Dodaj ovo sa ostalim opcijama
         $content_type = isset($_POST['dexpress_content_type']) ? sanitize_text_field($_POST['dexpress_content_type']) : 'auto';
 

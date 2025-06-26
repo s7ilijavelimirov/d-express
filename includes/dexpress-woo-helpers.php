@@ -620,19 +620,19 @@ function dexpress_convert_price_to_para($price)
  */
 function dexpress_generate_shipment_content($order)
 {
-    $content_setting = get_option('dexpress_content_type', 'auto');
-    $custom_content = get_option('dexpress_default_content', 'Roba iz web prodavnice');
+    $content_setting = get_option('dexpress_content_type', 'category');
+    $custom_content = get_option('dexpress_default_content', '');
 
     // Ako je podešeno na custom, vrati custom sadržaj
     if ($content_setting === 'custom') {
-        return $custom_content;
+        return !empty($custom_content) ? $custom_content : 'Proizvod';
     }
 
     $items = $order->get_items();
-    $content_parts = array();
+    $categories = array();
+    $total_items = 0;
 
     foreach ($items as $item) {
-        // ISPRAVKA: Proveri da li je item stvarno WC_Order_Item_Product
         if (!($item instanceof WC_Order_Item_Product)) {
             continue;
         }
@@ -643,73 +643,104 @@ function dexpress_generate_shipment_content($order)
         }
 
         $quantity = $item->get_quantity();
+        $total_items += $quantity;
 
         switch ($content_setting) {
             case 'name':
-                // Samo naziv proizvoda
-                $name = $product->get_name();
-                $content_parts[] = $quantity > 1 ? "{$quantity}x {$name}" : $name;
+                // KRATKI NAZIVI - samo prvi proizvod + ukupno
+                static $first_item = null;
+
+                if ($first_item === null) {
+                    $name = $product->get_name();
+
+                    // Skrati naziv ako je predugačak
+                    if (strlen($name) > 20) {
+                        $name = substr($name, 0, 17) . '...';
+                    }
+
+                    // Očisti nedozvoljene karaktere
+                    $name = preg_replace('/[^\p{L}\p{N}\s\-,\(\)\/\.]/u', '', $name);
+                    $name = preg_replace('/\s+/', ' ', trim($name));
+
+                    if (empty($name)) {
+                        $name = 'Proizvod';
+                    }
+
+                    $first_item = $name;
+                }
                 break;
 
             case 'category':
-                // Samo kategorija
-                $categories = wp_get_post_terms($product->get_id(), 'product_cat');
-                if (!empty($categories) && !is_wp_error($categories)) {
-                    $category_name = $categories[0]->name;
-                    $content_parts[] = $quantity > 1 ? "{$quantity}x {$category_name}" : $category_name;
-                } else {
-                    // FALLBACK ako nema kategoriju
-                    $content_parts[] = $quantity > 1 ? "{$quantity}x Proizvod" : "Proizvod";
-                }
-                break;
-
             case 'auto':
             default:
-                // Automatska kombinacija - kategorija + skraćeni naziv
-                $categories = wp_get_post_terms($product->get_id(), 'product_cat');
+                // KATEGORIJE - ovo je najbolje za D Express
+                $product_categories = wp_get_post_terms($product->get_id(), 'product_cat');
+                if (!empty($product_categories) && !is_wp_error($product_categories)) {
+                    $category_name = $product_categories[0]->name;
+                    // Očisti kategoriju
+                    $category_name = preg_replace('/[^\p{L}\p{N}\s\-,\(\)\/\.]/u', '', $category_name);
+                    $category_name = preg_replace('/\s+/', ' ', trim($category_name));
 
-                // FALLBACK za kategoriju
-                $category_name = 'Proizvod'; // Default fallback
-                if (!empty($categories) && !is_wp_error($categories)) {
-                    $category_name = $categories[0]->name;
-                }
-
-                $product_name = $product->get_name();
-
-                // Skrati naziv ako je predugačak
-                if (strlen($product_name) > 30) {
-                    $product_name = substr($product_name, 0, 27) . '...';
-                }
-
-                // Ukloni specijalne karaktere i višak space-ova
-                $product_name = preg_replace('/[^\p{L}\p{N}\s\-\.]/u', '', $product_name);
-                $product_name = preg_replace('/\s+/', ' ', trim($product_name));
-
-                // Ako je naziv prazan nakon čišćenja, koristi ID
-                if (empty($product_name)) {
-                    $product_name = 'Proizvod #' . $product->get_id();
-                }
-
-                if ($quantity > 1) {
-                    $content_parts[] = "{$quantity}x {$category_name}: {$product_name}";
+                    if (!empty($category_name) && !in_array($category_name, $categories)) {
+                        $categories[] = $category_name;
+                    }
                 } else {
-                    $content_parts[] = "{$category_name}: {$product_name}";
+                    // FALLBACK ako nema kategoriju
+                    if (!in_array('Proizvod', $categories)) {
+                        $categories[] = 'Proizvod';
+                    }
                 }
                 break;
         }
     }
 
-    // Spoji sve stavke
-    $content = implode(', ', array_unique($content_parts));
+    // Generiši finalni sadržaj na osnovu opcije
+    switch ($content_setting) {
+        case 'name':
+            // Za nazive - vrati prvi proizvod + ukupno
+            if ($total_items > 1 && isset($first_item)) {
+                $content = "{$total_items}x {$first_item}";
+            } elseif (isset($first_item)) {
+                $content = $first_item;
+            } else {
+                $content = $total_items > 1 ? "{$total_items}x Proizvod" : "Proizvod";
+            }
+            break;
 
-    // Ograniči ukupnu dužinu na 100 karaktera (D Express limit)
-    if (strlen($content) > 100) {
-        $content = substr($content, 0, 97) . '...';
+        case 'category':
+        case 'auto':
+        default:
+            // Za kategorije - generiši na osnovu kategorija
+            if (!empty($categories)) {
+                // Ukloni duplikate
+                $categories = array_unique($categories);
+
+                if (count($categories) === 1) {
+                    // Jedna kategorija
+                    $content = $total_items > 1 ?
+                        "{$total_items}x {$categories[0]}" :
+                        $categories[0];
+                } else {
+                    // Više kategorija - spoji ih zarezom
+                    $content = $total_items > 1 ?
+                        "{$total_items}x " . implode(', ', $categories) :
+                        implode(', ', $categories);
+                }
+            } else {
+                // Fallback
+                $content = $total_items > 1 ? "{$total_items}x Proizvod" : "Proizvod";
+            }
+            break;
     }
 
-    // GLAVNI FALLBACK ako je sadržaj prazan
-    if (empty($content)) {
-        $content = $custom_content;
+    // Ograniči na 50 karaktera (D Express limit)
+    if (strlen($content) > 50) {
+        $content = substr($content, 0, 47) . '...';
+    }
+
+    // Finalna validacija
+    if (empty($content) || !D_Express_Validator::validate_content($content)) {
+        $content = 'Proizvod';
     }
 
     return $content;
