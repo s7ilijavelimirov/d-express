@@ -75,7 +75,7 @@ class D_Express_API
 
         $args = array(
             'method'    => $method,
-            'timeout'   => 120,
+            'timeout'   => 180,
             'headers'   => array(
                 'Authorization' => 'Basic ' . base64_encode($this->username . ':' . $this->password),
                 'Content-Type'  => 'application/json',
@@ -406,6 +406,31 @@ class D_Express_API
                 }
             }
 
+
+            $municipalities = $this->get_municipalities();
+            if (is_wp_error($municipalities)) {
+                dexpress_log('Greška municipalities: ' . $municipalities->get_error_message(), 'error');
+            } else {
+
+                if (is_array($municipalities) && !empty($municipalities)) {
+                    $this->update_municipalities_index($municipalities);
+                } else {
+                }
+            }
+
+
+            $towns = $this->get_towns();
+            if (is_wp_error($towns)) {
+                dexpress_log('Greška towns: ' . $towns->get_error_message(), 'error');
+            } else {
+
+                if (is_array($towns) && !empty($towns)) {
+                    $this->update_towns_index($towns);
+                    dexpress_log("Uspešno ažuriran šifarnik za towns. Ukupno: " . count($towns), 'info');
+                } else {
+                    dexpress_log('Towns: prazan ili nevažeći odgovor', 'warning');
+                }
+            }
             // Ulice se obrađuju posebno zbog veličine
             dexpress_log('Započeto ažuriranje ulica', 'info');
             $streets = $this->get_streets($last_update);
@@ -429,7 +454,7 @@ class D_Express_API
     /**
      * Ažuriranje indeksa prodavnica
      */
-    private function update_shops_index($shops)
+    public function update_shops_index($shops)
     {
         global $wpdb;
         $table_name = $wpdb->prefix . 'dexpress_shops';
@@ -446,38 +471,22 @@ class D_Express_API
                     'town_id' => isset($shop['TownID']) ? $shop['TownID'] : null,
                     'working_hours' => isset($shop['WorkingHours']) ? $shop['WorkingHours'] : null,
                     'work_days' => isset($shop['WorkDays']) ? $shop['WorkDays'] : null,
-                    'phone' => isset($shop['Phone']) ? $shop['Phone'] : null,
+                    'phone' => isset($shop['Phone']) ? $shop['Phone'] : null, // ← DODAJ OVO!
                     'latitude' => isset($shop['Latitude']) ? $shop['Latitude'] : null,
                     'longitude' => isset($shop['Longitude']) ? $shop['Longitude'] : null,
                     'location_type' => isset($shop['LocationType']) ? $shop['LocationType'] : null,
-                    'pay_by_cash' => isset($shop['PayByCash']) ? ($shop['PayByCash'] ? 1 : 0) : 0,
-                    'pay_by_card' => isset($shop['PayByCard']) ? ($shop['PayByCard'] ? 1 : 0) : 0,
+                    'pay_by_cash' => isset($shop['PayByCash']) ? (int)$shop['PayByCash'] : 0,
+                    'pay_by_card' => isset($shop['PayByCard']) ? (int)$shop['PayByCard'] : 0,
                     'last_updated' => current_time('mysql')
                 ),
-                array(
-                    '%d', // id
-                    '%s', // name
-                    '%s', // description
-                    '%s', // address
-                    '%s', // town
-                    '%d', // town_id
-                    '%s', // working_hours
-                    '%s', // work_days
-                    '%s', // phone
-                    '%s', // latitude
-                    '%s', // longitude
-                    '%s', // location_type
-                    '%d', // pay_by_cash
-                    '%d', // pay_by_card
-                    '%s'  // last_updated
-                )
+                array('%d', '%s', '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%s')
             );
         }
     }
     /**
      * Ažuriranje indeksa opština
      */
-    private function update_municipalities_index($municipalities)
+    public function update_municipalities_index($municipalities)
     {
         global $wpdb;
         $table_name = $wpdb->prefix . 'dexpress_municipalities';
@@ -499,7 +508,7 @@ class D_Express_API
     /**
      * Ažuriranje indeksa centara
      */
-    private function update_centres_index($centres)
+    public function update_centres_index($centres)
     {
         global $wpdb;
         $table_name = $wpdb->prefix . 'dexpress_centres';
@@ -543,7 +552,7 @@ class D_Express_API
     /**
      * Ažuriranje indeksa gradova
      */
-    private function update_towns_index($towns)
+    public function update_towns_index($towns)
     {
         global $wpdb;
         $table_name = $wpdb->prefix . 'dexpress_towns';
@@ -557,6 +566,7 @@ class D_Express_API
                     'display_name' => isset($town['DName']) ? $town['DName'] : null,
                     'center_id' => isset($town['CentarId']) ? $town['CentarId'] : null,
                     'municipality_id' => isset($town['MId']) ? $town['MId'] : null,
+                    'order_num' => isset($town['O']) ? $town['O'] : null,
                     'postal_code' => isset($town['PttNo']) ? $town['PttNo'] : null,
                     'delivery_days' => isset($town['DeliveryDays']) ? $town['DeliveryDays'] : null,
                     'cut_off_pickup_time' => isset($town['CutOffPickupTime']) ? $town['CutOffPickupTime'] : null,
@@ -569,7 +579,7 @@ class D_Express_API
     /**
      * Ažuriranje indeksa lokacija
      */
-    private function update_locations_index($locations)
+    public function update_locations_index($locations)
     {
         global $wpdb;
         $table_name = $wpdb->prefix . 'dexpress_locations';
@@ -591,28 +601,11 @@ class D_Express_API
                     'latitude' => isset($location['Latitude']) ? $location['Latitude'] : null,
                     'longitude' => isset($location['Longitude']) ? $location['Longitude'] : null,
                     'location_type' => isset($location['LocationType']) ? $location['LocationType'] : null,
-                    'pay_by_cash' => isset($location['PayByCash']) ? ($location['PayByCash'] ? 1 : 0) : 0,
-                    'pay_by_card' => isset($location['PayByCard']) ? ($location['PayByCard'] ? 1 : 0) : 0,
+                    'pay_by_cash' => isset($location['PayByCash']) ? (int)$location['PayByCash'] : 0,
+                    'pay_by_card' => isset($location['PayByCard']) ? (int)$location['PayByCard'] : 0,
                     'last_updated' => current_time('mysql')
                 ),
-                array(
-                    '%d', // id
-                    '%s', // name
-                    '%s', // description
-                    '%s', // address
-                    '%s', // town
-                    '%d', // town_id
-                    '%s', // working_hours
-                    '%s', // work_hours
-                    '%s', // work_days
-                    '%s', // phone
-                    '%s', // latitude
-                    '%s', // longitude
-                    '%s', // location_type
-                    '%d', // pay_by_cash
-                    '%d', // pay_by_card
-                    '%s'  // last_updated
-                )
+                array('%d', '%s', '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%s')
             );
         }
     }
@@ -622,13 +615,13 @@ class D_Express_API
      * @param array $streets Lista ulica za ažuriranje
      * @return void
      */
-    private function update_streets_batch($streets)
+    public function update_streets_batch($streets)
     {
         global $wpdb;
         $table_name = $wpdb->prefix . 'dexpress_streets';
 
         // Manja batch veličina za ulice zbog velikog broja
-        $batch_size = 200;
+        $batch_size = 500;
         $total = count($streets);
 
         // Čistimo memoriju pre obrade
@@ -685,7 +678,7 @@ class D_Express_API
     /**
      * Ažuriranje indeksa statusa
      */
-    private function update_statuses_index($statuses)
+    public function update_statuses_index($statuses)
     {
         global $wpdb;
         $table_name = $wpdb->prefix . 'dexpress_statuses_index';
@@ -707,7 +700,7 @@ class D_Express_API
     /**
      * Ažuriranje indeksa automata za pakete
      */
-    private function update_dispensers_index($dispensers)
+    public function update_dispensers_index($dispensers)
     {
         global $wpdb;
         $table_name = $wpdb->prefix . 'dexpress_dispensers';
@@ -723,15 +716,13 @@ class D_Express_API
                     'town_id' => isset($dispenser['TownID']) ? $dispenser['TownID'] : null,
                     'work_hours' => isset($dispenser['WorkHours']) ? $dispenser['WorkHours'] : null,
                     'work_days' => isset($dispenser['WorkDays']) ? $dispenser['WorkDays'] : null,
-                    'coordinates' => json_encode(array(
-                        'latitude' => isset($dispenser['Latitude']) ? $dispenser['Latitude'] : null,
-                        'longitude' => isset($dispenser['Longitude']) ? $dispenser['Longitude'] : null
-                    )),
-                    'pay_by_cash' => isset($dispenser['PayByCash']) ? (int) $dispenser['PayByCash'] : 0,
-                    'pay_by_card' => isset($dispenser['PayByCard']) ? (int) $dispenser['PayByCard'] : 0,
+                    'latitude' => isset($dispenser['Latitude']) ? (float)$dispenser['Latitude'] : null,
+                    'longitude' => isset($dispenser['Longitude']) ? (float)$dispenser['Longitude'] : null,
+                    'pay_by_cash' => isset($dispenser['PayByCash']) ? (int)$dispenser['PayByCash'] : 0,
+                    'pay_by_card' => isset($dispenser['PayByCard']) ? (int)$dispenser['PayByCard'] : 0,
                     'last_updated' => current_time('mysql')
                 ),
-                array('%d', '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%d', '%d', '%s')
+                array('%d', '%s', '%s', '%s', '%d', '%s', '%s', '%f', '%f', '%d', '%d', '%s')
             );
         }
     }

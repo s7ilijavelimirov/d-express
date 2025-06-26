@@ -1,0 +1,14 @@
+{"timestamp":"2025-06-26 05:47:37","context":"general","level":"info","message":"CRON: Započeto dnevno ažuriranje"}
+{"timestamp":"2025-06-26 05:47:37","context":"general","level":"info","message":"CRON: Ažuriranje paketomata..."}
+{"timestamp":"2025-06-26 05:47:38","context":"general","level":"info","message":"CRON: Ažurirano 219 paketomata"}
+{"timestamp":"2025-06-26 05:47:39","context":"general","level":"info","message":"CRON: Osnovni šifarnici ažurirani"}
+{"timestamp":"2025-06-26 05:47:39","context":"general","level":"info","message":"CRON: Završeno dnevno ažuriranje"}
+{"timestamp":"2025-06-26 05:48:27","context":"general","level":"info","message":"CRON: Započeto dnevno ažuriranje"}
+{"timestamp":"2025-06-26 05:48:27","context":"general","level":"info","message":"CRON: Ažuriranje paketomata..."}
+{"timestamp":"2025-06-26 05:48:28","context":"general","level":"info","message":"CRON: Ažurirano 219 paketomata"}
+{"timestamp":"2025-06-26 05:48:28","context":"general","level":"info","message":"CRON: Osnovni šifarnici ažurirani"}
+{"timestamp":"2025-06-26 05:48:28","context":"general","level":"info","message":"CRON: Završeno dnevno ažuriranje"}
+{"timestamp":"2025-06-26 06:06:12","context":"general","level":"info","message":"Manuelno pokretanje svih ažuriranja"}
+{"timestamp":"2025-06-26 06:06:24","context":"general","level":"info","message":"Manuelno ažuriranje uspešno završeno"}
+{"timestamp":"2025-06-26 06:10:52","context":"general","level":"info","message":"Manuelno pokretanje svih ažuriranja"}
+{"timestamp":"2025-06-26 06:11:05","context":"general","level":"info","message":"Manuelno ažuriranje uspešno završeno"}

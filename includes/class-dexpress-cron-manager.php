@@ -90,7 +90,7 @@ class D_Express_Cron_Manager
             $table = $wpdb->prefix . 'dexpress_dispensers';
 
             // Batch insert/update
-            $batch_size = get_option('dexpress_batch_size', 100);
+            $batch_size = get_option('dexpress_batch_size', 500);
             $chunks = array_chunk($dispensers, $batch_size);
             $total_updated = 0;
 
@@ -103,7 +103,6 @@ class D_Express_Cron_Manager
                         'town_id' => $dispenser['TownID'] ?? 0,
                         'latitude' => $dispenser['Latitude'] ?? 0,
                         'longitude' => $dispenser['Longitude'] ?? 0,
-                        'active' => $dispenser['Active'] ?? 1,
                         'last_updated' => current_time('mysql')
                     ]);
 

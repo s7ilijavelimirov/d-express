@@ -291,7 +291,6 @@ class D_Express_WooCommerce
         }
         if (is_admin()) {
             require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/admin/class-dexpress-admin.php';
-            // require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/admin/dexpress-admin-ajax.php';
         }
         // Kreiranje potrebnih tabela u bazi
         require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/db/class-dexpress-db-installer.php';
@@ -299,14 +298,13 @@ class D_Express_WooCommerce
         $installer->install();
         $db = new D_Express_DB();
         $db->add_shipment_index();
+
         // Postavljanje potrebnih opcija
         $this->set_default_options();
 
         // Flush rewrite rules za REST API endpoint
         flush_rewrite_rules();
-        if (get_option('dexpress_api_username') && get_option('dexpress_api_password')) {
-            D_Express_Cron_Manager::initial_load_all();
-        }
+
     }
 
     /**
