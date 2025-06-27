@@ -43,6 +43,7 @@ class D_Express_Admin
         // AJAX za ostale funkcionalnosti
         add_action('wp_ajax_dexpress_save_settings', array($this, 'ajax_save_settings'));
         add_action('wp_ajax_dexpress_test_api', array($this, 'ajax_test_api'));
+        add_action('wp_ajax_dexpress_create_shipment', array($this, 'ajax_create_shipment'));
     }
     /**
      * Inicijalizacija admin funkcionalnosti
@@ -77,6 +78,18 @@ class D_Express_Admin
         add_filter('manage_woocommerce_page_wc-orders_columns', array($this, 'add_order_shipment_status_column'), 21);
         add_action('manage_woocommerce_page_wc-orders_custom_column', array($this, 'show_order_shipment_status_column'), 21, 2);
     }
+
+    /**
+     * AJAX: Kreiranje pošiljke
+     */
+   public function ajax_create_shipment()
+{
+    error_log('ADMIN AJAX HANDLER POZVAN!'); // DODAJ OVO ZA DEBUG
+    
+    // Instanciraj shipment service i pozovi njegovu funkciju
+    $shipment_service = new D_Express_Shipment_Service();
+    $shipment_service->ajax_create_shipment();
+}
     public function format_order_address_phone($address, $type, $order)
     {
         if ($type === 'billing' && isset($address['phone'])) {
@@ -312,12 +325,6 @@ class D_Express_Admin
         $code_range_end = get_option('dexpress_code_range_end', '');
         $test_mode = get_option('dexpress_test_mode', 'yes');
         $enable_logging = get_option('dexpress_enable_logging', 'no');
-        $sender_name = get_option('dexpress_sender_name', '');
-        $sender_address = get_option('dexpress_sender_address', '');
-        $sender_address_num = get_option('dexpress_sender_address_num', '');
-        $sender_town_id = get_option('dexpress_sender_town_id', '');
-        $sender_contact_name = get_option('dexpress_sender_contact_name', '');
-        $sender_contact_phone = get_option('dexpress_sender_contact_phone', '');
         $shipment_type = get_option('dexpress_shipment_type', '2');
         $payment_by = get_option('dexpress_payment_by', '0');
         $payment_type = get_option('dexpress_payment_type', '2');
@@ -1545,14 +1552,6 @@ class D_Express_Admin
         $update_time = isset($_POST['dexpress_update_time']) ? sanitize_text_field($_POST['dexpress_update_time']) : '03:00';
         $batch_size = isset($_POST['dexpress_batch_size']) ? intval($_POST['dexpress_batch_size']) : 100;
 
-        // Podaci pošiljaoca
-        $sender_name = isset($_POST['dexpress_sender_name']) ? sanitize_text_field($_POST['dexpress_sender_name']) : '';
-        $sender_address = isset($_POST['dexpress_sender_address']) ? sanitize_text_field($_POST['dexpress_sender_address']) : '';
-        $sender_address_num = isset($_POST['dexpress_sender_address_num']) ? sanitize_text_field($_POST['dexpress_sender_address_num']) : '';
-        $sender_town_id = isset($_POST['dexpress_sender_town_id']) ? intval($_POST['dexpress_sender_town_id']) : '';
-        $sender_contact_name = isset($_POST['dexpress_sender_contact_name']) ? sanitize_text_field($_POST['dexpress_sender_contact_name']) : '';
-        $sender_contact_phone = isset($_POST['dexpress_sender_contact_phone']) ? sanitize_text_field($_POST['dexpress_sender_contact_phone']) : '';
-
         // Podešavanja pošiljke
         $shipment_type = isset($_POST['dexpress_shipment_type']) ? sanitize_text_field($_POST['dexpress_shipment_type']) : '2';
         $payment_by = isset($_POST['dexpress_payment_by']) ? sanitize_text_field($_POST['dexpress_payment_by']) : '0';
@@ -1601,13 +1600,6 @@ class D_Express_Admin
         update_option('dexpress_code_range_start', $code_range_start);
         update_option('dexpress_code_range_end', $code_range_end);
         update_option('dexpress_validate_address', $validate_address);
-        update_option('dexpress_sender_name', $sender_name);
-        update_option('dexpress_buyout_account', $buyout_account);
-        update_option('dexpress_sender_address', $sender_address);
-        update_option('dexpress_sender_address_num', $sender_address_num);
-        update_option('dexpress_sender_town_id', $sender_town_id);
-        update_option('dexpress_sender_contact_name', $sender_contact_name);
-        update_option('dexpress_sender_contact_phone', $sender_contact_phone);
         update_option('dexpress_shipment_type', $shipment_type);
         update_option('dexpress_payment_by', $payment_by);
         update_option('dexpress_payment_type', $payment_type);
@@ -1792,11 +1784,32 @@ class D_Express_Admin
                 echo '<p class="description">' . __('Ova narudžbina nema D Express dostavu.', 'd-express-woo') . '</p>';
             } else {
                 echo '<p>' . __('Još uvek nema pošiljke za ovu narudžbinu.', 'd-express-woo') . '</p>';
+                $sender_service = D_Express_Sender_Locations::get_instance();
+                $locations = $sender_service->get_all_locations();
 
-                // Dugme za kreiranje pošiljke
-                echo '<button type="button" class="button button-primary" id="dexpress-create-shipment-btn" 
+                if (empty($locations)) {
+                    echo '<div class="notice notice-warning inline">';
+                    echo '<p>Morate kreirati najmanje jednu sender lokaciju pre kreiranja pošiljke.</p>';
+                    echo '<p><a href="' . admin_url('admin.php?page=dexpress-settings&tab=sender') . '" class="button">Dodaj lokaciju</a></p>';
+                    echo '</div>';
+                } else {
+                    echo '<div class="dexpress-location-selection" style="margin-bottom: 15px;">';
+                    echo '<label for="sender-location-select"><strong>Pošalji sa lokacije:</strong></label><br>';
+                    echo '<select id="sender-location-select" style="width: 100%; margin-top: 5px;">';
+                    foreach ($locations as $location) {
+                        $selected = $location->is_default ? 'selected' : '';
+                        echo '<option value="' . esc_attr($location->id) . '" ' . $selected . '>';
+                        echo esc_html($location->name) . ' (' . esc_html($location->town_name) . ')';
+                        if ($location->is_default) echo ' - [Glavna]';
+                        echo '</option>';
+                    }
+                    echo '</select>';
+                    echo '</div>';
+
+                    echo '<button type="button" class="button button-primary" id="dexpress-create-shipment-btn" 
                data-order-id="' . esc_attr($order_id) . '">' .
-                    __('Kreiraj D Express pošiljku', 'd-express-woo') . '</button>';
+                        __('Kreiraj D Express pošiljku', 'd-express-woo') . '</button>';
+                }
 
                 echo '<div id="dexpress-response" style="margin-top: 10px;"></div>';
 
@@ -1818,6 +1831,7 @@ class D_Express_Admin
                                 data: {
                                     action: 'dexpress_create_shipment',
                                     order_id: order_id,
+                                    sender_location_id: $('#sender-location-select').val(),
                                     nonce: '<?php echo $this->admin_nonce; ?>'
                                 },
                                 success: function(response) {

@@ -366,11 +366,15 @@ class D_Express_Label_Generator
             <!-- Podaci pošiljaoca -->
             <div class="sender-info">
                 <strong>Pošiljalac:</strong><br>
-                <?php echo esc_html(get_option('dexpress_sender_name')); ?>,
-                <?php echo esc_html(get_option('dexpress_sender_address')); ?>
-                <?php echo esc_html(get_option('dexpress_sender_address_num')); ?>,
-                <?php echo esc_html($town_name); ?><br>
-                <?php echo esc_html(get_option('dexpress_sender_contact_phone')); ?>
+                <?php
+                $sender_service = D_Express_Sender_Locations::get_instance();
+                $sender_location = $sender_service->get_default_location();
+                ?>
+                <?php echo esc_html($sender_location ? $sender_location->name : ''); ?>,
+                <?php echo esc_html($sender_location ? $sender_location->address : ''); ?>
+                <?php echo esc_html($sender_location ? $sender_location->address_num : ''); ?>,
+                <?php echo esc_html($sender_location ? $sender_location->town_name : ''); ?><br>
+                <?php echo esc_html($sender_location ? $sender_location->contact_phone : ''); ?>
             </div>
 
             <!-- Barcode sekcija -->
@@ -705,7 +709,7 @@ class D_Express_Label_Generator
     public function ajax_generate_label()
     {
         // Provera nonce-a
-        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'dexpress-admin-nonce')) {
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'dexpress_admin_nonce')) {
             wp_send_json_error(array(
                 'message' => __('Sigurnosna provera nije uspela.', 'd-express-woo')
             ));
@@ -953,19 +957,15 @@ class D_Express_Label_Generator
                 <!-- Podaci pošiljaoca -->
                 <div class="sender-info">
                     <strong>Pošiljalac:</strong><br>
-                    <?php echo esc_html(get_option('dexpress_sender_name')); ?>,
-                    <?php echo esc_html(get_option('dexpress_sender_address')); ?>
-                    <?php echo esc_html(get_option('dexpress_sender_address_num')); ?>,
                     <?php
-                    $town_id = get_option('dexpress_sender_town_id');
-                    global $wpdb;
-                    $town_name = $wpdb->get_var($wpdb->prepare(
-                        "SELECT name FROM {$wpdb->prefix}dexpress_towns WHERE id = %d",
-                        $town_id
-                    ));
-                    echo esc_html($town_name);
-                    ?><br>
-                    <?php echo esc_html(get_option('dexpress_sender_contact_phone')); ?>
+                    $sender_service = D_Express_Sender_Locations::get_instance();
+                    $sender_location = $sender_service->get_default_location();
+                    ?>
+                    <?php echo esc_html($sender_location ? $sender_location->name : ''); ?>,
+                    <?php echo esc_html($sender_location ? $sender_location->address : ''); ?>
+                    <?php echo esc_html($sender_location ? $sender_location->address_num : ''); ?>,
+                    <?php echo esc_html($sender_location ? $sender_location->town_name : ''); ?><br>
+                    <?php echo esc_html($sender_location ? $sender_location->contact_phone : ''); ?>
                 </div>
 
                 <!-- Barcode sekcija -->
@@ -1064,20 +1064,12 @@ class D_Express_Label_Generator
     private function prepare_order_data($order)
     {
         // Podaci o pošiljaocu
-        $sender_name = get_option('dexpress_sender_name', '');
-        $sender_address = get_option('dexpress_sender_address', '') . ' ' . get_option('dexpress_sender_address_num', '');
-        $sender_town_id = get_option('dexpress_sender_town_id', '');
+        $sender_service = D_Express_Sender_Locations::get_instance();
+        $sender_location = $sender_service->get_default_location();
 
-        // Dobijanje naziva grada pošiljaoca
-        global $wpdb;
-        $sender_city = '';
-
-        if (!empty($sender_town_id)) {
-            $sender_city = $wpdb->get_var($wpdb->prepare(
-                "SELECT name FROM {$wpdb->prefix}dexpress_towns WHERE id = %d",
-                $sender_town_id
-            ));
-        }
+        $sender_name = $sender_location ? $sender_location->name : '';
+        $sender_address = $sender_location ? ($sender_location->address . ' ' . $sender_location->address_num) : '';
+        $sender_city = $sender_location ? $sender_location->town_name : '';
 
         // Izračunavanje ukupne težine narudžbine
         if (class_exists('D_Express_Validator')) {

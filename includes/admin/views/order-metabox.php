@@ -132,17 +132,34 @@ wp_nonce_field('dexpress_meta_box', 'dexpress_meta_box_nonce');
             <p>
                 <label for="dexpress_content"><?php _e('Sadržaj pošiljke:', 'd-express-woo'); ?></label><br>
                 <input type="text" id="dexpress_content" name="dexpress_content" class="widefat"
-                  value="<?php echo esc_attr(get_post_meta($order->get_id(), '_dexpress_content', true) ?: dexpress_generate_shipment_content($order)); ?>">
+                    value="<?php echo esc_attr(get_post_meta($order->get_id(), '_dexpress_content', true) ?: dexpress_generate_shipment_content($order)); ?>">
             </p>
         </div>
 
+        <?php
+        $sender_service = D_Express_Sender_Locations::get_instance();
+        $locations = $sender_service->get_all_locations();
+        ?>
+
+        <?php if (!empty($locations)): ?>
+            <div class="dexpress-location-selection" style="margin-bottom: 15px;">
+                <label for="sender-location-select-metabox"><strong>Pošalji sa lokacije:</strong></label><br>
+                <select id="sender-location-select-metabox" style="width: 100%; margin-top: 5px;">
+                    <?php foreach ($locations as $location): ?>
+                        <option value="<?php echo esc_attr($location->id); ?>" <?php selected($location->is_default, 1); ?>>
+                            <?php echo esc_html($location->name); ?> (<?php echo esc_html($location->town_name); ?>)
+                            <?php if ($location->is_default): ?> - [Glavna]<?php endif; ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+        <?php endif; ?>
         <div class="dexpress-create-shipment" style="margin-top: 15px;">
             <button type="button" class="button button-primary dexpress-create-shipment-btn" data-order-id="<?php echo esc_attr($order->get_id()); ?>">
                 <?php _e('Kreiraj D Express pošiljku', 'd-express-woo'); ?>
             </button>
             <div class="dexpress-response" style="margin-top: 10px;"></div>
         </div>
-
         <script>
             jQuery(document).ready(function($) {
                 $('.dexpress-create-shipment-btn').on('click', function() {
@@ -159,7 +176,8 @@ wp_nonce_field('dexpress_meta_box', 'dexpress_meta_box_nonce');
                         data: {
                             action: 'dexpress_create_shipment',
                             order_id: order_id,
-                            nonce: dexpressAdmin.nonce
+                            sender_location_id: $('#sender-location-select-metabox').val(),
+                            nonce: '<?php echo wp_create_nonce('dexpress_admin_nonce'); ?>'
                         },
                         success: function(response) {
                             btn.prop('disabled', false).text('<?php _e('Kreiraj D Express pošiljku', 'd-express-woo'); ?>');
@@ -201,7 +219,7 @@ wp_nonce_field('dexpress_meta_box', 'dexpress_meta_box_nonce');
                     data: {
                         action: 'dexpress_generate_label',
                         shipment_id: shipment_id,
-                        nonce: dexpressAdmin.nonce
+                        nonce: '<?php echo wp_create_nonce('dexpress_admin_nonce'); ?>'
                     },
                     timeout: 30000, // Povećan timeout
                     success: function(response) {

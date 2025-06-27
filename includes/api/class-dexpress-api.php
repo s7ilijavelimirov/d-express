@@ -771,12 +771,20 @@ class D_Express_API
     /**
      * Priprema podatke pošiljke iz WooCommerce narudžbine
      */
-    public function prepare_shipment_data_from_order($order)
+    public function prepare_shipment_data_from_order($order, $sender_location_id = null)
     {
         if (!$order instanceof WC_Order) {
             return new WP_Error('invalid_order', __('Nevažeća narudžbina', 'd-express-woo'));
         }
+        if ($sender_location_id) {
+            $location = D_Express_Sender_Locations::get_instance()->get_location($sender_location_id);
+        } else {
+            $location = D_Express_Sender_Locations::get_instance()->get_default_location();
+        }
 
+        if (!$location) {
+            return new WP_Error('no_sender_location', 'Nema definisane sender lokacije');
+        }
         $order_id = $order->get_id();
 
         // DEBUG LOG: Inicijalna vrednost iz WooCommerce
@@ -979,28 +987,27 @@ class D_Express_API
                 )
             );
         }
-        $location = D_Express_Sender_Locations::get_instance()->get_default_location();
         // Osnovni podaci o pošiljci
         $shipment_data = array(
 
             'CClientID' => $this->client_id,
 
-            // Podaci o klijentu (pošiljaocu)
+            // Podaci o klijentu (pošiljaocu) - iz default lokacije
             'CName' => $location->name,
             'CAddress' => $location->address,
-            'CAddressNum' => get_option('dexpress_sender_address_num', ''),
-            'CTownID' => intval(get_option('dexpress_sender_town_id', 0)),
-            'CCName' => get_option('dexpress_sender_contact_name', ''),
-            'CCPhone' => D_Express_Validator::format_phone(get_option('dexpress_sender_contact_phone', '')),
+            'CAddressNum' => $location->address_num,
+            'CTownID' => intval($location->town_id),
+            'CCName' => $location->contact_name,
+            'CCPhone' => D_Express_Validator::format_phone($location->contact_phone),
 
             // Podaci o pošiljaocu (isto kao klijent)
             'PuClientID' => $this->client_id,
-            'PuName' => get_option('dexpress_sender_name', ''),
-            'PuAddress' => get_option('dexpress_sender_address', ''),
-            'PuAddressNum' => get_option('dexpress_sender_address_num', ''),
-            'PuTownID' => intval(get_option('dexpress_sender_town_id', 0)),
-            'PuCName' => get_option('dexpress_sender_contact_name', ''),
-            'PuCPhone' => D_Express_Validator::format_phone(get_option('dexpress_sender_contact_phone', '')),
+            'PuName' => $location->name,
+            'PuAddress' => $location->address,
+            'PuAddressNum' => $location->address_num,
+            'PuTownID' => intval($location->town_id),
+            'PuCName' => $location->contact_name,
+            'PuCPhone' => D_Express_Validator::format_phone($location->contact_phone),
 
             // Podaci o primaocu - sa validiranim vrednostima
             'RName' => $order->get_shipping_first_name() . ' ' . $order->get_shipping_last_name(),

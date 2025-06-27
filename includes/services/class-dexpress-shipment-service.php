@@ -29,7 +29,7 @@ class D_Express_Shipment_Service
         $this->api = new D_Express_API();
         $this->db = new D_Express_DB();
 
-        $this->register_ajax_handlers();
+        // $this->register_ajax_handlers();
         add_action('dexpress_after_shipment_created', array($this, 'send_tracking_email'), 10, 2);
     }
     /**
@@ -38,7 +38,7 @@ class D_Express_Shipment_Service
      * @param WC_Order $order WooCommerce narudžbina
      * @return int|WP_Error ID pošiljke ili WP_Error
      */
-    public function create_shipment($order)
+    public function create_shipment($order, $sender_location_id = null)
     {
         try {
             // Početni log 
@@ -68,7 +68,7 @@ class D_Express_Shipment_Service
 
             // Dobijanje podataka za pošiljku
             dexpress_log('[SHIPPING] Priprema podataka za narudžbinu #' . $order->get_id(), 'debug');
-            $shipment_data = $this->api->prepare_shipment_data_from_order($order);
+            $shipment_data = $this->api->prepare_shipment_data_from_order($order, $sender_location_id);
             if (is_wp_error($shipment_data)) {
                 dexpress_log('[SHIPPING] Greška pri pripremi podataka: ' . $shipment_data->get_error_message(), 'error');
                 return $shipment_data;
@@ -412,8 +412,7 @@ class D_Express_Shipment_Service
     {
         add_action('wp_ajax_dexpress_create_shipment', array($this, 'ajax_create_shipment'));
     }
-    // Dodaj u klasu D_Express_Shipment_Service
-    // U funkciji send_tracking_email u klasi D_Express_Shipment_Service
+
 
     public function send_tracking_email($shipment_id, $order)
     {
@@ -485,7 +484,7 @@ class D_Express_Shipment_Service
     public function ajax_create_shipment()
     {
         // Provera nonce-a
-        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field($_POST['nonce']), 'dexpress-admin-nonce')) {
+        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field($_POST['nonce']), 'dexpress_admin_nonce')) {
             wp_send_json_error(array(
                 'message' => __('Sigurnosna provera nije uspela.', 'd-express-woo')
             ));
@@ -507,7 +506,7 @@ class D_Express_Shipment_Service
 
         $order_id = intval($_POST['order_id']);
         $order = wc_get_order($order_id);
-
+        $sender_location_id = isset($_POST['sender_location_id']) ? intval($_POST['sender_location_id']) : null;
         if (!$order) {
             wp_send_json_error(array(
                 'message' => __('Narudžbina nije pronađena.', 'd-express-woo')
@@ -515,7 +514,7 @@ class D_Express_Shipment_Service
         }
 
         // Kreiranje pošiljke
-        $result = $this->create_shipment($order);
+        $result = $this->create_shipment($order, $sender_location_id);
 
         if (is_wp_error($result)) {
             wp_send_json_error(array(
