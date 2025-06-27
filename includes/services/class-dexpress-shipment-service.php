@@ -34,25 +34,53 @@ class D_Express_Shipment_Service
      * Kreiranje D Express pošiljke
      * 
      * @param WC_Order $order WooCommerce narudžbina
+     * @param int $sender_location_id ID lokacije pošaljioce (opciono)
      * @return int|WP_Error ID pošiljke ili WP_Error
      */
     public function create_shipment($order, $sender_location_id = null)
     {
         try {
+            $order_id = $order->get_id();
+
             // Početni log 
-            dexpress_log('[SHIPPING] Započinjem kreiranje pošiljke za narudžbinu #' . $order->get_id(), 'debug');
+            dexpress_log('[SHIPPING] Započinjem kreiranje pošiljke za narudžbinu #' . $order_id, 'debug');
+
+            // ============= DODATO: HANDLING LOKACIJE =============
+            // Određivanje lokacije koja će se koristiti
+            if (empty($sender_location_id)) {
+                $sender_location_id = get_option('dexpress_default_sender_location_id');
+                dexpress_log('[SHIPPING] Koristi se glavna lokacija ID: ' . $sender_location_id, 'debug');
+            } else {
+                dexpress_log('[SHIPPING] Koristi se prosleđena lokacija ID: ' . $sender_location_id, 'debug');
+            }
+
+            // Validacija da lokacija postoji
+            $sender_locations_service = new D_Express_Sender_Locations();
+            $sender_location = $sender_locations_service->get_location($sender_location_id);
+
+            if (!$sender_location) {
+                dexpress_log('[SHIPPING] ERROR: Lokacija ID ' . $sender_location_id . ' nije pronađena!', 'error');
+                return new WP_Error('invalid_location', __('Neispravna lokacija pošaljioce.', 'd-express-woo'));
+            }
+
+            // KLJUČNO: Sačuvaj korišćenu lokaciju PRE API poziva
+            update_post_meta($order_id, '_dexpress_used_sender_location_id', $sender_location_id);
+            update_post_meta($order_id, '_dexpress_selected_sender_location_id', $sender_location_id);
+
+            dexpress_log('[SHIPPING] Sačuvana korišćena lokacija ' . $sender_location_id . ' za order ' . $order_id, 'debug');
+            // ====================================================
 
             // Provera da li pošiljka već postoji
-            $existing = $this->db->get_shipment_by_order_id($order->get_id());
+            $existing = $this->db->get_shipment_by_order_id($order_id);
 
             if ($existing) {
-                dexpress_log('[SHIPPING] Pošiljka već postoji za narudžbinu #' . $order->get_id(), 'debug');
+                dexpress_log('[SHIPPING] Pošiljka već postoji za narudžbinu #' . $order_id, 'debug');
                 return new WP_Error('shipment_exists', __('Pošiljka već postoji za ovu narudžbinu.', 'd-express-woo'));
             }
 
             // Provera da li su postavljeni API kredencijali
             if (!$this->api->has_credentials()) {
-                dexpress_log('[SHIPPING] Nedostaju API kredencijali za narudžbinu #' . $order->get_id(), 'error');
+                dexpress_log('[SHIPPING] Nedostaju API kredencijali za narudžbinu #' . $order_id, 'error');
                 return new WP_Error('missing_credentials', __('Nedostaju API kredencijali. Molimo podesite API kredencijale u podešavanjima.', 'd-express-woo'));
             }
 
@@ -64,8 +92,8 @@ class D_Express_Shipment_Service
                 return $validation;
             }
 
-            // Dobijanje podataka za pošiljku
-            dexpress_log('[SHIPPING] Priprema podataka za narudžbinu #' . $order->get_id(), 'debug');
+            // Dobijanje podataka za pošiljku SA PROSLEĐENOM LOKACIJOM
+            dexpress_log('[SHIPPING] Priprema podataka za narudžbinu #' . $order_id . ' sa lokacijom ' . $sender_location_id, 'debug');
             $shipment_data = $this->api->prepare_shipment_data_from_order($order, $sender_location_id);
             if (is_wp_error($shipment_data)) {
                 dexpress_log('[SHIPPING] Greška pri pripremi podataka: ' . $shipment_data->get_error_message(), 'error');
@@ -102,15 +130,6 @@ class D_Express_Shipment_Service
             }
 
             dexpress_log('[SHIPPING DEBUG] Telefon u API zahtevu: ' . $shipment_data['RCPhone'], 'info');
-            if (is_wp_error($shipment_data)) {
-                dexpress_log('[SHIPPING] Greška pri pripremi podataka: ' . $shipment_data->get_error_message(), 'error');
-                // Dodati kod greške za lakše identifikovanje
-                return new WP_Error('prepare_data_failed', $shipment_data->get_error_message(), [
-                    'order_id' => $order->get_id(),
-                    'function' => 'create_shipment',
-                    'step' => 'prepare_data'
-                ]);
-            }
 
             // Logovanje u test modu
             if (dexpress_is_test_mode()) {
@@ -135,15 +154,16 @@ class D_Express_Shipment_Service
 
             dexpress_log('[SHIPPING] Tracking broj: ' . $tracking_number . ', Shipment ID: ' . $shipment_id, 'debug');
 
-            // Dodavanje napomene u narudžbinu
+            // Dodavanje napomene u narudžbinu SA LOKACIJOM
             $note = sprintf(
-                __('D Express pošiljka je kreirana. Tracking broj: %s, Reference ID: %s', 'd-express-woo'),
+                __('D Express pošiljka je kreirana. Tracking broj: %s, Reference ID: %s, Lokacija: %s', 'd-express-woo'),
                 $tracking_number,
-                $shipment_data['ReferenceID']
+                $shipment_data['ReferenceID'],
+                $sender_location['name']
             );
 
             // Dobavi postojeće komentare
-            $order_notes = wc_get_order_notes(['order_id' => $order->get_id()]);
+            $order_notes = wc_get_order_notes(['order_id' => $order_id]);
             $note_exists = false;
 
             // Proveri da li napomena već postoji
@@ -159,13 +179,15 @@ class D_Express_Shipment_Service
                 $order->add_order_note($note);
             }
 
-            // Čuvanje podataka o pošiljci u bazi
-            dexpress_log('[SHIPPING] Čuvanje pošiljke u bazu podataka', 'debug');
+            // ============= IZMENJENO: ČUVANJE SA LOKACIJOM =============
+            // Čuvanje podataka o pošiljci u bazi SA SENDER_LOCATION_ID
+            dexpress_log('[SHIPPING] Čuvanje pošiljke u bazu podataka sa lokacijom ' . $sender_location_id, 'debug');
             $shipment = array(
-                'order_id' => $order->get_id(),
+                'order_id' => $order_id,
                 'shipment_id' => $shipment_id,
                 'tracking_number' => $tracking_number,
                 'reference_id' => $shipment_data['ReferenceID'],
+                'sender_location_id' => $sender_location_id, // ← DODANO!
                 'created_at' => current_time('mysql'),
                 'updated_at' => current_time('mysql'),
                 'shipment_data' => json_encode($response),
@@ -173,6 +195,7 @@ class D_Express_Shipment_Service
             );
 
             $insert_id = $this->db->add_shipment($shipment);
+            // ===========================================================
 
             if (!$insert_id) {
                 dexpress_log('[SHIPPING] Greška pri upisu pošiljke u bazu', 'error');
@@ -196,12 +219,21 @@ class D_Express_Shipment_Service
             }
 
             // Uspešno kreiranje
-            dexpress_log('[SHIPPING] Pošiljka uspešno kreirana sa ID: ' . $insert_id, 'debug');
+            dexpress_log('[SHIPPING] Pošiljka uspešno kreirana sa ID: ' . $insert_id . ' i lokacijom: ' . $sender_location_id, 'debug');
 
             // Hook za dodatne akcije nakon kreiranja pošiljke
             do_action('dexpress_after_shipment_created', $insert_id, $order);
-            return $insert_id;
-            dexpress_log('[SHIPPING DEBUG] Pošiljka kreirana sa telefonom: ' . $shipment_data['RCPhone'], 'info');
+
+            // ============= DODANO: POVRATNE INFORMACIJE =============
+            return array(
+                'shipment_id' => $insert_id,
+                'shipment_code' => $response['PackageList'][0]['Code'] ?? '',
+                'tracking_number' => $tracking_number,
+                'used_location_id' => $sender_location_id,
+                'location_name' => $sender_location->name
+            );
+            // =======================================================
+
         } catch (Exception $e) {
             dexpress_log('[SHIPPING] Exception pri kreiranju pošiljke: ' . $e->getMessage(), 'error');
             return new WP_Error('exception', $e->getMessage());

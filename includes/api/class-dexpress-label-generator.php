@@ -338,18 +338,31 @@ class D_Express_Label_Generator
         // Datum i vreme štampe
         $print_date = date_i18n('d.m.Y H:i:s');
 
-        // Town name za pošiljaoca
-        $town_id = get_option('dexpress_sender_town_id');
-        global $wpdb;
-        $town_name = $wpdb->get_var($wpdb->prepare(
-            "SELECT name FROM {$wpdb->prefix}dexpress_towns WHERE id = %d",
-            $town_id
-        ));
+        // KLJUČNA IZMENA: Koristi pravu lokaciju umesto uvek glavnu
+        $used_location_id = get_post_meta($order->get_id(), '_dexpress_used_sender_location_id', true);
+
+        $sender_service = D_Express_Sender_Locations::get_instance();
+
+        if ($used_location_id) {
+            // Koristi lokaciju koja je stvarno korišćena
+            $sender_location = $sender_service->get_location($used_location_id);
+            error_log("Label generator: Koristi lokaciju ID {$used_location_id} iz meta podataka");
+        } else {
+            // Fallback na glavnu lokaciju
+            $sender_location = $sender_service->get_default_location();
+            error_log("Label generator: Koristi glavnu lokaciju kao fallback");
+        }
+
+        // Ako ni to ne radi, pokušaj da dohvatiš iz shipment tabele
+        if (!$sender_location && isset($shipment->sender_location_id)) {
+            $sender_location = $sender_service->get_location($shipment->sender_location_id);
+            error_log("Label generator: Koristi lokaciju iz shipment tabele: " . $shipment->sender_location_id);
+        }
 
         // Debug info
         $debug_info = "Generating label for order: " . $order->get_id() . "\n";
-        $debug_info .= "Address description: " . print_r($order_data['shipping_address_desc'], true) . "\n";
-        $debug_info .= "Package index/count: " . $package_index . "/" . $package_count . "\n";
+        $debug_info .= "Used location ID: " . ($used_location_id ?: 'none') . "\n";
+        $debug_info .= "Location name: " . ($sender_location ? $sender_location->name : 'not found') . "\n";
         error_log($debug_info);
 
         // HTML za nalepnicu
@@ -366,18 +379,17 @@ class D_Express_Label_Generator
             <!-- Podaci pošiljaoca -->
             <div class="sender-info">
                 <strong>Pošiljalac:</strong><br>
-                <?php
-                $sender_service = D_Express_Sender_Locations::get_instance();
-                $sender_location = $sender_service->get_default_location();
-                ?>
-                <?php echo esc_html($sender_location ? $sender_location->name : ''); ?>,
-                <?php echo esc_html($sender_location ? $sender_location->address : ''); ?>
-                <?php echo esc_html($sender_location ? $sender_location->address_num : ''); ?>,
-                <?php echo esc_html($sender_location ? $sender_location->town_name : ''); ?><br>
-                <?php echo esc_html($sender_location ? $sender_location->contact_phone : ''); ?>
+                <?php if ($sender_location): ?>
+                    <?php echo esc_html($sender_location->name); ?>,
+                    <?php echo esc_html($sender_location->address . ' ' . $sender_location->address_num); ?>,
+                    <?php echo esc_html($sender_location->town_name); ?><br>
+                    <?php echo esc_html($sender_location->contact_phone); ?>
+                <?php else: ?>
+                    <em>Podaci o pošiljaocu nisu dostupni</em>
+                <?php endif; ?>
             </div>
 
-            <!-- Barcode sekcija -->
+            <!-- Ostatak koda ostaje isti... -->
             <div class="barcode-container">
                 <svg class="barcode-<?php echo esc_attr($tracking_number); ?>"></svg>
                 <script>
@@ -431,7 +443,6 @@ class D_Express_Label_Generator
                 <div class="detail-row">
                     <span class="detail-label">Masa:</span>
                     <?php
-                    // Prikazujemo težinu bez decimalnih mesta ako je ceo broj
                     if ($order_data['total_weight'] == (int)$order_data['total_weight']) {
                         echo esc_html(number_format($order_data['total_weight'], 0, ',', '.') . ' kg');
                     } else {

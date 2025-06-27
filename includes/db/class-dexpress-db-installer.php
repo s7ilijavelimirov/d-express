@@ -16,10 +16,12 @@ class D_Express_DB_Installer
      */
     public function install()
     {
+         D_Express_DB::update_shipments_table_schema();
         $this->create_tables();
 
 
         $this->migrate_sender_data();
+        
         // Dodaj indekse za optimizaciju performansi
         global $wpdb;
 

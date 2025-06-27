@@ -117,7 +117,7 @@ class D_Express_Sender_Locations
         }
 
         $location_id = $wpdb->insert_id;
-        
+
         // Log successful creation
         dexpress_log("Kreirana nova sender lokacija ID: {$location_id}", 'info');
 
@@ -220,9 +220,8 @@ class D_Express_Sender_Locations
 
         return true;
     }
-
     /**
-     * Brisanje lokacije (soft delete)
+     * Brisanje lokacije (PRAVO brisanje iz baze)
      */
     public function delete_location($location_id)
     {
@@ -240,29 +239,73 @@ class D_Express_Sender_Locations
             return new WP_Error('not_found', 'Lokacija nije pronađena');
         }
 
-        // Ne dozvoli brisanje default lokacije ako je jedina
-        if ($existing->is_default) {
-            $count = $this->get_active_locations_count();
-            if ($count <= 1) {
-                return new WP_Error('cannot_delete', 'Ne možete obrisati jedinu aktivnu lokaciju');
-            }
+        error_log("DExpress Delete: Lokacija pronađena - ID: {$location_id}, Name: {$existing->name}, is_default: {$existing->is_default}");
+
+        // Ne dozvoli brisanje glavne lokacije
+        if ($existing->is_default == 1) {
+            error_log("DExpress Delete: Pokušano brisanje glavne lokacije");
+            return new WP_Error('cannot_delete_default', 'Ne možete obrisati glavnu lokaciju. Prvo postavite drugu lokaciju kao glavnu.');
         }
 
-        // Soft delete - označava kao neaktivnu
-        $result = $wpdb->update(
+        // Proveri da li postoje aktivne pošiljke sa ovom lokacijom
+        $shipments_table = $wpdb->prefix . 'dexpress_shipments';
+        $active_shipments = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$shipments_table} WHERE sender_location_id = %d",
+            $location_id
+        ));
+
+        error_log("DExpress Delete: Pronađeno {$active_shipments} aktivnih pošiljki za lokaciju {$location_id}");
+
+        if ($active_shipments > 0) {
+            return new WP_Error(
+                'has_active_shipments',
+                sprintf(
+                    'Ne možete obrisati lokaciju koja ima %d povezanih pošiljki. Prvo rešite te pošiljke.',
+                    $active_shipments
+                )
+            );
+        }
+
+        // Proveri da li postoje narudžbine koje koriste ovu lokaciju
+        $orders_with_location = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$wpdb->prefix}postmeta 
+         WHERE meta_key IN ('_dexpress_used_sender_location_id', '_dexpress_selected_sender_location_id') 
+         AND meta_value = %d",
+            $location_id
+        ));
+
+        if ($orders_with_location > 0) {
+            error_log("DExpress Delete: Upozorenje - Brisanje lokacije koja je korišćena u {$orders_with_location} narudžbina/e");
+            // Nastavljamo jer su to istorijski podaci
+        }
+
+        // KLJUČNO: PRAVO brisanje iz baze umesto soft delete
+        error_log("DExpress Delete: Početak pravog brisanja iz baze");
+
+        $deleted = $wpdb->delete(
             $table_name,
-            array('is_active' => 0, 'is_default' => 0),
             array('id' => $location_id),
-            array('%d', '%d'),
             array('%d')
         );
 
-        if ($result === false) {
+        error_log("DExpress Delete: wpdb->delete rezultat: " . var_export($deleted, true));
+        error_log("DExpress Delete: wpdb->last_error: " . $wpdb->last_error);
+
+        if ($deleted === false) {
             error_log('DExpress delete_location DB error: ' . $wpdb->last_error);
-            return new WP_Error('db_error', 'Greška pri brisanju lokacije: ' . $wpdb->last_error);
+            return new WP_Error('db_error', 'Greška pri brisanju iz baze: ' . $wpdb->last_error);
         }
 
-        dexpress_log("Obrisana sender lokacija ID: {$location_id}", 'info');
+        if ($deleted === 0) {
+            error_log('DExpress delete_location: Nijedan red nije obrisan');
+            return new WP_Error('not_deleted', 'Lokacija nije pronađena ili već obrisana');
+        }
+
+        // Očisti cache
+        wp_cache_delete('dexpress_sender_locations', 'dexpress');
+
+        error_log("DExpress Delete: USPEŠNO obrisana lokacija ID: {$location_id} - obrisano {$deleted} redova");
+        dexpress_log("STVARNO obrisana sender lokacija ID: {$location_id} od strane korisnika: " . get_current_user_id(), 'info');
 
         return true;
     }

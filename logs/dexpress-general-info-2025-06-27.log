@@ -1,0 +1,4 @@
+{"timestamp":"2025-06-27 12:45:24","context":"general","level":"info","message":"STVARNO obrisana sender lokacija ID: 11 od strane korisnika: 1"}
+{"timestamp":"2025-06-27 12:53:20","context":"general","level":"info","message":"CRON: Svi CRON zadaci obrisani"}
+{"timestamp":"2025-06-27 13:03:27","context":"general","level":"info","message":"Kreirana nova sender lokacija ID: 12"}
+{"timestamp":"2025-06-27 13:03:33","context":"general","level":"info","message":"Podešavanja su ažurirana od strane korisnika ID: 1"}

@@ -329,39 +329,79 @@ jQuery(document).ready(function ($) {
      * Obriši lokaciju
      */
     function deleteLocation(locationId) {
-        if (!confirm('Da li ste sigurni da želite da obrišete ovu lokaciju? Ova akcija se ne može opozvati.')) {
+        // Dobij informacije o lokaciji iz reda
+        const row = document.querySelector(`[data-location-id="${locationId}"]`);
+        const locationName = row ? row.querySelector('td:first-child strong').textContent : 'ovu lokaciju';
+
+        const confirmMessage = `Da li ste sigurni da želite da TRAJNO obrišete lokaciju "${locationName}"?\n\nOva akcija se ne može opozvati!`;
+
+        if (!confirm(confirmMessage)) {
             return;
         }
 
-        $.ajax({
-            url: dexpressAdmin.ajaxUrl,
-            type: 'POST',
-            data: {
-                action: 'dexpress_delete_location',
-                location_id: locationId,
-                nonce: dexpressAdmin.nonce
-            },
-            success: function (response) {
+        const data = {
+            action: 'dexpress_delete_location',
+            location_id: locationId,
+            nonce: dexpressAdmin.nonce
+        };
+
+        // Dodaj loading state
+        const deleteBtn = row.querySelector('.dexpress-delete-location');
+        const originalText = deleteBtn.textContent;
+
+        if (deleteBtn) {
+            deleteBtn.disabled = true;
+            deleteBtn.textContent = 'Brišem...';
+            deleteBtn.style.backgroundColor = '#999';
+        }
+
+        jQuery.post(dexpressAdmin.ajaxUrl, data)
+            .done(function (response) {
                 if (response.success) {
                     // Ukloni red iz tabele sa animacijom
-                    $('tr[data-location-id="' + locationId + '"]').fadeOut(500, function () {
-                        $(this).remove();
+                    if (row) {
+                        row.style.backgroundColor = '#f8d7da';
+                        row.style.transition = 'all 0.5s ease';
 
-                        // Proveri da li je tabela prazna
-                        if ($('.dexpress-locations-list tbody tr').length === 0) {
-                            $('.dexpress-locations-list').html('<p>Nema kreiranih lokacija.</p>');
-                        }
-                    });
+                        setTimeout(() => {
+                            row.style.opacity = '0';
+                            setTimeout(() => {
+                                row.remove();
+                            }, 300);
+                        }, 500);
+                    }
 
-                    showNotice('success', response.data.message || 'Lokacija je uspešno obrisana');
+                    // Prikaži success poruku
+                    showNotice(response.data.message, 'success');
+
+                    // Refresh stranicu da se ažuriraju dropdown-i
+                    setTimeout(() => {
+                        location.reload();
+                    }, 2000);
+
                 } else {
-                    showNotice('error', 'Greška: ' + (response.data || 'Nepoznata greška'));
+                    // Prikaži error poruku
+                    showNotice(response.data.message, 'error');
+
+                    // Vrati dugme u prethodno stanje
+                    if (deleteBtn) {
+                        deleteBtn.disabled = false;
+                        deleteBtn.textContent = originalText;
+                        deleteBtn.style.backgroundColor = '';
+                    }
                 }
-            },
-            error: function (xhr, status, error) {
-                showNotice('error', 'Greška pri komunikaciji sa serverom: ' + error);
-            }
-        });
+            })
+            .fail(function (jqXHR, textStatus, errorThrown) {
+                console.error('AJAX Error:', textStatus, errorThrown);
+                showNotice('Došlo je do greške prilikom brisanja: ' + textStatus, 'error');
+
+                // Vrati dugme u prethodno stanje
+                if (deleteBtn) {
+                    deleteBtn.disabled = false;
+                    deleteBtn.textContent = originalText;
+                    deleteBtn.style.backgroundColor = '';
+                }
+            });
     }
 
     /**
@@ -525,33 +565,30 @@ jQuery(document).ready(function ($) {
     /**
      * Prikaži notice poruku
      */
-    function showNotice(type, message) {
-        const noticeClass = type === 'success' ? 'notice-success' : 'notice-error';
-        const noticeHtml = `
-            <div class="notice ${noticeClass} is-dismissible">
-                <p>${message}</p>
-                <button type="button" class="notice-dismiss">
-                    <span class="screen-reader-text">Dismiss this notice.</span>
-                </button>
-            </div>
-        `;
+    function showNotice(message, type) {
+        // Kreiraj notice element
+        const notice = document.createElement('div');
+        notice.className = `notice notice-${type} is-dismissible`;
+        notice.innerHTML = `<p>${message}</p>`;
 
-        // Ukloni postojeće notice poruke
-        $('.notice.is-dismissible').remove();
+        // Dodaj close button
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'notice-dismiss';
+        closeBtn.innerHTML = '<span class="screen-reader-text">Dismiss this notice.</span>';
+        closeBtn.onclick = () => notice.remove();
+        notice.appendChild(closeBtn);
 
-        // Dodaj novu notice poruku
-        $('.wrap h1').after(noticeHtml);
-
-        // Dodaj funkcionalnost dismiss button-a
-        $('.notice-dismiss').on('click', function () {
-            $(this).parent().fadeOut();
-        });
-
-        // Auto-hide success poruke nakon 3 sekundi
-        if (type === 'success') {
-            setTimeout(function () {
-                $('.notice-success').fadeOut();
-            }, 3000);
+        // Dodaj na vrh stranice
+        const pageTitle = document.querySelector('.wp-header-end') || document.querySelector('.wrap h1');
+        if (pageTitle) {
+            pageTitle.parentNode.insertBefore(notice, pageTitle.nextSibling);
         }
+
+        // Auto remove nakon 5 sekundi
+        setTimeout(() => {
+            if (notice.parentNode) {
+                notice.remove();
+            }
+        }, 5000);
     }
 });

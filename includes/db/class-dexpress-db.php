@@ -28,6 +28,7 @@ class D_Express_DB
                 '%s', // shipment_id
                 '%s', // tracking_number
                 '%s', // reference_id
+                '%d', // sender_location_id
                 '%s', // status_code
                 '%s', // status_description
                 '%s', // created_at
@@ -315,5 +316,36 @@ class D_Express_DB
             array('%d'),
             array('%d')
         ) !== false;
+    }
+    /**
+     * Ažurira schema tabele za sender_location_id kolonu
+     */
+    public static function update_shipments_table_schema()
+    {
+        global $wpdb;
+
+        $table_name = $wpdb->prefix . 'dexpress_shipments';
+
+        // Proveri da li kolona postoji
+        $column_exists = $wpdb->get_results($wpdb->prepare(
+            "SHOW COLUMNS FROM {$table_name} LIKE %s",
+            'sender_location_id'
+        ));
+
+        // Ako ne postoji, dodaj je
+        if (empty($column_exists)) {
+            $sql = "ALTER TABLE {$table_name} ADD COLUMN sender_location_id INT(11) NULL AFTER reference_id";
+
+            $result = $wpdb->query($sql);
+
+            if ($result !== false) {
+                error_log('DExpress: Dodana sender_location_id kolona u shipments tabelu');
+
+                // Dodaj i index za bolje performanse
+                $wpdb->query("ALTER TABLE {$table_name} ADD INDEX idx_sender_location_id (sender_location_id)");
+            } else {
+                error_log('DExpress: Greška pri dodavanju sender_location_id kolone: ' . $wpdb->last_error);
+            }
+        }
     }
 }
