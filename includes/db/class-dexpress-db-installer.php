@@ -18,6 +18,8 @@ class D_Express_DB_Installer
     {
         $this->create_tables();
 
+
+        $this->migrate_sender_data();
         // Dodaj indekse za optimizaciju performansi
         global $wpdb;
 
@@ -35,7 +37,47 @@ class D_Express_DB_Installer
             $wpdb->query("CREATE INDEX idx_reference_id ON {$wpdb->prefix}dexpress_statuses(reference_id)");
         }
     }
+    /**
+     * DODAJ ovu novu metodu u klasu
+     */
+    private function migrate_sender_data()
+    {
+        global $wpdb;
 
+        $table_name = $wpdb->prefix . 'dexpress_sender_locations';
+
+        // Proveri da li već postoje lokacije
+        $existing = $wpdb->get_var("SELECT COUNT(*) FROM $table_name");
+        if ($existing > 0) {
+            return; // Već migrováno
+        }
+
+        // Uzmi postojeće podatke iz options
+        $sender_name = get_option('dexpress_sender_name', '');
+        $sender_address = get_option('dexpress_sender_address', '');
+        $sender_address_num = get_option('dexpress_sender_address_num', '');
+        $sender_town_id = get_option('dexpress_sender_town_id', 0);
+        $sender_contact_name = get_option('dexpress_sender_contact_name', '');
+        $sender_contact_phone = get_option('dexpress_sender_contact_phone', '');
+
+        // Kreiraj glavnu lokaciju ako postoje podaci
+        if (!empty($sender_name)) {
+            $wpdb->insert($table_name, [
+                'name' => $sender_name,
+                'address' => $sender_address,
+                'address_num' => $sender_address_num,
+                'town_id' => intval($sender_town_id),
+                'contact_name' => $sender_contact_name,
+                'contact_phone' => $sender_contact_phone,
+                'is_default' => 1,
+                'is_active' => 1
+            ]);
+
+            if (function_exists('dexpress_log')) {
+                dexpress_log('Migrirani podaci pošiljaoca u sender_locations', 'info');
+            }
+        }
+    }
     /**
      * Kreiranje potrebnih tabela
      */
@@ -231,6 +273,26 @@ class D_Express_DB_Installer
             last_updated datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY (id),
             KEY town_id (town_id)
+        ) $charset_collate;";
+
+        // 12. Tabela za lokacije pošiljaoca (NOVA!)
+        $tables[] = "CREATE TABLE {$wpdb->prefix}dexpress_sender_locations (
+            id int(11) NOT NULL AUTO_INCREMENT,
+            name varchar(255) NOT NULL COMMENT 'Naziv lokacije/prodavnice',
+            address varchar(255) NOT NULL COMMENT 'Naziv ulice',
+            address_num varchar(20) NOT NULL COMMENT 'Kućni broj',
+            town_id int(11) NOT NULL COMMENT 'ID grada iz dexpress_towns',
+            contact_name varchar(255) NOT NULL COMMENT 'Ime kontakt osobe',
+            contact_phone varchar(20) NOT NULL COMMENT 'Telefon (+381...)',
+            bank_account varchar(30) DEFAULT NULL COMMENT 'Račun za otkupninu',
+            is_default tinyint(1) DEFAULT 0 COMMENT 'Glavna lokacija',
+            is_active tinyint(1) DEFAULT 1 COMMENT 'Aktivna lokacija',
+            created_at datetime DEFAULT CURRENT_TIMESTAMP,
+            updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            KEY idx_is_default (is_default),
+            KEY idx_is_active (is_active),
+            KEY idx_town_id (town_id)
         ) $charset_collate;";
         // Učitavanje dbDelta funkcije
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';

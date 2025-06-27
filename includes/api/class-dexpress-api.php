@@ -979,14 +979,15 @@ class D_Express_API
                 )
             );
         }
-
+        $location = D_Express_Sender_Locations::get_instance()->get_default_location();
         // Osnovni podaci o pošiljci
         $shipment_data = array(
+
             'CClientID' => $this->client_id,
 
             // Podaci o klijentu (pošiljaocu)
-            'CName' => get_option('dexpress_sender_name', ''),
-            'CAddress' => get_option('dexpress_sender_address', ''),
+            'CName' => $location->name,
+            'CAddress' => $location->address,
             'CAddressNum' => get_option('dexpress_sender_address_num', ''),
             'CTownID' => intval(get_option('dexpress_sender_town_id', 0)),
             'CCName' => get_option('dexpress_sender_contact_name', ''),

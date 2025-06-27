@@ -74,6 +74,8 @@ class D_Express_WooCommerce
         // Klase za bazu podataka
         require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/db/class-dexpress-db.php';
 
+        require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/services/class-dexpress-sender-locations.php';
+
         // CRON
         require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/class-dexpress-cron-manager.php';
 
