@@ -375,9 +375,6 @@ class D_Express_WooCommerce
         $order_handler = new D_Express_Order_Handler();
         $order_handler->init();
 
-        $shipment_service = new D_Express_Shipment_Service();
-        $shipment_service->register_ajax_handlers();
-
         // Inicijalizacija timeline-a
         $timeline = new D_Express_Order_Timeline();
         $timeline->init();

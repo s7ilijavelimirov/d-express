@@ -10,7 +10,7 @@ defined('ABSPATH') || exit;
 
 class D_Express_Admin
 {
-    private $admin_nonce = 'dexpress_admin_nonce';
+   // private $admin_nonce = 'dexpress_admin_nonce';
 
     /**
      * Konstruktor klase
@@ -43,6 +43,8 @@ class D_Express_Admin
         // AJAX za ostale funkcionalnosti
         add_action('wp_ajax_dexpress_save_settings', array($this, 'ajax_save_settings'));
         add_action('wp_ajax_dexpress_test_api', array($this, 'ajax_test_api'));
+
+        // DODAJ OVO OBAVEZNO:
         add_action('wp_ajax_dexpress_create_shipment', array($this, 'ajax_create_shipment'));
     }
     /**
@@ -82,14 +84,57 @@ class D_Express_Admin
     /**
      * AJAX: Kreiranje pošiljke
      */
-   public function ajax_create_shipment()
-{
-    error_log('ADMIN AJAX HANDLER POZVAN!'); // DODAJ OVO ZA DEBUG
-    
-    // Instanciraj shipment service i pozovi njegovu funkciju
-    $shipment_service = new D_Express_Shipment_Service();
-    $shipment_service->ajax_create_shipment();
-}
+    public function ajax_create_shipment()
+    {
+
+        error_log('AJAX poziv primljen: ' . print_r($_POST, true));
+        error_log('Nonce provera: ' . wp_verify_nonce($_POST['nonce'] ?? '', 'dexpress_admin_nonce'));
+        // Provera nonce-a
+        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field($_POST['nonce']), 'dexpress_admin_nonce')) {
+            wp_send_json_error(array(
+                'message' => __('Sigurnosna provera nije uspela.', 'd-express-woo')
+            ));
+        }
+
+        // Provera dozvola
+        if (!current_user_can('manage_woocommerce')) {
+            wp_send_json_error(array(
+                'message' => __('Nemate dozvolu za ovu akciju.', 'd-express-woo')
+            ));
+        }
+
+        // Provera ID-a narudžbine
+        if (!isset($_POST['order_id']) || empty($_POST['order_id'])) {
+            wp_send_json_error(array(
+                'message' => __('ID narudžbine je obavezan.', 'd-express-woo')
+            ));
+        }
+
+        $order_id = intval($_POST['order_id']);
+        $order = wc_get_order($order_id);
+        $sender_location_id = isset($_POST['sender_location_id']) ? intval($_POST['sender_location_id']) : null;
+
+        if (!$order) {
+            wp_send_json_error(array(
+                'message' => __('Narudžbina nije pronađena.', 'd-express-woo')
+            ));
+        }
+
+        // Pozovi shipment service za kreiranje
+        $shipment_service = new D_Express_Shipment_Service();
+        $result = $shipment_service->create_shipment($order, $sender_location_id);
+
+        if (is_wp_error($result)) {
+            wp_send_json_error(array(
+                'message' => $result->get_error_message()
+            ));
+        } else {
+            wp_send_json_success(array(
+                'message' => __('Pošiljka je uspešno kreirana.', 'd-express-woo'),
+                'shipment_id' => $result
+            ));
+        }
+    }
     public function format_order_address_phone($address, $type, $order)
     {
         if ($type === 'billing' && isset($address['phone'])) {
@@ -1832,7 +1877,7 @@ class D_Express_Admin
                                     action: 'dexpress_create_shipment',
                                     order_id: order_id,
                                     sender_location_id: $('#sender-location-select').val(),
-                                    nonce: '<?php echo $this->admin_nonce; ?>'
+                                   nonce: '<?php echo wp_create_nonce('dexpress_admin_nonce'); ?>'
                                 },
                                 success: function(response) {
                                     btn.prop('disabled', false).text('<?php _e('Kreiraj D Express pošiljku', 'd-express-woo'); ?>');

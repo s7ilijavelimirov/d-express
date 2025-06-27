@@ -80,7 +80,7 @@ wp_nonce_field('dexpress_meta_box', 'dexpress_meta_box_nonce');
             </div>
         <?php endif; ?>
 
-        <p><?php _e('Još uvek nema pošiljke za ovu narudžbinu.', 'd-express-woo'); ?></p>
+        <p><?php _e('Još uvek nema pošiljke za ovu narudžbinu1.', 'd-express-woo'); ?></p>
 
         <div class="dexpress-shipment-options">
             <h4><?php _e('Opcije pošiljke:', 'd-express-woo'); ?></h4>

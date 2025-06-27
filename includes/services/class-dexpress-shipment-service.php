@@ -28,8 +28,6 @@ class D_Express_Shipment_Service
     {
         $this->api = new D_Express_API();
         $this->db = new D_Express_DB();
-
-        // $this->register_ajax_handlers();
         add_action('dexpress_after_shipment_created', array($this, 'send_tracking_email'), 10, 2);
     }
     /**
@@ -405,14 +403,6 @@ class D_Express_Shipment_Service
             return new WP_Error('exception', $e->getMessage());
         }
     }
-    /**
-     * Registruje AJAX handler za kreiranje pošiljke
-     */
-    public function register_ajax_handlers()
-    {
-        add_action('wp_ajax_dexpress_create_shipment', array($this, 'ajax_create_shipment'));
-    }
-
 
     public function send_tracking_email($shipment_id, $order)
     {
