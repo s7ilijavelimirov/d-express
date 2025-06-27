@@ -10,25 +10,45 @@ defined('ABSPATH') || exit;
 
 class D_Express_Admin
 {
-    private $admin_nonce;
+    private $admin_nonce = 'dexpress_admin_nonce';
+
+    /**
+     * Konstruktor klase
+     */
+    public function __construct()
+    {
+        add_action('admin_menu', array($this, 'add_admin_menu'));
+        add_action('admin_init', array($this, 'handle_admin_actions'));
+        add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_assets'));
+        add_action('admin_post_dexpress_reset_cron', array($this, 'handle_reset_cron'));
+
+        // VAŽNO: Registruj AJAX hooks-e
+        $this->register_ajax_hooks();
+
+        // Inicijalizuj sve admin funkcionalnosti
+        $this->init_admin_features();
+    }
+    /**
+     * Registracija svih AJAX hooks-a
+     */
+    private function register_ajax_hooks()
+    {
+        // AJAX za lokacije
+        add_action('wp_ajax_dexpress_create_location', array($this, 'ajax_create_location'));
+        add_action('wp_ajax_dexpress_update_location', array($this, 'ajax_update_location'));
+        add_action('wp_ajax_dexpress_get_location', array($this, 'ajax_get_location'));
+        add_action('wp_ajax_dexpress_set_default_location', array($this, 'ajax_set_default_location'));
+        add_action('wp_ajax_dexpress_delete_location', array($this, 'ajax_delete_location'));
+
+        // AJAX za ostale funkcionalnosti
+        add_action('wp_ajax_dexpress_save_settings', array($this, 'ajax_save_settings'));
+        add_action('wp_ajax_dexpress_test_api', array($this, 'ajax_test_api'));
+    }
     /**
      * Inicijalizacija admin funkcionalnosti
      */
-    public function init()
+    private function init_admin_features()
     {
-        if (is_admin()) {
-            error_log('DExpress Admin init called');
-        }
-        // Dodavanje admin menija
-        add_action('admin_menu', array($this, 'add_admin_menu'));
-
-        $this->register_ajax_handlers();
-        // Registracija admin stilova i skripti
-        add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_assets'));
-
-        // Obrada admin akcija
-        add_action('admin_init', array($this, 'handle_admin_actions'));
-
         // Dodavanje metabox-a na stranici narudžbine
         add_action('add_meta_boxes', array($this, 'add_order_metabox'));
 
@@ -49,30 +69,13 @@ class D_Express_Admin
         add_filter('manage_edit-shop_order_columns', array($this, 'add_wc_orders_label_printed_column'), 20);
         add_action('manage_shop_order_posts_custom_column', array($this, 'show_wc_orders_label_printed_column'), 20, 2);
 
-        // Dodaj ovo u funkciju init() u class-dexpress-admin.php
+        // Dodavanje status kolone
         add_filter('manage_edit-shop_order_columns', array($this, 'add_order_shipment_status_column'), 21);
         add_action('manage_shop_order_posts_custom_column', array($this, 'show_order_shipment_status_column'), 21, 2);
 
         // Za WooCommerce Orders HPOS prikaz
         add_filter('manage_woocommerce_page_wc-orders_columns', array($this, 'add_order_shipment_status_column'), 21);
         add_action('manage_woocommerce_page_wc-orders_custom_column', array($this, 'show_order_shipment_status_column'), 21, 2);
-    }
-
-    public function __construct()
-    {
-        $this->admin_nonce = wp_create_nonce('dexpress-admin-nonce');
-    }
-    // 2. DODAJ OVU NOVU METODU u klasu:
-    /**
-     * Registracija AJAX handlera
-     */
-    private function register_ajax_handlers()
-    {
-        add_action('wp_ajax_dexpress_create_location', [$this, 'ajax_create_location']);
-        add_action('wp_ajax_dexpress_update_location', [$this, 'ajax_update_location']);
-        add_action('wp_ajax_dexpress_get_location', [$this, 'ajax_get_location']);
-        add_action('wp_ajax_dexpress_set_default_location', [$this, 'ajax_set_default_location']);
-        add_action('wp_ajax_dexpress_delete_location', [$this, 'ajax_delete_location']);
     }
     public function format_order_address_phone($address, $type, $order)
     {
@@ -242,22 +245,26 @@ class D_Express_Admin
             wp_enqueue_script(
                 'dexpress-locations-js',
                 DEXPRESS_WOO_PLUGIN_URL . 'assets/js/dexpress-locations.js',
-                array('jquery'),
+                array('jquery', 'dexpress-admin-js'), // Dependency na main admin script
                 DEXPRESS_WOO_VERSION,
                 true
             );
             wp_localize_script('dexpress-admin-js', 'dexpressL10n', array(
                 'save_alert' => __('Niste sačuvali promene. Da li ste sigurni da želite da napustite ovu stranicu?', 'd-express-woo')
             ));
-            wp_localize_script('dexpress-admin-js', 'dexpressAdmin', array(
+            // Dodaj admin podatke u oba script-a
+            $admin_data = array(
                 'ajaxUrl' => admin_url('admin-ajax.php'),
-                'nonce' => $this->admin_nonce,
+                'nonce' => wp_create_nonce('dexpress_admin_nonce'),
                 'i18n' => array(
-                    'confirmDelete' => __('Da li ste sigurni da želite da obrišete ovu pošiljku?', 'd-express-woo'),
+                    'confirmDelete' => __('Da li ste sigurni da želite da obrišete ovu lokaciju?', 'd-express-woo'),
                     'error' => __('Došlo je do greške. Molimo pokušajte ponovo.', 'd-express-woo'),
                     'success' => __('Operacija uspešno izvršena.', 'd-express-woo'),
                 )
-            ));
+            );
+
+            wp_localize_script('dexpress-admin-js', 'dexpressAdmin', $admin_data);
+            wp_localize_script('dexpress-locations-js', 'dexpressAdmin', $admin_data);
         }
     }
     /**
@@ -845,118 +852,6 @@ class D_Express_Admin
                                 <?php _e('+ Dodaj novu lokaciju', 'd-express-woo'); ?>
                             </button>
                         </div>
-
-                        <!-- Modal za dodavanje/editovanje lokacije -->
-                        <div id="dexpress-location-modal" class="dexpress-modal" style="display: none;">
-                            <div class="dexpress-modal-content">
-                                <div class="dexpress-modal-header">
-                                    <h3 id="dexpress-modal-title"><?php _e('Dodaj novu lokaciju', 'd-express-woo'); ?></h3>
-                                    <span class="dexpress-modal-close">&times;</span>
-                                </div>
-
-                                <form id="dexpress-location-form">
-                                    <input type="hidden" id="location-id" name="location_id" value="">
-
-                                    <table class="form-table">
-                                        <tr>
-                                            <th scope="row">
-                                                <label for="location-name"><?php _e('Naziv lokacije *', 'd-express-woo'); ?></label>
-                                            </th>
-                                            <td>
-                                                <input type="text" id="location-name" name="name" class="regular-text" data-required="true">
-                                                <p class="description"><?php _e('Naziv prodavnice/lokacije (npr. "Glavni magacin Beograd")', 'd-express-woo'); ?></p>
-                                            </td>
-                                        </tr>
-
-                                        <tr>
-                                            <th scope="row">
-                                                <label for="location-address"><?php _e('Ulica *', 'd-express-woo'); ?></label>
-                                            </th>
-                                            <td>
-                                                <input type="text" id="location-address" name="address" class="regular-text" data-required="true">
-                                                <p class="description"><?php _e('Naziv ulice (bez broja)', 'd-express-woo'); ?></p>
-                                            </td>
-                                        </tr>
-
-                                        <tr>
-                                            <th scope="row">
-                                                <label for="location-address-num"><?php _e('Broj *', 'd-express-woo'); ?></label>
-                                            </th>
-                                            <td>
-                                                <input type="text" id="location-address-num" name="address_num" class="small-text" data-required="true">
-                                                <p class="description"><?php _e('Kućni broj (npr. 15, 23a, bb)', 'd-express-woo'); ?></p>
-                                            </td>
-                                        </tr>
-
-                                        <tr>
-                                            <th scope="row">
-                                                <label for="location-town"><?php _e('Grad *', 'd-express-woo'); ?></label>
-                                            </th>
-                                            <td>
-                                                <select id="location-town" name="town_id" class="regular-text" data-required="true">
-                                                    <option value=""><?php _e('Izaberite grad...', 'd-express-woo'); ?></option>
-                                                    <?php foreach ($towns_options as $town_id => $town_name): ?>
-                                                        <option value="<?php echo esc_attr($town_id); ?>"><?php echo esc_html($town_name); ?></option>
-                                                    <?php endforeach; ?>
-                                                </select>
-                                            </td>
-                                        </tr>
-
-                                        <tr>
-                                            <th scope="row">
-                                                <label for="location-contact-name"><?php _e('Kontakt osoba *', 'd-express-woo'); ?></label>
-                                            </th>
-                                            <td>
-                                                <input type="text" id="location-contact-name" name="contact_name" class="regular-text" data-required="true">
-                                                <p class="description"><?php _e('Ime i prezime kontakt osobe', 'd-express-woo'); ?></p>
-                                            </td>
-                                        </tr>
-
-                                        <tr>
-                                            <th scope="row">
-                                                <label for="location-contact-phone"><?php _e('Kontakt telefon *', 'd-express-woo'); ?></label>
-                                            </th>
-                                            <td>
-                                                <input type="text" id="location-contact-phone" name="contact_phone" class="regular-text" data-required="true"
-                                                    placeholder="+381641234567">
-                                                <p class="description"><?php _e('Telefon u formatu +381XXXXXXXXX', 'd-express-woo'); ?></p>
-                                            </td>
-                                        </tr>
-
-                                        <tr>
-                                            <th scope="row">
-                                                <label for="location-bank-account"><?php _e('Broj računa za otkupninu', 'd-express-woo'); ?></label>
-                                            </th>
-                                            <td>
-                                                <input type="text" id="location-bank-account" name="bank_account" class="regular-text"
-                                                    placeholder="160-0000000000-00">
-                                                <p class="description"><?php _e('Format: XXX-XXXXXXXXXX-XX (opciono)', 'd-express-woo'); ?></p>
-                                            </td>
-                                        </tr>
-
-                                        <tr>
-                                            <th scope="row">
-                                                <label for="location-is-default"><?php _e('Glavna lokacija', 'd-express-woo'); ?></label>
-                                            </th>
-                                            <td>
-                                                <label>
-                                                    <input type="checkbox" id="location-is-default" name="is_default" value="1">
-                                                    <?php _e('Postavi kao glavnu lokaciju', 'd-express-woo'); ?>
-                                                </label>
-                                                <p class="description"><?php _e('Glavna lokacija se koristi kao default izbor', 'd-express-woo'); ?></p>
-                                            </td>
-                                        </tr>
-                                    </table>
-
-                                    <div class="dexpress-modal-footer">
-                                        <button type="button" class="button" id="dexpress-cancel-location"><?php _e('Otkaži', 'd-express-woo'); ?></button>
-                                        <button type="submit" class="button button-primary" id="dexpress-save-location">
-                                            <?php _e('Sačuvaj lokaciju', 'd-express-woo'); ?>
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
                     </div>
                     <!-- Podešavanja pošiljke -->
 
@@ -1330,6 +1225,108 @@ class D_Express_Admin
                         <?php endif; ?>
                     </div>
             </form>
+            <div id="dexpress-location-modal" class="dexpress-modal" style="display: none;">
+                <div class="dexpress-modal-content">
+                    <div class="dexpress-modal-header">
+                        <h3 id="dexpress-modal-title"><?php _e('Dodaj novu lokaciju', 'd-express-woo'); ?></h3>
+                        <span class="dexpress-modal-close">&times;</span>
+                    </div>
+
+                    <form id="dexpress-location-form">
+                        <input type="hidden" id="location-id" name="location_id" value="">
+
+                        <table class="form-table">
+                            <tr>
+                                <th scope="row">
+                                    <label for="location-name"><?php _e('Naziv lokacije *', 'd-express-woo'); ?></label>
+                                </th>
+                                <td>
+                                    <input type="text" id="location-name" name="name" class="regular-text" data-required="true">
+                                    <p class="description"><?php _e('Naziv prodavnice/lokacije', 'd-express-woo'); ?></p>
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <th scope="row">
+                                    <label for="location-address"><?php _e('Ulica *', 'd-express-woo'); ?></label>
+                                </th>
+                                <td>
+                                    <input type="text" id="location-address" name="address" class="regular-text" data-required="true">
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <th scope="row">
+                                    <label for="location-address-num"><?php _e('Broj *', 'd-express-woo'); ?></label>
+                                </th>
+                                <td>
+                                    <input type="text" id="location-address-num" name="address_num" class="small-text" data-required="true">
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <th scope="row">
+                                    <label for="location-town"><?php _e('Grad *', 'd-express-woo'); ?></label>
+                                </th>
+                                <td>
+                                    <select id="location-town" name="town_id" class="regular-text" data-required="true">
+                                        <option value=""><?php _e('Izaberite grad...', 'd-express-woo'); ?></option>
+                                        <?php foreach ($towns_options as $town_id => $town_name): ?>
+                                            <option value="<?php echo esc_attr($town_id); ?>"><?php echo esc_html($town_name); ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <th scope="row">
+                                    <label for="location-contact-name"><?php _e('Kontakt osoba *', 'd-express-woo'); ?></label>
+                                </th>
+                                <td>
+                                    <input type="text" id="location-contact-name" name="contact_name" class="regular-text" data-required="true">
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <th scope="row">
+                                    <label for="location-contact-phone"><?php _e('Kontakt telefon *', 'd-express-woo'); ?></label>
+                                </th>
+                                <td>
+                                    <input type="text" id="location-contact-phone" name="contact_phone" class="regular-text" data-required="true" placeholder="+381641234567">
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <th scope="row">
+                                    <label for="location-bank-account"><?php _e('Broj računa za otkupninu', 'd-express-woo'); ?></label>
+                                </th>
+                                <td>
+                                    <input type="text" id="location-bank-account" name="bank_account" class="regular-text" placeholder="160-0000000000-00">
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <th scope="row">
+                                    <label for="location-is-default"><?php _e('Glavna lokacija', 'd-express-woo'); ?></label>
+                                </th>
+                                <td>
+                                    <label>
+                                        <input type="checkbox" id="location-is-default" name="is_default" value="1">
+                                        <?php _e('Postavi kao glavnu lokaciju', 'd-express-woo'); ?>
+                                    </label>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <div class="dexpress-modal-footer">
+                            <button type="button" class="button" id="dexpress-cancel-location"><?php _e('Otkaži', 'd-express-woo'); ?></button>
+                            <button type="submit" class="button button-primary" id="dexpress-save-location">
+                                <?php _e('Sačuvaj lokaciju', 'd-express-woo'); ?>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
             <div class="dexpress-support-section">
                 <h2><?php _e('Podrška', 'd-express-woo'); ?></h2>
 
@@ -2229,47 +2226,60 @@ class D_Express_Admin
         ], admin_url('admin.php')));
         exit;
     }
+
     /**
      * AJAX: Kreiranje nove lokacije
      */
     public function ajax_create_location()
     {
-        error_log('ajax_create_location called'); // DEBUG
-        error_log('POST data: ' . print_r($_POST, true)); // DEBUG
+        try {
+            // Nonce proverava
+            if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'dexpress_admin_nonce')) {
+                wp_send_json_error('Sigurnosna greška - nonce validation failed');
+                return;
+            }
 
-        // Nonce proverava
-        if (!wp_verify_nonce($_POST['nonce'], 'dexpress_admin_nonce')) {
-            error_log('Nonce verification failed'); // DEBUG
-            wp_send_json_error('Sigurnosna greška');
-            return;
-        }
+            // Proverava dozvole
+            if (!current_user_can('manage_woocommerce')) {
+                wp_send_json_error('Nemate dozvolu');
+                return;
+            }
 
-        // Proverava dozvole
-        if (!current_user_can('manage_woocommerce')) {
-            wp_send_json_error('Nemate dozvolu');
-            return;
-        }
+            // Validacija podataka
+            $required_fields = ['name', 'address', 'address_num', 'town_id', 'contact_name', 'contact_phone'];
+            foreach ($required_fields as $field) {
+                if (empty($_POST[$field])) {
+                    wp_send_json_error("Polje '{$field}' je obavezno");
+                    return;
+                }
+            }
 
-        $locations_service = D_Express_Sender_Locations::get_instance();
+            $locations_service = D_Express_Sender_Locations::get_instance();
 
-        // Pripremi podatke
-        $data = [
-            'name' => sanitize_text_field($_POST['name']),
-            'address' => sanitize_text_field($_POST['address']),
-            'address_num' => sanitize_text_field($_POST['address_num']),
-            'town_id' => intval($_POST['town_id']),
-            'contact_name' => sanitize_text_field($_POST['contact_name']),
-            'contact_phone' => sanitize_text_field($_POST['contact_phone']),
-            'bank_account' => sanitize_text_field($_POST['bank_account'] ?? ''),
-            'is_default' => !empty($_POST['is_default']) ? 1 : 0
-        ];
+            $data = [
+                'name' => sanitize_text_field($_POST['name']),
+                'address' => sanitize_text_field($_POST['address']),
+                'address_num' => sanitize_text_field($_POST['address_num']),
+                'town_id' => intval($_POST['town_id']),
+                'contact_name' => sanitize_text_field($_POST['contact_name']),
+                'contact_phone' => sanitize_text_field($_POST['contact_phone']),
+                'bank_account' => sanitize_text_field($_POST['bank_account'] ?? ''),
+                'is_default' => !empty($_POST['is_default']) ? 1 : 0
+            ];
 
-        $result = $locations_service->create_location($data);
+            $result = $locations_service->create_location($data);
 
-        if (is_wp_error($result)) {
-            wp_send_json_error($result->get_error_message());
-        } else {
-            wp_send_json_success(['message' => 'Lokacija je uspešno kreirana', 'location_id' => $result]);
+            if (is_wp_error($result)) {
+                wp_send_json_error($result->get_error_message());
+            } else {
+                wp_send_json_success([
+                    'message' => 'Lokacija je uspešno kreirana',
+                    'location_id' => $result
+                ]);
+            }
+        } catch (Exception $e) {
+            error_log('DExpress Create Location Error: ' . $e->getMessage());
+            wp_send_json_error('Server greška: ' . $e->getMessage());
         }
     }
 
@@ -2278,41 +2288,46 @@ class D_Express_Admin
      */
     public function ajax_update_location()
     {
-        if (!wp_verify_nonce($_POST['nonce'], 'dexpress_admin_nonce')) {
-            wp_send_json_error('Sigurnosna greška');
-            return;
-        }
+        try {
+            if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'dexpress_admin_nonce')) {
+                wp_send_json_error('Sigurnosna greška');
+                return;
+            }
 
-        if (!current_user_can('manage_woocommerce')) {
-            wp_send_json_error('Nemate dozvolu');
-            return;
-        }
+            if (!current_user_can('manage_woocommerce')) {
+                wp_send_json_error('Nemate dozvolu');
+                return;
+            }
 
-        $location_id = intval($_POST['location_id']);
-        if (!$location_id) {
-            wp_send_json_error('Nevaljan ID lokacije');
-            return;
-        }
+            $location_id = intval($_POST['location_id']);
+            if (!$location_id) {
+                wp_send_json_error('Nevaljan ID lokacije');
+                return;
+            }
 
-        $locations_service = D_Express_Sender_Locations::get_instance();
+            $locations_service = D_Express_Sender_Locations::get_instance();
 
-        $data = [
-            'name' => sanitize_text_field($_POST['name']),
-            'address' => sanitize_text_field($_POST['address']),
-            'address_num' => sanitize_text_field($_POST['address_num']),
-            'town_id' => intval($_POST['town_id']),
-            'contact_name' => sanitize_text_field($_POST['contact_name']),
-            'contact_phone' => sanitize_text_field($_POST['contact_phone']),
-            'bank_account' => sanitize_text_field($_POST['bank_account'] ?? ''),
-            'is_default' => !empty($_POST['is_default']) ? 1 : 0
-        ];
+            $data = [
+                'name' => sanitize_text_field($_POST['name']),
+                'address' => sanitize_text_field($_POST['address']),
+                'address_num' => sanitize_text_field($_POST['address_num']),
+                'town_id' => intval($_POST['town_id']),
+                'contact_name' => sanitize_text_field($_POST['contact_name']),
+                'contact_phone' => sanitize_text_field($_POST['contact_phone']),
+                'bank_account' => sanitize_text_field($_POST['bank_account'] ?? ''),
+                'is_default' => !empty($_POST['is_default']) ? 1 : 0
+            ];
 
-        $result = $locations_service->update_location($location_id, $data);
+            $result = $locations_service->update_location($location_id, $data);
 
-        if (is_wp_error($result)) {
-            wp_send_json_error($result->get_error_message());
-        } else {
-            wp_send_json_success(['message' => 'Lokacija je uspešno ažurirana']);
+            if (is_wp_error($result)) {
+                wp_send_json_error($result->get_error_message());
+            } else {
+                wp_send_json_success(['message' => 'Lokacija je uspešno ažurirana']);
+            }
+        } catch (Exception $e) {
+            error_log('DExpress Update Location Error: ' . $e->getMessage());
+            wp_send_json_error('Server greška: ' . $e->getMessage());
         }
     }
 
@@ -2321,92 +2336,105 @@ class D_Express_Admin
      */
     public function ajax_get_location()
     {
-        if (!wp_verify_nonce($_POST['nonce'], 'dexpress_admin_nonce')) {
-            wp_send_json_error('Sigurnosna greška');
-            return;
+        try {
+            if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'dexpress_admin_nonce')) {
+                wp_send_json_error('Sigurnosna greška');
+                return;
+            }
+
+            if (!current_user_can('manage_woocommerce')) {
+                wp_send_json_error('Nemate dozvolu');
+                return;
+            }
+
+            $location_id = intval($_POST['location_id']);
+            if (!$location_id) {
+                wp_send_json_error('Nevaljan ID lokacije');
+                return;
+            }
+
+            $locations_service = D_Express_Sender_Locations::get_instance();
+            $location = $locations_service->get_location($location_id);
+
+            if (!$location) {
+                wp_send_json_error('Lokacija nije pronađena');
+                return;
+            }
+
+            wp_send_json_success($location);
+        } catch (Exception $e) {
+            error_log('DExpress Get Location Error: ' . $e->getMessage());
+            wp_send_json_error('Server greška: ' . $e->getMessage());
         }
-
-        if (!current_user_can('manage_woocommerce')) {
-            wp_send_json_error('Nemate dozvolu');
-            return;
-        }
-
-        $location_id = intval($_POST['location_id']);
-        if (!$location_id) {
-            wp_send_json_error('Nevaljan ID lokacije');
-            return;
-        }
-
-        $locations_service = D_Express_Sender_Locations::get_instance();
-        $location = $locations_service->get_location($location_id);
-
-        if (!$location) {
-            wp_send_json_error('Lokacija nije pronađena');
-            return;
-        }
-
-        wp_send_json_success($location);
     }
-
     /**
      * AJAX: Postavljanje lokacije kao default
      */
     public function ajax_set_default_location()
     {
-        if (!wp_verify_nonce($_POST['nonce'], 'dexpress_admin_nonce')) {
-            wp_send_json_error('Sigurnosna greška');
-            return;
-        }
+        try {
+            if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'dexpress_admin_nonce')) {
+                wp_send_json_error('Sigurnosna greška');
+                return;
+            }
 
-        if (!current_user_can('manage_woocommerce')) {
-            wp_send_json_error('Nemate dozvolu');
-            return;
-        }
+            if (!current_user_can('manage_woocommerce')) {
+                wp_send_json_error('Nemate dozvolu');
+                return;
+            }
 
-        $location_id = intval($_POST['location_id']);
-        if (!$location_id) {
-            wp_send_json_error('Nevaljan ID lokacije');
-            return;
-        }
+            $location_id = intval($_POST['location_id']);
+            if (!$location_id) {
+                wp_send_json_error('Nevaljan ID lokacije');
+                return;
+            }
 
-        $locations_service = D_Express_Sender_Locations::get_instance();
-        $result = $locations_service->set_as_default($location_id);
+            $locations_service = D_Express_Sender_Locations::get_instance();
+            $result = $locations_service->set_as_default($location_id);
 
-        if (is_wp_error($result)) {
-            wp_send_json_error($result->get_error_message());
-        } else {
-            wp_send_json_success(['message' => 'Lokacija je postavljena kao glavna']);
+            if (is_wp_error($result)) {
+                wp_send_json_error($result->get_error_message());
+            } else {
+                wp_send_json_success(['message' => 'Lokacija je postavljena kao glavna']);
+            }
+        } catch (Exception $e) {
+            error_log('DExpress Set Default Location Error: ' . $e->getMessage());
+            wp_send_json_error('Server greška: ' . $e->getMessage());
         }
     }
-
     /**
      * AJAX: Brisanje lokacije
      */
     public function ajax_delete_location()
     {
-        if (!wp_verify_nonce($_POST['nonce'], 'dexpress_admin_nonce')) {
-            wp_send_json_error('Sigurnosna greška');
-            return;
-        }
+        try {
+            if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'dexpress_admin_nonce')) {
+                wp_send_json_error('Sigurnosna greška');
+                return;
+            }
 
-        if (!current_user_can('manage_woocommerce')) {
-            wp_send_json_error('Nemate dozvolu');
-            return;
-        }
+            if (!current_user_can('manage_woocommerce')) {
+                wp_send_json_error('Nemate dozvolu');
+                return;
+            }
 
-        $location_id = intval($_POST['location_id']);
-        if (!$location_id) {
-            wp_send_json_error('Nevaljan ID lokacije');
-            return;
-        }
+            $location_id = intval($_POST['location_id']);
+            if (!$location_id) {
+                wp_send_json_error('Nevaljan ID lokacije');
+                return;
+            }
 
-        $locations_service = D_Express_Sender_Locations::get_instance();
-        $result = $locations_service->delete_location($location_id);
+            $locations_service = D_Express_Sender_Locations::get_instance();
+            $result = $locations_service->delete_location($location_id);
 
-        if (is_wp_error($result)) {
-            wp_send_json_error($result->get_error_message());
-        } else {
-            wp_send_json_success(['message' => 'Lokacija je uspešno obrisana']);
+            if (is_wp_error($result)) {
+                wp_send_json_error($result->get_error_message());
+            } else {
+                wp_send_json_success(['message' => 'Lokacija je uspešno obrisana']);
+            }
+        } catch (Exception $e) {
+            error_log('DExpress Delete Location Error: ' . $e->getMessage());
+            wp_send_json_error('Server greška: ' . $e->getMessage());
         }
     }
 }

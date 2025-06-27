@@ -366,7 +366,6 @@ class D_Express_WooCommerce
         // Inicijalizacija admin klasa
         if (is_admin()) {
             $admin = new D_Express_Admin();
-            $admin->init();
         }
 
         // Inicijalizacija frontend klasa

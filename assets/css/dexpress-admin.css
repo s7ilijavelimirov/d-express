@@ -906,20 +906,7 @@
         gap: 8px;
     }
 }
-#dexpress-location-modal {
-    position: fixed;
-    z-index: 100000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0,0,0,0.4);
-    pointer-events: none; /* Sprečava da utiče na glavnu formu */
-}
 
-#dexpress-location-modal.show {
-    pointer-events: auto; /* Omogućava interakciju kad je otvoren */
-}
 /* Hover efekti */
 .dexpress-timeline-step:hover .dexpress-step-marker {
     transform: scale(1.1);
@@ -929,48 +916,37 @@
     color: #2563eb;
 }
 
-.dexpress-default-badge {
-    background: #00a32a;
-    color: white;
-    padding: 2px 8px;
-    border-radius: 3px;
-    font-size: 11px;
-    margin-left: 8px;
-}
-
-.status-active {
-    color: #00a32a;
-    font-weight: bold;
-}
-
-.status-secondary {
-    color: #646970;
-}
-
+/* Modal styles */
 .dexpress-modal {
+    display: none;
     position: fixed;
     z-index: 100000;
     left: 0;
     top: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.4);
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.dexpress-modal.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .dexpress-modal-content {
-    background-color: #fefefe;
-    margin: 5% auto;
-    border: 1px solid #888;
-    width: 80%;
-    max-width: 600px;
+    background-color: #fff;
     border-radius: 4px;
-    max-height: 90vh;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
     overflow-y: auto;
+    position: relative;
 }
 
 .dexpress-modal-header {
-    padding: 15px 20px;
-    background: #f1f1f1;
+    padding: 20px 20px 15px;
     border-bottom: 1px solid #ddd;
     display: flex;
     justify-content: space-between;
@@ -979,22 +955,31 @@
 
 .dexpress-modal-header h3 {
     margin: 0;
+    font-size: 18px;
+    font-weight: 600;
 }
 
 .dexpress-modal-close {
-    color: #aaa;
-    font-size: 28px;
-    font-weight: bold;
     cursor: pointer;
+    font-size: 24px;
+    font-weight: bold;
+    color: #666;
+    line-height: 1;
+    padding: 0;
+    border: none;
+    background: none;
 }
 
 .dexpress-modal-close:hover {
-    color: black;
+    color: #000;
+}
+
+.dexpress-modal-body {
+    padding: 20px;
 }
 
 .dexpress-modal-footer {
-    padding: 15px 20px;
-    background: #f1f1f1;
+    padding: 15px 20px 20px;
     border-top: 1px solid #ddd;
     text-align: right;
 }
@@ -1003,6 +988,92 @@
     margin-left: 10px;
 }
 
-#dexpress-location-form {
-    padding: 20px;
+/* Form styles */
+.dexpress-modal .form-table th {
+    width: 150px;
+    padding: 15px 10px 15px 0;
+    vertical-align: top;
+}
+
+.dexpress-modal .form-table td {
+    padding: 15px 0;
+}
+
+.dexpress-modal input.error,
+.dexpress-modal select.error {
+    border-color: #dc3232;
+    box-shadow: 0 0 2px rgba(220, 50, 50, 0.8);
+}
+
+/* Location list styles */
+.dexpress-locations-list {
+    margin-bottom: 30px;
+}
+
+.dexpress-default-badge {
+    background: #007cba;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    margin-left: 8px;
+}
+
+.status-active {
+    color: #007cba;
+    font-weight: 600;
+}
+
+.status-secondary {
+    color: #666;
+}
+
+.dexpress-add-location-section {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #ddd;
+}
+
+/* Button styles */
+.dexpress-edit-location,
+.dexpress-set-default,
+.dexpress-delete-location {
+    margin-right: 5px !important;
+}
+
+.dexpress-delete-location {
+    color: #a00;
+}
+
+.dexpress-delete-location:hover {
+    color: #dc3232;
+}
+
+/* Notice styles */
+.notice.notice-success {
+    border-left-color: #00a32a;
+}
+
+.notice.notice-error {
+    border-left-color: #dc3232;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .dexpress-modal-content {
+        width: 95%;
+        margin: 20px;
+    }
+    
+    .dexpress-modal .form-table th,
+    .dexpress-modal .form-table td {
+        display: block;
+        width: 100%;
+        padding: 10px 0;
+    }
+    
+    .dexpress-modal .form-table th {
+        border-bottom: none;
+        padding-bottom: 5px;
+    }
 }

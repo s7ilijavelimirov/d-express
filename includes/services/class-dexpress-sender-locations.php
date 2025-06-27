@@ -1,7 +1,7 @@
 <?php
 
 /**
- * D Express Sender Locations Service
+ * D Express Sender Locations Service - Popravljena verzija
  * File: includes/services/class-dexpress-sender-locations.php
  */
 
@@ -9,7 +9,6 @@ defined('ABSPATH') || exit;
 
 class D_Express_Sender_Locations
 {
-
     private static $instance = null;
 
     /**
@@ -21,6 +20,60 @@ class D_Express_Sender_Locations
             self::$instance = new self();
         }
         return self::$instance;
+    }
+
+    /**
+     * Dohvati sve lokacije sa podacima o gradu
+     */
+    public function get_all_locations()
+    {
+        global $wpdb;
+
+        $table_name = $wpdb->prefix . 'dexpress_sender_locations';
+        $towns_table = $wpdb->prefix . 'dexpress_towns';
+
+        $sql = "SELECT l.*, t.name as town_name 
+                FROM {$table_name} l 
+                LEFT JOIN {$towns_table} t ON l.town_id = t.id 
+                WHERE l.is_active = 1 
+                ORDER BY l.is_default DESC, l.name ASC";
+
+        $results = $wpdb->get_results($sql);
+
+        if ($wpdb->last_error) {
+            error_log('DExpress get_all_locations error: ' . $wpdb->last_error);
+            return array();
+        }
+
+        return $results;
+    }
+
+    /**
+     * Dohvati pojedinačnu lokaciju
+     */
+    public function get_location($location_id)
+    {
+        global $wpdb;
+
+        $table_name = $wpdb->prefix . 'dexpress_sender_locations';
+        $towns_table = $wpdb->prefix . 'dexpress_towns';
+
+        $sql = $wpdb->prepare(
+            "SELECT l.*, t.name as town_name 
+             FROM {$table_name} l 
+             LEFT JOIN {$towns_table} t ON l.town_id = t.id 
+             WHERE l.id = %d AND l.is_active = 1",
+            $location_id
+        );
+
+        $result = $wpdb->get_row($sql);
+
+        if ($wpdb->last_error) {
+            error_log('DExpress get_location error: ' . $wpdb->last_error);
+            return null;
+        }
+
+        return $result;
     }
 
     /**
@@ -59,10 +112,13 @@ class D_Express_Sender_Locations
         );
 
         if ($result === false) {
+            error_log('DExpress create_location DB error: ' . $wpdb->last_error);
             return new WP_Error('db_error', 'Greška pri kreiranju lokacije: ' . $wpdb->last_error);
         }
 
         $location_id = $wpdb->insert_id;
+        
+        // Log successful creation
         dexpress_log("Kreirana nova sender lokacija ID: {$location_id}", 'info');
 
         return $location_id;
@@ -75,6 +131,10 @@ class D_Express_Sender_Locations
     {
         global $wpdb;
 
+        if (!$location_id) {
+            return new WP_Error('invalid_id', 'Nevaljan ID lokacije');
+        }
+
         $validated = $this->validate_location_data($data);
         if (is_wp_error($validated)) {
             return $validated;
@@ -82,14 +142,14 @@ class D_Express_Sender_Locations
 
         $table_name = $wpdb->prefix . 'dexpress_sender_locations';
 
-        // Proveri da li lokacija postoji
-        $location = $this->get_location($location_id);
-        if (!$location) {
+        // Proverava da li lokacija postoji
+        $existing = $this->get_location($location_id);
+        if (!$existing) {
             return new WP_Error('not_found', 'Lokacija nije pronađena');
         }
 
         // Ako je označena kao default, ukloni default sa ostalih
-        if (!empty($data['is_default']) && !$location->is_default) {
+        if (!empty($data['is_default'])) {
             $this->clear_default_locations();
         }
 
@@ -105,111 +165,19 @@ class D_Express_Sender_Locations
                 'bank_account' => sanitize_text_field($data['bank_account'] ?? ''),
                 'is_default' => !empty($data['is_default']) ? 1 : 0
             ),
-            array('id' => intval($location_id)),
+            array('id' => $location_id),
             array('%s', '%s', '%s', '%d', '%s', '%s', '%s', '%d'),
             array('%d')
         );
 
         if ($result === false) {
+            error_log('DExpress update_location DB error: ' . $wpdb->last_error);
             return new WP_Error('db_error', 'Greška pri ažuriranju lokacije: ' . $wpdb->last_error);
         }
 
         dexpress_log("Ažurirana sender lokacija ID: {$location_id}", 'info');
+
         return true;
-    }
-
-    /**
-     * Brisanje lokacije
-     */
-    public function delete_location($location_id)
-    {
-        global $wpdb;
-
-        $table_name = $wpdb->prefix . 'dexpress_sender_locations';
-
-        $location = $this->get_location($location_id);
-        if (!$location) {
-            return new WP_Error('not_found', 'Lokacija nije pronađena');
-        }
-
-        // Ne dozvoli brisanje default lokacije ako je jedina
-        if ($location->is_default) {
-            $total_locations = $this->get_locations_count();
-            if ($total_locations <= 1) {
-                return new WP_Error('cannot_delete_last', 'Ne možete obrisati poslednju lokaciju');
-            }
-        }
-
-        $result = $wpdb->delete(
-            $table_name,
-            array('id' => intval($location_id)),
-            array('%d')
-        );
-
-        if ($result === false) {
-            return new WP_Error('db_error', 'Greška pri brisanju lokacije: ' . $wpdb->last_error);
-        }
-
-        // Ako je obrisana default lokacija, postavi prvu aktivnu kao default
-        if ($location->is_default) {
-            $this->set_first_active_as_default();
-        }
-
-        dexpress_log("Obrisana sender lokacija ID: {$location_id}", 'info');
-        return true;
-    }
-
-    /**
-     * Dohvatanje jedne lokacije
-     */
-    public function get_location($location_id)
-    {
-        global $wpdb;
-
-        $table_name = $wpdb->prefix . 'dexpress_sender_locations';
-
-        return $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM $table_name WHERE id = %d AND is_active = 1",
-            intval($location_id)
-        ));
-    }
-
-    /**
-     * Dohvatanje svih aktivnih lokacija
-     */
-    public function get_all_locations($include_inactive = false)
-    {
-        global $wpdb;
-
-        $table_name = $wpdb->prefix . 'dexpress_sender_locations';
-
-        $where_clause = $include_inactive ? '' : 'WHERE is_active = 1';
-
-        return $wpdb->get_results(
-            "SELECT sl.*, t.name as town_name 
-             FROM $table_name sl 
-             LEFT JOIN {$wpdb->prefix}dexpress_towns t ON sl.town_id = t.id 
-             $where_clause 
-             ORDER BY sl.is_default DESC, sl.name ASC"
-        );
-    }
-
-    /**
-     * Dohvatanje default lokacije
-     */
-    public function get_default_location()
-    {
-        global $wpdb;
-
-        $table_name = $wpdb->prefix . 'dexpress_sender_locations';
-
-        return $wpdb->get_row(
-            "SELECT sl.*, t.name as town_name 
-             FROM $table_name sl 
-             LEFT JOIN {$wpdb->prefix}dexpress_towns t ON sl.town_id = t.id 
-             WHERE sl.is_default = 1 AND sl.is_active = 1 
-             LIMIT 1"
-        );
     }
 
     /**
@@ -219,45 +187,110 @@ class D_Express_Sender_Locations
     {
         global $wpdb;
 
+        if (!$location_id) {
+            return new WP_Error('invalid_id', 'Nevaljan ID lokacije');
+        }
+
         $table_name = $wpdb->prefix . 'dexpress_sender_locations';
 
-        $location = $this->get_location($location_id);
-        if (!$location) {
+        // Proverava da li lokacija postoji
+        $existing = $this->get_location($location_id);
+        if (!$existing) {
             return new WP_Error('not_found', 'Lokacija nije pronađena');
         }
 
-        // Ukloni default sa svih
+        // Prvo ukloni default sa svih lokacija
         $this->clear_default_locations();
 
-        // Postavi novu default
+        // Postavi novu default lokaciju
         $result = $wpdb->update(
             $table_name,
             array('is_default' => 1),
-            array('id' => intval($location_id)),
+            array('id' => $location_id),
             array('%d'),
             array('%d')
         );
 
         if ($result === false) {
-            return new WP_Error('db_error', 'Greška pri postavljanju default lokacije');
+            error_log('DExpress set_as_default DB error: ' . $wpdb->last_error);
+            return new WP_Error('db_error', 'Greška pri postavljanju default lokacije: ' . $wpdb->last_error);
         }
 
         dexpress_log("Postavljena default sender lokacija ID: {$location_id}", 'info');
+
         return true;
     }
 
     /**
-     * Broj aktivnih lokacija
+     * Brisanje lokacije (soft delete)
      */
-    public function get_locations_count()
+    public function delete_location($location_id)
+    {
+        global $wpdb;
+
+        if (!$location_id) {
+            return new WP_Error('invalid_id', 'Nevaljan ID lokacije');
+        }
+
+        $table_name = $wpdb->prefix . 'dexpress_sender_locations';
+
+        // Proverava da li lokacija postoji
+        $existing = $this->get_location($location_id);
+        if (!$existing) {
+            return new WP_Error('not_found', 'Lokacija nije pronađena');
+        }
+
+        // Ne dozvoli brisanje default lokacije ako je jedina
+        if ($existing->is_default) {
+            $count = $this->get_active_locations_count();
+            if ($count <= 1) {
+                return new WP_Error('cannot_delete', 'Ne možete obrisati jedinu aktivnu lokaciju');
+            }
+        }
+
+        // Soft delete - označava kao neaktivnu
+        $result = $wpdb->update(
+            $table_name,
+            array('is_active' => 0, 'is_default' => 0),
+            array('id' => $location_id),
+            array('%d', '%d'),
+            array('%d')
+        );
+
+        if ($result === false) {
+            error_log('DExpress delete_location DB error: ' . $wpdb->last_error);
+            return new WP_Error('db_error', 'Greška pri brisanju lokacije: ' . $wpdb->last_error);
+        }
+
+        dexpress_log("Obrisana sender lokacija ID: {$location_id}", 'info');
+
+        return true;
+    }
+
+    /**
+     * Dohvati default lokaciju
+     */
+    public function get_default_location()
     {
         global $wpdb;
 
         $table_name = $wpdb->prefix . 'dexpress_sender_locations';
+        $towns_table = $wpdb->prefix . 'dexpress_towns';
 
-        return intval($wpdb->get_var(
-            "SELECT COUNT(*) FROM $table_name WHERE is_active = 1"
-        ));
+        $sql = "SELECT l.*, t.name as town_name 
+                FROM {$table_name} l 
+                LEFT JOIN {$towns_table} t ON l.town_id = t.id 
+                WHERE l.is_default = 1 AND l.is_active = 1 
+                LIMIT 1";
+
+        $result = $wpdb->get_row($sql);
+
+        if ($wpdb->last_error) {
+            error_log('DExpress get_default_location error: ' . $wpdb->last_error);
+            return null;
+        }
+
+        return $result;
     }
 
     /**
@@ -265,36 +298,35 @@ class D_Express_Sender_Locations
      */
     private function validate_location_data($data)
     {
-        $errors = new WP_Error();
+        $required_fields = ['name', 'address', 'address_num', 'town_id', 'contact_name', 'contact_phone'];
 
-        if (empty($data['name'])) {
-            $errors->add('empty_name', 'Naziv lokacije je obavezan');
+        foreach ($required_fields as $field) {
+            if (empty($data[$field])) {
+                return new WP_Error('missing_field', "Polje '{$field}' je obavezno");
+            }
         }
 
-        if (empty($data['address'])) {
-            $errors->add('empty_address', 'Adresa je obavezna');
+        // Validacija town_id
+        if (!is_numeric($data['town_id']) || intval($data['town_id']) <= 0) {
+            return new WP_Error('invalid_town', 'Morate izabrati valjan grad');
         }
 
-        if (empty($data['address_num'])) {
-            $errors->add('empty_address_num', 'Broj adrese je obavezan');
+        // Proverava da li grad postoji
+        global $wpdb;
+        $towns_table = $wpdb->prefix . 'dexpress_towns';
+        $town_exists = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$towns_table} WHERE id = %d",
+            intval($data['town_id'])
+        ));
+
+        if (!$town_exists) {
+            return new WP_Error('town_not_found', 'Izabrani grad ne postoji');
         }
 
-        if (empty($data['town_id']) || !is_numeric($data['town_id'])) {
-            $errors->add('invalid_town', 'Grad mora biti izabran');
-        }
-
-        if (empty($data['contact_name'])) {
-            $errors->add('empty_contact_name', 'Kontakt osoba je obavezna');
-        }
-
-        if (empty($data['contact_phone'])) {
-            $errors->add('empty_contact_phone', 'Kontakt telefon je obavezan');
-        } elseif (class_exists('D_Express_Validator') && !D_Express_Validator::validate_phone($data['contact_phone'])) {
-            $errors->add('invalid_phone', 'Neispravan format telefona (+381XXXXXXXXX)');
-        }
-
-        if ($errors->get_error_codes()) {
-            return $errors;
+        // Validacija telefona
+        $phone = sanitize_text_field($data['contact_phone']);
+        if (!preg_match('/^\+381\d{8,9}$/', $phone)) {
+            return new WP_Error('invalid_phone', 'Telefon mora biti u formatu +381XXXXXXXX');
         }
 
         return true;
@@ -312,33 +344,21 @@ class D_Express_Sender_Locations
         $wpdb->update(
             $table_name,
             array('is_default' => 0),
-            array('is_default' => 1),
+            array('is_active' => 1),
             array('%d'),
             array('%d')
         );
     }
 
     /**
-     * Postavi prvu aktivnu lokaciju kao default
+     * Broji aktivne lokacije
      */
-    private function set_first_active_as_default()
+    private function get_active_locations_count()
     {
         global $wpdb;
 
         $table_name = $wpdb->prefix . 'dexpress_sender_locations';
 
-        $first_location = $wpdb->get_row(
-            "SELECT * FROM $table_name WHERE is_active = 1 ORDER BY id ASC LIMIT 1"
-        );
-
-        if ($first_location) {
-            $wpdb->update(
-                $table_name,
-                array('is_default' => 1),
-                array('id' => $first_location->id),
-                array('%d'),
-                array('%d')
-            );
-        }
+        return $wpdb->get_var("SELECT COUNT(*) FROM {$table_name} WHERE is_active = 1");
     }
 }
