@@ -537,8 +537,7 @@ function dexpress_get_payment_by_options()
 function dexpress_get_payment_type_options()
 {
     return array(
-        0 => __('Gotovina', 'd-express-woo'),
-        1 => __('Kartica', 'd-express-woo'),
+        1 => __('Gotovina', 'd-express-woo'),
         2 => __('Faktura', 'd-express-woo'),
     );
 }

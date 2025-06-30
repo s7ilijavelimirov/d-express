@@ -143,7 +143,8 @@ class D_Express_Admin_Ajax
     public function ajax_get_location()
     {
         try {
-            if (!isset($_GET['nonce']) || !wp_verify_nonce($_GET['nonce'], 'dexpress_admin_nonce')) {
+            // ✅ ISPRAVKA: Koristi $_POST jer JavaScript šalje POST
+            if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'dexpress_admin_nonce')) {
                 wp_send_json_error('Sigurnosna greška');
                 return;
             }
@@ -153,7 +154,8 @@ class D_Express_Admin_Ajax
                 return;
             }
 
-            $location_id = intval($_GET['location_id']);
+            // ✅ ISPRAVKA: Koristi $_POST
+            $location_id = intval($_POST['location_id']);
             if (!$location_id) {
                 wp_send_json_error('Nevaljan ID lokacije');
                 return;
@@ -167,13 +169,16 @@ class D_Express_Admin_Ajax
                 return;
             }
 
-            wp_send_json_success(['location' => $location]);
+            // ✅ ISPRAVKA: Vraćaj direktno pod 'data' ključem
+            wp_send_json_success($location);
+
+            // ALI JOŠ BOLJE: Konvertuj objekat u array da JavaScript može pristupiti svojstvima
+            wp_send_json_success((array) $location);
         } catch (Exception $e) {
             error_log('DExpress Get Location Error: ' . $e->getMessage());
             wp_send_json_error('Server greška: ' . $e->getMessage());
         }
     }
-
     /**
      * AJAX: Postavljanje default lokacije
      */

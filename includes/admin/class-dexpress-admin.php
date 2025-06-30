@@ -784,6 +784,11 @@ class D_Express_Admin
                                                 <td>
                                                     <?php echo esc_html($location->contact_name); ?><br>
                                                     <small><?php echo esc_html($location->contact_phone); ?></small>
+                                                    <?php if (!empty($location->bank_account)): ?>
+                                                        <br><small style="color: #28a745;">💳 <?php echo esc_html($location->bank_account); ?></small>
+                                                    <?php else: ?>
+                                                        <br><small style="color: #dc3545;">⚠️ Nema računa</small>
+                                                    <?php endif; ?>
                                                 </td>
                                                 <td>
                                                     <?php if ($location->is_default): ?>

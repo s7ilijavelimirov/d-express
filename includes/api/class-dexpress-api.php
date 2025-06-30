@@ -751,15 +751,28 @@ class D_Express_API
         // Ukloni sve osim brojeva
         $digits_only = preg_replace('/[^0-9]/', '', $account_number);
 
-        // Ako imamo 15 cifara (3 banke + 10 broja + 2 kontrolna), formatiraj
+        dexpress_log("[BANK DEBUG] Original: {$account_number}, Digits: {$digits_only}, Length: " . strlen($digits_only), 'debug');
+
+        // Standardni srpski format: 3-10-2 = 15 cifara
         if (strlen($digits_only) === 15) {
-            return substr($digits_only, 0, 3) . '-' .
+            $formatted = substr($digits_only, 0, 3) . '-' .
                 substr($digits_only, 3, 10) . '-' .
                 substr($digits_only, 13, 2);
+            dexpress_log("[BANK DEBUG] Formatted (15): {$formatted}", 'debug');
+            return $formatted;
         }
 
-        // Vrati original ako već ima crtice ili ne možemo formatirati
-        return $account_number;
+        // Neki bankovni računi mogu imati 16-18 cifara
+        if (strlen($digits_only) >= 16 && strlen($digits_only) <= 18) {
+            $formatted = substr($digits_only, 0, 3) . '-' .
+                substr($digits_only, 3, strlen($digits_only) - 5) . '-' .
+                substr($digits_only, -2);
+            dexpress_log("[BANK DEBUG] Formatted (16-18): {$formatted}", 'debug');
+            return $formatted;
+        }
+
+        dexpress_log("[BANK DEBUG] ERROR: Invalid length " . strlen($digits_only) . " for account: {$account_number}", 'error');
+        return $account_number; // Vrati original ako ne možemo formatirati
     }
     /**
      * Generiše jedinstveni kod paketa
@@ -877,7 +890,8 @@ class D_Express_API
 
         // Postavke za otkupninu
         $buyout_amount = 0;
-        $buyout_account = get_option('dexpress_buyout_account', '');
+        $buyout_account = !empty($location->bank_account) ? $location->bank_account : get_option('dexpress_buyout_account', '');
+        dexpress_log("[COD DEBUG] Lokacija: {$location->name}, Bank account: " . ($location->bank_account ?: 'nema'), 'debug');
 
         // Prepoznavanje metode plaćanja
         $payment_method = $order->get_payment_method();
@@ -886,6 +900,7 @@ class D_Express_API
 
         if (!empty($buyout_account)) {
             $buyout_account = $this->format_bank_account($buyout_account);
+            dexpress_log("[COD DEBUG] Formatiran račun: {$buyout_account}", 'debug');
         }
 
         // Ako je pouzeće i imamo račun, koristimo otkupninu
@@ -912,24 +927,37 @@ class D_Express_API
             }
 
             if (!empty($buyout_account) && D_Express_Validator::validate_bank_account($buyout_account)) {
-                // Validni bankovni račun, možemo koristiti otkupninu
+                // Validni bankovni račun iz LOKACIJE, možemo koristiti otkupninu
                 $buyout_amount = $total_para;
-                dexpress_log("Using BuyOut: {$buyout_amount}, Account: {$buyout_account}", 'debug');
+                dexpress_log("Using BuyOut: {$buyout_amount}, Account from location '{$location->name}': {$buyout_account}", 'debug');
             } else {
-                // Nema validnog bankovnog računa - upozorenje
-                dexpress_log("WARNING: COD payment method, but no valid BuyOutAccount defined, using 0 BuyOut", 'warning');
+                // NOVA logika za bolje upozorenje
+                $location_has_account = !empty($location->bank_account);
+                $global_account = get_option('dexpress_buyout_account', '');
 
-                // Kod odluke:
-                // 1. Postavi otkupninu na 0 (bez naplate)
-                $buyout_amount = 0;
+                if (!$location_has_account && !empty($global_account)) {
+                    // Fallback na globalni račun
+                    $buyout_account = $this->format_bank_account($global_account);
+                    if (D_Express_Validator::validate_bank_account($buyout_account)) {
+                        $buyout_amount = $total_para;
+                        dexpress_log("WARNING: Lokacija '{$location->name}' nema račun, koristi se globalni: {$buyout_account}", 'warning');
+                    }
+                } else {
+                    // Nema nijednog validnog računa
+                    dexpress_log("WARNING: COD payment, no valid bank account for location '{$location->name}' or globally", 'warning');
 
-                // ILI
-                // 2. Pravimo grešku ako je firma odlučila da je otkupnina obavezna
-                if (get_option('dexpress_require_buyout_account', 'no') === 'yes') {
-                    return new WP_Error(
-                        'missing_buyout_account',
-                        __('Za pouzeće je obavezan validan bankovni račun. Podesite ga u D Express podešavanjima.', 'd-express-woo')
-                    );
+                    // Ako je obavezno imati račun
+                    if (get_option('dexpress_require_buyout_account', 'no') === 'yes') {
+                        return new WP_Error(
+                            'missing_buyout_account',
+                            sprintf(
+                                __('Lokacija "%s" nema bankovni račun za otkupninu. Dodajte ga u podešavanjima lokacije ili u globalnim podešavanjima.', 'd-express-woo'),
+                                $location->name
+                            )
+                        );
+                    }
+
+                    $buyout_amount = 0; // Bez otkupnine
                 }
             }
         }

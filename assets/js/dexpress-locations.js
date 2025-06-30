@@ -272,13 +272,18 @@ jQuery(document).ready(function ($) {
                 nonce: dexpressAdmin.nonce
             },
             success: function (response) {
+                console.log('Response:', response); // ← Dodaj ovo za debug
+
                 if (response.success) {
+                    console.log('Location data:', response.data); // ← Dodaj ovo za debug
                     openLocationModal(response.data);
                 } else {
+                    console.error('Error:', response.data); // ← Dodaj ovo za debug
                     showNotice('error', 'Greška pri učitavanju lokacije: ' + (response.data || 'Nepoznata greška'));
                 }
             },
             error: function (xhr, status, error) {
+                console.error('AJAX Error:', xhr, status, error); // ← Dodaj ovo za debug
                 showNotice('error', 'Greška pri komunikaciji sa serverom: ' + error);
             }
         });
