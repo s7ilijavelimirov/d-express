@@ -1,0 +1,8 @@
+{"timestamp":"2025-06-30 07:40:29","context":"shipping","level":"debug","message":"[SHIPPING] Započinjem kreiranje pošiljke za narudžbinu #863"}
+{"timestamp":"2025-06-30 07:40:29","context":"shipping","level":"debug","message":"[SHIPPING] Koristi se prosleđena lokacija ID: 1"}
+{"timestamp":"2025-06-30 07:40:29","context":"shipping","level":"debug","message":"[SHIPPING] Sačuvana korišćena lokacija 1 za order 863"}
+{"timestamp":"2025-06-30 07:40:29","context":"shipping","level":"debug","message":"[SHIPPING] Priprema podataka za narudžbinu #863 sa lokacijom 1"}
+{"timestamp":"2025-06-30 07:40:29","context":"shipping","level":"debug","message":"[SHIPPING] Šaljem zahtev ka D-Express API-ju"}
+{"timestamp":"2025-06-30 07:40:29","context":"shipping","level":"debug","message":"[SHIPPING] API odgovor primljen uspešno"}
+{"timestamp":"2025-06-30 07:40:29","context":"shipping","level":"debug","message":"[SHIPPING] API odgovor: TEST"}
+{"timestamp":"2025-06-30 07:40:29","context":"shipping","level":"debug","message":"[SHIPPING] Tracking broj: TT0000000054, Shipment ID: TT0000000054"}

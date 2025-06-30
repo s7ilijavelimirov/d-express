@@ -159,7 +159,7 @@ class D_Express_Shipment_Service
                 __('D Express pošiljka je kreirana. Tracking broj: %s, Reference ID: %s, Lokacija: %s', 'd-express-woo'),
                 $tracking_number,
                 $shipment_data['ReferenceID'],
-                $sender_location['name']
+                $sender_location->name  // ← ISPRAVKA! Koristimo -> za objekat
             );
 
             // Dobavi postojeće komentare
@@ -499,54 +499,5 @@ class D_Express_Shipment_Service
 
         // Označava da je email poslat
         update_post_meta($order->get_id(), '_dexpress_tracking_email_sent', 'yes');
-    }
-    /**
-     * AJAX handler za kreiranje pošiljke
-     */
-    public function ajax_create_shipment()
-    {
-        // Provera nonce-a
-        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field($_POST['nonce']), 'dexpress_admin_nonce')) {
-            wp_send_json_error(array(
-                'message' => __('Sigurnosna provera nije uspela.', 'd-express-woo')
-            ));
-        }
-
-        // Provera dozvola
-        if (!current_user_can('manage_woocommerce')) {
-            wp_send_json_error(array(
-                'message' => __('Nemate dozvolu za ovu akciju.', 'd-express-woo')
-            ));
-        }
-
-        // Provera ID-a narudžbine
-        if (!isset($_POST['order_id']) || empty($_POST['order_id'])) {
-            wp_send_json_error(array(
-                'message' => __('ID narudžbine je obavezan.', 'd-express-woo')
-            ));
-        }
-
-        $order_id = intval($_POST['order_id']);
-        $order = wc_get_order($order_id);
-        $sender_location_id = isset($_POST['sender_location_id']) ? intval($_POST['sender_location_id']) : null;
-        if (!$order) {
-            wp_send_json_error(array(
-                'message' => __('Narudžbina nije pronađena.', 'd-express-woo')
-            ));
-        }
-
-        // Kreiranje pošiljke
-        $result = $this->create_shipment($order, $sender_location_id);
-
-        if (is_wp_error($result)) {
-            wp_send_json_error(array(
-                'message' => $result->get_error_message()
-            ));
-        } else {
-            wp_send_json_success(array(
-                'message' => __('Pošiljka je uspešno kreirana.', 'd-express-woo'),
-                'shipment_id' => $result
-            ));
-        }
     }
 }

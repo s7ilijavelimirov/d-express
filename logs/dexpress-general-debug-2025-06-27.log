@@ -1,6 +1,0 @@
-{"timestamp":"2025-06-27 12:50:52","context":"general","level":"debug","message":"Checkout order processed: 863"}
-{"timestamp":"2025-06-27 12:50:52","context":"general","level":"debug","message":"Has D Express shipping: Yes"}
-{"timestamp":"2025-06-27 12:50:52","context":"general","level":"debug","message":"Order processed - manual shipment creation required: 863"}
-{"timestamp":"2025-06-27 13:02:42","context":"general","level":"debug","message":"Generisan kod paketa: TT0000000050 (index: 50)"}
-{"timestamp":"2025-06-27 13:03:49","context":"general","level":"debug","message":"Generisan kod paketa: TT0000000051 (index: 51)"}
-{"timestamp":"2025-06-27 13:06:31","context":"general","level":"debug","message":"Generisan kod paketa: TT0000000052 (index: 52)"}
