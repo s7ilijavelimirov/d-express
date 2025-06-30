@@ -1062,7 +1062,7 @@ class D_Express_Label_Generator
         </body>
 
         </html>
-<?php
+    <?php
         return ob_get_clean();
     }
 
@@ -1137,5 +1137,43 @@ class D_Express_Label_Generator
             'customer_note' => $order->get_customer_note(),
             'total_weight' => $total_weight
         );
+    }
+    /**
+     * ✅ NOVA metoda u D_Express_Label_Generator klasi
+     */
+    public function generate_label_html($shipment, $package_index = 1, $package_count = 1)
+    {
+        // Dobijanje podataka o narudžbini
+        $order = wc_get_order($shipment->order_id);
+
+        if (!$order) {
+            return '<p>' . __('Narudžbina nije pronađena.', 'd-express-woo') . '</p>';
+        }
+
+        // Pripremanje podataka za nalepnicu
+        $order_data = $this->prepare_order_data($order);
+
+        // [... ostatak koda kao u artifact-u ...]
+
+        ob_start();
+    ?>
+        <!DOCTYPE html>
+        <html>
+
+        <head>
+            <meta charset="UTF-8">
+            <title>D Express Nalepnica</title>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
+            <!-- [CSS stilovi] -->
+        </head>
+
+        <body>
+            <!-- [HTML za nalepnicu] -->
+            <button onclick="window.print()">Štampaj nalepnicu</button>
+        </body>
+
+        </html>
+<?php
+        return ob_get_clean();
     }
 }
