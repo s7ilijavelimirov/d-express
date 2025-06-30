@@ -20,7 +20,7 @@ class D_Express_Admin
         add_action('admin_menu', array($this, 'add_admin_menu'));
         add_action('admin_init', array($this, 'handle_admin_actions'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_assets'));
-
+        add_action('admin_notices', array($this, 'display_buyout_account_notice'));
         // Inicijalizacija AJAX i Metabox handlers
         new D_Express_Admin_Ajax();
         new D_Express_Order_Metabox();
@@ -189,10 +189,10 @@ class D_Express_Admin
     {
         $custom_css = "
             #adminmenu .toplevel_page_dexpress-settings .wp-menu-image img {
-                padding: 7px 0px !important;
-                width: auto !important;
+                padding: 2px 0px !important;
+                width: 30px !important;
                 height: auto !important;
-                max-width: 20px !important;
+                
             }
         ";
         // Registrujemo i dodajemo inline CSS
@@ -606,7 +606,7 @@ class D_Express_Admin
                                                 <td style="padding-right: 15px;">
                                                     <label for="dexpress_extend_range_end"><?php _e('Novi opseg od D Express-a:', 'd-express-woo'); ?></label><br>
                                                     <input type="number" id="dexpress_extend_range_end" name="dexpress_extend_range_end"
-                                                        min="<?php echo $code_range_end + 1; ?>" style="width: 120px;"
+                                                        min="<?php echo $code_range_end + 1; ?>" style="width: 200px;"
                                                         placeholder="<?php _e('Unesite krajnji broj', 'd-express-woo'); ?>">
                                                     <p class="description" style="margin-top: 5px;">
                                                         <?php printf(__('Trenutni opseg: %s-%s. Unesite krajnji broj novog opsega koji ste dobili od D Express-a.', 'd-express-woo'), $code_range_start, $code_range_end); ?>
@@ -1423,39 +1423,28 @@ class D_Express_Admin
         // Uklanjamo sve osim brojeva i crtice
         $account_number = preg_replace('/[^0-9\-]/', '', $account_number);
 
-        // Ako je prazan string, vraćamo prazan string
         if (empty($account_number)) {
             return '';
         }
 
-        // Ako su crtice već postavljene, proveravamo format
-        if (strpos($account_number, '-') !== false) {
-            $parts = explode('-', $account_number);
+        // Uklanjamo sve crtice za standardizaciju
+        $digits_only = str_replace('-', '', $account_number);
 
-            // Ako nemamo 3 dela, pokušavamo da formatiramo
-            if (count($parts) !== 3) {
-                // Uklanjamo sve crtice i formatiramo ispočetka
-                $account_number = str_replace('-', '', $account_number);
-            } else {
-                // Proveravamo da li delovi imaju ispravan broj cifara
-                if (strlen($parts[0]) === 3 && strlen($parts[2]) === 2) {
-                    return $account_number; // Već je dobro formatiran
-                }
-
-                // Uklanjamo sve crtice i formatiramo ispočetka
-                $account_number = str_replace('-', '', $account_number);
-            }
-        }
-
-        // Uklonili smo sve crtice, sada pokušavamo da formatiramo
-        $digits_only = preg_replace('/[^0-9]/', '', $account_number);
-
-        // Proveravamo da li imamo dovoljno cifara (minimalno 12-15 cifara)
+        // BOLJA VALIDACIJA: Proveravamo da li imamo tačno broj cifara
         if (strlen($digits_only) < 12 || strlen($digits_only) > 18) {
             return ''; // Nevažeći broj računa
         }
 
-        // Formatiramo broj računa u standardnom formatu 3-10-2 (ili više u srednjem delu)
+        // DODATNA VALIDACIJA: Provera da li su prva 3 broja validni kod banke
+        $bank_code = substr($digits_only, 0, 3);
+        $valid_bank_codes = ['115', '160', '180', '205', '250', '265', '275', '310', '325', '340', '355', '370', '380', '385'];
+
+        if (!in_array($bank_code, $valid_bank_codes)) {
+            // Log upozorenja o nepoznatom kodu banke
+            dexpress_log("Upozorenje: Nepoznat kod banke '{$bank_code}' u računu '{$account_number}'", 'warning');
+        }
+
+        // Formatiranje u standardnom formatu XXX-XXXXXXXXXX-XX
         return substr($digits_only, 0, 3) . '-' .
             substr($digits_only, 3, strlen($digits_only) - 5) . '-' .
             substr($digits_only, -2);
@@ -1539,18 +1528,24 @@ class D_Express_Admin
 
         // Validacija i formatiranje bankovnog računa
         $buyout_account = isset($_POST['dexpress_buyout_account']) ? sanitize_text_field($_POST['dexpress_buyout_account']) : '';
-        $buyout_account = $this->validate_and_format_bank_account($buyout_account);
 
-        // Provera validnosti bankovnog računa ako nije prazan
-        if (!empty($buyout_account) && !preg_match('/^\d{3}-\d{8,13}-\d{2}$/', $buyout_account)) {
-            // Ako format nije dobar, dodajemo obaveštenje
-            add_settings_error(
-                'dexpress_settings',
-                'invalid_buyout_account',
-                __('Broj računa za otkupninu mora biti u formatu XXX-XXXXXXXXXX-XX.', 'd-express-woo'),
-                'error'
-            );
-            // Ali i dalje čuvamo vrednost koju je korisnik uneo
+        if (!empty($buyout_account)) {
+            $formatted_account = $this->validate_and_format_bank_account($buyout_account);
+
+            if (empty($formatted_account)) {
+                add_settings_error(
+                    'dexpress_settings',
+                    'invalid_buyout_account',
+                    __('Broj računa za otkupninu nije u validnom formatu. Mora imati 12-18 cifara.', 'd-express-woo'),
+                    'error'
+                );
+                // PREKINEMO ČUVANJE ako bankovni račun nije valjan
+                $active_tab = isset($_POST['active_tab']) ? sanitize_key($_POST['active_tab']) : 'api';
+                wp_redirect(add_query_arg(['settings-updated' => 'false', 'tab' => $active_tab], admin_url('admin.php?page=dexpress-settings')));
+                exit;
+            }
+
+            $buyout_account = $formatted_account;
         }
 
         $require_buyout_account = isset($_POST['dexpress_require_buyout_account']) ? 'yes' : 'no';
@@ -1973,5 +1968,20 @@ class D_Express_Admin
             'cron-reset' => 'success',
         ], admin_url('admin.php')));
         exit;
+    }
+    public function display_buyout_account_notice()
+    {
+        if (isset($_GET['settings-updated']) && $_GET['settings-updated'] === 'false') {
+            $errors = get_settings_errors('dexpress_settings');
+
+            foreach ($errors as $error) {
+                if ($error['code'] === 'invalid_buyout_account' || $error['code'] === 'api_buyout_account_error') {
+                    echo '<div class="notice notice-error is-dismissible">';
+                    echo '<p><strong>' . esc_html($error['message']) . '</strong></p>';
+                    echo '<p>' . __('Molimo unesite valjan bankovni račun u formatu XXX-XXXXXXXXXX-XX.', 'd-express-woo') . '</p>';
+                    echo '</div>';
+                }
+            }
+        }
     }
 }

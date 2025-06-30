@@ -551,8 +551,8 @@ function dexpress_get_return_doc_options()
 {
     return array(
         0 => __('Bez povraćaja', 'd-express-woo'),
-        1 => __('Obavezan povraćaj', 'd-express-woo'),
-        2 => __('Povraćaj ako je potrebno', 'd-express-woo'),
+        1 => __('Povratak dokumenata', 'd-express-woo'),
+        3 => __('Dokaz o isporuci', 'd-express-woo'),
     );
 }
 

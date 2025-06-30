@@ -57,7 +57,25 @@ class D_Express_Shipment_Service
             // Validacija da lokacija postoji
             $sender_locations_service = new D_Express_Sender_Locations();
             $sender_location = $sender_locations_service->get_location($sender_location_id);
+            $payment_method = $order->get_payment_method();
+            if ($payment_method === 'cod') { // Cash on Delivery
+                $buyout_account = get_option('dexpress_buyout_account', '');
 
+                if (empty($buyout_account) && get_option('dexpress_require_buyout_account', 'no') === 'yes') {
+                    return new WP_Error(
+                        'missing_buyout_account',
+                        __('Bankovni račun za otkupninu je obavezan za narudžbine sa plaćanjem po dostavi.', 'd-express-woo')
+                    );
+                }
+
+                // Validacija formata računa
+                if (!empty($buyout_account) && !preg_match('/^\d{3}-\d{8,13}-\d{2}$/', $buyout_account)) {
+                    return new WP_Error(
+                        'invalid_buyout_format',
+                        __('Bankovni račun za otkupninu nije u validnom formatu.', 'd-express-woo')
+                    );
+                }
+            }
             if (!$sender_location) {
                 dexpress_log('[SHIPPING] ERROR: Lokacija ID ' . $sender_location_id . ' nije pronađena!', 'error');
                 return new WP_Error('invalid_location', __('Neispravna lokacija pošaljioce.', 'd-express-woo'));
@@ -139,7 +157,26 @@ class D_Express_Shipment_Service
             // Kreiranje pošiljke preko API-ja
             dexpress_log('[SHIPPING] Šaljem zahtev ka D-Express API-ju', 'debug');
             $response = $this->api->add_shipment($shipment_data);
+            if (is_wp_error($response)) {
+                // Specifično handling za bankovni račun greške
+                if (strpos($response->get_error_message(), 'BuyOutAccount') !== false) {
+                    dexpress_log(
+                        sprintf(
+                            '[SHIPPING] Greška sa bankovnim računom za narudžbinu #%d: %s',
+                            $order_id,
+                            $response->get_error_message()
+                        ),
+                        'error'
+                    );
 
+                    return new WP_Error(
+                        'buyout_account_rejected',
+                        __('D-Express je odbacio bankovni račun za otkupninu. Proverite podešavanja.', 'd-express-woo')
+                    );
+                }
+
+                return $response;
+            }
             if (is_wp_error($response)) {
                 dexpress_log('[SHIPPING] Greška pri kreiranju pošiljke: ' . $response->get_error_message(), 'error');
                 return $response;
@@ -236,9 +273,11 @@ class D_Express_Shipment_Service
 
         } catch (Exception $e) {
             dexpress_log('[SHIPPING] Exception pri kreiranju pošiljke: ' . $e->getMessage(), 'error');
+            dexpress_log('[SHIPPING] Exception: ' . $e->getMessage(), 'error');
             return new WP_Error('exception', $e->getMessage());
         }
     }
+    
     /**
      * Šalje email obaveštenje o promeni statusa pošiljke
      * 

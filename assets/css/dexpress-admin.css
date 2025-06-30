@@ -945,6 +945,11 @@
     position: relative;
 }
 
+form#dexpress-location-form {
+    padding: 20px 20px 15px;
+    border-bottom: 1px solid #ddd;
+}
+
 .dexpress-modal-header {
     padding: 20px 20px 15px;
     border-bottom: 1px solid #ddd;
@@ -1064,14 +1069,14 @@
         width: 95%;
         margin: 20px;
     }
-    
+
     .dexpress-modal .form-table th,
     .dexpress-modal .form-table td {
         display: block;
         width: 100%;
         padding: 10px 0;
     }
-    
+
     .dexpress-modal .form-table th {
         border-bottom: none;
         padding-bottom: 5px;
