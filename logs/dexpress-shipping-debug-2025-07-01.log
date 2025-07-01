@@ -1,0 +1,10 @@
+{"timestamp":"2025-07-01 09:22:01","context":"shipping","level":"debug","message":"[SHIPPING] Započinjem kreiranje pošiljke za narudžbinu #889"}
+{"timestamp":"2025-07-01 09:22:01","context":"shipping","level":"debug","message":"[SHIPPING] Koristi se prosleđena lokacija ID: 13"}
+{"timestamp":"2025-07-01 09:22:01","context":"shipping","level":"debug","message":"[SHIPPING] Sačuvana korišćena lokacija 13 za order 889"}
+{"timestamp":"2025-07-01 09:22:01","context":"shipping","level":"debug","message":"[SHIPPING] Priprema podataka za narudžbinu #889 sa lokacijom 13"}
+{"timestamp":"2025-07-01 09:22:01","context":"shipping","level":"debug","message":"[SHIPPING] Šaljem zahtev ka D-Express API-ju"}
+{"timestamp":"2025-07-01 09:22:01","context":"shipping","level":"debug","message":"[SHIPPING] API odgovor primljen uspešno"}
+{"timestamp":"2025-07-01 09:22:01","context":"shipping","level":"debug","message":"[SHIPPING] API odgovor: TEST"}
+{"timestamp":"2025-07-01 09:22:01","context":"shipping","level":"debug","message":"[SHIPPING] Tracking broj: TT0000000005, Shipment ID: TT0000000005"}
+{"timestamp":"2025-07-01 09:22:01","context":"shipping","level":"debug","message":"[SHIPPING] Čuvanje pošiljke u bazu podataka sa lokacijom 13"}
+{"timestamp":"2025-07-01 09:22:01","context":"shipping","level":"debug","message":"[SHIPPING] Pošiljka uspešno kreirana sa ID: 3 i lokacijom: 13"}
