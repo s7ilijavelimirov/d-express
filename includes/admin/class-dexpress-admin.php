@@ -556,7 +556,7 @@ class D_Express_Admin
                                 <td>
                                     <?php
 
-                                    $current_index = intval(get_option('dexpress_current_code_index', intval($code_range_start)));
+                                    $current_index = intval(get_option('dexpress_package_index', intval($code_range_start)));
                                     $code_range_start = intval($code_range_start);
                                     $code_range_end = intval($code_range_end);
 

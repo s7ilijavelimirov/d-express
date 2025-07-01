@@ -775,13 +775,6 @@ class D_Express_API
         return $account_number; // Vrati original ako ne možemo formatirati
     }
     /**
-     * Generiše jedinstveni kod paketa
-     */
-    public function generate_package_code()
-    {
-        return dexpress_generate_package_code();
-    }
-    /**
      * Priprema podatke pošiljke iz WooCommerce narudžbine
      */
     public function prepare_shipment_data_from_order($order, $sender_location_id = null)

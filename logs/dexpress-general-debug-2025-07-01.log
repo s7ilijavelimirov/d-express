@@ -1,0 +1,14 @@
+{"timestamp":"2025-07-01 08:28:58","context":"general","level":"debug","message":"Checkout order processed: 883"}
+{"timestamp":"2025-07-01 08:28:58","context":"general","level":"debug","message":"Has D Express shipping: Yes"}
+{"timestamp":"2025-07-01 08:28:58","context":"general","level":"debug","message":"Order processed - manual shipment creation required: 883"}
+{"timestamp":"2025-07-01 08:29:21","context":"general","level":"debug","message":"Generisan kod paketa: TT0000000083 (index: 83)"}
+{"timestamp":"2025-07-01 08:29:21","context":"general","level":"debug","message":"Generisan kod paketa: TT0000000084 (index: 84)"}
+{"timestamp":"2025-07-01 08:29:21","context":"general","level":"debug","message":"Generisan kod paketa: TT0000000085 (index: 85)"}
+{"timestamp":"2025-07-01 08:29:21","context":"general","level":"debug","message":"Generisan kod paketa: TT0000000086 (index: 86)"}
+{"timestamp":"2025-07-01 08:35:40","context":"general","level":"debug","message":"Checkout order processed: 884"}
+{"timestamp":"2025-07-01 08:35:40","context":"general","level":"debug","message":"Has D Express shipping: Yes"}
+{"timestamp":"2025-07-01 08:35:40","context":"general","level":"debug","message":"Order processed - manual shipment creation required: 884"}
+{"timestamp":"2025-07-01 08:35:57","context":"general","level":"debug","message":"Generisan kod paketa: TT0000000007 (index: 7)"}
+{"timestamp":"2025-07-01 08:35:57","context":"general","level":"debug","message":"Generisan kod paketa: TT0000000008 (index: 8)"}
+{"timestamp":"2025-07-01 08:35:57","context":"general","level":"debug","message":"Generisan kod paketa: TT0000000009 (index: 9)"}
+{"timestamp":"2025-07-01 08:35:57","context":"general","level":"debug","message":"Generisan kod paketa: TT0000000010 (index: 10)"}

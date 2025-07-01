@@ -396,6 +396,7 @@ class D_Express_WooCommerce
 
             // ✅ DODAJ OVU LINIJU ZA AJAX HANDLER
             $admin_ajax = new D_Express_Admin_Ajax();
+            add_action('wp_ajax_dexpress_delete_shipment', array($admin_ajax, 'ajax_delete_shipment'));
         }
 
         // Inicijalizacija frontend klasa

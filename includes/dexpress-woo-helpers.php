@@ -461,23 +461,30 @@ function dexpress_generate_reference($order_id)
  *
  * @return string Kod paketa
  */
+/**
+ * Generisanje koda paketa
+ *
+ * @return string Kod paketa
+ */
 function dexpress_generate_package_code()
 {
     $prefix = get_option('dexpress_code_prefix', 'TT');
     $range_start = intval(get_option('dexpress_code_range_start', 1));
     $range_end = intval(get_option('dexpress_code_range_end', 99));
-    $current_index = intval(get_option('dexpress_current_code_index', $range_start));
+
+    // KORISTI ISTI INDEX kao generate_unique_package_codes
+    $current_index = intval(get_option('dexpress_package_index', $range_start));
 
     // Povećaj index
     $current_index++;
 
-    // UKLONI RESETOVANJE! Umesto toga, baci grešku
+    // Proveri limit
     if ($current_index > $range_end) {
         throw new Exception("Opseg kodova je iscrpljen! Trenutni opseg: {$range_start}-{$range_end}. Molimo proširite opseg u admin panelu.");
     }
 
-    // Sačuvaj novi index
-    update_option('dexpress_current_code_index', $current_index);
+    // Sačuvaj novi index u ISTI ključ
+    update_option('dexpress_package_index', $current_index);
 
     // Formatiraj kod
     $formatted_code = $prefix . sprintf('%010d', $current_index);

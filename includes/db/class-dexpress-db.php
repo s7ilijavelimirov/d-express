@@ -202,6 +202,7 @@ class D_Express_DB
      */
     public function clear_shipment_cache($order_id)
     {
+        wp_cache_delete('dexpress_shipments_' . $order_id);
         delete_transient('dexpress_shipment_' . $order_id);
     }
 
@@ -415,18 +416,67 @@ class D_Express_DB
         }
     }
     /**
-     * Dobijanje svih pošiljki za narudžbinu
+     * Dobija sve pošiljke za određenu narudžbinu sa location podacima
      */
     public function get_shipments_by_order_id($order_id)
     {
         global $wpdb;
 
-        return $wpdb->get_results($wpdb->prepare(
-            "SELECT * FROM {$wpdb->prefix}dexpress_shipments 
-         WHERE order_id = %d 
-         ORDER BY split_index ASC, created_at ASC",
+        $cache_key = 'dexpress_shipments_' . $order_id;
+        $cached = wp_cache_get($cache_key);
+
+        if (false !== $cached) {
+            return $cached;
+        }
+
+        $shipments = $wpdb->get_results($wpdb->prepare(
+            "SELECT s.*, sl.name as location_name 
+         FROM {$wpdb->prefix}dexpress_shipments s
+         LEFT JOIN {$wpdb->prefix}dexpress_sender_locations sl ON s.sender_location_id = sl.id
+         WHERE s.order_id = %d 
+         ORDER BY s.split_index ASC, s.created_at ASC",
             $order_id
         ));
+
+        // Dodaj package informacije
+        foreach ($shipments as &$shipment) {
+            $shipment->packages = $this->get_packages_by_shipment_id($shipment->id);
+        }
+
+        wp_cache_set($cache_key, $shipments, '', HOUR_IN_SECONDS);
+        return $shipments;
+    }
+    /**
+     * Dobija pakete za određenu pošiljku
+     */
+    public function get_packages_by_shipment_id($shipment_id)
+    {
+        global $wpdb;
+
+        return $wpdb->get_results($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}dexpress_packages WHERE shipment_id = %d ORDER BY created_at ASC",
+            $shipment_id
+        ));
+    }
+    /**
+     * Dobija informacije o split-ovima za narudžbinu
+     */
+    public function get_shipment_splits_info($order_id)
+    {
+        global $wpdb;
+
+        $result = $wpdb->get_row($wpdb->prepare(
+            "SELECT 
+            COUNT(*) as total_shipments,
+            MAX(total_splits) as expected_splits,
+            MIN(created_at) as first_created,
+            MAX(created_at) as last_created
+         FROM {$wpdb->prefix}dexpress_shipments 
+         WHERE order_id = %d",
+            $order_id
+        ));
+
+        return $result;
     }
     /**
      * Proverava da li narudžbina ima multiple shipments
@@ -462,5 +512,35 @@ class D_Express_DB
         ORDER BY date DESC
         LIMIT 30
     ");
+    }
+    /**
+     * Briše pošiljku i povezane pakete
+     */
+    public function delete_shipment($shipment_id)
+    {
+        global $wpdb;
+
+        // Prvo dobij order_id za cache clearing
+        $shipment = $this->get_shipment($shipment_id);
+
+        // Obriši pakete
+        $wpdb->delete(
+            $wpdb->prefix . 'dexpress_packages',
+            array('shipment_id' => $shipment_id),
+            array('%d')
+        );
+
+        // Obriši pošiljku
+        $result = $wpdb->delete(
+            $wpdb->prefix . 'dexpress_shipments',
+            array('id' => $shipment_id),
+            array('%d')
+        );
+
+        if ($result && $shipment) {
+            $this->clear_shipment_cache($shipment->order_id);
+        }
+
+        return $result !== false;
     }
 }

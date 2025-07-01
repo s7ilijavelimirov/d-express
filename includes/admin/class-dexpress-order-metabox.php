@@ -95,18 +95,7 @@ class D_Express_Order_Metabox
     private function get_order_shipments($order_id)
     {
         $db = new D_Express_DB();
-
-        // Proveri da li metoda postoji, inače koristi osnovnu funkcionalnost
-        if (method_exists($db, 'get_shipments_by_order_id')) {
-            return $db->get_shipments_by_order_id($order_id);
-        } else {
-            // Fallback na osnovnu funkcionalnost
-            global $wpdb;
-            return $wpdb->get_results($wpdb->prepare(
-                "SELECT * FROM {$wpdb->prefix}dexpress_shipments WHERE order_id = %d ORDER BY created_at ASC",
-                $order_id
-            ));
-        }
+        return $db->get_shipments_by_order_id($order_id);
     }
     /**
      * Renderovanje sadržaja metabox-a
@@ -347,7 +336,44 @@ class D_Express_Order_Metabox
                         $(this).closest('.dexpress-split-form').remove();
                     }
                 });
+                // JS za brisanje pošiljke
+                $('.dexpress-delete-shipment').on('click', function(e) {
+                    e.preventDefault();
 
+                    if (!confirm('<?php _e('Da li ste sigurni da želite da obrišete ovu pošiljku?', 'd-express-woo'); ?>')) {
+                        return;
+                    }
+
+                    var btn = $(this);
+                    var shipmentId = btn.data('shipment-id');
+                    var orderId = btn.data('order-id');
+
+                    btn.prop('disabled', true).text('<?php _e('Brisanje...', 'd-express-woo'); ?>');
+
+                    $.ajax({
+                        url: ajaxurl,
+                        type: 'POST',
+                        data: {
+                            action: 'dexpress_delete_shipment',
+                            shipment_id: shipmentId,
+                            order_id: orderId,
+                            nonce: '<?php echo wp_create_nonce('dexpress_admin_nonce'); ?>'
+                        },
+                        success: function(response) {
+                            if (response.success) {
+                                alert(response.data.message);
+                                location.reload();
+                            } else {
+                                alert('<?php _e('Greška:', 'd-express-woo'); ?> ' + response.data.message);
+                                btn.prop('disabled', false).text('<?php _e('Obriši', 'd-express-woo'); ?>');
+                            }
+                        },
+                        error: function() {
+                            alert('<?php _e('Greška pri komunikaciji sa serverom', 'd-express-woo'); ?>');
+                            btn.prop('disabled', false).text('<?php _e('Obriši', 'd-express-woo'); ?>');
+                        }
+                    });
+                });
                 // Kreiranje svih pošiljki
                 $('#dexpress-create-all-shipments').on('click', function() {
                     var splits = [];
