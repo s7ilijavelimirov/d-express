@@ -318,9 +318,12 @@ class D_Express_Admin_Ajax
             wp_send_json_error(array('message' => __('Narudžbina nije pronađena.', 'd-express-woo')));
         }
 
-        // Kreiranje pošiljke pomoću servisne klase
+        // IZMENA: Generiši kod pre poziva servisne klase
+        $package_code = dexpress_generate_package_code();
+
+        // Kreiranje pošiljke pomoću servisne klase sa unapred generisanim kodom
         $shipment_service = new D_Express_Shipment_Service();
-        $result = $shipment_service->create_shipment($order, $sender_location_id);
+        $result = $shipment_service->create_shipment($order, $sender_location_id, $package_code);
 
         if (is_wp_error($result)) {
             wp_send_json_error(array('message' => $result->get_error_message()));
@@ -508,10 +511,27 @@ class D_Express_Admin_Ajax
     {
         $codes = array();
 
-        // KORISTI ISTU FUNKCIJU kao pojedinačne pošiljke
+        // Samo JEDNOM dobij početni index i generiši sve kodove odjednom
+        $prefix = get_option('dexpress_code_prefix', 'TT');
+        $range_start = intval(get_option('dexpress_code_range_start', 1));
+        $range_end = intval(get_option('dexpress_code_range_end', 99));
+
+        // Dobij trenutni index
+        $current_index = intval(get_option('dexpress_package_index', $range_start - 1));
+
+        // Generiši sve kodove sekvencijalno
         for ($i = 0; $i < $count; $i++) {
-            $codes[] = dexpress_generate_package_code();
+            $current_index++;
+
+            if ($current_index > $range_end) {
+                throw new Exception("Opseg kodova je iscrpljen!");
+            }
+
+            $codes[] = $prefix . str_pad($current_index, 10, '0', STR_PAD_LEFT);
         }
+
+        // JEDNOM sačuvaj finalni index
+        update_option('dexpress_package_index', $current_index);
 
         error_log('Generated package codes: ' . implode(', ', $codes));
         return $codes;

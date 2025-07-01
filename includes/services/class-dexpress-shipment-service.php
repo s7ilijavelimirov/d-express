@@ -37,7 +37,7 @@ class D_Express_Shipment_Service
      * @param int $sender_location_id ID lokacije pošaljioce (opciono)
      * @return int|WP_Error ID pošiljke ili WP_Error
      */
-    public function create_shipment($order, $sender_location_id = null)
+    public function create_shipment($order, $sender_location_id = null, $package_code = null)
     {
         try {
             $order_id = $order->get_id();
@@ -53,7 +53,12 @@ class D_Express_Shipment_Service
             } else {
                 dexpress_log('[SHIPPING] Koristi se prosleđena lokacija ID: ' . $sender_location_id, 'debug');
             }
-
+            if (empty($package_code)) {
+                $package_code = dexpress_generate_package_code();
+                dexpress_log('[SHIPPING] Generisan novi package kod: ' . $package_code, 'debug');
+            } else {
+                dexpress_log('[SHIPPING] Koristi prosleđeni package kod: ' . $package_code, 'debug');
+            }
             // Validacija da lokacija postoji
             $sender_locations_service = new D_Express_Sender_Locations();
             $sender_location = $sender_locations_service->get_location($sender_location_id);
@@ -112,7 +117,7 @@ class D_Express_Shipment_Service
 
             // Dobijanje podataka za pošiljku SA PROSLEĐENOM LOKACIJOM
             dexpress_log('[SHIPPING] Priprema podataka za narudžbinu #' . $order_id . ' sa lokacijom ' . $sender_location_id, 'debug');
-            $shipment_data = $this->api->prepare_shipment_data_from_order($order, $sender_location_id);
+            $shipment_data = $this->api->prepare_shipment_data_from_order($order, $sender_location_id, $package_code);
             if (is_wp_error($shipment_data)) {
                 dexpress_log('[SHIPPING] Greška pri pripremi podataka: ' . $shipment_data->get_error_message(), 'error');
                 return $shipment_data;
@@ -539,5 +544,4 @@ class D_Express_Shipment_Service
         // Označava da je email poslat
         update_post_meta($order->get_id(), '_dexpress_tracking_email_sent', 'yes');
     }
-    
 }

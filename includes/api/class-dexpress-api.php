@@ -777,7 +777,7 @@ class D_Express_API
     /**
      * Priprema podatke pošiljke iz WooCommerce narudžbine
      */
-    public function prepare_shipment_data_from_order($order, $sender_location_id = null)
+    public function prepare_shipment_data_from_order($order, $sender_location_id = null, $package_code = null)
     {
         if (!$order instanceof WC_Order) {
             return new WP_Error('invalid_order', __('Nevažeća narudžbina', 'd-express-woo'));
@@ -1063,9 +1063,7 @@ class D_Express_API
             'SelfDropOff' => intval(get_option('dexpress_self_drop_off', 0)),
         );
         dexpress_log("[WEIGHT DEBUG] Težina nakon formatiranja za API: {$shipment_data['Mass']} grama", 'debug');
-        // Dodavanje paketa
-        // Dodavanje paketa sa jedinstvenim kodom
-        $package_code = $this->generate_package_code();
+
         $shipment_data['PackageList'] = array(
             array(
                 'Code' => $package_code,
@@ -1155,11 +1153,11 @@ class D_Express_API
     /**
      * Generiše package code koristeći centralizovanu funkciju
      */
-    private function generate_package_code()
-    {
-        // Koristi helper funkciju umesto lokalne logike
-        return dexpress_generate_package_code();
-    }
+    // private function generate_package_code()
+    // {
+    //     // Koristi helper funkciju umesto lokalne logike
+    //     return dexpress_generate_package_code();
+    // }
 
     /**
      * Izračunavanje težine narudžbine u gramima
