@@ -27,12 +27,60 @@ class D_Express_Label_Generator
         // Registracija AJAX akcija
         add_action('wp_ajax_dexpress_download_label', array($this, 'ajax_download_label'));
         add_action('wp_ajax_dexpress_generate_label', array($this, 'ajax_generate_label'));
-
         add_action('wp_ajax_dexpress_bulk_print_labels', array($this, 'ajax_bulk_print_labels'));
     }
     /**
-     * AJAX akcija za masovno štampanje nalepnica
+     * Izračunava COD iznos za shipment (bez dostave)
+     * 
+     * @param WC_Order $order WooCommerce narudžbina
+     * @param object $shipment Podaci o pošiljci
+     * @return float COD iznos u dinarima
      */
+    private function calculate_split_cod_amount($order, $shipment)
+    {
+        // Ako je split shipment, kalkuliši samo za artikle iz tog split-a
+        if (!empty($shipment->split_index) && !empty($shipment->total_splits) && $shipment->total_splits > 1) {
+            $shipment_splits = get_post_meta($order->get_id(), '_dexpress_shipment_splits', true);
+
+            if (!empty($shipment_splits) && isset($shipment_splits[$shipment->split_index - 1])) {
+                $split_data = $shipment_splits[$shipment->split_index - 1];
+                $selected_items = isset($split_data['items']) ? $split_data['items'] : [];
+
+                if (!empty($selected_items)) {
+                    $split_value = 0;
+
+                    foreach ($order->get_items() as $item_id => $item) {
+                        // Proveri da li je item_id u selected_items
+                        if (in_array($item_id, $selected_items)) {
+                            // Proveri da li je WC_Order_Item_Product
+                            if (!($item instanceof WC_Order_Item_Product)) {
+                                continue;
+                            }
+
+                            // Dodaj total + tax za ovaj item
+                            $split_value += ($item->get_total() + $item->get_total_tax());
+                        }
+                    }
+
+                    return $split_value > 0 ? $split_value : 0;
+                }
+            }
+        }
+
+        // Fallback: Izračunaj vrednost svih proizvoda (bez dostave)
+        $total_items_value = 0;
+
+        foreach ($order->get_items() as $item) {
+            if (!($item instanceof WC_Order_Item_Product)) {
+                continue;
+            }
+
+            // Dodaj vrednost artikla + porez
+            $total_items_value += ($item->get_total() + $item->get_total_tax());
+        }
+
+        return $total_items_value;
+    }
     /**
      * AJAX akcija za masovno štampanje nalepnica
      */
@@ -74,7 +122,9 @@ class D_Express_Label_Generator
         if (empty($shipments)) {
             wp_die(__('Pošiljke nisu pronađene.', 'd-express-woo'));
         }
+
         $total_shipments = count($shipments);
+
         // Početak HTML-a za nalepnice
         echo '<!DOCTYPE html>
         <html>
@@ -288,6 +338,7 @@ class D_Express_Label_Generator
         echo '</div></body></html>';
         exit;
     }
+
     /**
      * Dobavlja broj paketa za pošiljku
      * 
@@ -307,6 +358,7 @@ class D_Express_Label_Generator
         // Ako nemamo podatke o paketima, pretpostavljamo da je jedan paket
         return 1;
     }
+
     /**
      * Generiše kompaktnu nalepnicu za višestruko štampanje
      * 
@@ -318,7 +370,7 @@ class D_Express_Label_Generator
     public function generate_compact_label($shipment, $order, $package_index = 1, $package_count = 1)
     {
         // Pripremanje podataka za nalepnicu
-        $order_data = $this->prepare_order_data($order);
+        $order_data = $this->prepare_order_data($order, $shipment);
 
         $address_type = $order->has_shipping_address() ? 'shipping' : 'billing';
         $address_desc = get_post_meta($order->get_id(), "_{$address_type}_address_desc", true);
@@ -329,41 +381,47 @@ class D_Express_Label_Generator
         // Format otkupnine
         $cod_amount = '';
         if ($order_data['payment_method'] === 'cod') {
-            $cod_amount = number_format($order_data['order_total'], 2, ',', '.') . ' RSD';
+            $split_cod = $this->calculate_split_cod_amount($order, $shipment);
+            $cod_amount = number_format($split_cod, 2, ',', '.') . ' RSD';
         }
 
-        // Referentni broj
-        $reference_id = !empty($shipment->reference_id) ? $shipment->reference_id : 'ORDER-' . $order->get_id();
+        // Referentni broj - ISPRAVKA za split shipments
+        $reference_id = $this->generate_reference_id($order, $shipment);
 
         // Datum i vreme štampe
         $print_date = date_i18n('d.m.Y H:i:s');
 
-        // KLJUČNA IZMENA: Koristi pravu lokaciju umesto uvek glavnu
-        $used_location_id = get_post_meta($order->get_id(), '_dexpress_used_sender_location_id', true);
-
+        // ISPRAVKA: Prvo probaj sa sender_location_id iz shipment tabele
         $sender_service = D_Express_Sender_Locations::get_instance();
+        $sender_location = null;
 
-        if ($used_location_id) {
-            // Koristi lokaciju koja je stvarno korišćena
-            $sender_location = $sender_service->get_location($used_location_id);
-            error_log("Label generator: Koristi lokaciju ID {$used_location_id} iz meta podataka");
-        } else {
-            // Fallback na glavnu lokaciju
-            $sender_location = $sender_service->get_default_location();
-            error_log("Label generator: Koristi glavnu lokaciju kao fallback");
-        }
-
-        // Ako ni to ne radi, pokušaj da dohvatiš iz shipment tabele
-        if (!$sender_location && isset($shipment->sender_location_id)) {
+        if (!empty($shipment->sender_location_id)) {
+            // Koristi lokaciju iz shipment-a (ovo je najčešći slučaj za multiple shipments)
             $sender_location = $sender_service->get_location($shipment->sender_location_id);
-            error_log("Label generator: Koristi lokaciju iz shipment tabele: " . $shipment->sender_location_id);
+            error_log("Label generator: Koristi lokaciju iz shipment: ID " . $shipment->sender_location_id);
+        } else {
+            // Fallback: probaj sa order meta
+            $used_location_id = get_post_meta($order->get_id(), '_dexpress_used_sender_location_id', true);
+
+            if ($used_location_id) {
+                $sender_location = $sender_service->get_location($used_location_id);
+                error_log("Label generator: Fallback na order meta lokaciju: ID " . $used_location_id);
+            } else {
+                // Poslednji fallback: glavna lokacija
+                $sender_location = $sender_service->get_default_location();
+                error_log("Label generator: Fallback na glavnu lokaciju");
+            }
         }
 
         // Debug info
         $debug_info = "Generating label for order: " . $order->get_id() . "\n";
-        $debug_info .= "Used location ID: " . ($used_location_id ?: 'none') . "\n";
-        $debug_info .= "Location name: " . ($sender_location ? $sender_location->name : 'not found') . "\n";
+        $debug_info .= "Shipment ID: " . ($shipment->id ?? 'N/A') . "\n";
+        $debug_info .= "Shipment location ID: " . ($shipment->sender_location_id ?? 'N/A') . "\n";
+        $debug_info .= "Used location name: " . ($sender_location ? $sender_location->name : 'not found') . "\n";
         error_log($debug_info);
+
+        // Generiši sadržaj pošiljke na osnovu split podataka (ako postoje)
+        $shipment_content = $this->generate_shipment_content_for_split($order, $shipment);
 
         // HTML za nalepnicu
 ?>
@@ -389,7 +447,7 @@ class D_Express_Label_Generator
                 <?php endif; ?>
             </div>
 
-            <!-- Ostatak koda ostaje isti... -->
+            <!-- Barcode sekcija -->
             <div class="barcode-container">
                 <svg class="barcode-<?php echo esc_attr($tracking_number); ?>"></svg>
                 <script>
@@ -425,7 +483,7 @@ class D_Express_Label_Generator
                     <?php echo esc_html(dexpress_get_payment_type_text(get_option('dexpress_payment_type', '2'))); ?>
                 </div>
                 <div class="detail-row">
-                    <span class="detail-label">Dokumentacija:</span>
+                    <span class="detail-label">Povratna dokumentacija:</span>
                     <?php echo esc_html(dexpress_get_return_doc_text(get_option('dexpress_return_doc', '0'))); ?>
                 </div>
 
@@ -438,15 +496,17 @@ class D_Express_Label_Generator
 
                 <div class="detail-row">
                     <span class="detail-label">Sadržaj:</span>
-                    <?php echo esc_html(dexpress_generate_shipment_content($order)); ?>
+                    <?php echo esc_html($shipment_content); ?>
                 </div>
                 <div class="detail-row">
                     <span class="detail-label">Masa:</span>
                     <?php
-                    if ($order_data['total_weight'] == (int)$order_data['total_weight']) {
-                        echo esc_html(number_format($order_data['total_weight'], 0, ',', '.') . ' kg');
+                    // Koristi podatke specifične za ovaj shipment
+                    $shipment_weight = $this->calculate_shipment_weight($order, $shipment);
+                    if ($shipment_weight == (int)$shipment_weight) {
+                        echo esc_html(number_format($shipment_weight, 0, ',', '.') . ' kg');
                     } else {
-                        echo esc_html(number_format($order_data['total_weight'], 1, ',', '.') . ' kg');
+                        echo esc_html(number_format($shipment_weight, 1, ',', '.') . ' kg');
                     }
                     ?>
                 </div>
@@ -463,11 +523,225 @@ class D_Express_Label_Generator
         </div>
     <?php
     }
+
+    /**
+     * Generiše referencični broj za shipment
+     * 
+     * @param WC_Order $order WooCommerce narudžbina
+     * @param object $shipment Podaci o pošiljci
+     * @return string Referentni broj
+     */
+    private function generate_reference_id($order, $shipment)
+    {
+        // Ako postoji postojeći reference_id, koristi ga
+        if (!empty($shipment->reference_id)) {
+            return $shipment->reference_id;
+        }
+
+        // Za split shipments, dodaj suffix
+        if (!empty($shipment->split_index) && !empty($shipment->total_splits) && $shipment->total_splits > 1) {
+            return $order->get_id() . '-' . $shipment->split_index;
+        }
+
+        // Standardni format
+        return 'ORDER-' . $order->get_id();
+    }
+
+    /**
+     * Izračunava težinu za specifičan shipment
+     * 
+     * @param WC_Order $order WooCommerce narudžbina
+     * @param object $shipment Podaci o pošiljci
+     * @return float Težina u kilogramima
+     */
+    private function calculate_shipment_weight($order, $shipment)
+    {
+        // Ako je split shipment, kalkuliši težinu samo za artikle koji pripadaju ovom split-u
+        if (!empty($shipment->split_index) && !empty($shipment->total_splits) && $shipment->total_splits > 1) {
+            $shipment_splits = get_post_meta($order->get_id(), '_dexpress_shipment_splits', true);
+
+            if (!empty($shipment_splits) && isset($shipment_splits[$shipment->split_index - 1])) {
+                $split_data = $shipment_splits[$shipment->split_index - 1];
+                $selected_items = isset($split_data['items']) ? $split_data['items'] : [];
+
+                if (!empty($selected_items)) {
+                    $total_weight = 0;
+
+                    foreach ($order->get_items() as $item_id => $item) {
+                        // Proveri da li je item_id u selected_items
+                        if (in_array($item_id, $selected_items)) {
+                            // Proveri da li je WC_Order_Item_Product
+                            if (!($item instanceof WC_Order_Item_Product)) {
+                                continue;
+                            }
+
+                            $product = $item->get_product();
+                            $quantity = $item->get_quantity();
+
+                            if ($product && $product->has_weight()) {
+                                $total_weight += floatval($product->get_weight()) * $quantity;
+                            }
+                        }
+                    }
+
+                    // Ako nema težine, postavi minimalnu težinu
+                    return $total_weight > 0 ? $total_weight : 0.5;
+                }
+            }
+        }
+
+        // Fallback: koristi težinu cele narudžbine
+        $total_weight = 0;
+        foreach ($order->get_items() as $item) {
+            if (!($item instanceof WC_Order_Item_Product)) {
+                continue;
+            }
+
+            $product = $item->get_product();
+            if ($product && $product instanceof WC_Product && $product->has_weight()) {
+                $total_weight += floatval($product->get_weight()) * $item->get_quantity();
+            }
+        }
+
+        return $total_weight > 0 ? $total_weight : 0.5;
+    }
+
+    /**
+     * Generiše sadržaj pošiljke za split shipment
+     * 
+     * @param WC_Order $order WooCommerce narudžbina
+     * @param object $shipment Podaci o pošiljci
+     * @return string Sadržaj pošiljke
+     */
+    private function generate_shipment_content_for_split($order, $shipment)
+    {
+        // Ako je split shipment, koristi samo artikle koji pripadaju ovom split-u
+        if (!empty($shipment->split_index) && !empty($shipment->total_splits) && $shipment->total_splits > 1) {
+            // Dobij split podatke iz order meta
+            $shipment_splits = get_post_meta($order->get_id(), '_dexpress_shipment_splits', true);
+
+            if (!empty($shipment_splits) && isset($shipment_splits[$shipment->split_index - 1])) {
+                $split_data = $shipment_splits[$shipment->split_index - 1];
+                $selected_items = isset($split_data['items']) ? $split_data['items'] : [];
+
+                if (!empty($selected_items)) {
+                    $content_parts = [];
+
+                    foreach ($order->get_items() as $item_id => $item) {
+                        // Proveri da li je item_id u selected_items
+                        if (in_array($item_id, $selected_items)) {
+                            // Proveri da li je WC_Order_Item_Product
+                            if (!($item instanceof WC_Order_Item_Product)) {
+                                continue;
+                            }
+
+                            $product = $item->get_product();
+                            $quantity = $item->get_quantity();
+
+                            if ($product) {
+                                $content_parts[] = $quantity . 'x ' . $product->get_name();
+                            }
+                        }
+                    }
+
+                    return !empty($content_parts) ? implode(', ', $content_parts) : dexpress_generate_shipment_content($order);
+                }
+            }
+        }
+
+        // Fallback: koristi postojeću funkciju za celu narudžbinu
+        if (function_exists('dexpress_generate_shipment_content')) {
+            return dexpress_generate_shipment_content($order);
+        }
+
+        $fallback_content = get_option('dexpress_default_content', 'Proizvodi');
+        return !empty($fallback_content) ? $fallback_content : 'Proizvodi';
+    }
+
+    /**
+     * Pripremanje podataka o narudžbini za nalepnicu - AŽURIRANO
+     * 
+     * @param WC_Order $order WooCommerce narudžbina
+     * @param object $shipment Podaci o pošiljci (opciono)
+     * @return array Podaci o narudžbini
+     */
+    private function prepare_order_data($order, $shipment = null)
+    {
+        // Podaci o pošiljaocu - koristi podatke iz shipment-a ako su dostupni
+        $sender_service = D_Express_Sender_Locations::get_instance();
+
+        if ($shipment && !empty($shipment->sender_location_id)) {
+            $sender_location = $sender_service->get_location($shipment->sender_location_id);
+        } else {
+            $sender_location = $sender_service->get_default_location();
+        }
+
+        $sender_name = $sender_location ? $sender_location->name : '';
+        $sender_address = $sender_location ? ($sender_location->address . ' ' . $sender_location->address_num) : '';
+        $sender_city = $sender_location ? $sender_location->town_name : '';
+
+        // Izračunavanje ukupne težine - koristi shipment-specific ako je split
+        if ($shipment) {
+            $total_weight = $this->calculate_shipment_weight($order, $shipment);
+        } else {
+            // Fallback za standardnu kalkulaciju
+            if (class_exists('D_Express_Validator')) {
+                $weight_grams = D_Express_Validator::calculate_order_weight($order);
+                $total_weight = $weight_grams / 1000;
+            } else {
+                $total_weight = 0;
+                foreach ($order->get_items() as $item) {
+                    if (!($item instanceof WC_Order_Item_Product)) {
+                        continue;
+                    }
+
+                    $product = $item->get_product();
+                    if ($product && $product instanceof WC_Product && $product->has_weight()) {
+                        $total_weight += floatval($product->get_weight()) * $item->get_quantity();
+                    }
+                }
+
+                if ($total_weight <= 0) {
+                    $total_weight = 0.5;
+                }
+            }
+        }
+
+        // Odredi tip adrese (billing ili shipping)
+        $address_type = $order->has_shipping_address() ? 'shipping' : 'billing';
+
+        // Prvo pokušaj da dobiješ napomenu iz odgovarajućeg tipa adrese
+        $address_desc = get_post_meta($order->get_id(), "_{$address_type}_address_desc", true);
+
+        // Ako je napomena prazna, a koristimo shipping adresu, probaj i billing
+        if (empty($address_desc) && $address_type === 'shipping') {
+            $address_desc = get_post_meta($order->get_id(), "_billing_address_desc", true);
+        }
+
+        // Podaci o pošiljci
+        return array(
+            'sender_name' => $sender_name,
+            'sender_address' => $sender_address,
+            'sender_city' => $sender_city,
+            'shipping_name' => $order->get_shipping_first_name() . ' ' . $order->get_shipping_last_name(),
+            'shipping_address' => $order->get_shipping_address_1(),
+            'shipping_address_desc' => $address_desc,
+            'shipping_city' => $order->get_shipping_city(),
+            'shipping_postcode' => $order->get_shipping_postcode(),
+            'shipping_phone' => $order->get_billing_phone(),
+            'order_id' => $order->get_id(),
+            'order_number' => $order->get_order_number(),
+            'payment_method' => $order->get_payment_method(),
+            'order_total' => $order->get_total(),
+            'formatted_total' => $order->get_formatted_order_total(),
+            'customer_note' => $order->get_customer_note(),
+            'total_weight' => $total_weight
+        );
+    }
+
     /**
      * AJAX akcija za preuzimanje nalepnice
      */
-
-
     public function ajax_download_label()
     {
         // Provera nonce-a
@@ -783,7 +1057,8 @@ class D_Express_Label_Generator
         // Format otkupnine
         $cod_amount = '';
         if ($order_data['payment_method'] === 'cod') {
-            $cod_amount = number_format($order_data['order_total'], 2, ',', '.') . ' RSD';
+            $split_cod = $this->calculate_split_cod_amount($order, $shipment);
+            $cod_amount = number_format($split_cod, 2, ',', '.') . ' RSD';
         }
 
         // Referentni broj
@@ -1064,78 +1339,5 @@ class D_Express_Label_Generator
         </html>
 <?php
         return ob_get_clean();
-    }
-
-    /**
-     * Pripremanje podataka o narudžbini za nalepnicu
-     * 
-     * @param WC_Order $order WooCommerce narudžbina
-     * @return array Podaci o narudžbini
-     */
-    private function prepare_order_data($order)
-    {
-        // Podaci o pošiljaocu
-        $sender_service = D_Express_Sender_Locations::get_instance();
-        $sender_location = $sender_service->get_default_location();
-
-        $sender_name = $sender_location ? $sender_location->name : '';
-        $sender_address = $sender_location ? ($sender_location->address . ' ' . $sender_location->address_num) : '';
-        $sender_city = $sender_location ? $sender_location->town_name : '';
-
-        // Izračunavanje ukupne težine narudžbine
-        if (class_exists('D_Express_Validator')) {
-            $weight_grams = D_Express_Validator::calculate_order_weight($order);
-            $total_weight = $weight_grams / 1000; // Konverzija iz grama u kg za prikaz
-        } else {
-            // Alternativno, ako klasa nije dostupna, izračunaj ovde
-            $total_weight = 0;
-            foreach ($order->get_items() as $item) {
-                // Provera da li je $item instanca WC_Order_Item_Product
-                if (!($item instanceof WC_Order_Item_Product)) {
-                    continue;
-                }
-
-                $product = $item->get_product();
-                if ($product && $product instanceof WC_Product && $product->has_weight()) {
-                    $total_weight += floatval($product->get_weight()) * $item->get_quantity();
-                }
-            }
-
-            // Ako nema težine, postavimo neku podrazumevanu vrednost
-            if ($total_weight <= 0) {
-                $total_weight = 0.5; // 500g = 0.5kg
-            }
-        }
-
-        // Odredi tip adrese (billing ili shipping)
-        $address_type = $order->has_shipping_address() ? 'shipping' : 'billing';
-
-        // Prvo pokušaj da dobiješ napomenu iz odgovarajućeg tipa adrese
-        $address_desc = get_post_meta($order->get_id(), "_{$address_type}_address_desc", true);
-
-        // Ako je napomena prazna, a koristimo shipping adresu, probaj i billing
-        if (empty($address_desc) && $address_type === 'shipping') {
-            $address_desc = get_post_meta($order->get_id(), "_billing_address_desc", true);
-        }
-
-        // Podaci o pošiljci
-        return array(
-            'sender_name' => $sender_name,
-            'sender_address' => $sender_address,
-            'sender_city' => $sender_city,
-            'shipping_name' => $order->get_shipping_first_name() . ' ' . $order->get_shipping_last_name(),
-            'shipping_address' => $order->get_shipping_address_1(),
-            'shipping_address_desc' => $address_desc, // Dodali smo napomenu ovde
-            'shipping_city' => $order->get_shipping_city(),
-            'shipping_postcode' => $order->get_shipping_postcode(),
-            'shipping_phone' => $order->get_billing_phone(),
-            'order_id' => $order->get_id(),
-            'order_number' => $order->get_order_number(),
-            'payment_method' => $order->get_payment_method(),
-            'order_total' => $order->get_total(),
-            'formatted_total' => $order->get_formatted_order_total(),
-            'customer_note' => $order->get_customer_note(),
-            'total_weight' => $total_weight
-        );
     }
 }

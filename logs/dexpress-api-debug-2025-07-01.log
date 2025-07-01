@@ -70,3 +70,129 @@
 {"timestamp":"2025-07-01 12:18:52","context":"api","level":"debug","message":"Final RAddressNum: 105"}
 {"timestamp":"2025-07-01 12:18:52","context":"api","level":"debug","message":"Final RTownID: 802140"}
 {"timestamp":"2025-07-01 12:18:52","context":"api","level":"debug","message":"Final RCPhone: 381603995503"}
+{"timestamp":"2025-07-01 12:41:52","context":"api","level":"debug","message":"Using address type: shipping"}
+{"timestamp":"2025-07-01 12:41:52","context":"api","level":"debug","message":"Street: Nikole Francuskog, Number: 105, City ID: 802140"}
+{"timestamp":"2025-07-01 12:41:52","context":"api","level":"debug","message":"[COD DEBUG] Lokacija: s7Code DOO, Bank account: 170-0010364556000-77"}
+{"timestamp":"2025-07-01 12:41:52","context":"api","level":"debug","message":"Payment method: cod, Is COD: Yes"}
+{"timestamp":"2025-07-01 12:41:52","context":"api","level":"debug","message":"[BANK DEBUG] Original: 170-0010364556000-77, Digits: 170001036455600077, Length: 18"}
+{"timestamp":"2025-07-01 12:41:52","context":"api","level":"debug","message":"[BANK DEBUG] Formatted (16-18): 170-0010364556000-77"}
+{"timestamp":"2025-07-01 12:41:52","context":"api","level":"debug","message":"[COD DEBUG] Formatiran račun: 170-0010364556000-77"}
+{"timestamp":"2025-07-01 12:41:52","context":"api","level":"debug","message":"Using BuyOut: 56500, Account from location 's7Code DOO': 170-0010364556000-77"}
+{"timestamp":"2025-07-01 12:41:52","context":"api","level":"debug","message":"[WEIGHT DEBUG] Početak izračunavanja težine za narudžbinu #907"}
+{"timestamp":"2025-07-01 12:41:52","context":"api","level":"debug","message":"[WEIGHT DEBUG] Ukupna težina u kg pre konverzije: 0"}
+{"timestamp":"2025-07-01 12:41:52","context":"api","level":"debug","message":"[WEIGHT DEBUG] Konačna težina u gramima: 100"}
+{"timestamp":"2025-07-01 12:41:52","context":"api","level":"debug","message":"[WEIGHT DEBUG] Težina iz calculate_order_weight: 100 grama"}
+{"timestamp":"2025-07-01 12:41:52","context":"api","level":"debug","message":"[WEIGHT DEBUG] Težina nakon formatiranja za API: 100 grama"}
+{"timestamp":"2025-07-01 12:41:52","context":"api","level":"debug","message":"Final BuyOut amount: 56500"}
+{"timestamp":"2025-07-01 12:41:52","context":"api","level":"debug","message":"Final BuyOutAccount: 170-0010364556000-77"}
+{"timestamp":"2025-07-01 12:41:52","context":"api","level":"debug","message":"Final RAddressNum: 105"}
+{"timestamp":"2025-07-01 12:41:52","context":"api","level":"debug","message":"Final RTownID: 802140"}
+{"timestamp":"2025-07-01 12:41:52","context":"api","level":"debug","message":"Final RCPhone: 381603995503"}
+{"timestamp":"2025-07-01 12:41:52","context":"api","level":"debug","message":"Using address type: shipping"}
+{"timestamp":"2025-07-01 12:41:52","context":"api","level":"debug","message":"Street: Nikole Francuskog, Number: 105, City ID: 802140"}
+{"timestamp":"2025-07-01 12:41:52","context":"api","level":"debug","message":"[COD DEBUG] Lokacija: s7Code KI DOO, Bank account: 155-8500181632480-56"}
+{"timestamp":"2025-07-01 12:41:52","context":"api","level":"debug","message":"Payment method: cod, Is COD: Yes"}
+{"timestamp":"2025-07-01 12:41:52","context":"api","level":"debug","message":"[BANK DEBUG] Original: 155-8500181632480-56, Digits: 155850018163248056, Length: 18"}
+{"timestamp":"2025-07-01 12:41:52","context":"api","level":"debug","message":"[BANK DEBUG] Formatted (16-18): 155-8500181632480-56"}
+{"timestamp":"2025-07-01 12:41:52","context":"api","level":"debug","message":"[COD DEBUG] Formatiran račun: 155-8500181632480-56"}
+{"timestamp":"2025-07-01 12:41:52","context":"api","level":"debug","message":"Using BuyOut: 56500, Account from location 's7Code KI DOO': 155-8500181632480-56"}
+{"timestamp":"2025-07-01 12:41:52","context":"api","level":"debug","message":"[WEIGHT DEBUG] Početak izračunavanja težine za narudžbinu #907"}
+{"timestamp":"2025-07-01 12:41:52","context":"api","level":"debug","message":"[WEIGHT DEBUG] Ukupna težina u kg pre konverzije: 0"}
+{"timestamp":"2025-07-01 12:41:52","context":"api","level":"debug","message":"[WEIGHT DEBUG] Konačna težina u gramima: 100"}
+{"timestamp":"2025-07-01 12:41:52","context":"api","level":"debug","message":"[WEIGHT DEBUG] Težina iz calculate_order_weight: 100 grama"}
+{"timestamp":"2025-07-01 12:41:52","context":"api","level":"debug","message":"[WEIGHT DEBUG] Težina nakon formatiranja za API: 100 grama"}
+{"timestamp":"2025-07-01 12:41:52","context":"api","level":"debug","message":"Final BuyOut amount: 56500"}
+{"timestamp":"2025-07-01 12:41:52","context":"api","level":"debug","message":"Final BuyOutAccount: 155-8500181632480-56"}
+{"timestamp":"2025-07-01 12:41:52","context":"api","level":"debug","message":"Final RAddressNum: 105"}
+{"timestamp":"2025-07-01 12:41:52","context":"api","level":"debug","message":"Final RTownID: 802140"}
+{"timestamp":"2025-07-01 12:41:52","context":"api","level":"debug","message":"Final RCPhone: 381603995503"}
+{"timestamp":"2025-07-01 13:17:07","context":"api","level":"debug","message":"Using address type: shipping"}
+{"timestamp":"2025-07-01 13:17:07","context":"api","level":"debug","message":"Street: Nikole Francuskog, Number: 105, City ID: 802140"}
+{"timestamp":"2025-07-01 13:17:07","context":"api","level":"debug","message":"[COD DEBUG] Lokacija: s7Code DOO, Bank account: 170-0010364556000-77"}
+{"timestamp":"2025-07-01 13:17:07","context":"api","level":"debug","message":"Payment method: cod, Is COD: Yes"}
+{"timestamp":"2025-07-01 13:17:07","context":"api","level":"debug","message":"[BANK DEBUG] Original: 170-0010364556000-77, Digits: 170001036455600077, Length: 18"}
+{"timestamp":"2025-07-01 13:17:07","context":"api","level":"debug","message":"[BANK DEBUG] Formatted (16-18): 170-0010364556000-77"}
+{"timestamp":"2025-07-01 13:17:07","context":"api","level":"debug","message":"[COD DEBUG] Formatiran račun: 170-0010364556000-77"}
+{"timestamp":"2025-07-01 13:17:07","context":"api","level":"debug","message":"Using BuyOut: 57000, Account from location 's7Code DOO': 170-0010364556000-77"}
+{"timestamp":"2025-07-01 13:17:07","context":"api","level":"debug","message":"[WEIGHT DEBUG] Početak izračunavanja težine za narudžbinu #909"}
+{"timestamp":"2025-07-01 13:17:07","context":"api","level":"debug","message":"[WEIGHT DEBUG] Ukupna težina u kg pre konverzije: 0"}
+{"timestamp":"2025-07-01 13:17:07","context":"api","level":"debug","message":"[WEIGHT DEBUG] Konačna težina u gramima: 100"}
+{"timestamp":"2025-07-01 13:17:07","context":"api","level":"debug","message":"[WEIGHT DEBUG] Težina iz calculate_order_weight: 100 grama"}
+{"timestamp":"2025-07-01 13:17:07","context":"api","level":"debug","message":"[WEIGHT DEBUG] Težina nakon formatiranja za API: 100 grama"}
+{"timestamp":"2025-07-01 13:17:07","context":"api","level":"debug","message":"Final BuyOut amount: 57000"}
+{"timestamp":"2025-07-01 13:17:07","context":"api","level":"debug","message":"Final BuyOutAccount: 170-0010364556000-77"}
+{"timestamp":"2025-07-01 13:17:07","context":"api","level":"debug","message":"Final RAddressNum: 105"}
+{"timestamp":"2025-07-01 13:17:07","context":"api","level":"debug","message":"Final RTownID: 802140"}
+{"timestamp":"2025-07-01 13:17:07","context":"api","level":"debug","message":"Final RCPhone: 381603995503"}
+{"timestamp":"2025-07-01 13:17:07","context":"api","level":"debug","message":"Using address type: shipping"}
+{"timestamp":"2025-07-01 13:17:07","context":"api","level":"debug","message":"Street: Nikole Francuskog, Number: 105, City ID: 802140"}
+{"timestamp":"2025-07-01 13:17:07","context":"api","level":"debug","message":"[COD DEBUG] Lokacija: s7Code KI DOO, Bank account: 155-8500181632480-56"}
+{"timestamp":"2025-07-01 13:17:07","context":"api","level":"debug","message":"Payment method: cod, Is COD: Yes"}
+{"timestamp":"2025-07-01 13:17:07","context":"api","level":"debug","message":"[BANK DEBUG] Original: 155-8500181632480-56, Digits: 155850018163248056, Length: 18"}
+{"timestamp":"2025-07-01 13:17:07","context":"api","level":"debug","message":"[BANK DEBUG] Formatted (16-18): 155-8500181632480-56"}
+{"timestamp":"2025-07-01 13:17:07","context":"api","level":"debug","message":"[COD DEBUG] Formatiran račun: 155-8500181632480-56"}
+{"timestamp":"2025-07-01 13:17:07","context":"api","level":"debug","message":"Using BuyOut: 57000, Account from location 's7Code KI DOO': 155-8500181632480-56"}
+{"timestamp":"2025-07-01 13:17:07","context":"api","level":"debug","message":"[WEIGHT DEBUG] Početak izračunavanja težine za narudžbinu #909"}
+{"timestamp":"2025-07-01 13:17:07","context":"api","level":"debug","message":"[WEIGHT DEBUG] Ukupna težina u kg pre konverzije: 0"}
+{"timestamp":"2025-07-01 13:17:07","context":"api","level":"debug","message":"[WEIGHT DEBUG] Konačna težina u gramima: 100"}
+{"timestamp":"2025-07-01 13:17:07","context":"api","level":"debug","message":"[WEIGHT DEBUG] Težina iz calculate_order_weight: 100 grama"}
+{"timestamp":"2025-07-01 13:17:07","context":"api","level":"debug","message":"[WEIGHT DEBUG] Težina nakon formatiranja za API: 100 grama"}
+{"timestamp":"2025-07-01 13:17:07","context":"api","level":"debug","message":"Final BuyOut amount: 57000"}
+{"timestamp":"2025-07-01 13:17:07","context":"api","level":"debug","message":"Final BuyOutAccount: 155-8500181632480-56"}
+{"timestamp":"2025-07-01 13:17:07","context":"api","level":"debug","message":"Final RAddressNum: 105"}
+{"timestamp":"2025-07-01 13:17:07","context":"api","level":"debug","message":"Final RTownID: 802140"}
+{"timestamp":"2025-07-01 13:17:07","context":"api","level":"debug","message":"Final RCPhone: 381603995503"}
+{"timestamp":"2025-07-01 13:24:22","context":"api","level":"debug","message":"Using address type: shipping"}
+{"timestamp":"2025-07-01 13:24:22","context":"api","level":"debug","message":"Street: Nikole Francuskog, Number: 105, City ID: 802140"}
+{"timestamp":"2025-07-01 13:24:22","context":"api","level":"debug","message":"[COD DEBUG] Lokacija: s7Code DOO, Bank account: 170-0010364556000-77"}
+{"timestamp":"2025-07-01 13:24:22","context":"api","level":"debug","message":"Payment method: cod, Is COD: Yes"}
+{"timestamp":"2025-07-01 13:24:22","context":"api","level":"debug","message":"[BANK DEBUG] Original: 170-0010364556000-77, Digits: 170001036455600077, Length: 18"}
+{"timestamp":"2025-07-01 13:24:22","context":"api","level":"debug","message":"[BANK DEBUG] Formatted (16-18): 170-0010364556000-77"}
+{"timestamp":"2025-07-01 13:24:22","context":"api","level":"debug","message":"[COD DEBUG] Formatiran račun: 170-0010364556000-77"}
+{"timestamp":"2025-07-01 13:24:22","context":"api","level":"debug","message":"Using BuyOut: 56100, Account from location 's7Code DOO': 170-0010364556000-77"}
+{"timestamp":"2025-07-01 13:24:22","context":"api","level":"debug","message":"[WEIGHT DEBUG] Početak izračunavanja težine za narudžbinu #910"}
+{"timestamp":"2025-07-01 13:24:22","context":"api","level":"debug","message":"[WEIGHT DEBUG] Ukupna težina u kg pre konverzije: 0"}
+{"timestamp":"2025-07-01 13:24:22","context":"api","level":"debug","message":"[WEIGHT DEBUG] Konačna težina u gramima: 100"}
+{"timestamp":"2025-07-01 13:24:22","context":"api","level":"debug","message":"[WEIGHT DEBUG] Težina iz calculate_order_weight: 100 grama"}
+{"timestamp":"2025-07-01 13:24:22","context":"api","level":"debug","message":"[WEIGHT DEBUG] Težina nakon formatiranja za API: 100 grama"}
+{"timestamp":"2025-07-01 13:24:22","context":"api","level":"debug","message":"Final BuyOut amount: 56100"}
+{"timestamp":"2025-07-01 13:24:22","context":"api","level":"debug","message":"Final BuyOutAccount: 170-0010364556000-77"}
+{"timestamp":"2025-07-01 13:24:22","context":"api","level":"debug","message":"Final RAddressNum: 105"}
+{"timestamp":"2025-07-01 13:24:22","context":"api","level":"debug","message":"Final RTownID: 802140"}
+{"timestamp":"2025-07-01 13:24:22","context":"api","level":"debug","message":"Final RCPhone: 381603995503"}
+{"timestamp":"2025-07-01 13:24:23","context":"api","level":"debug","message":"Using address type: shipping"}
+{"timestamp":"2025-07-01 13:24:23","context":"api","level":"debug","message":"Street: Nikole Francuskog, Number: 105, City ID: 802140"}
+{"timestamp":"2025-07-01 13:24:23","context":"api","level":"debug","message":"[COD DEBUG] Lokacija: s7Code KI DOO, Bank account: 155-8500181632480-56"}
+{"timestamp":"2025-07-01 13:24:23","context":"api","level":"debug","message":"Payment method: cod, Is COD: Yes"}
+{"timestamp":"2025-07-01 13:24:23","context":"api","level":"debug","message":"[BANK DEBUG] Original: 155-8500181632480-56, Digits: 155850018163248056, Length: 18"}
+{"timestamp":"2025-07-01 13:24:23","context":"api","level":"debug","message":"[BANK DEBUG] Formatted (16-18): 155-8500181632480-56"}
+{"timestamp":"2025-07-01 13:24:23","context":"api","level":"debug","message":"[COD DEBUG] Formatiran račun: 155-8500181632480-56"}
+{"timestamp":"2025-07-01 13:24:23","context":"api","level":"debug","message":"Using BuyOut: 56100, Account from location 's7Code KI DOO': 155-8500181632480-56"}
+{"timestamp":"2025-07-01 13:24:23","context":"api","level":"debug","message":"[WEIGHT DEBUG] Početak izračunavanja težine za narudžbinu #910"}
+{"timestamp":"2025-07-01 13:24:23","context":"api","level":"debug","message":"[WEIGHT DEBUG] Ukupna težina u kg pre konverzije: 0"}
+{"timestamp":"2025-07-01 13:24:23","context":"api","level":"debug","message":"[WEIGHT DEBUG] Konačna težina u gramima: 100"}
+{"timestamp":"2025-07-01 13:24:23","context":"api","level":"debug","message":"[WEIGHT DEBUG] Težina iz calculate_order_weight: 100 grama"}
+{"timestamp":"2025-07-01 13:24:23","context":"api","level":"debug","message":"[WEIGHT DEBUG] Težina nakon formatiranja za API: 100 grama"}
+{"timestamp":"2025-07-01 13:24:23","context":"api","level":"debug","message":"Final BuyOut amount: 56100"}
+{"timestamp":"2025-07-01 13:24:23","context":"api","level":"debug","message":"Final BuyOutAccount: 155-8500181632480-56"}
+{"timestamp":"2025-07-01 13:24:23","context":"api","level":"debug","message":"Final RAddressNum: 105"}
+{"timestamp":"2025-07-01 13:24:23","context":"api","level":"debug","message":"Final RTownID: 802140"}
+{"timestamp":"2025-07-01 13:24:23","context":"api","level":"debug","message":"Final RCPhone: 381603995503"}
+{"timestamp":"2025-07-01 13:34:39","context":"api","level":"debug","message":"Using address type: shipping"}
+{"timestamp":"2025-07-01 13:34:39","context":"api","level":"debug","message":"Street: Nikole Francuskog, Number: 105, City ID: 802140"}
+{"timestamp":"2025-07-01 13:34:39","context":"api","level":"debug","message":"[COD DEBUG] Lokacija: s7Code KI DOO, Bank account: 155-8500181632480-56"}
+{"timestamp":"2025-07-01 13:34:39","context":"api","level":"debug","message":"Payment method: cod, Is COD: Yes"}
+{"timestamp":"2025-07-01 13:34:39","context":"api","level":"debug","message":"[BANK DEBUG] Original: 155-8500181632480-56, Digits: 155850018163248056, Length: 18"}
+{"timestamp":"2025-07-01 13:34:39","context":"api","level":"debug","message":"[BANK DEBUG] Formatted (16-18): 155-8500181632480-56"}
+{"timestamp":"2025-07-01 13:34:39","context":"api","level":"debug","message":"[COD DEBUG] Formatiran račun: 155-8500181632480-56"}
+{"timestamp":"2025-07-01 13:34:39","context":"api","level":"debug","message":"Using BuyOut: 59300, Account from location 's7Code KI DOO': 155-8500181632480-56"}
+{"timestamp":"2025-07-01 13:34:39","context":"api","level":"debug","message":"[WEIGHT DEBUG] Početak izračunavanja težine za narudžbinu #911"}
+{"timestamp":"2025-07-01 13:34:39","context":"api","level":"debug","message":"[WEIGHT DEBUG] Ukupna težina u kg pre konverzije: 0"}
+{"timestamp":"2025-07-01 13:34:39","context":"api","level":"debug","message":"[WEIGHT DEBUG] Konačna težina u gramima: 100"}
+{"timestamp":"2025-07-01 13:34:39","context":"api","level":"debug","message":"[WEIGHT DEBUG] Težina iz calculate_order_weight: 100 grama"}
+{"timestamp":"2025-07-01 13:34:39","context":"api","level":"debug","message":"[WEIGHT DEBUG] Težina nakon formatiranja za API: 100 grama"}
+{"timestamp":"2025-07-01 13:34:39","context":"api","level":"debug","message":"Final BuyOut amount: 59300"}
+{"timestamp":"2025-07-01 13:34:39","context":"api","level":"debug","message":"Final BuyOutAccount: 155-8500181632480-56"}
+{"timestamp":"2025-07-01 13:34:39","context":"api","level":"debug","message":"Final RAddressNum: 105"}
+{"timestamp":"2025-07-01 13:34:39","context":"api","level":"debug","message":"Final RTownID: 802140"}
+{"timestamp":"2025-07-01 13:34:39","context":"api","level":"debug","message":"Final RCPhone: 381603995503"}

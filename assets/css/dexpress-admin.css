@@ -627,7 +627,154 @@
     justify-content: space-between;
     align-items: center;
 }
+/* Multiple Shipments Timeline Styles */
 
+.dexpress-multiple-shipments-container {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.dexpress-shipments-header {
+    background: #f6f7f7;
+    padding: 15px 20px;
+    border-bottom: 1px solid #c3c4c7;
+}
+
+.dexpress-shipments-header h3 {
+    margin: 0 0 5px 0;
+    color: #1e1e1e;
+    font-size: 16px;
+}
+
+.dexpress-shipments-header .description {
+    margin: 0;
+    color: #646970;
+    font-style: italic;
+}
+
+/* Single Shipment Timeline */
+.dexpress-single-shipment-timeline {
+    border-bottom: 1px solid #f0f0f0;
+    padding: 20px;
+}
+
+.dexpress-single-shipment-timeline:last-child {
+    border-bottom: none;
+}
+
+.dexpress-single-shipment-timeline.is-multiple {
+    background: #fafafa;
+    margin-bottom: 0;
+}
+
+.dexpress-single-shipment-timeline.is-single {
+    background: #fff;
+}
+
+/* Shipment Header for Multiple */
+.dexpress-shipment-header {
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.dexpress-shipment-header h4 {
+    margin: 0;
+    color: #0073aa;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.location-badge {
+    background: #0073aa;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: normal;
+}
+
+/* Info Grid for Multiple Shipments */
+.dexpress-single-shipment-timeline.is-multiple .dexpress-info-grid {
+    grid-template-columns: 1fr 1fr 1fr 1fr auto;
+    gap: 10px;
+}
+
+.dexpress-single-shipment-timeline.is-multiple .dexpress-info-item {
+    font-size: 13px;
+}
+
+.dexpress-single-shipment-timeline.is-multiple .dexpress-info-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Compact Timeline for Multiple */
+.dexpress-single-shipment-timeline.is-multiple .dexpress-timeline-steps {
+    gap: 20px;
+}
+
+.dexpress-single-shipment-timeline.is-multiple .dexpress-step-content {
+    font-size: 12px;
+}
+
+.dexpress-single-shipment-timeline.is-multiple .dexpress-step-marker {
+    width: 28px;
+    height: 28px;
+}
+
+.dexpress-single-shipment-timeline.is-multiple .dexpress-step-marker .dashicons {
+    font-size: 14px;
+}
+
+/* Collapsed History */
+.dexpress-status-history.collapsed .dexpress-status-history-items {
+    display: none;
+}
+
+.dexpress-toggle-history {
+    background: none;
+    border: none;
+    color: #0073aa;
+    cursor: pointer;
+    font-size: 13px;
+    padding: 5px 0;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.dexpress-toggle-history:hover {
+    color: #005a87;
+}
+
+.dexpress-toggle-history .dashicons {
+    font-size: 16px;
+    transition: transform 0.2s ease;
+}
+
+.dexpress-status-history:not(.collapsed) .dexpress-toggle-history .dashicons {
+    transform: rotate(180deg);
+}
+
+/* Responsive adjustments */
+@media (max-width: 782px) {
+    .dexpress-single-shipment-timeline.is-multiple .dexpress-info-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+    
+    .dexpress-shipment-header h4 {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+}
 /* Osnovni stilovi za metabox */
 #dexpress_timeline_metabox {
     border-radius: 12px;

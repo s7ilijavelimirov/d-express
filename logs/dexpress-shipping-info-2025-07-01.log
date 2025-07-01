@@ -12,3 +12,10 @@
 {"timestamp":"2025-07-01 12:18:52","context":"shipping","level":"info","message":"[SHIPPING] API uspešno odgovorio: TEST"}
 {"timestamp":"2025-07-01 12:18:52","context":"shipping","level":"info","message":"[SHIPPING] Pošiljka sačuvana u bazu sa ID: 28"}
 {"timestamp":"2025-07-01 12:18:52","context":"shipping","level":"info","message":"[SHIPPING] Pošiljka uspešno kreirana! ID: 28, Tracking: TT0000000035, API odgovor: TEST"}
+{"timestamp":"2025-07-01 13:34:39","context":"shipping","level":"info","message":"[SHIPPING] Započinjem kreiranje pošiljke za narudžbinu #911"}
+{"timestamp":"2025-07-01 13:34:39","context":"shipping","level":"info","message":"[SHIPPING] Koristi se prosleđena lokacija ID: 13 (s7Code KI DOO)"}
+{"timestamp":"2025-07-01 13:34:39","context":"shipping","level":"info","message":"[SHIPPING] Koristi prosleđeni package kod: TT0000000042"}
+{"timestamp":"2025-07-01 13:34:39","context":"shipping","level":"info","message":"[SHIPPING] Podaci pripremljeni, pozivam D Express API..."}
+{"timestamp":"2025-07-01 13:34:39","context":"shipping","level":"info","message":"[SHIPPING] API uspešno odgovorio: TEST"}
+{"timestamp":"2025-07-01 13:34:39","context":"shipping","level":"info","message":"[SHIPPING] Pošiljka sačuvana u bazu sa ID: 35"}
+{"timestamp":"2025-07-01 13:34:40","context":"shipping","level":"info","message":"[SHIPPING] Pošiljka uspešno kreirana! ID: 35, Tracking: TT0000000042, API odgovor: TEST"}

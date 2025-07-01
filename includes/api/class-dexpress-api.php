@@ -320,7 +320,21 @@ class D_Express_API
             return new WP_Error('exception', $e->getMessage());
         }
     }
+    /**
+     * Izračunava vrednost artikala (bez dostave)
+     */
+    private function calculate_items_value($order)
+    {
+        $items_total = 0;
 
+        foreach ($order->get_items() as $item) {
+            if ($item instanceof WC_Order_Item_Product) {
+                $items_total += ($item->get_total() + $item->get_total_tax());
+            }
+        }
+
+        return dexpress_convert_price_to_para($items_total);
+    }
     /**
      * Pregled plaćanja prema referenci
      */
@@ -1046,7 +1060,7 @@ class D_Express_API
             'PaymentType' => $payment_type,
 
             // Vrednost i masa
-            'Value' => $value_para,
+            'Value' => $this->calculate_items_value($order),
             'Content' => dexpress_generate_shipment_content($order),
             'Mass' => $weight_grams,
 
