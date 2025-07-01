@@ -162,11 +162,12 @@ class D_Express_Shipment_Service
                 'split_index' => null,
                 'total_splits' => null,
                 'parent_order_id' => null,
-                'status_code' => dexpress_is_test_mode() ? 'TEST_CREATED' : null,
-                'status_description' => dexpress_is_test_mode() ? 'Test pošiljka kreirana' : null,
+                // ISPRAVKA: Koristi standardni status umesto TEST_CREATED
+                'status_code' => dexpress_is_test_mode() ? '0' : null,
+                'status_description' => dexpress_is_test_mode() ? 'Čeka na preuzimanje' : null,
                 'created_at' => current_time('mysql'),
                 'updated_at' => current_time('mysql'),
-                'shipment_data' => json_encode($response), // "TEST" ili "OK"
+                'shipment_data' => json_encode($response),
                 'is_test' => dexpress_is_test_mode() ? 1 : 0
             );
 

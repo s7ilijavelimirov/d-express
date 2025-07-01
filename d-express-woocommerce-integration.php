@@ -573,8 +573,12 @@ class D_Express_WooCommerce
         // Dohvatanje pošiljke na osnovu reference_id ili shipment_code
         $shipment = $wpdb->get_row($wpdb->prepare(
             "SELECT * FROM {$wpdb->prefix}dexpress_shipments 
-        WHERE reference_id = %s OR shipment_id = %s",
+    WHERE reference_id = %s 
+       OR shipment_id = %s 
+       OR tracking_number = %s
+    ORDER BY created_at DESC LIMIT 1",
             $notification->reference_id,
+            $notification->shipment_code,
             $notification->shipment_code
         ));
 

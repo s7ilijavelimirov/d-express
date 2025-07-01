@@ -638,8 +638,8 @@ class D_Express_Admin_Ajax
                 'split_index' => $split_index,
                 'total_splits' => $total_splits,
                 'parent_order_id' => $order->get_id(),
-                'status_code' => dexpress_is_test_mode() ? 'TEST_CREATED' : null,
-                'status_description' => dexpress_is_test_mode() ? 'Test pošiljka kreirana' : null,
+                'status_code' => dexpress_is_test_mode() ? '0' : null,  // ← ISPRAVKA
+                'status_description' => dexpress_is_test_mode() ? 'Čeka na preuzimanje' : null,
                 'created_at' => current_time('mysql'),
                 'updated_at' => current_time('mysql'),
                 'shipment_data' => json_encode($response), // "TEST" ili "OK"

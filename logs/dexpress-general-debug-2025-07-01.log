@@ -1,8 +1,6 @@
-{"timestamp":"2025-07-01 11:47:41","context":"general","level":"debug","message":"Checkout order processed: 902"}
-{"timestamp":"2025-07-01 11:47:41","context":"general","level":"debug","message":"Has D Express shipping: Yes"}
-{"timestamp":"2025-07-01 11:47:41","context":"general","level":"debug","message":"Order processed - manual shipment creation required: 902"}
-{"timestamp":"2025-07-01 11:48:00","context":"general","level":"debug","message":"Checkout order processed: 903"}
-{"timestamp":"2025-07-01 11:48:00","context":"general","level":"debug","message":"Has D Express shipping: No"}
-{"timestamp":"2025-07-01 11:49:05","context":"general","level":"debug","message":"Checkout order processed: 904"}
-{"timestamp":"2025-07-01 11:49:05","context":"general","level":"debug","message":"Has D Express shipping: Yes"}
-{"timestamp":"2025-07-01 11:49:05","context":"general","level":"debug","message":"Order processed - manual shipment creation required: 904"}
+{"timestamp":"2025-07-01 12:16:06","context":"general","level":"debug","message":"Checkout order processed: 905"}
+{"timestamp":"2025-07-01 12:16:06","context":"general","level":"debug","message":"Has D Express shipping: Yes"}
+{"timestamp":"2025-07-01 12:16:06","context":"general","level":"debug","message":"Order processed - manual shipment creation required: 905"}
+{"timestamp":"2025-07-01 12:16:25","context":"general","level":"debug","message":"Checkout order processed: 906"}
+{"timestamp":"2025-07-01 12:16:25","context":"general","level":"debug","message":"Has D Express shipping: Yes"}
+{"timestamp":"2025-07-01 12:16:25","context":"general","level":"debug","message":"Order processed - manual shipment creation required: 906"}

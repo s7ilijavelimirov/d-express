@@ -146,10 +146,19 @@ class D_Express_Order_Metabox
                                 </p>
                             <?php endif; ?>
 
-                            <button type="button" class="button dexpress-get-label"
-                                data-shipment-id="<?php echo esc_attr($shipment->id); ?>">
-                                <?php _e('Preuzmi nalepnicu', 'd-express-woo'); ?>
-                            </button>
+                            <div style="margin-top: 10px;">
+                                <button type="button" class="button dexpress-get-label"
+                                    data-shipment-id="<?php echo esc_attr($shipment->id); ?>">
+                                    <?php _e('Preuzmi nalepnicu', 'd-express-woo'); ?>
+                                </button>
+
+                                <button type="button" class="button button-link-delete dexpress-delete-shipment"
+                                    data-shipment-id="<?php echo esc_attr($shipment->id); ?>"
+                                    data-order-id="<?php echo esc_attr($order->get_id()); ?>"
+                                    style="margin-left: 10px; color: #a00;">
+                                    <?php _e('Obriši', 'd-express-woo'); ?>
+                                </button>
+                            </div>
                         </div>
                     <?php endforeach; ?>
                 </div>

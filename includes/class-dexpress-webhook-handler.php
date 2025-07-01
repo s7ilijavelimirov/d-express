@@ -125,9 +125,10 @@ class D_Express_Webhook_Handler
 
         // Parametri
         $notification_id = sanitize_text_field($data['nID']);
-        $shipment_code = sanitize_text_field($data['code']);
+        $shipment_code = sanitize_text_field($data['code']);    // Tracking number
         $reference_id = sanitize_text_field($data['rID']);
-        $status_id = sanitize_text_field($data['sID']);
+        $status_id = sanitize_text_field($data['sID']);        // Status ID
+        $date_str = sanitize_text_field($data['dt']);
 
         // Dodatna validacija datuma (format yyyyMMddHHmmss)
         $date_str = sanitize_text_field($data['dt']);
@@ -157,28 +158,19 @@ class D_Express_Webhook_Handler
             // Ubacivanje u bazu podataka
             $status_data = [
                 'notification_id' => $notification_id,
-                'shipment_code' => $shipment_code,
+                'shipment_code' => $shipment_code,    // ovo je tracking number
                 'reference_id' => $reference_id,
-                'status_id' => $status_id,
-                'status_date' => $status_date,
+                'status_id' => $status_id,            // ovo je D Express status kod
+                'status_date' => $this->format_date($date_str),
                 'raw_data' => json_encode($data),
                 'is_processed' => 0,
                 'created_at' => current_time('mysql')
             ];
 
             $inserted = $wpdb->insert(
-                $table_name,
+                $wpdb->prefix . 'dexpress_statuses',
                 $status_data,
-                [
-                    '%s', // notification_id
-                    '%s', // shipment_code
-                    '%s', // reference_id
-                    '%s', // status_id
-                    '%s', // status_date
-                    '%s', // raw_data
-                    '%d', // is_processed
-                    '%s', // created_at
-                ]
+                ['%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s']
             );
 
             if ($inserted === false) {
