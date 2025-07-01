@@ -472,27 +472,45 @@ function dexpress_generate_package_code()
     $range_start = intval(get_option('dexpress_code_range_start', 1));
     $range_end = intval(get_option('dexpress_code_range_end', 99));
 
-    // KORISTI ISTI INDEX kao generate_unique_package_codes
-    $current_index = intval(get_option('dexpress_package_index', $range_start));
+    // Koristi transient za lock da sprečiš race condition
+    $lock_key = 'dexpress_code_generation_lock';
+    $lock_timeout = 5;
 
-    // Povećaj index
-    $current_index++;
-
-    // Proveri limit
-    if ($current_index > $range_end) {
-        throw new Exception("Opseg kodova je iscrpljen! Trenutni opseg: {$range_start}-{$range_end}. Molimo proširite opseg u admin panelu.");
+    // Pokušaj da postaviš lock
+    if (get_transient($lock_key)) {
+        // Sačekaj malo i pokušaj ponovo
+        usleep(100000); // 100ms
     }
 
-    // Sačuvaj novi index u ISTI ključ
-    update_option('dexpress_package_index', $current_index);
+    // Postavi lock
+    set_transient($lock_key, true, $lock_timeout);
 
-    // Formatiraj kod
-    $formatted_code = $prefix . sprintf('%010d', $current_index);
+    try {
+        // Dobij trenutni index
+        $current_index = intval(get_option('dexpress_package_index', $range_start - 1));
 
-    // Log generisan kod
-    dexpress_log("Generisan kod paketa: {$formatted_code} (index: {$current_index})", 'debug');
+        // Povećaj index
+        $current_index++;
 
-    return $formatted_code;
+        // Proveri limit
+        if ($current_index > $range_end) {
+            delete_transient($lock_key);
+            throw new Exception("Opseg kodova je iscrpljen! Trenutni opseg: {$range_start}-{$range_end}");
+        }
+
+        // Sačuvaj novi index
+        update_option('dexpress_package_index', $current_index);
+
+        // Formatiraj kod
+        $formatted_code = $prefix . str_pad($current_index, 10, '0', STR_PAD_LEFT);
+
+        error_log('[DEXPRESS] Generisan kod: ' . $formatted_code . ' (index: ' . $current_index . ')');
+
+        return $formatted_code;
+    } finally {
+        // Uvek ukloni lock
+        delete_transient($lock_key);
+    }
 }
 
 /**

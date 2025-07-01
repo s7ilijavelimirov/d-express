@@ -436,8 +436,11 @@ class D_Express_Admin_Ajax
         $split_index = 1;
         $total_splits = count($shipment_splits);
 
-        // Generiši jedinstvene package kodove za sve splits odjednom
+        // SAMO JEDNOM generiši kodove za SVE splits
         $all_package_codes = $this->generate_unique_package_codes($total_splits);
+
+        // Loguj generisane kodove
+        error_log('[DEXPRESS] Generiši kodove za ' . $total_splits . ' splits: ' . implode(', ', $all_package_codes));
 
         foreach ($shipment_splits as $split_data) {
             $location_id = intval($split_data['location_id']);
@@ -445,16 +448,21 @@ class D_Express_Admin_Ajax
 
             if (!$location_id) {
                 $errors[] = sprintf('Lokacija nije definisana za pošiljku %d', $split_index);
+                $split_index++;
                 continue;
             }
 
             if (empty($selected_items)) {
                 $errors[] = sprintf('Nema izabranih artikala za pošiljku %d', $split_index);
+                $split_index++;
                 continue;
             }
 
-            // Kreiraj pošiljku sa unapred generisanim package kodom
+            // Koristi već generisan kod iz niza
             $package_code = $all_package_codes[$split_index - 1];
+
+            error_log('[DEXPRESS] Split ' . $split_index . '/' . $total_splits . ' koristi kod: ' . $package_code);
+
             $result = $this->create_optimized_split_shipment(
                 $order,
                 $location_id,
@@ -564,6 +572,7 @@ class D_Express_Admin_Ajax
                 'order_id' => $order->get_id(),
                 'shipment_id' => $shipment_id,
                 'tracking_number' => $tracking_number,
+                'package_code' => $package_code,
                 'reference_id' => $shipment_data['ReferenceID'],
                 'sender_location_id' => $location_id,
                 'split_index' => $split_index,

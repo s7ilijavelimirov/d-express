@@ -303,12 +303,12 @@ class D_Express_WooCommerce
         $db = new D_Express_DB();
         $db->add_shipment_index();
 
-        // ✅ DODAJ OVE LINIJE ZA MULTIPLE SHIPMENTS SCHEMA
         D_Express_DB::update_multiple_shipments_schema();
 
-        // Postavljanje verzije schema
-        update_option('dexpress_schema_version', '1.1.0');
+        D_Express_DB::update_package_code_schema();
 
+        // Postavljanje verzije schema
+        update_option('dexpress_schema_version', '1.2.0');
         // Postavljanje potrebnih opcija
         $this->set_default_options();
 
@@ -321,16 +321,19 @@ class D_Express_WooCommerce
     public function check_and_update_schema()
     {
         $schema_version = get_option('dexpress_schema_version', '1.0.0');
-        $current_version = '1.1.0'; // Verzija sa multiple shipments
+        $current_version = '1.2.0'; // Promeni na 1.2.0
 
         if (version_compare($schema_version, $current_version, '<')) {
             if (class_exists('D_Express_DB')) {
+                // Dodaj sve schema update-ove
+                D_Express_DB::update_shipments_table_schema();
                 D_Express_DB::update_multiple_shipments_schema();
+                D_Express_DB::update_package_code_schema(); // DODAJ OVO
+
                 update_option('dexpress_schema_version', $current_version);
 
-                // Log da je schema ažurirana
                 if (function_exists('dexpress_log')) {
-                    dexpress_log('Schema ažurirana na verziju ' . $current_version . ' za multiple shipments support', 'info');
+                    dexpress_log('Schema ažurirana na verziju ' . $current_version, 'info');
                 }
             }
         }

@@ -974,7 +974,7 @@ class D_Express_API
         $content = dexpress_generate_shipment_content($order);
 
         // Kreiranje reference
-       $reference_id = apply_filters('dexpress_shipment_reference_id', $order->get_order_number());
+        $reference_id = apply_filters('dexpress_shipment_reference_id', $order->get_order_number());
         if (!D_Express_Validator::validate_reference($reference_id)) {
             dexpress_log("WARNING: Invalid reference ID: {$reference_id}", 'warning');
             $reference_id = "ORDER-" . $order->get_id(); // Pojednostavljena referenca
@@ -1064,7 +1064,17 @@ class D_Express_API
         );
         dexpress_log("[WEIGHT DEBUG] Težina nakon formatiranja za API: {$shipment_data['Mass']} grama", 'debug');
         // Dodavanje paketa
-        $shipment_data['PackageList'] = $this->prepare_packages_for_order($order);
+        // Dodavanje paketa sa jedinstvenim kodom
+        $package_code = $this->generate_package_code();
+        $shipment_data['PackageList'] = array(
+            array(
+                'Code' => $package_code,
+                'Mass' => $weight_grams
+            )
+        );
+
+        // Loguj generisani kod
+        dexpress_log("[PACKAGE CODE] Generisan kod: {$package_code} za order #{$order_id}", 'info');
 
         // Ako koristimo paketomat, postavimo adresu paketomata umesto adrese kupca
         if ($is_dispenser && $dispenser) {
@@ -1143,49 +1153,12 @@ class D_Express_API
     }
 
     /**
-     * Priprema listu paketa za narudžbinu
+     * Generiše package code koristeći centralizovanu funkciju
      */
-    private function prepare_packages_for_order($order)
+    private function generate_package_code()
     {
-        $packages = array();
-        $total_weight = $this->calculate_order_weight($order);
-
-        // Kreiraj jedan paket sa svim dimenzijama
-        $package = array(
-            'Code' => $this->generate_package_code(),
-            'Mass' => $total_weight
-        );
-
-        // Dodaj dimenzije ako su dostupne
-        $max_length = 0;
-        $max_width = 0;
-        $max_height = 0;
-
-        foreach ($order->get_items() as $item) {
-            $product = $item->get_product();
-            if ($product && $product->has_dimensions()) {
-                // Konvertuj u mm
-                $length = wc_get_dimension($product->get_length(), 'mm');
-                $width = wc_get_dimension($product->get_width(), 'mm');
-                $height = wc_get_dimension($product->get_height(), 'mm');
-
-                // Uzmi najveće dimenzije
-                $max_length = max($max_length, $length);
-                $max_width = max($max_width, $width);
-                $max_height = max($max_height, $height);
-            }
-        }
-
-        // Dodaj dimenzije u paket ako su izračunate
-        if ($max_length > 0 && $max_width > 0 && $max_height > 0) {
-            $package['DimX'] = round($max_width);
-            $package['DimY'] = round($max_length);
-            $package['DimZ'] = round($max_height);
-        }
-
-        $packages[] = $package;
-        // Unutar prepare_packages_for_order funkcije 
-        return $packages;
+        // Koristi helper funkciju umesto lokalne logike
+        return dexpress_generate_package_code();
     }
 
     /**

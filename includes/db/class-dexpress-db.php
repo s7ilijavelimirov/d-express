@@ -21,6 +21,9 @@ class D_Express_DB
         global $wpdb;
 
         // Dodaj default vrednosti za nove kolone
+        if (!isset($shipment_data['package_code'])) {
+            $shipment_data['package_code'] = null;
+        }
         if (!isset($shipment_data['split_index'])) {
             $shipment_data['split_index'] = null;
         }
@@ -38,6 +41,7 @@ class D_Express_DB
                 '%d', // order_id
                 '%s', // shipment_id
                 '%s', // tracking_number
+                '%s', // package_code - DODAJ OVO
                 '%s', // reference_id
                 '%d', // sender_location_id
                 '%d', // split_index
@@ -542,5 +546,36 @@ class D_Express_DB
         }
 
         return $result !== false;
+    }
+    /**
+     * Ažurira schema tabele za package_code kolonu
+     */
+    public static function update_package_code_schema()
+    {
+        global $wpdb;
+
+        $table_name = $wpdb->prefix . 'dexpress_shipments';
+
+        // Proveri da li kolona postoji
+        $column_exists = $wpdb->get_results($wpdb->prepare(
+            "SHOW COLUMNS FROM {$table_name} LIKE %s",
+            'package_code'
+        ));
+
+        // Ako ne postoji, dodaj je
+        if (empty($column_exists)) {
+            $sql = "ALTER TABLE {$table_name} ADD COLUMN package_code VARCHAR(50) DEFAULT NULL AFTER tracking_number";
+
+            $result = $wpdb->query($sql);
+
+            if ($result !== false) {
+                error_log('DExpress: Dodana package_code kolona u shipments tabelu');
+
+                // Dodaj i index za bolje performanse
+                $wpdb->query("ALTER TABLE {$table_name} ADD INDEX idx_package_code (package_code)");
+            } else {
+                error_log('DExpress: Greška pri dodavanju package_code kolone: ' . $wpdb->last_error);
+            }
+        }
     }
 }
