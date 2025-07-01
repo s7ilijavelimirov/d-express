@@ -277,7 +277,7 @@ class D_Express_Shipment_Service
             return new WP_Error('exception', $e->getMessage());
         }
     }
-    
+
     /**
      * Šalje email obaveštenje o promeni statusa pošiljke
      * 
@@ -539,4 +539,5 @@ class D_Express_Shipment_Service
         // Označava da je email poslat
         update_post_meta($order->get_id(), '_dexpress_tracking_email_sent', 'yes');
     }
+    
 }

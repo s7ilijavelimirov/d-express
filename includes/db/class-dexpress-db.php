@@ -20,6 +20,17 @@ class D_Express_DB
     {
         global $wpdb;
 
+        // Dodaj default vrednosti za nove kolone
+        if (!isset($shipment_data['split_index'])) {
+            $shipment_data['split_index'] = null;
+        }
+        if (!isset($shipment_data['total_splits'])) {
+            $shipment_data['total_splits'] = null;
+        }
+        if (!isset($shipment_data['parent_order_id'])) {
+            $shipment_data['parent_order_id'] = null;
+        }
+
         $result = $wpdb->insert(
             $wpdb->prefix . 'dexpress_shipments',
             $shipment_data,
@@ -29,6 +40,9 @@ class D_Express_DB
                 '%s', // tracking_number
                 '%s', // reference_id
                 '%d', // sender_location_id
+                '%d', // split_index
+                '%d', // total_splits
+                '%d', // parent_order_id
                 '%s', // status_code
                 '%s', // status_description
                 '%s', // created_at
@@ -347,5 +361,106 @@ class D_Express_DB
                 error_log('DExpress: Greška pri dodavanju sender_location_id kolone: ' . $wpdb->last_error);
             }
         }
+    }
+    public static function update_multiple_shipments_schema()
+    {
+        global $wpdb;
+
+        $table_name = $wpdb->prefix . 'dexpress_shipments';
+
+        // Dodaj kolone za split shipments ako ne postoje
+        $columns_to_add = array(
+            'split_index' => "ADD COLUMN split_index INT(11) NULL DEFAULT NULL AFTER sender_location_id",
+            'total_splits' => "ADD COLUMN total_splits INT(11) NULL DEFAULT NULL AFTER split_index",
+            'parent_order_id' => "ADD COLUMN parent_order_id INT(11) NULL DEFAULT NULL AFTER total_splits"
+        );
+
+        foreach ($columns_to_add as $column => $sql) {
+            // Proveri da li kolona postoji
+            $column_exists = $wpdb->get_results($wpdb->prepare(
+                "SHOW COLUMNS FROM {$table_name} LIKE %s",
+                $column
+            ));
+
+            if (empty($column_exists)) {
+                $result = $wpdb->query("ALTER TABLE {$table_name} {$sql}");
+
+                if ($result !== false) {
+                    error_log("DExpress: Dodana {$column} kolona u shipments tabelu");
+                } else {
+                    error_log("DExpress: Greška pri dodavanju {$column} kolone: " . $wpdb->last_error);
+                }
+            }
+        }
+
+        // Dodaj indekse za bolje performanse
+        $indexes_to_add = array(
+            'idx_parent_order_id' => "ADD INDEX idx_parent_order_id (parent_order_id)",
+            'idx_split_info' => "ADD INDEX idx_split_info (order_id, split_index)"
+        );
+
+        foreach ($indexes_to_add as $index_name => $sql) {
+            // Proveri da li indeks postoji
+            $index_exists = $wpdb->get_results("SHOW INDEX FROM {$table_name} WHERE Key_name = '{$index_name}'");
+
+            if (empty($index_exists)) {
+                $result = $wpdb->query("ALTER TABLE {$table_name} {$sql}");
+
+                if ($result !== false) {
+                    error_log("DExpress: Dodan {$index_name} indeks u shipments tabelu");
+                } else {
+                    error_log("DExpress: Greška pri dodavanju {$index_name} indeksa: " . $wpdb->last_error);
+                }
+            }
+        }
+    }
+    /**
+     * Dobijanje svih pošiljki za narudžbinu
+     */
+    public function get_shipments_by_order_id($order_id)
+    {
+        global $wpdb;
+
+        return $wpdb->get_results($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}dexpress_shipments 
+         WHERE order_id = %d 
+         ORDER BY split_index ASC, created_at ASC",
+            $order_id
+        ));
+    }
+    /**
+     * Proverava da li narudžbina ima multiple shipments
+     */
+    public function has_multiple_shipments($order_id)
+    {
+        global $wpdb;
+
+        $count = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$wpdb->prefix}dexpress_shipments WHERE order_id = %d",
+            $order_id
+        ));
+
+        return intval($count) > 1;
+    }
+
+    /**
+     * Dobijanje statistika split pošiljki za dashboard
+     */
+    public function get_split_shipments_stats()
+    {
+        global $wpdb;
+
+        return $wpdb->get_results("
+        SELECT 
+            DATE(created_at) as date,
+            COUNT(DISTINCT order_id) as orders_with_splits,
+            COUNT(*) as total_shipments,
+            AVG(total_splits) as avg_splits_per_order
+        FROM {$wpdb->prefix}dexpress_shipments 
+        WHERE total_splits > 1
+        GROUP BY DATE(created_at)
+        ORDER BY date DESC
+        LIMIT 30
+    ");
     }
 }

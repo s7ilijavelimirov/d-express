@@ -6,16 +6,6 @@ Opis
 D-Express WooCommerce plugin omogućava potpunu integraciju D-Express kurirske službe sa vašom WooCommerce prodavnicom. Plugin dodaje D-Express kao opciju dostave, omogućava automatsko kreiranje pošiljki, praćenje statusa pošiljki i mnoge druge funkcionalnosti.
 Ključne funkcionalnosti
 
-Automatsko kreiranje pošiljki
-Praćenje statusa pošiljki
-Integracija sa paketomat-ima
-Prilagođena shipping metoda za standardnu dostavu
-Prilagođena shipping metoda za paketomat dostavu
-Štampanje nalepnica
-Pregled istorije statusa pošiljki
-Izveštaji o pošiljkama
-Automatska sinhronizacija statusa
-
 Instalacija
 
 Preuzmite ZIP fajl sa GitHub-a

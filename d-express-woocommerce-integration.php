@@ -132,6 +132,8 @@ class D_Express_WooCommerce
         // Dodavanje REST API ruta za webhook - pomereno pre plugins_loaded
         add_action('rest_api_init', array($this, 'register_rest_routes'));
 
+        add_action('admin_init', array($this, 'check_and_update_schema'));
+
         // Dodavanje webhook obrade za cron - pomereno pre plugins_loaded
         add_action('dexpress_process_notification', array($this, 'process_notification'));
 
@@ -301,13 +303,38 @@ class D_Express_WooCommerce
         $db = new D_Express_DB();
         $db->add_shipment_index();
 
+        // ✅ DODAJ OVE LINIJE ZA MULTIPLE SHIPMENTS SCHEMA
+        D_Express_DB::update_multiple_shipments_schema();
+
+        // Postavljanje verzije schema
+        update_option('dexpress_schema_version', '1.1.0');
+
         // Postavljanje potrebnih opcija
         $this->set_default_options();
 
         // Flush rewrite rules za REST API endpoint
         flush_rewrite_rules();
     }
+    /**
+     * Provera i ažuriranje database schema
+     */
+    public function check_and_update_schema()
+    {
+        $schema_version = get_option('dexpress_schema_version', '1.0.0');
+        $current_version = '1.1.0'; // Verzija sa multiple shipments
 
+        if (version_compare($schema_version, $current_version, '<')) {
+            if (class_exists('D_Express_DB')) {
+                D_Express_DB::update_multiple_shipments_schema();
+                update_option('dexpress_schema_version', $current_version);
+
+                // Log da je schema ažurirana
+                if (function_exists('dexpress_log')) {
+                    dexpress_log('Schema ažurirana na verziju ' . $current_version . ' za multiple shipments support', 'info');
+                }
+            }
+        }
+    }
     /**
      * Deaktivacija plugin-a
      */
@@ -366,6 +393,9 @@ class D_Express_WooCommerce
         // Inicijalizacija admin klasa
         if (is_admin()) {
             $admin = new D_Express_Admin();
+
+            // ✅ DODAJ OVU LINIJU ZA AJAX HANDLER
+            $admin_ajax = new D_Express_Admin_Ajax();
         }
 
         // Inicijalizacija frontend klasa

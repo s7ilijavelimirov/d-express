@@ -981,7 +981,7 @@ class D_Express_API
         $content = dexpress_generate_shipment_content($order);
 
         // Kreiranje reference
-        $reference_id = $this->generate_reference_id($order->get_id());
+       $reference_id = apply_filters('dexpress_shipment_reference_id', $order->get_order_number());
         if (!D_Express_Validator::validate_reference($reference_id)) {
             dexpress_log("WARNING: Invalid reference ID: {$reference_id}", 'warning');
             $reference_id = "ORDER-" . $order->get_id(); // Pojednostavljena referenca

@@ -37,6 +37,9 @@ class D_Express_Admin_Ajax
         add_action('wp_ajax_dexpress_save_settings', array($this, 'ajax_save_settings'));
         add_action('wp_ajax_dexpress_test_api', array($this, 'ajax_test_api'));
 
+        // NOVA REGISTRACIJA za multiple shipments
+        add_action('wp_ajax_dexpress_create_multiple_shipments', array($this, 'ajax_create_multiple_shipments'));
+
         // AJAX za pošiljke
         add_action('wp_ajax_dexpress_create_shipment', array($this, 'ajax_create_shipment'));
 
@@ -388,5 +391,272 @@ class D_Express_Admin_Ajax
     {
         // Implementirati kada dođemo do API refaktora
         wp_send_json_error('Not implemented yet');
+    }
+    /**
+     * AJAX: Kreiranje više pošiljki iz jedne narudžbine
+     */
+    public function ajax_create_multiple_shipments()
+    {
+        // Provera nonce-a
+        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field($_POST['nonce']), 'dexpress_admin_nonce')) {
+            wp_send_json_error(array('message' => __('Sigurnosna provera nije uspela.', 'd-express-woo')));
+        }
+
+        // Provera dozvola
+        if (!current_user_can('manage_woocommerce')) {
+            wp_send_json_error(array('message' => __('Nemate dozvolu za ovu akciju.', 'd-express-woo')));
+        }
+
+        $order_id = intval($_POST['order_id']);
+        $splits = isset($_POST['splits']) ? $_POST['splits'] : array();
+
+        if (!$order_id) {
+            wp_send_json_error(array('message' => __('ID narudžbine je obavezan.', 'd-express-woo')));
+        }
+
+        if (empty($splits) || !is_array($splits)) {
+            wp_send_json_error(array('message' => __('Morate definisati podele pošiljki.', 'd-express-woo')));
+        }
+
+        // Dobijanje narudžbine
+        $order = wc_get_order($order_id);
+        if (!$order) {
+            wp_send_json_error(array('message' => __('Narudžbina nije pronađena.', 'd-express-woo')));
+        }
+
+        // Provera da li već postoje pošiljke
+        global $wpdb;
+        $existing_shipments = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$wpdb->prefix}dexpress_shipments WHERE order_id = %d",
+            $order_id
+        ));
+
+        if ($existing_shipments > 0) {
+            wp_send_json_error(array('message' => __('Za ovu narudžbinu već postoje pošiljke.', 'd-express-woo')));
+        }
+
+        $shipment_service = new D_Express_Shipment_Service();
+        $created_shipments = array();
+        $errors = array();
+
+        // Validacija da su svi artikli dodeljeni
+        $order_items = $order->get_items();
+        $assigned_items = array();
+
+        foreach ($splits as $split) {
+            if (isset($split['items']) && is_array($split['items'])) {
+                foreach ($split['items'] as $item_id) {
+                    $assigned_items[] = intval($item_id);
+                }
+            }
+        }
+
+        // Proveri da li su svi artikli dodeljeni
+        foreach ($order_items as $item_id => $item) {
+            if (!in_array($item_id, $assigned_items)) {
+                wp_send_json_error(array(
+                    'message' => sprintf(__('Artikl "%s" nije dodeljen nijednoj pošiljci.', 'd-express-woo'), $item->get_name())
+                ));
+            }
+        }
+
+        // Kreiranje pošiljki
+        $split_index = 1;
+        foreach ($splits as $split) {
+            if (empty($split['items']) || !is_array($split['items'])) {
+                continue;
+            }
+
+            $location_id = intval($split['location_id']);
+            $selected_items = array_map('intval', $split['items']);
+
+            try {
+                // Kreiraj modifikovanu narudžbinu za ovu pošiljku
+                $split_result = $this->create_split_shipment($order, $location_id, $selected_items, $split_index, count($splits));
+
+                if (is_wp_error($split_result)) {
+                    $errors[] = sprintf(__('Pošiljka %d: %s', 'd-express-woo'), $split_index, $split_result->get_error_message());
+                } else {
+                    $created_shipments[] = $split_result;
+                }
+            } catch (Exception $e) {
+                $errors[] = sprintf(__('Pošiljka %d: %s', 'd-express-woo'), $split_index, $e->getMessage());
+            }
+
+            $split_index++;
+        }
+
+        // Sačuvaj informacije o podeli
+        if (!empty($created_shipments)) {
+            $split_info = array();
+            foreach ($splits as $index => $split) {
+                $split_info[] = array(
+                    'location_id' => $split['location_id'],
+                    'items' => $split['items'],
+                    'shipment_index' => $index + 1
+                );
+            }
+            update_post_meta($order_id, '_dexpress_shipment_splits', $split_info);
+        }
+
+        if (!empty($errors)) {
+            wp_send_json_error(array(
+                'message' => __('Greške pri kreiranju pošiljki:', 'd-express-woo') . "\n" . implode("\n", $errors),
+                'created_count' => count($created_shipments)
+            ));
+        } else {
+            wp_send_json_success(array(
+                'message' => sprintf(__('Uspešno kreirano %d pošiljki.', 'd-express-woo'), count($created_shipments)),
+                'shipments' => $created_shipments
+            ));
+        }
+    }
+    /**
+     * Kreiranje pojedinačne split pošiljke
+     */
+    private function create_split_shipment($order, $location_id, $selected_items, $split_index, $total_splits)
+    {
+        $shipment_service = new D_Express_Shipment_Service();
+
+        // Kreiraj custom API instancu za ovu split pošiljku
+        $api = new D_Express_API();
+
+        // Pripremi podatke za pošiljku samo sa izabranim artiklima
+        $shipment_data = $api->prepare_shipment_data_from_order($order, $location_id);
+
+        if (is_wp_error($shipment_data)) {
+            return $shipment_data;
+        }
+
+        // Modifikuj podatke za split pošiljku
+        $shipment_data = $this->modify_shipment_data_for_split($shipment_data, $order, $selected_items, $split_index, $total_splits);
+
+        if (is_wp_error($shipment_data)) {
+            return $shipment_data;
+        }
+
+        // Kreiraj pošiljku preko API-ja
+        $response = $api->add_shipment($shipment_data);
+
+        if (is_wp_error($response)) {
+            return $response;
+        }
+
+        // Sačuvaj u bazu
+        $tracking_number = !empty($response['TrackingNumber']) ? $response['TrackingNumber'] : $shipment_data['PackageList'][0]['Code'];
+        $shipment_id = !empty($response['ShipmentID']) ? $response['ShipmentID'] : $tracking_number;
+
+        $db = new D_Express_DB();
+        $shipment_record = array(
+            'order_id' => $order->get_id(),
+            'shipment_id' => $shipment_id,
+            'tracking_number' => $tracking_number,
+            'reference_id' => $shipment_data['ReferenceID'],
+            'sender_location_id' => $location_id,
+            'split_index' => $split_index,
+            'total_splits' => $total_splits,
+            'parent_order_id' => $order->get_id(),
+            'created_at' => current_time('mysql'),
+            'updated_at' => current_time('mysql'),
+            'shipment_data' => json_encode($response),
+            'is_test' => dexpress_is_test_mode() ? 1 : 0
+        );
+
+        $insert_id = $db->add_shipment($shipment_record);
+
+        if (!$insert_id) {
+            return new WP_Error('db_error', __('Greška pri upisu pošiljke u bazu.', 'd-express-woo'));
+        }
+
+        // Sačuvaj pakete
+        if (isset($shipment_data['PackageList']) && is_array($shipment_data['PackageList'])) {
+            foreach ($shipment_data['PackageList'] as $package) {
+                $package_data = array(
+                    'shipment_id' => $insert_id,
+                    'package_code' => $package['Code'],
+                    'mass' => $package['Mass'],
+                    'created_at' => current_time('mysql')
+                );
+                $db->add_package($package_data);
+            }
+        }
+
+        // Dodaj napomenu u narudžbinu
+        $sender_locations_service = new D_Express_Sender_Locations();
+        $location = $sender_locations_service->get_location($location_id);
+
+        $note = sprintf(
+            __('D Express pošiljka %d/%d kreirana. Tracking: %s, Lokacija: %s', 'd-express-woo'),
+            $split_index,
+            $total_splits,
+            $tracking_number,
+            $location ? $location->name : 'N/A'
+        );
+
+        $order->add_order_note($note);
+
+        return array(
+            'shipment_id' => $insert_id,
+            'tracking_number' => $tracking_number,
+            'split_index' => $split_index,
+            'location_name' => $location ? $location->name : 'N/A'
+        );
+    }
+    /**
+     * Modifikuje podatke pošiljke za split
+     */
+    private function modify_shipment_data_for_split($shipment_data, $order, $selected_items, $split_index, $total_splits)
+    {
+        // Izračunaj težinu za izabrane artikle
+        $total_weight = 0;
+        $split_value = 0;
+
+        foreach ($selected_items as $item_id) {
+            $item = $order->get_item($item_id);
+            if (!$item) {
+                continue;
+            }
+
+            $product = $item->get_product();
+            if ($product && $product->has_weight()) {
+                $weight_kg = floatval($product->get_weight());
+                $quantity = $item->get_quantity();
+                $total_weight += ($weight_kg * $quantity * 1000); // u gramima
+            }
+
+            // Dodaj vrednost artikla
+            $split_value += ($item->get_total() + $item->get_total_tax());
+        }
+
+        // Ako nema težine, koristi podrazumevanu
+        if ($total_weight <= 0) {
+            $total_weight = floatval(get_option('dexpress_default_weight', 1)) * 1000;
+        }
+
+        // Modifikuj podatke
+        $shipment_data['Mass'] = round($total_weight);
+
+        // Modifikuj reference ID da bude jedinstven
+        $shipment_data['ReferenceID'] = $shipment_data['ReferenceID'] . '-' . $split_index;
+
+        // Modifikuj PackageList - kreiraj novi paket za ovaj split
+        $package_code = dexpress_generate_package_code();
+        $shipment_data['PackageList'] = array(
+            array(
+                'Code' => $package_code,
+                'Mass' => round($total_weight)
+            )
+        );
+
+        // Ako je pouzećem, podeli vrednost otkupnine
+        if ($shipment_data['BuyOut'] > 0) {
+            // Proporcionalno podeli otkupninu
+            $original_total = $order->get_total();
+            if ($original_total > 0) {
+                $shipment_data['BuyOut'] = round(($split_value / $original_total) * $shipment_data['BuyOut'] * 100); // u parama
+            }
+        }
+
+        return $shipment_data;
     }
 }

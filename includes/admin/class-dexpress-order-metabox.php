@@ -92,57 +92,111 @@ class D_Express_Order_Metabox
         // Pozovi view fajl sa svim potrebnim podacima
         $this->render_metabox_content($order, $has_dexpress, $is_dispenser, $shipment, $locations, $selected_location_id);
     }
+    private function get_order_shipments($order_id)
+    {
+        $db = new D_Express_DB();
 
+        // Proveri da li metoda postoji, inače koristi osnovnu funkcionalnost
+        if (method_exists($db, 'get_shipments_by_order_id')) {
+            return $db->get_shipments_by_order_id($order_id);
+        } else {
+            // Fallback na osnovnu funkcionalnost
+            global $wpdb;
+            return $wpdb->get_results($wpdb->prepare(
+                "SELECT * FROM {$wpdb->prefix}dexpress_shipments WHERE order_id = %d ORDER BY created_at ASC",
+                $order_id
+            ));
+        }
+    }
     /**
      * Renderovanje sadržaja metabox-a
      */
+
+
     private function render_metabox_content($order, $has_dexpress, $is_dispenser, $shipment, $locations, $selected_location_id)
     {
+        // Proveri da li postoje već kreirane pošiljke (ažurirano za multiple)
+        $shipments = $this->get_order_shipments($order->get_id());
+        $shipment_splits = get_post_meta($order->get_id(), '_dexpress_shipment_splits', true) ?: [];
+
 ?>
         <div class="dexpress-order-metabox">
             <?php if (!$has_dexpress): ?>
                 <p><?php _e('Ova narudžbina ne koristi D Express dostavu.', 'd-express-woo'); ?></p>
 
-            <?php elseif ($shipment): ?>
-                <!-- POŠILJKA POSTOJI - PRIKAŽI TRACKING INFO -->
-                <div class="dexpress-tracking-info">
-                    <!-- Status -->
-                    <div class="dexpress-tracking-status">
-                        <?php $this->render_shipment_status($shipment); ?>
-                    </div>
+            <?php elseif (!empty($shipments)): ?>
+                <!-- PRIKAZ POSTOJEĆIH POŠILJKI -->
+                <div class="dexpress-existing-shipments">
+                    <h4><?php _e('D Express pošiljke', 'd-express-woo'); ?></h4>
+                    <?php foreach ($shipments as $index => $shipment): ?>
+                        <div style="margin-bottom: 15px; padding: 10px; border: 1px solid #ddd;">
+                            <?php if (count($shipments) > 1): ?>
+                                <h5><?php printf(__('Pošiljka %d od %d', 'd-express-woo'), $index + 1, count($shipments)); ?></h5>
+                            <?php else: ?>
+                                <h5><?php _e('D Express pošiljka', 'd-express-woo'); ?></h5>
+                            <?php endif; ?>
 
-                    <!-- Tracking broj -->
-                    <p>
-                        <strong><?php _e('Tracking broj:', 'd-express-woo'); ?></strong><br>
-                        <?php $this->render_tracking_number($shipment); ?>
-                    </p>
+                            <div class="dexpress-tracking-status">
+                                <?php $this->render_shipment_status($shipment); ?>
+                            </div>
 
-                    <!-- Reference ID -->
-                    <p>
-                        <strong><?php _e('Reference ID:', 'd-express-woo'); ?></strong><br>
-                        <?php echo esc_html($shipment->reference_id); ?>
-                    </p>
+                            <p>
+                                <strong><?php _e('Tracking broj:', 'd-express-woo'); ?></strong><br>
+                                <?php $this->render_tracking_number($shipment); ?>
+                            </p>
 
-                    <!-- Datum kreiranja -->
-                    <p>
-                        <strong><?php _e('Datum kreiranja:', 'd-express-woo'); ?></strong><br>
-                        <?php echo esc_html(date_i18n(get_option('date_format') . ' ' . get_option('time_format'), strtotime($shipment->created_at))); ?>
-                    </p>
+                            <?php if ($shipment->sender_location_id): ?>
+                                <p>
+                                    <strong><?php _e('Lokacija:', 'd-express-woo'); ?></strong><br>
+                                    <?php
+                                    $location = array_filter($locations, function ($loc) use ($shipment) {
+                                        return $loc->id == $shipment->sender_location_id;
+                                    });
+                                    echo $location ? reset($location)->name : 'N/A';
+                                    ?>
+                                </p>
+                            <?php endif; ?>
 
-                    <!-- Dugmad za akcije -->
-                    <div class="dexpress-actions" style="margin-top: 15px;">
-                        <button type="button" class="button dexpress-get-label"
-                            data-shipment-id="<?php echo esc_attr($shipment->id); ?>">
-                            <?php _e('Preuzmi nalepnicu', 'd-express-woo'); ?>
-                        </button>
-                    </div>
+                            <button type="button" class="button dexpress-get-label"
+                                data-shipment-id="<?php echo esc_attr($shipment->id); ?>">
+                                <?php _e('Preuzmi nalepnicu', 'd-express-woo'); ?>
+                            </button>
+                        </div>
+                    <?php endforeach; ?>
                 </div>
 
             <?php else: ?>
-                <!-- KREIRANJE NOVE POŠILJKE -->
-                <div class="dexpress-create-shipment-section">
+                <!-- KREIRANJE NOVIH POŠILJKI -->
+                <?php if ($order->get_item_count() > 1 && empty($shipment)): ?>
+                    <div style="margin-bottom: 15px;">
+                        <label>
+                            <input type="checkbox" id="dexpress-enable-split">
+                            <strong><?php _e('Podeli na više pošiljki', 'd-express-woo'); ?></strong>
+                        </label>
+                        <p class="description"><?php _e('Omogućava kreiranje više pošiljki iz jedne narudžbine sa različitim lokacijama.', 'd-express-woo'); ?></p>
+                    </div>
+
+                    <div id="dexpress-split-section" style="display:none;">
+                        <div id="dexpress-splits-container">
+                            <!-- Dinamički se dodaju split forme -->
+                        </div>
+
+                        <button type="button" class="button" id="dexpress-add-split">
+                            <?php _e('Dodaj pošiljku', 'd-express-woo'); ?>
+                        </button>
+
+                        <hr style="margin: 15px 0;">
+
+                        <button type="button" class="button button-primary" id="dexpress-create-all-shipments"
+                            data-order-id="<?php echo esc_attr($order->get_id()); ?>">
+                            <?php _e('Kreiraj sve pošiljke', 'd-express-woo'); ?>
+                        </button>
+                    </div>
+                <?php endif; ?>
+
+                <!-- Postojeći kod za kreiranje pojedinačne pošiljke -->
+                <div id="dexpress-single-shipment">
                     <?php if (!empty($locations)): ?>
-                        <!-- Izbor lokacije -->
                         <p>
                             <label for="dexpress-sender-location">
                                 <strong><?php _e('Lokacija pošaljioce:', 'd-express-woo'); ?></strong>
@@ -159,18 +213,8 @@ class D_Express_Order_Metabox
                                 <?php endforeach; ?>
                             </select>
                         </p>
-                    <?php else: ?>
-                        <div class="notice notice-error inline" style="margin: 0 0 10px;">
-                            <p>
-                                <?php _e('Nema konfigurisan nijednu lokaciju pošaljioce. ', 'd-express-woo'); ?>
-                                <a href="<?php echo admin_url('admin.php?page=dexpress-settings&tab=sender'); ?>">
-                                    <?php _e('Dodaj lokaciju', 'd-express-woo'); ?>
-                                </a>
-                            </p>
-                        </div>
                     <?php endif; ?>
 
-                    <!-- Dugme za kreiranje -->
                     <div class="dexpress-create-shipment" style="margin-top: 15px;">
                         <button type="button" class="button button-primary dexpress-create-shipment-btn"
                             data-order-id="<?php echo esc_attr($order->get_id()); ?>"
@@ -184,89 +228,204 @@ class D_Express_Order_Metabox
             <?php endif; ?>
         </div>
 
-        <!-- JavaScript za metabox -->
+        <!-- JavaScript kod -->
         <script type="text/javascript">
             jQuery(document).ready(function($) {
-                // Kreiranje pošiljke
-                $('.dexpress-create-shipment-btn').on('click', function() {
+                // Postojeći JS kod za kreiranje pojedinačne pošiljke
+                $('.dexpress-create-shipment-btn').on('click', function(e) {
+                    e.preventDefault();
+
                     var btn = $(this);
-                    var order_id = btn.data('order-id');
-                    var response_div = btn.siblings('.dexpress-response');
-                    var sender_location_id = $('#dexpress-sender-location').val();
+                    var orderId = btn.data('order-id');
+                    var locationId = $('#dexpress-sender-location').val();
 
-                    if (!sender_location_id) {
-                        alert('<?php echo esc_js(__('Molimo izaberite lokaciju pošaljioce.', 'd-express-woo')); ?>');
-                        return;
-                    }
-
-                    btn.prop('disabled', true).text('<?php echo esc_js(__('Kreiranje...', 'd-express-woo')); ?>');
-                    response_div.html('');
+                    btn.prop('disabled', true).text('<?php _e('Kreiranje...', 'd-express-woo'); ?>');
 
                     $.ajax({
                         url: ajaxurl,
                         type: 'POST',
                         data: {
                             action: 'dexpress_create_shipment',
-                            order_id: order_id,
-                            sender_location_id: sender_location_id,
+                            order_id: orderId,
+                            sender_location_id: locationId,
                             nonce: '<?php echo wp_create_nonce('dexpress_admin_nonce'); ?>'
                         },
                         success: function(response) {
                             if (response.success) {
-                                response_div.html('<div class="notice notice-success inline"><p>' + response.data.message + '</p></div>');
+                                $('.dexpress-response').html('<div class="notice notice-success"><p>' + response.data.message + '</p></div>');
                                 setTimeout(function() {
                                     location.reload();
-                                }, 2000);
+                                }, 1500);
                             } else {
-                                response_div.html('<div class="notice notice-error inline"><p>' + response.data.message + '</p></div>');
-                                btn.prop('disabled', false).text('<?php echo esc_js(__('Kreiraj D Express pošiljku', 'd-express-woo')); ?>');
+                                $('.dexpress-response').html('<div class="notice notice-error"><p>' + response.data.message + '</p></div>');
+                                btn.prop('disabled', false).text('<?php _e('Kreiraj D Express pošiljku', 'd-express-woo'); ?>');
                             }
                         },
                         error: function() {
-                            response_div.html('<div class="notice notice-error inline"><p><?php echo esc_js(__('Došlo je do greške.', 'd-express-woo')); ?></p></div>');
-                            btn.prop('disabled', false).text('<?php echo esc_js(__('Kreiraj D Express pošiljku', 'd-express-woo')); ?>');
+                            $('.dexpress-response').html('<div class="notice notice-error"><p><?php _e('Greška pri komunikaciji sa serverom.', 'd-express-woo'); ?></p></div>');
+                            btn.prop('disabled', false).text('<?php _e('Kreiraj D Express pošiljku', 'd-express-woo'); ?>');
                         }
                     });
                 });
 
-                // Čuvanje izabrane lokacije
-                $('#dexpress-sender-location').on('change', function() {
-                    var location_id = $(this).val();
+                // JS za preuzimanje nalepnica
+                $('.dexpress-get-label').on('click', function(e) {
+                    e.preventDefault();
+
+                    var shipmentId = $(this).data('shipment-id');
+                    window.open(ajaxurl + '?action=dexpress_download_label&shipment_id=' + shipmentId + '&nonce=<?php echo wp_create_nonce('dexpress-download-label'); ?>', '_blank');
+                });
+
+                // NOVI JS za multiple shipments
+                $('#dexpress-enable-split').on('change', function() {
+                    if ($(this).is(':checked') && confirm('<?php _e('Da li ste sigurni da želite da podelite ovu narudžbinu na više pošiljki?', 'd-express-woo'); ?>')) {
+                        $('#dexpress-split-section').show();
+                        $('#dexpress-single-shipment').hide();
+                        if ($('#dexpress-splits-container').children().length === 0) {
+                            $('#dexpress-add-split').click();
+                        }
+                    } else {
+                        $(this).prop('checked', false);
+                        $('#dexpress-split-section').hide();
+                        $('#dexpress-single-shipment').show();
+                    }
+                });
+
+                var splitIndex = 0;
+                var orderItems = <?php echo json_encode(array_values(array_map(function ($item) {
+                                        return array(
+                                            'id' => $item->get_id(),
+                                            'name' => $item->get_name(),
+                                            'quantity' => $item->get_quantity()
+                                        );
+                                    }, $order->get_items()))); ?>;
+                var locations = <?php echo json_encode(array_map(function ($loc) {
+                                    return array(
+                                        'id' => $loc->id,
+                                        'name' => $loc->name
+                                    );
+                                }, $locations)); ?>;
+
+                $('#dexpress-add-split').on('click', function() {
+                    var html = '<div class="dexpress-split-form" data-index="' + splitIndex + '" style="margin-bottom: 15px; padding: 15px; background: #f5f5f5; border: 1px solid #ddd;">';
+                    html += '<h5>Pošiljka ' + (splitIndex + 1);
+                    html += ' <button type="button" class="button-link dexpress-remove-split" style="float: right; color: #a00;">Ukloni</button></h5>';
+
+                    // Lokacija
+                    html += '<p><strong>Lokacija:</strong></p>';
+                    html += '<select class="split-location" style="width: 100%; margin-bottom: 10px;">';
+                    for (var i = 0; i < locations.length; i++) {
+                        html += '<option value="' + locations[i].id + '">' + locations[i].name + '</option>';
+                    }
+                    html += '</select>';
+
+                    // Artikli
+                    html += '<div class="split-items">';
+                    html += '<p><strong>Artikli:</strong></p>';
+                    if (orderItems.length > 0) {
+                        for (var j = 0; j < orderItems.length; j++) {
+                            var item = orderItems[j];
+                            html += '<label style="display: block; margin: 5px 0;">';
+                            html += '<input type="checkbox" class="item-checkbox" data-item-id="' + item.id + '"> ';
+                            html += item.name + ' (x' + item.quantity + ')';
+                            html += '</label>';
+                        }
+                    } else {
+                        html += '<p>Nema artikala u narudžbini</p>';
+                    }
+                    html += '</div>';
+
+                    html += '</div>';
+
+                    $('#dexpress-splits-container').append(html);
+                    splitIndex++;
+                });
+
+                // Uklanjanje split forme
+                $(document).on('click', '.dexpress-remove-split', function() {
+                    if (confirm('<?php _e('Da li ste sigurni da želite da uklonite ovu pošiljku?', 'd-express-woo'); ?>')) {
+                        $(this).closest('.dexpress-split-form').remove();
+                    }
+                });
+
+                // Kreiranje svih pošiljki
+                $('#dexpress-create-all-shipments').on('click', function() {
+                    var splits = [];
+                    var hasErrors = false;
+                    var errorMessage = '';
+
+                    $('.dexpress-split-form').each(function(index) {
+                        var split = {
+                            location_id: $(this).find('.split-location').val(),
+                            items: []
+                        };
+
+                        $(this).find('.item-checkbox:checked').each(function() {
+                            split.items.push($(this).data('item-id'));
+                        });
+
+                        if (split.items.length === 0) {
+                            hasErrors = true;
+                            errorMessage = '<?php _e('Morate izabrati artikle za pošiljku', 'd-express-woo'); ?> ' + (index + 1);
+                            return false;
+                        }
+
+                        splits.push(split);
+                    });
+
+                    if (hasErrors) {
+                        alert(errorMessage);
+                        return;
+                    }
+
+                    if (splits.length === 0) {
+                        alert('<?php _e('Morate kreirati najmanje jednu pošiljku', 'd-express-woo'); ?>');
+                        return;
+                    }
+
+                    // Proveri da li su svi artikli dodeljeni
+                    var assignedItems = [];
+                    for (var i = 0; i < splits.length; i++) {
+                        for (var j = 0; j < splits[i].items.length; j++) {
+                            assignedItems.push(splits[i].items[j]);
+                        }
+                    }
+
+                    for (var k = 0; k < orderItems.length; k++) {
+                        if (assignedItems.indexOf(orderItems[k].id) === -1) {
+                            alert('<?php _e('Artikl', 'd-express-woo'); ?> "' + orderItems[k].name + '" <?php _e('nije dodeljen nijednoj pošiljci', 'd-express-woo'); ?>');
+                            return;
+                        }
+                    }
+
+                    if (!confirm('<?php _e('Da li ste sigurni da želite da kreirate', 'd-express-woo'); ?> ' + splits.length + ' <?php _e('pošiljki?', 'd-express-woo'); ?>')) {
+                        return;
+                    }
+
+                    var btn = $(this);
+                    btn.prop('disabled', true).text('<?php _e('Kreiranje...', 'd-express-woo'); ?>');
 
                     $.ajax({
                         url: ajaxurl,
                         type: 'POST',
                         data: {
-                            action: 'dexpress_save_order_meta',
-                            order_id: <?php echo $order->get_id(); ?>,
-                            field_name: 'dexpress_selected_sender_location_id',
-                            field_value: location_id,
-                            nonce: '<?php echo wp_create_nonce('dexpress_admin_nonce'); ?>'
-                        }
-                    });
-                });
-
-                // Preuzimanje nalepnice
-                $('.dexpress-get-label').on('click', function() {
-                    var shipment_id = $(this).data('shipment-id');
-
-                    $.ajax({
-                        url: ajaxurl,
-                        type: 'POST',
-                        data: {
-                            action: 'dexpress_get_label',
-                            shipment_id: shipment_id,
+                            action: 'dexpress_create_multiple_shipments',
+                            order_id: btn.data('order-id'),
+                            splits: splits,
                             nonce: '<?php echo wp_create_nonce('dexpress_admin_nonce'); ?>'
                         },
                         success: function(response) {
-                            if (response.success && response.data.url) {
-                                window.open(response.data.url, '_blank');
+                            if (response.success) {
+                                alert(response.data.message);
+                                location.reload();
                             } else {
-                                alert('Greška: ' + (response.data.message || 'Nepoznata greška'));
+                                alert('<?php _e('Greška:', 'd-express-woo'); ?> ' + response.data.message);
+                                btn.prop('disabled', false).text('<?php _e('Kreiraj sve pošiljke', 'd-express-woo'); ?>');
                             }
                         },
                         error: function() {
-                            alert('Došlo je do greške. Pokušajte ponovo.');
+                            alert('<?php _e('Greška pri komunikaciji sa serverom', 'd-express-woo'); ?>');
+                            btn.prop('disabled', false).text('<?php _e('Kreiraj sve pošiljke', 'd-express-woo'); ?>');
                         }
                     });
                 });
