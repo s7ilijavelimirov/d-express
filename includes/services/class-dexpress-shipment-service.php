@@ -37,212 +37,150 @@ class D_Express_Shipment_Service
      * @param int $sender_location_id ID lokacije pošaljioce (opciono)
      * @return int|WP_Error ID pošiljke ili WP_Error
      */
+    /**
+     * Kreiranje D Express pošiljke - FINALNA VERZIJA
+     * 
+     * @param WC_Order $order WooCommerce narudžbina
+     * @param int $sender_location_id ID lokacije pošaljioce (opciono)
+     * @param string $package_code Unapred generisan package kod
+     * @return array|WP_Error Array sa podacima o kreiranoj pošiljci ili WP_Error
+     */
     public function create_shipment($order, $sender_location_id = null, $package_code = null)
     {
         try {
             $order_id = $order->get_id();
 
             // Početni log 
-            dexpress_log('[SHIPPING] Započinjem kreiranje pošiljke za narudžbinu #' . $order_id, 'debug');
+            dexpress_log('[SHIPPING] Započinjem kreiranje pošiljke za narudžbinu #' . $order_id, 'info');
 
-            // ============= DODATO: HANDLING LOKACIJE =============
             // Određivanje lokacije koja će se koristiti
             if (empty($sender_location_id)) {
-                $sender_location_id = get_option('dexpress_default_sender_location_id');
-                dexpress_log('[SHIPPING] Koristi se glavna lokacija ID: ' . $sender_location_id, 'debug');
+                // Pokušaj dobijanje glavne lokacije
+                $sender_locations_service = D_Express_Sender_Locations::get_instance();
+                $sender_location = $sender_locations_service->get_default_location();
+
+                if (!$sender_location) {
+                    return new WP_Error('no_default_location', __('Nema definisane glavne lokacije pošiljaoca.', 'd-express-woo'));
+                }
+
+                $sender_location_id = $sender_location->id;
+                dexpress_log('[SHIPPING] Koristi se glavna lokacija ID: ' . $sender_location_id . ' (' . $sender_location->name . ')', 'info');
             } else {
-                dexpress_log('[SHIPPING] Koristi se prosleđena lokacija ID: ' . $sender_location_id, 'debug');
+                // Validacija da prosleđena lokacija postoji
+                $sender_locations_service = D_Express_Sender_Locations::get_instance();
+                $sender_location = $sender_locations_service->get_location($sender_location_id);
+
+                if (!$sender_location) {
+                    return new WP_Error('invalid_location', __('Lokacija pošiljaoca nije pronađena.', 'd-express-woo'));
+                }
+
+                dexpress_log('[SHIPPING] Koristi se prosleđena lokacija ID: ' . $sender_location_id . ' (' . $sender_location->name . ')', 'info');
             }
+
+            // Generiši package kod ako nije prosleđen
             if (empty($package_code)) {
-                $package_code = dexpress_generate_package_code();
-                dexpress_log('[SHIPPING] Generisan novi package kod: ' . $package_code, 'debug');
+                try {
+                    $package_code = dexpress_generate_package_code();
+                    dexpress_log('[SHIPPING] Generisan novi package kod: ' . $package_code, 'info');
+                } catch (Exception $e) {
+                    return new WP_Error('package_code_error', 'Greška pri generisanju package koda: ' . $e->getMessage());
+                }
             } else {
-                dexpress_log('[SHIPPING] Koristi prosleđeni package kod: ' . $package_code, 'debug');
+                dexpress_log('[SHIPPING] Koristi prosleđeni package kod: ' . $package_code, 'info');
             }
-            // Validacija da lokacija postoji
-            $sender_locations_service = new D_Express_Sender_Locations();
-            $sender_location = $sender_locations_service->get_location($sender_location_id);
+
+            // Provera da li pošiljka već postoji
+            $existing_shipment = $this->db->get_shipment_by_order_id($order_id);
+            if ($existing_shipment) {
+                return new WP_Error('shipment_exists', __('Pošiljka za ovu narudžbinu već postoji.', 'd-express-woo'));
+            }
+
+            // Validacija COD i bankovnog računa
             $payment_method = $order->get_payment_method();
-            if ($payment_method === 'cod') { // Cash on Delivery
-                $buyout_account = get_option('dexpress_buyout_account', '');
+            if ($payment_method === 'cod') {
+                $buyout_account = !empty($sender_location->bank_account)
+                    ? $sender_location->bank_account
+                    : get_option('dexpress_buyout_account', '');
 
                 if (empty($buyout_account) && get_option('dexpress_require_buyout_account', 'no') === 'yes') {
                     return new WP_Error(
                         'missing_buyout_account',
-                        __('Bankovni račun za otkupninu je obavezan za narudžbine sa plaćanjem po dostavi.', 'd-express-woo')
-                    );
-                }
-
-                // Validacija formata računa
-                if (!empty($buyout_account) && !preg_match('/^\d{3}-\d{8,13}-\d{2}$/', $buyout_account)) {
-                    return new WP_Error(
-                        'invalid_buyout_format',
-                        __('Bankovni račun za otkupninu nije u validnom formatu.', 'd-express-woo')
+                        sprintf(
+                            __('Lokacija "%s" nema bankovni račun za otkupninu, a COD je izabrano. Dodajte bankovni račun lokaciji ili u globalna podešavanja.', 'd-express-woo'),
+                            $sender_location->name
+                        )
                     );
                 }
             }
-            if (!$sender_location) {
-                dexpress_log('[SHIPPING] ERROR: Lokacija ID ' . $sender_location_id . ' nije pronađena!', 'error');
-                return new WP_Error('invalid_location', __('Neispravna lokacija pošaljioce.', 'd-express-woo'));
-            }
 
-            // KLJUČNO: Sačuvaj korišćenu lokaciju PRE API poziva
-            update_post_meta($order_id, '_dexpress_used_sender_location_id', $sender_location_id);
-            update_post_meta($order_id, '_dexpress_selected_sender_location_id', $sender_location_id);
-
-            dexpress_log('[SHIPPING] Sačuvana korišćena lokacija ' . $sender_location_id . ' za order ' . $order_id, 'debug');
-            // ====================================================
-
-            // Provera da li pošiljka već postoji
-            $existing = $this->db->get_shipment_by_order_id($order_id);
-
-            if ($existing) {
-                dexpress_log('[SHIPPING] Pošiljka već postoji za narudžbinu #' . $order_id, 'debug');
-                return new WP_Error('shipment_exists', __('Pošiljka već postoji za ovu narudžbinu.', 'd-express-woo'));
-            }
-
-            // Provera da li su postavljeni API kredencijali
-            if (!$this->api->has_credentials()) {
-                dexpress_log('[SHIPPING] Nedostaju API kredencijali za narudžbinu #' . $order_id, 'error');
-                return new WP_Error('missing_credentials', __('Nedostaju API kredencijali. Molimo podesite API kredencijale u podešavanjima.', 'd-express-woo'));
-            }
-
-            // Centralna validacija
-            require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/class-dexpress-validator.php';
-            $validation = D_Express_Validator::validate_order($order);
-            if (is_wp_error($validation)) {
-                dexpress_log('[SHIPPING] Validacija nije uspela: ' . $validation->get_error_message(), 'error');
-                return $validation;
-            }
-
-            // Dobijanje podataka za pošiljku SA PROSLEĐENOM LOKACIJOM
-            dexpress_log('[SHIPPING] Priprema podataka za narudžbinu #' . $order_id . ' sa lokacijom ' . $sender_location_id, 'debug');
+            // Priprema podataka za API sa unapred generisanim package kodom
+            dexpress_log('[SHIPPING] Priprema podataka za API...', 'debug');
             $shipment_data = $this->api->prepare_shipment_data_from_order($order, $sender_location_id, $package_code);
+
             if (is_wp_error($shipment_data)) {
                 dexpress_log('[SHIPPING] Greška pri pripremi podataka: ' . $shipment_data->get_error_message(), 'error');
                 return $shipment_data;
             }
 
-            // DODATNA VALIDACIJA PRE SLANJA API-ju
-            if (empty($shipment_data['RAddress']) || empty($shipment_data['RAddressNum'])) {
-                return new WP_Error('invalid_address', __('Adresa primaoca je nepotpuna.', 'd-express-woo'));
-            }
+            dexpress_log('[SHIPPING] Podaci pripremljeni, pozivam D Express API...', 'info');
 
-            if (empty($shipment_data['RCPhone'])) {
-                return new WP_Error('invalid_phone', __('Telefon primaoca je obavezan.', 'd-express-woo'));
-            }
-
-            if (!isset($shipment_data['Mass']) || $shipment_data['Mass'] <= 0) {
-                return new WP_Error('invalid_mass', __('Masa pošiljke mora biti veća od 0.', 'd-express-woo'));
-            }
-
-            if (empty($shipment_data['PackageList']) || !is_array($shipment_data['PackageList'])) {
-                return new WP_Error('missing_package', __('Nedostaju podaci o paketu.', 'd-express-woo'));
-            }
-
-            // Provera validnosti paketa
-            foreach ($shipment_data['PackageList'] as $package) {
-                if (empty($package['Code'])) {
-                    return new WP_Error('invalid_package_code', __('Nedostaje kod paketa.', 'd-express-woo'));
-                }
-            }
-
-            // Ako je otkupnina uključena, proveri bankovni račun
-            if (!empty($shipment_data['BuyOut']) && $shipment_data['BuyOut'] > 0 && empty($shipment_data['BuyOutAccount'])) {
-                return new WP_Error('missing_buyout_account', __('Nedostaje bankovni račun za otkupninu.', 'd-express-woo'));
-            }
-
-            dexpress_log('[SHIPPING DEBUG] Telefon u API zahtevu: ' . $shipment_data['RCPhone'], 'info');
-
-            // Logovanje u test modu
-            if (dexpress_is_test_mode()) {
-                dexpress_log('Kreiranje pošiljke. Podaci: ' . print_r($shipment_data, true));
-            }
-
-            // Kreiranje pošiljke preko API-ja
-            dexpress_log('[SHIPPING] Šaljem zahtev ka D-Express API-ju', 'debug');
+            // Slanje zahteva ka D Express API
             $response = $this->api->add_shipment($shipment_data);
-            if (is_wp_error($response)) {
-                // Specifično handling za bankovni račun greške
-                if (strpos($response->get_error_message(), 'BuyOutAccount') !== false) {
-                    dexpress_log(
-                        sprintf(
-                            '[SHIPPING] Greška sa bankovnim računom za narudžbinu #%d: %s',
-                            $order_id,
-                            $response->get_error_message()
-                        ),
-                        'error'
-                    );
 
-                    return new WP_Error(
-                        'buyout_account_rejected',
-                        __('D-Express je odbacio bankovni račun za otkupninu. Proverite podešavanja.', 'd-express-woo')
-                    );
-                }
-
-                return $response;
-            }
             if (is_wp_error($response)) {
-                dexpress_log('[SHIPPING] Greška pri kreiranju pošiljke: ' . $response->get_error_message(), 'error');
+                dexpress_log('[SHIPPING] API greška: ' . $response->get_error_message(), 'error');
                 return $response;
             }
 
-            dexpress_log('[SHIPPING] API odgovor primljen uspešno', 'debug');
-            dexpress_log('[SHIPPING] API odgovor: ' . print_r($response, true), 'debug');
+            // API Response Parsing prema dokumentaciji
+            if (is_string($response)) {
+                if ($response === 'TEST' || $response === 'OK') {
+                    // Uspešan API odgovor
+                    $api_response = $response; // "TEST" ili "OK"
+                    $tracking_number = $package_code; // TT0000000026
 
-            // Kreiranje tracking broja - dodajemo proveru da li postoje ključevi
-            $tracking_number = !empty($response['TrackingNumber']) ? $response['TrackingNumber'] : $shipment_data['PackageList'][0]['Code'];
-            $shipment_id = !empty($response['ShipmentID']) ? $response['ShipmentID'] : $tracking_number;
-
-            dexpress_log('[SHIPPING] Tracking broj: ' . $tracking_number . ', Shipment ID: ' . $shipment_id, 'debug');
-
-            // Dodavanje napomene u narudžbinu SA LOKACIJOM
-            $note = sprintf(
-                __('D Express pošiljka je kreirana. Tracking broj: %s, Reference ID: %s, Lokacija: %s', 'd-express-woo'),
-                $tracking_number,
-                $shipment_data['ReferenceID'],
-                $sender_location->name  // ← ISPRAVKA! Koristimo -> za objekat
-            );
-
-            // Dobavi postojeće komentare
-            $order_notes = wc_get_order_notes(['order_id' => $order_id]);
-            $note_exists = false;
-
-            // Proveri da li napomena već postoji
-            foreach ($order_notes as $order_note) {
-                if (strpos($order_note->content, $tracking_number) !== false) {
-                    $note_exists = true;
-                    break;
+                    dexpress_log('[SHIPPING] API uspešno odgovorio: ' . $api_response, 'info');
+                } else {
+                    // Error odgovor
+                    dexpress_log('[SHIPPING] API greška: ' . $response, 'error');
+                    return new WP_Error('api_error', 'D Express API greška: ' . $response);
                 }
+            } else {
+                // Neočekivan format odgovora
+                dexpress_log('[SHIPPING] API neočekivan odgovor: ' . print_r($response, true), 'error');
+                return new WP_Error('api_error', 'Neočekivan format odgovora od D Express API-ja');
             }
 
-            // Dodaj napomenu samo ako ne postoji
-            if (!$note_exists) {
-                $order->add_order_note($note);
-            }
-
-            // ============= IZMENJENO: ČUVANJE SA LOKACIJOM =============
-            // Čuvanje podataka o pošiljci u bazi SA SENDER_LOCATION_ID
-            dexpress_log('[SHIPPING] Čuvanje pošiljke u bazu podataka sa lokacijom ' . $sender_location_id, 'debug');
-            $shipment = array(
+            // Priprema zapisa za bazu
+            $shipment_record = array(
                 'order_id' => $order_id,
-                'shipment_id' => $shipment_id,
-                'tracking_number' => $tracking_number,
+                'shipment_id' => $api_response,        // "TEST" ili "OK"
+                'tracking_number' => $tracking_number, // "TT0000000026"
+                'package_code' => $package_code,       // "TT0000000026"
                 'reference_id' => $shipment_data['ReferenceID'],
-                'sender_location_id' => $sender_location_id, // ← DODANO!
+                'sender_location_id' => $sender_location_id,
+                'split_index' => null,
+                'total_splits' => null,
+                'parent_order_id' => null,
+                'status_code' => dexpress_is_test_mode() ? 'TEST_CREATED' : null,
+                'status_description' => dexpress_is_test_mode() ? 'Test pošiljka kreirana' : null,
                 'created_at' => current_time('mysql'),
                 'updated_at' => current_time('mysql'),
-                'shipment_data' => json_encode($response),
+                'shipment_data' => json_encode($response), // "TEST" ili "OK"
                 'is_test' => dexpress_is_test_mode() ? 1 : 0
             );
 
-            $insert_id = $this->db->add_shipment($shipment);
-            // ===========================================================
+            dexpress_log('[SHIPPING] Čuvam pošiljku u bazu podataka...', 'debug');
+
+            // Čuvanje u bazu
+            $insert_id = $this->db->add_shipment($shipment_record);
 
             if (!$insert_id) {
-                dexpress_log('[SHIPPING] Greška pri upisu pošiljke u bazu', 'error');
-                return new WP_Error('db_error', __('Greška pri upisu pošiljke u bazu.', 'd-express-woo'));
+                dexpress_log('[SHIPPING] Greška pri čuvanju u bazu', 'error');
+                return new WP_Error('db_error', __('Greška pri čuvanju pošiljke u bazu podataka.', 'd-express-woo'));
             }
+
+            dexpress_log('[SHIPPING] Pošiljka sačuvana u bazu sa ID: ' . $insert_id, 'info');
 
             // Čuvanje paketa
             if (isset($shipment_data['PackageList']) && is_array($shipment_data['PackageList'])) {
@@ -256,29 +194,39 @@ class D_Express_Shipment_Service
                         'created_at' => current_time('mysql')
                     );
 
-                    $this->db->add_package($package_data);
+                    $package_id = $this->db->add_package($package_data);
+                    dexpress_log('[SHIPPING] Paket sačuvan sa ID: ' . $package_id, 'debug');
                 }
             }
 
-            // Uspešno kreiranje
-            dexpress_log('[SHIPPING] Pošiljka uspešno kreirana sa ID: ' . $insert_id . ' i lokacijom: ' . $sender_location_id, 'debug');
+            // Dodavanje note u narudžbinu
+            $note = sprintf(
+                'D Express pošiljka kreirana. Tracking: %s, Lokacija: %s%s',
+                $tracking_number,
+                $sender_location->name,
+                dexpress_is_test_mode() ? ' [TEST]' : ''
+            );
+            $order->add_order_note($note);
 
             // Hook za dodatne akcije nakon kreiranja pošiljke
             do_action('dexpress_after_shipment_created', $insert_id, $order);
 
-            // ============= DODANO: POVRATNE INFORMACIJE =============
-            return array(
+            // Povratne informacije
+            $result = array(
                 'shipment_id' => $insert_id,
-                'shipment_code' => $response['PackageList'][0]['Code'] ?? '',
+                'shipment_code' => $package_code,
                 'tracking_number' => $tracking_number,
                 'used_location_id' => $sender_location_id,
-                'location_name' => $sender_location->name
+                'location_name' => $sender_location->name,
+                'is_test' => dexpress_is_test_mode(),
+                'api_response' => $api_response
             );
-            // =======================================================
 
+            dexpress_log('[SHIPPING] Pošiljka uspešno kreirana! ID: ' . $insert_id . ', Tracking: ' . $tracking_number . ', API odgovor: ' . $api_response, 'info');
+
+            return $result;
         } catch (Exception $e) {
             dexpress_log('[SHIPPING] Exception pri kreiranju pošiljke: ' . $e->getMessage(), 'error');
-            dexpress_log('[SHIPPING] Exception: ' . $e->getMessage(), 'error');
             return new WP_Error('exception', $e->getMessage());
         }
     }

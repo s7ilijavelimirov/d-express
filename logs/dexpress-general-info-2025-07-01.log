@@ -1,0 +1,2 @@
+{"timestamp":"2025-07-01 11:49:20","context":"general","level":"info","message":"[AJAX] Kreiranje single shipment - Order: 904, Lokacija: 1, Kod: TT0000000031"}
+{"timestamp":"2025-07-01 11:49:22","context":"general","level":"info","message":"[AJAX] Uspešno kreirana pošiljka: Array\n(\n    [shipment_id] => 24\n    [shipment_code] => TT0000000031\n    [tracking_number] => TT0000000031\n    [used_location_id] => 1\n    [location_name] => s7Code DOO\n    [is_test] => 1\n    [api_response] => TEST\n)\n"}

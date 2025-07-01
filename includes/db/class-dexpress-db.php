@@ -20,47 +20,82 @@ class D_Express_DB
     {
         global $wpdb;
 
-        // Dodaj default vrednosti za nove kolone
-        if (!isset($shipment_data['package_code'])) {
-            $shipment_data['package_code'] = null;
-        }
-        if (!isset($shipment_data['split_index'])) {
-            $shipment_data['split_index'] = null;
-        }
-        if (!isset($shipment_data['total_splits'])) {
-            $shipment_data['total_splits'] = null;
-        }
-        if (!isset($shipment_data['parent_order_id'])) {
-            $shipment_data['parent_order_id'] = null;
-        }
+        // Dodaj default vrednosti za nove kolone ako ne postoje
+        $defaults = array(
+            'package_code' => null,
+            'split_index' => null,
+            'total_splits' => null,
+            'parent_order_id' => null,
+            'status_code' => null,
+            'status_description' => null,
+            'created_at' => current_time('mysql'),
+            'updated_at' => current_time('mysql'),
+            'shipment_data' => null,
+            'is_test' => 0
+        );
+
+        // Spoji sa default vrednostima
+        $shipment_data = array_merge($defaults, $shipment_data);
+
+        // Definiši redosled kolona prema strukturi tabele
+        $ordered_data = array(
+            'order_id' => $shipment_data['order_id'],
+            'shipment_id' => $shipment_data['shipment_id'],
+            'tracking_number' => $shipment_data['tracking_number'],
+            'package_code' => $shipment_data['package_code'],
+            'reference_id' => $shipment_data['reference_id'],
+            'sender_location_id' => $shipment_data['sender_location_id'],
+            'split_index' => $shipment_data['split_index'],
+            'total_splits' => $shipment_data['total_splits'],
+            'parent_order_id' => $shipment_data['parent_order_id'],
+            'status_code' => $shipment_data['status_code'],
+            'status_description' => $shipment_data['status_description'],
+            'created_at' => $shipment_data['created_at'],
+            'updated_at' => $shipment_data['updated_at'],
+            'shipment_data' => $shipment_data['shipment_data'],
+            'is_test' => $shipment_data['is_test']
+        );
+
+        // Format specifiers u istom redosledu
+        $format = array(
+            '%d', // order_id
+            '%s', // shipment_id
+            '%s', // tracking_number
+            '%s', // package_code
+            '%s', // reference_id
+            '%d', // sender_location_id
+            '%d', // split_index
+            '%d', // total_splits
+            '%d', // parent_order_id
+            '%s', // status_code
+            '%s', // status_description
+            '%s', // created_at
+            '%s', // updated_at
+            '%s', // shipment_data
+            '%d'  // is_test
+        );
+
+        // Debug log
+        dexpress_log('[DB] Čuvanje pošiljke: ' . print_r($ordered_data, true), 'debug');
 
         $result = $wpdb->insert(
             $wpdb->prefix . 'dexpress_shipments',
-            $shipment_data,
-            array(
-                '%d', // order_id
-                '%s', // shipment_id
-                '%s', // tracking_number
-                '%s', // package_code - DODAJ OVO
-                '%s', // reference_id
-                '%d', // sender_location_id
-                '%d', // split_index
-                '%d', // total_splits
-                '%d', // parent_order_id
-                '%s', // status_code
-                '%s', // status_description
-                '%s', // created_at
-                '%s', // updated_at
-                '%s', // shipment_data
-                '%d', // is_test
-            )
+            $ordered_data,
+            $format
         );
 
-        if ($result) {
-            $this->clear_shipment_cache($shipment_data['order_id']);
-            return $wpdb->insert_id;
+        if ($result === false) {
+            dexpress_log('[DB] Greška pri čuvanju pošiljke: ' . $wpdb->last_error, 'error');
+            return false;
         }
-        return false;
+
+        $insert_id = $wpdb->insert_id;
+        dexpress_log('[DB] Pošiljka sačuvana sa ID: ' . $insert_id, 'info');
+
+        // Očisti cache
+        $this->clear_shipment_cache($shipment_data['order_id']);
+
+        return $insert_id;
     }
 
     /**

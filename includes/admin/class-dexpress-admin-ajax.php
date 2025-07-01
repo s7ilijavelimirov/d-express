@@ -318,19 +318,44 @@ class D_Express_Admin_Ajax
             wp_send_json_error(array('message' => __('Narudžbina nije pronađena.', 'd-express-woo')));
         }
 
-        // IZMENA: Generiši kod pre poziva servisne klase
-        $package_code = dexpress_generate_package_code();
+        // Generiši kod pre poziva servisne klase
+        try {
+            $package_code = dexpress_generate_package_code();
+        } catch (Exception $e) {
+            wp_send_json_error(array('message' => 'Greška pri generisanju koda: ' . $e->getMessage()));
+            return;
+        }
 
-        // Kreiranje pošiljke pomoću servisne klase sa unapred generisanim kodom
+        dexpress_log('[AJAX] Kreiranje single shipment - Order: ' . $order_id . ', Lokacija: ' . $sender_location_id . ', Kod: ' . $package_code, 'info');
+
+        // Kreiranje pošiljke pomoću servisne klase
         $shipment_service = new D_Express_Shipment_Service();
         $result = $shipment_service->create_shipment($order, $sender_location_id, $package_code);
 
         if (is_wp_error($result)) {
+            dexpress_log('[AJAX] Greška pri kreiranju: ' . $result->get_error_message(), 'error');
             wp_send_json_error(array('message' => $result->get_error_message()));
         } else {
+            dexpress_log('[AJAX] Uspešno kreirana pošiljka: ' . print_r($result, true), 'info');
+
+            // Formatiranje odgovora
+            $response_message = sprintf(
+                __('Pošiljka je uspešno kreirana. Tracking: %s, Lokacija: %s', 'd-express-woo'),
+                $result['tracking_number'],
+                $result['location_name']
+            );
+
+            if ($result['is_test']) {
+                $response_message .= ' [TEST REŽIM]';
+            }
+
             wp_send_json_success(array(
-                'message' => __('Pošiljka je uspešno kreirana.', 'd-express-woo'),
-                'shipment_id' => $result
+                'message' => $response_message,
+                'shipment_id' => $result['shipment_id'],
+                'tracking_number' => $result['tracking_number'],
+                'package_code' => $result['shipment_code'],
+                'location_name' => $result['location_name'],
+                'is_test' => $result['is_test']
             ));
         }
     }
@@ -583,24 +608,41 @@ class D_Express_Admin_Ajax
                 return $response;
             }
 
-            // Sačuvaj u bazu
-            $tracking_number = !empty($response['TrackingNumber']) ? $response['TrackingNumber'] : $package_code;
-            $shipment_id = !empty($response['ShipmentID']) ? $response['ShipmentID'] : $tracking_number;
+            // API Response Parsing prema dokumentaciji - ISTI KAO U SINGLE SHIPMENT
+            if (is_string($response)) {
+                if ($response === 'TEST' || $response === 'OK') {
+                    // Uspešan API odgovor
+                    $api_response = $response; // "TEST" ili "OK"
+                    $tracking_number = $package_code; // TT0000000026
+
+                    error_log('[SPLIT SHIPPING] API uspešno odgovorio: ' . $api_response);
+                } else {
+                    // Error odgovor
+                    error_log('[SPLIT SHIPPING] API greška: ' . $response);
+                    return new WP_Error('api_error', 'D Express API greška: ' . $response);
+                }
+            } else {
+                // Neočekivan format odgovora
+                error_log('[SPLIT SHIPPING] API neočekivan odgovor: ' . print_r($response, true));
+                return new WP_Error('api_error', 'Neočekivan format odgovora od D Express API-ja');
+            }
 
             $db = new D_Express_DB();
             $shipment_record = array(
                 'order_id' => $order->get_id(),
-                'shipment_id' => $shipment_id,
-                'tracking_number' => $tracking_number,
-                'package_code' => $package_code,
+                'shipment_id' => $api_response,        // "TEST" ili "OK" 
+                'tracking_number' => $tracking_number, // "TT0000000026"
+                'package_code' => $package_code,       // "TT0000000026"
                 'reference_id' => $shipment_data['ReferenceID'],
                 'sender_location_id' => $location_id,
                 'split_index' => $split_index,
                 'total_splits' => $total_splits,
                 'parent_order_id' => $order->get_id(),
+                'status_code' => dexpress_is_test_mode() ? 'TEST_CREATED' : null,
+                'status_description' => dexpress_is_test_mode() ? 'Test pošiljka kreirana' : null,
                 'created_at' => current_time('mysql'),
                 'updated_at' => current_time('mysql'),
-                'shipment_data' => json_encode($response),
+                'shipment_data' => json_encode($response), // "TEST" ili "OK"
                 'is_test' => dexpress_is_test_mode() ? 1 : 0
             );
 
