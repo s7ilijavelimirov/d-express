@@ -1,0 +1,2 @@
+{"timestamp":"2025-07-02 12:01:55","context":"checkout","level":"debug","message":"Učitani paketomati iz baze","data":{"count":0,"town_id":null}}
+{"timestamp":"2025-07-02 12:12:48","context":"checkout","level":"debug","message":"Učitani paketomati iz cache-a","data":{"count":0,"town_id":null}}

@@ -1,6 +1,0 @@
-{"timestamp":"2025-07-02 05:59:53","context":"api","level":"info","message":"API Zahtev: https:\/\/usersupport.dexpress.rs\/ExternalApi\/data\/dispensers, Metod: GET, Podaci: nema"}
-{"timestamp":"2025-07-02 05:59:53","context":"api","level":"info","message":"API Odgovor (kod 200)"}
-{"timestamp":"2025-07-02 05:59:54","context":"api","level":"info","message":"API Zahtev: https:\/\/usersupport.dexpress.rs\/ExternalApi\/data\/statuses, Metod: GET, Podaci: nema"}
-{"timestamp":"2025-07-02 05:59:54","context":"api","level":"info","message":"API Odgovor (kod 200)"}
-{"timestamp":"2025-07-02 05:59:54","context":"api","level":"info","message":"API Zahtev: https:\/\/usersupport.dexpress.rs\/ExternalApi\/data\/centres, Metod: GET, Podaci: nema"}
-{"timestamp":"2025-07-02 05:59:54","context":"api","level":"info","message":"API Odgovor (kod 200)"}

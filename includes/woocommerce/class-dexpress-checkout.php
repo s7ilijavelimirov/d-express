@@ -22,6 +22,19 @@ class D_Express_Checkout
         add_action('wp_ajax_dexpress_get_town_for_street', [$this, 'ajax_get_town_for_street']);
         add_action('wp_ajax_nopriv_dexpress_get_town_for_street', [$this, 'ajax_get_town_for_street']);
 
+        // NOVI: AJAX handler za dobijanje gradova za ulicu
+        add_action('wp_ajax_dexpress_get_towns_for_street', [$this, 'ajax_get_towns_for_street']);
+        add_action('wp_ajax_nopriv_dexpress_get_towns_for_street', [$this, 'ajax_get_towns_for_street']);
+
+        // Dodaj u init() metodi
+        add_action('wp_ajax_dexpress_search_streets_for_town', [$this, 'ajax_search_streets_for_town']);
+        add_action('wp_ajax_nopriv_dexpress_search_streets_for_town', [$this, 'ajax_search_streets_for_town']);
+
+        // NOVI: AJAX handler za pretragu svih gradova (za "Drugo mesto")
+        add_action('wp_ajax_dexpress_search_all_towns', [$this, 'ajax_search_all_towns']);
+        add_action('wp_ajax_nopriv_dexpress_search_all_towns', [$this, 'ajax_search_all_towns']);
+
+
         add_action('woocommerce_after_shipping_rate', array($this, 'add_dispenser_selection'), 10, 2);
         add_action('wp_footer', array($this, 'add_dispenser_modal'));
 
@@ -165,11 +178,10 @@ class D_Express_Checkout
             'city' => [
                 'type'        => 'text',
                 'label'       => __('Grad', 'd-express-woo'),
-                'placeholder' => __('Grad će biti popunjen automatski', 'd-express-woo'),
+                'placeholder' => __('Naziv grada/mesta', 'd-express-woo'),
                 'required'    => true,
                 'class'       => ['form-row-wide', 'dexpress-city'],
                 'priority'    => 60,
-                'custom_attributes' => ['readonly' => 'readonly'],
             ],
             'city_id' => [
                 'type'     => 'hidden',
@@ -227,7 +239,40 @@ class D_Express_Checkout
         require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/class-dexpress-validator.php';
         D_Express_Validator::validate_checkout();
     }
+    /**
+     * AJAX: Pretraga ulica za određeni grad
+     */
+    public function ajax_search_streets_for_town()
+    {
+        check_ajax_referer('dexpress-frontend-nonce', 'nonce');
 
+        global $wpdb;
+        $search = sanitize_text_field($_GET['term'] ?? '');
+        $town_id = intval($_GET['town_id'] ?? 0);
+
+        if (empty($search) || strlen($search) < 2 || !$town_id) {
+            wp_send_json([]);
+        }
+
+        $streets = $wpdb->get_results($wpdb->prepare(
+            "SELECT DISTINCT s.name
+         FROM {$wpdb->prefix}dexpress_streets s
+         WHERE s.TId = %d AND s.name LIKE %s
+         ORDER BY s.name ASC LIMIT 50",
+            $town_id,
+            '%' . $wpdb->esc_like($search) . '%'
+        ));
+
+        $results = array_map(function ($street) {
+            return [
+                'id'    => $street->name,
+                'label' => $street->name,
+                'value' => $street->name,
+            ];
+        }, $streets);
+
+        wp_send_json($results);
+    }
     /**
      * Čuvanje checkout polja u bazi
      */
@@ -307,7 +352,105 @@ class D_Express_Checkout
             substr($api_phone, 8);
     }
     /**
-     * AJAX: Pretraga ulica
+     * AJAX: Pretraga svih gradova sa naseljima (za "Drugo mesto")
+     */
+    public function ajax_search_all_towns()
+    {
+        check_ajax_referer('dexpress-frontend-nonce', 'nonce');
+
+        global $wpdb;
+        $search = sanitize_text_field($_GET['term'] ?? '');
+
+        if (empty($search) || strlen($search) < 2) {
+            wp_send_json([]);
+        }
+
+        $towns = $wpdb->get_results($wpdb->prepare(
+            "SELECT DISTINCT t.id, t.name, t.display_name, t.postal_code, t.municipality_id,
+        m.name as municipality_name
+ FROM {$wpdb->prefix}dexpress_towns t
+ LEFT JOIN {$wpdb->prefix}dexpress_municipalities m ON t.municipality_id = m.id
+ WHERE (t.name LIKE %s OR t.display_name LIKE %s)
+ ORDER BY t.display_name, t.name ASC LIMIT 50",
+            '%' . $wpdb->esc_like($search) . '%',
+            '%' . $wpdb->esc_like($search) . '%'
+        ));
+
+        $results = array_map(function ($town) {
+            // Koristi display_name ako postoji (naselje), inače name
+            $display_name = !empty($town->display_name) ? $town->display_name : $town->name;
+
+            return [
+                'id'          => $town->id,
+                'label'       => $display_name, // SAMO NAZIV GRADA!
+                'value'       => $display_name,
+                'town_id'     => $town->id,
+                'postal_code' => $town->postal_code,
+            ];
+        }, $towns);
+
+        wp_send_json($results);
+    }
+    /**
+     * AJAX: Dobijanje gradova za izabranu ulicu (sa naseljima)
+     */
+    public function ajax_get_towns_for_street()
+    {
+        check_ajax_referer('dexpress-frontend-nonce', 'nonce');
+
+        global $wpdb;
+        $street_name = sanitize_text_field($_POST['street_name'] ?? '');
+
+        if (empty($street_name)) {
+            wp_send_json_error(['message' => 'Naziv ulice je obavezan.']);
+        }
+
+        // Cache key
+        $cache_key = 'dexpress_towns_for_street_' . md5($street_name);
+        $cached_towns = get_transient($cache_key);
+
+        if ($cached_towns !== false) {
+            wp_send_json_success(['towns' => $cached_towns]);
+            return;
+        }
+
+        // Dobij sve gradove koji imaju ovu ulicu - SA NASELJIMA
+        $towns = $wpdb->get_results($wpdb->prepare(
+            "SELECT DISTINCT t.id, t.name, t.display_name, t.postal_code, t.municipality_id, 
+        m.name as municipality_name, s.id as street_id
+ FROM {$wpdb->prefix}dexpress_streets s
+ JOIN {$wpdb->prefix}dexpress_towns t ON s.TId = t.id
+ LEFT JOIN {$wpdb->prefix}dexpress_municipalities m ON t.municipality_id = m.id
+ WHERE s.name = %s AND s.deleted != 1
+ ORDER BY t.display_name, t.name ASC",
+            $street_name
+        ));
+
+        $towns_data = array_map(function ($town) {
+            // Koristi display_name ako postoji (naselje), inače name
+            $display_name = !empty($town->display_name) ? $town->display_name : $town->name;
+
+            // SAMO naziv grada bez PTT broja
+            $simple_display = $display_name;
+
+            return [
+                'id'          => $town->id,
+                'name'        => $town->name,
+                'display_name' => $display_name,
+                'postal_code' => $town->postal_code,
+                'street_id'   => $town->street_id,
+                'municipality_name' => $town->municipality_name,
+                'display_simple' => $simple_display
+            ];
+        }, $towns);
+
+        // Cache na 1 sat
+        set_transient($cache_key, $towns_data, HOUR_IN_SECONDS);
+
+        wp_send_json_success(['towns' => $towns_data]);
+    }
+    /**
+     * AJAX: Pretraga ulica (distinct po nazivu)
      */
     public function ajax_search_streets()
     {
@@ -320,23 +463,20 @@ class D_Express_Checkout
             wp_send_json([]);
         }
 
+        // Distinct ulice po nazivu - bez vezivanja za grad
         $streets = $wpdb->get_results($wpdb->prepare(
-            "SELECT s.id, s.name, t.id as town_id, t.name as town_name, t.postal_code
-             FROM {$wpdb->prefix}dexpress_streets s
-             JOIN {$wpdb->prefix}dexpress_towns t ON s.TId = t.id
-             WHERE s.name LIKE %s
-             ORDER BY s.name, t.name ASC LIMIT 50",
+            "SELECT DISTINCT s.name
+         FROM {$wpdb->prefix}dexpress_streets s
+         WHERE s.name LIKE %s
+         ORDER BY s.name ASC LIMIT 50",
             '%' . $wpdb->esc_like($search) . '%'
         ));
 
         $results = array_map(function ($street) {
             return [
-                'id'          => $street->id,
-                'label'       => "{$street->name} ({$street->town_name} - {$street->postal_code})",
-                'value'       => $street->name,
-                'town_id'     => $street->town_id,
-                'town_name'   => $street->town_name,
-                'postal_code' => $street->postal_code,
+                'id'    => $street->name, // koristimo naziv kao ID
+                'label' => $street->name,
+                'value' => $street->name,
             ];
         }, $streets);
 
