@@ -239,20 +239,38 @@ class D_Express_Validator
         }
 
         // Provera telefona
-        if (empty($_POST['billing_phone'])) {
-            wc_add_notice(
-                __('Broj telefona je obavezan za D Express dostavu.', 'd-express-woo'),
-                'error',
-                ['data-id' => 'billing_phone']
-            );
-            $has_errors = true;
-        } elseif (!self::validate_phone_format($_POST['billing_phone'])) {
-            wc_add_notice(
-                __('Broj telefona mora biti u formatu +3816XXXXXXXX ili +3811XXXXXXXX.', 'd-express-woo'),
-                'error',
-                ['data-id' => 'billing_phone']
-            );
-            $has_errors = true;
+        // Poboljšana validacija telefona - ZAMENI POSTOJEĆU LOGIKU
+        if (empty($_POST['dexpress_phone_api'])) {
+            // Ako nema API telefon, pokušaj sa standardnim
+            if (empty($_POST['billing_phone'])) {
+                wc_add_notice(
+                    __('Broj telefona je obavezan za D Express dostavu.', 'd-express-woo'),
+                    'error',
+                    ['data-id' => 'billing_phone']
+                );
+                $has_errors = true;
+            } else {
+                // Pokušaj validirati standardni format
+                if (!self::validate_phone_format($_POST['billing_phone'])) {
+                    wc_add_notice(
+                        __('Broj telefona mora biti valjan srpski broj.', 'd-express-woo'),
+                        'error',
+                        ['data-id' => 'billing_phone']
+                    );
+                    $has_errors = true;
+                }
+            }
+        } else {
+            // Validacija API telefona
+            $api_phone = sanitize_text_field($_POST['dexpress_phone_api']);
+            if (!preg_match('/^(381[1-9][0-9]{7,8}|38167[0-9]{6,8})$/', $api_phone)) {
+                wc_add_notice(
+                    __('Broj telefona mora biti valjan srpski broj (mobilni ili fiksni).', 'd-express-woo'),
+                    'error',
+                    ['data-id' => 'billing_phone']
+                );
+                $has_errors = true;
+            }
         }
 
         // Sprečavanje standardnih WooCommerce validacija za ova polja
@@ -806,7 +824,7 @@ class D_Express_Validator
      */
     public static function validate_content($content)
     {
-       
+
         $pattern = '/^([\-,\(\)\/a-zA-ZžćčđšĐŠĆŽČ_0-9]+\.?)( [\-,\(\)\/a-zA-ZžćčđšĐŠĆŽČ_0-9]+\.?)*$/';
         return preg_match($pattern, $content) && strlen($content) <= 50;
     }

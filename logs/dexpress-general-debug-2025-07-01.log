@@ -25,3 +25,14 @@
 {"timestamp":"2025-07-01 13:34:03","context":"general","level":"debug","message":"Checkout order processed: 911"}
 {"timestamp":"2025-07-01 13:34:03","context":"general","level":"debug","message":"Has D Express shipping: Yes"}
 {"timestamp":"2025-07-01 13:34:03","context":"general","level":"debug","message":"Order processed - manual shipment creation required: 911"}
+{"timestamp":"2025-07-01 13:42:07","context":"general","level":"debug","message":"[SIMULATION] Dodat status 3 za pošiljku TT0000000008"}
+{"timestamp":"2025-07-01 13:42:07","context":"general","level":"debug","message":"[SIMULATION] Dodat status 3 za pošiljku TT0000000009"}
+{"timestamp":"2025-07-01 13:46:42","context":"general","level":"debug","message":"[SIMULATION] Dodat status 3 za pošiljku TT0000000013"}
+{"timestamp":"2025-07-01 13:46:43","context":"general","level":"debug","message":"[SIMULATION] Dodat status 3 za pošiljku TT0000000014"}
+{"timestamp":"2025-07-01 13:48:43","context":"general","level":"debug","message":"[SIMULATION] Dodat status 0 za pošiljku TT0000000029"}
+{"timestamp":"2025-07-01 13:48:43","context":"general","level":"debug","message":"[SIMULATION] Dodat status 0 za pošiljku TT0000000030"}
+{"timestamp":"2025-07-01 13:49:43","context":"general","level":"debug","message":"[SIMULATION] Dodat status 0 za pošiljku TT0000000031"}
+{"timestamp":"2025-07-01 13:54:59","context":"general","level":"debug","message":"[SIMULATION] Dodat status 3 za pošiljku TT0000000018"}
+{"timestamp":"2025-07-01 13:54:59","context":"general","level":"debug","message":"[SIMULATION] Dodat status 3 za pošiljku TT0000000019"}
+{"timestamp":"2025-07-01 14:10:05","context":"general","level":"debug","message":"[SIMULATION] Dodat status 3 za pošiljku TT0000000023"}
+{"timestamp":"2025-07-01 14:10:05","context":"general","level":"debug","message":"[SIMULATION] Dodat status 3 za pošiljku TT0000000024"}

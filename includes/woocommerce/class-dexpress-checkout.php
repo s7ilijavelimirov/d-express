@@ -247,13 +247,11 @@ class D_Express_Checkout
 
                     // Posebna sanitizacija za address_desc
                     if ($key === 'address_desc') {
-                        // Uklanja sve nedozvoljene karaktere
                         $value = preg_replace('/[^a-zžćčđšA-ZĐŠĆŽČ:,._0-9\-\s]/u', '', $value);
-                        $value = preg_replace('/\s+/', ' ', $value); // Uklanja višestruke razmake
-                        $value = trim($value); // Uklanja razmak na početku i kraju
-                        $value = preg_replace('/^\./', '', $value); // Osigurava da tačka nije na početku
+                        $value = preg_replace('/\s+/', ' ', $value);
+                        $value = trim($value);
+                        $value = preg_replace('/^\./', '', $value);
 
-                        // Ograničava dužinu na 150 karaktera
                         if (mb_strlen($value, 'UTF-8') > 150) {
                             $value = mb_substr($value, 0, 150, 'UTF-8');
                         }
@@ -263,12 +261,10 @@ class D_Express_Checkout
                 }
             }
 
-            // Provera i sinhronizacija standardnih polja
+            // Sinhronizacija standardnih polja
             if (!empty($_POST["{$type}_street"]) && !empty($_POST["{$type}_number"])) {
                 $street = sanitize_text_field($_POST["{$type}_street"]);
                 $number = sanitize_text_field($_POST["{$type}_number"]);
-
-                // Postavi address_1 kao kombinaciju ulice i broja
                 $updated_values["_{$type}_address_1"] = $street . ' ' . $number;
             }
 
@@ -278,19 +274,38 @@ class D_Express_Checkout
             }
         }
 
-        // Čuvanje telefona u API formatu
-        if (isset($_POST['billing_phone'])) {
+        if (isset($_POST['dexpress_phone_api'])) {
+            // Prioritet: API format iz JS-a
+            $api_phone = sanitize_text_field($_POST['dexpress_phone_api']);
+            update_post_meta($order_id, '_billing_phone_api_format', $api_phone);
+
+            // Kreiraj display format za prikaz
+            $display_phone = $this->format_display_phone($api_phone);
+            update_post_meta($order_id, '_billing_phone', $display_phone);
+        } elseif (isset($_POST['billing_phone'])) {
+            // Fallback za stari sistem
             $phone = sanitize_text_field($_POST['billing_phone']);
             update_post_meta($order_id, '_billing_phone', $phone);
 
-            // Sačuvaj API format za korišćenje u API
+            // Pokušaj izvući API format
             if (strpos($phone, '+381') === 0) {
-                $api_phone = substr($phone, 1); // ukloni samo + sa početka
+                $api_phone = substr($phone, 1); // ukloni +
                 update_post_meta($order_id, '_billing_phone_api_format', $api_phone);
             }
         }
     }
+    private function format_display_phone($api_phone)
+    {
+        if (strlen($api_phone) < 10) {
+            return '+' . $api_phone;
+        }
 
+        // 381XXXXXXXXX -> +381 XX XXX XXXX
+        return '+' . substr($api_phone, 0, 3) . ' ' .
+            substr($api_phone, 3, 2) . ' ' .
+            substr($api_phone, 5, 3) . ' ' .
+            substr($api_phone, 8);
+    }
     /**
      * AJAX: Pretraga ulica
      */

@@ -189,8 +189,8 @@ class D_Express_Admin
     {
         $custom_css = "
             #adminmenu .toplevel_page_dexpress-settings .wp-menu-image img {
-                padding: 2px 0px !important;
-                width: 30px !important;
+                padding: 4px 0px !important;
+                width: 26px !important;
                 height: auto !important;
                 
             }
