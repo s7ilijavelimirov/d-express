@@ -1,0 +1,637 @@
+/* D-Express Dispenser Modal - Kompletno novi CSS */
+
+/* Modal overlay */
+#dexpress-dispenser-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 999999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+#dexpress-dispenser-modal.show {
+    display: flex;
+}
+
+/* Modal container */
+.dexpress-modal-content {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    width: 95%;
+    max-width: 1200px;
+    height: 90vh;
+    max-height: 800px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* Header */
+.dexpress-modal-header {
+    background: linear-gradient(135deg, #e60054, #cc0048);
+    color: white;
+    padding: 20px 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 12px 12px 0 0;
+}
+
+.dexpress-modal-header h3 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.dexpress-modal-close {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    font-size: 24px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+.dexpress-modal-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* Body */
+.dexpress-modal-body {
+    padding: 25px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Town filter */
+.dexpress-town-filter {
+    margin-bottom: 20px;
+    position: relative;
+}
+
+.dexpress-town-filter label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #333;
+    font-size: 14px;
+}
+
+.dexpress-town-filter input {
+    width: 100%;
+    padding: 12px 45px 12px 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    box-sizing: border-box;
+}
+
+.dexpress-town-filter input:focus {
+    outline: none;
+    border-color: #e60054;
+    box-shadow: 0 0 0 3px rgba(230, 0, 84, 0.1);
+}
+
+.dexpress-town-filter .reset-filter {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #e0e0e0;
+    border: none;
+    color: #666;
+    font-size: 16px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.dexpress-town-filter .reset-filter:hover {
+    background: #e60054;
+    color: white;
+}
+
+/* Town suggestions dropdown */
+.dexpress-town-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 2px solid #e0e0e0;
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    display: none;
+}
+
+.dexpress-town-suggestions.show {
+    display: block;
+}
+
+.town-suggestion {
+    padding: 12px 15px;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background 0.2s;
+    font-size: 14px;
+}
+
+.town-suggestion:last-child {
+    border-bottom: none;
+}
+
+.town-suggestion:hover,
+.town-suggestion.active {
+    background: #f8f9ff;
+    color: #e60054;
+}
+
+/* Main container */
+.dexpress-dispensers-container {
+    display: flex;
+    gap: 20px;
+    flex: 1;
+    min-height: 0;
+}
+
+/* Map */
+#dexpress-dispensers-map {
+    flex: 1.2;
+    background: #f5f5f5;
+    border-radius: 8px;
+    border: 2px solid #e0e0e0;
+    overflow: hidden;
+    position: relative;
+    min-height: 400px;
+}
+
+.dexpress-map-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #666;
+    text-align: center;
+    padding: 40px;
+    flex-direction: column;
+}
+
+.dexpress-map-placeholder .icon {
+    font-size: 48px;
+    color: #ccc;
+    margin-bottom: 15px;
+}
+
+/* Dispensers list */
+#dexpress-dispensers-list {
+    flex: 1;
+    background: white;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    overflow-y: auto;
+    max-height: 100%;
+}
+
+/* Town groups */
+.dexpress-dispensers-town h4 {
+    margin: 0;
+    padding: 15px 20px;
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    color: #495057;
+    font-size: 15px;
+    font-weight: 600;
+    border-bottom: 2px solid #dee2e6;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.dexpress-dispensers-town h4::after {
+    content: attr(data-count);
+    background: #e60054;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* Dispenser items */
+.dexpress-dispenser-item {
+    padding: 18px 20px;
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    position: relative;
+}
+
+.dexpress-dispenser-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: transparent;
+    transition: background 0.2s;
+}
+
+.dexpress-dispenser-item:hover {
+    background: #f8f9ff;
+    transform: translateX(2px);
+}
+
+.dexpress-dispenser-item:hover::before {
+    background: #e60054;
+}
+
+.dexpress-dispenser-item.selected {
+    background: #e8f4f8;
+    border-left: 4px solid #e60054;
+}
+
+.dexpress-dispenser-item.selected::before {
+    background: #e60054;
+}
+
+/* Dispenser content */
+.dispenser-content {
+    flex: 1;
+    margin-right: 15px;
+}
+
+.dispenser-name {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 15px;
+    margin-bottom: 6px;
+    display: block;
+}
+
+.dispenser-address {
+    color: #666;
+    font-size: 13px;
+    margin-bottom: 4px;
+    line-height: 1.3;
+}
+
+.dispenser-info {
+    font-size: 12px;
+    color: #888;
+    line-height: 1.3;
+}
+
+.dispenser-payment {
+    display: inline-flex;
+    gap: 6px;
+    margin-top: 4px;
+}
+
+.payment-badge {
+    background: #e9ecef;
+    color: #495057;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 500;
+}
+
+.payment-badge.cash {
+    background: #d4edda;
+    color: #155724;
+}
+
+.payment-badge.card {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+/* Select button */
+.dispenser-select-btn {
+    background: linear-gradient(135deg, #e60054, #cc0048);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    box-shadow: 0 2px 4px rgba(230, 0, 84, 0.2);
+}
+
+.dispenser-select-btn:hover {
+    background: linear-gradient(135deg, #cc0048, #b8003f);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(230, 0, 84, 0.3);
+}
+
+.dispenser-select-btn:active {
+    transform: translateY(0);
+}
+
+/* Map info window */
+.dexpress-dispenser-info {
+    min-width: 300px;
+    padding: 20px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.dexpress-dispenser-info h4 {
+    margin: 0 0 12px 0;
+    color: #2c3e50;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.dexpress-dispenser-info p {
+    margin: 8px 0;
+    font-size: 14px;
+    line-height: 1.4;
+    color: #555;
+}
+
+.dexpress-dispenser-info strong {
+    color: #2c3e50;
+}
+
+.dexpress-select-this-dispenser {
+    background: linear-gradient(135deg, #e60054, #cc0048);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 15px;
+    transition: all 0.2s;
+    width: 100%;
+    box-shadow: 0 2px 4px rgba(230, 0, 84, 0.2);
+}
+
+.dexpress-select-this-dispenser:hover {
+    background: linear-gradient(135deg, #cc0048, #b8003f);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(230, 0, 84, 0.3);
+}
+
+/* Loading states */
+.dexpress-loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.95);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    z-index: 1000;
+    border-radius: 8px;
+}
+
+.dexpress-loader {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #e60054;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 15px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.dexpress-loading-text {
+    color: #666;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* No results */
+.no-results {
+    padding: 60px 20px;
+    text-align: center;
+    color: #888;
+    font-size: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
+.no-results::before {
+    content: "🏪";
+    font-size: 48px;
+    margin-bottom: 15px;
+}
+
+.no-results-message {
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+.no-results-hint {
+    font-size: 14px;
+    color: #aaa;
+}
+
+/* Footer */
+.dexpress-modal-footer {
+    padding: 20px 25px;
+    border-top: 1px solid #e0e0e0;
+    background: #f8f9fa;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 0 0 12px 12px;
+}
+
+.dexpress-modal-close-btn {
+    background: #6c757d;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.dexpress-modal-close-btn:hover {
+    background: #5a6268;
+}
+
+/* Status indicators */
+.dispenser-status {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 8px;
+}
+
+.dispenser-status.online {
+    background: #28a745;
+}
+
+.dispenser-status.offline {
+    background: #dc3545;
+}
+
+.dispenser-status.unknown {
+    background: #6c757d;
+}
+
+/* Responsive design */
+@media (max-width: 1024px) {
+    .dexpress-modal-content {
+        width: 98%;
+        height: 95vh;
+    }
+    
+    .dexpress-dispensers-container {
+        flex-direction: column;
+    }
+    
+    #dexpress-dispensers-map,
+    #dexpress-dispensers-list {
+        flex: none;
+        height: 300px;
+    }
+}
+
+@media (max-width: 768px) {
+    .dexpress-modal-header {
+        padding: 15px 20px;
+    }
+    
+    .dexpress-modal-header h3 {
+        font-size: 18px;
+    }
+    
+    .dexpress-modal-body {
+        padding: 20px;
+    }
+    
+    .dexpress-dispensers-container {
+        gap: 15px;
+    }
+    
+    .dexpress-dispenser-item {
+        padding: 15px;
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .dispenser-content {
+        margin-right: 0;
+        margin-bottom: 10px;
+    }
+    
+    .dispenser-select-btn {
+        align-self: flex-start;
+    }
+}
+
+@media (max-width: 480px) {
+    .dexpress-modal-content {
+        width: 100%;
+        height: 100vh;
+        border-radius: 0;
+    }
+    
+    .dexpress-modal-header {
+        border-radius: 0;
+    }
+    
+    .dexpress-modal-footer {
+        border-radius: 0;
+    }
+    
+    #dexpress-dispensers-map,
+    #dexpress-dispensers-list {
+        height: 250px;
+    }
+}
+
+/* Utility classes */
+.dexpress-container-relative {
+    position: relative !important;
+}
+
+.dexpress-hidden {
+    display: none !important;
+}
+
+.dexpress-visible {
+    display: block !important;
+}
+
+/* Custom scrollbar for dispensers list */
+#dexpress-dispensers-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+#dexpress-dispensers-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+#dexpress-dispensers-list::-webkit-scrollbar-thumb {
+    background: #e60054;
+    border-radius: 3px;
+}
+
+#dexpress-dispensers-list::-webkit-scrollbar-thumb:hover {
+    background: #cc0048;
+}

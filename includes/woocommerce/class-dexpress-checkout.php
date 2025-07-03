@@ -67,72 +67,143 @@ class D_Express_Checkout
             return;
         }
 
-        // HTML za modal
+        // HTML za modal sa novim CSS klasama
 ?>
-        <div id="dexpress-dispenser-modal" style="display: none;">
-            <div class="dexpress-modal-content" style="width: 90%; max-width: 1000px;">
+        <div id="dexpress-dispenser-modal">
+            <div class="dexpress-modal-content">
                 <div class="dexpress-modal-header">
                     <h3><?php _e('Izaberite paketomat za dostavu', 'd-express-woo'); ?></h3>
-                    <span class="dexpress-modal-close">&times;</span>
+                    <button type="button" class="dexpress-modal-close">&times;</button>
                 </div>
+
                 <div class="dexpress-modal-body">
-                    <!-- Filter gradova ostaje gore -->
+                    <!-- Filter gradova -->
                     <div class="dexpress-town-filter">
                         <label for="dexpress-town-filter"><?php _e('Filtrirajte po gradu:', 'd-express-woo'); ?></label>
-                        <input type="text" id="dexpress-town-filter" placeholder="Započnite unos naziva grada..." autocomplete="off">
+                        <input type="text" id="dexpress-town-filter" placeholder="<?php _e('Započnite unos naziva grada...', 'd-express-woo'); ?>" autocomplete="off">
                         <div id="dexpress-town-suggestions" class="dexpress-town-suggestions"></div>
                     </div>
 
                     <!-- Glavni kontejner za mapu i listu -->
                     <div class="dexpress-dispensers-container">
-                        <div id="dexpress-dispensers-map"></div>
-                        <div id="dexpress-dispensers-list"></div>
+                        <div id="dexpress-dispensers-map">
+                            <div class="dexpress-map-placeholder">
+                                <div class="icon">🗺️</div>
+                                <p><?php _e('Učitavanje mape...', 'd-express-woo'); ?></p>
+                            </div>
+                        </div>
+                        <div id="dexpress-dispensers-list">
+                            <div class="no-results">
+                                <div class="no-results-message"><?php _e('Učitavanje paketomata...', 'd-express-woo'); ?></div>
+                                <div class="no-results-hint"><?php _e('Molimo sačekajte', 'd-express-woo'); ?></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 <div class="dexpress-modal-footer">
-                    <button type="button" class="button button-secondary dexpress-modal-close"><?php _e('Odustani', 'd-express-woo'); ?></button>
+                    <button type="button" class="dexpress-modal-close-btn dexpress-modal-close"><?php _e('Odustani', 'd-express-woo'); ?></button>
+                    <div class="modal-info">
+                        <small><?php _e('Izaberite paketomat koji vam odgovara', 'd-express-woo'); ?></small>
+                    </div>
                 </div>
             </div>
         </div>
     <?php
     }
+
     /**
-     * AJAX: Dobavljanje liste gradova sa paketomatima
+     * AJAX: Dobavljanje liste gradova sa paketomatima - AŽURIRANO
      */
     public function ajax_get_towns_list()
     {
         check_ajax_referer('dexpress-frontend-nonce', 'nonce');
 
+        dexpress_log("=== ajax_get_towns_list DEBUG ===", 'debug');
+
         // Pokušaj dobiti iz cache-a
-        $towns = get_transient('dexpress_dispenser_towns');
+        $cache_key = 'dexpress_dispenser_towns';
+        $towns = get_transient($cache_key);
 
         if ($towns === false) {
+            dexpress_log("Cache miss for towns, querying database...", 'debug');
+
             global $wpdb;
 
-            // Dohvati samo gradove koji imaju paketomate
-            $towns = $wpdb->get_results("
-            SELECT DISTINCT t.id, t.name, t.postal_code 
+            // ISPRAVKA: Dodajemo više podataka o gradovima
+            $query = "
+            SELECT DISTINCT 
+                t.id, 
+                t.name, 
+                COALESCE(t.postal_code, '') as postal_code,
+                COALESCE(t.display_name, t.name) as display_name,
+                COUNT(d.id) as dispenser_count
             FROM {$wpdb->prefix}dexpress_towns t
-            JOIN {$wpdb->prefix}dexpress_dispensers d ON t.id = d.town_id
-            WHERE d.deleted != 1
+            INNER JOIN {$wpdb->prefix}dexpress_dispensers d ON t.id = d.town_id
+            WHERE (d.deleted IS NULL OR d.deleted != 1)
+            GROUP BY t.id, t.name, t.postal_code, t.display_name
+            HAVING dispenser_count > 0
             ORDER BY t.name
-        ");
+        ";
 
-            // Sačuvaj u cache na 24 sata
-            set_transient('dexpress_dispenser_towns', $towns, 24 * HOUR_IN_SECONDS);
+            dexpress_log("Towns SQL Query: $query", 'debug');
+
+            $results = $wpdb->get_results($query, ARRAY_A);
+
+            dexpress_log("Towns query results count: " . count($results), 'debug');
+
+            if ($wpdb->last_error) {
+                dexpress_log("Towns SQL Error: " . $wpdb->last_error, 'error');
+                wp_send_json_error(['message' => 'Database error: ' . $wpdb->last_error]);
+                return;
+            }
+
+            // Formatiraj za frontend
+            $towns_data = array();
+            foreach ($results as $town) {
+                $towns_data[] = array(
+                    'id' => intval($town['id']),
+                    'name' => $town['name'],
+                    'display_name' => $town['display_name'],
+                    'postal_code' => $town['postal_code'],
+                    'dispenser_count' => intval($town['dispenser_count'])
+                );
+            }
+
+            // Cache na 24 sata
+            set_transient($cache_key, $towns_data, 24 * HOUR_IN_SECONDS);
+
+            dexpress_log("Towns cached: " . count($towns_data), 'debug');
+        } else {
+            $towns_data = $towns;
+            dexpress_log("Towns from cache: " . count($towns_data), 'debug');
         }
 
-        wp_send_json_success(array('towns' => $towns));
+        wp_send_json_success(array('towns' => $towns_data));
     }
     /**
-     * AJAX: Dobavljanje liste paketomata za mapu
+     * AJAX: Dobavljanje liste paketomata za mapu - AŽURIRANO SA DEBUG-om
      */
     public function ajax_get_dispensers()
     {
         check_ajax_referer('dexpress-frontend-nonce', 'nonce');
 
-        $dispensers = $this->get_dispensers_list();
+        dexpress_log("=== ajax_get_dispensers DEBUG ===", 'debug');
+
+        $dispensers = $this->get_cached_dispensers();
+
+        dexpress_log("AJAX get_dispensers: Vraćam " . count($dispensers) . " paketomata", 'debug');
+
+        if (!empty($dispensers)) {
+            dexpress_log("First dispenser from AJAX: " . print_r($dispensers[0], true), 'debug');
+        } else {
+            dexpress_log("WARNING: Nema paketomata u odgovoru!", 'warning');
+
+            // Dodatni debug - proveri direktno bazu
+            global $wpdb;
+            $count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}dexpress_dispensers WHERE (deleted IS NULL OR deleted != 1)");
+            dexpress_log("Direct DB count: $count", 'debug');
+        }
 
         wp_send_json_success(array('dispensers' => $dispensers));
     }
@@ -581,20 +652,19 @@ class D_Express_Checkout
             return;
         }
 
-        // Učitavanje jQuery UI Autocomplete
+        // jQuery UI Autocomplete
         wp_enqueue_script('jquery-ui-autocomplete');
         wp_enqueue_style('jquery-ui', 'https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css');
 
-        // Učitavanje Select2
+        // Select2
         if (!wp_script_is('select2', 'registered')) {
             wp_register_script('select2', 'https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js', array('jquery'), '4.0.13', true);
             wp_register_style('select2', 'https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css', array(), '4.0.13');
         }
-
         wp_enqueue_script('select2');
         wp_enqueue_style('select2');
 
-        // Učitavanje naših skripti
+        // Osnovni checkout script
         wp_enqueue_script(
             'dexpress-checkout',
             DEXPRESS_WOO_PLUGIN_URL . 'assets/js/dexpress-checkout.js',
@@ -603,7 +673,15 @@ class D_Express_Checkout
             true
         );
 
-        // Učitavanje naših stilova
+        // NOVI - Dispenser CSS
+        wp_enqueue_style(
+            'dexpress-dispenser',
+            DEXPRESS_WOO_PLUGIN_URL . 'assets/css/dexpress-dispenser.css',
+            array(),
+            DEXPRESS_WOO_VERSION
+        );
+
+        // Osnovni checkout CSS (uklonjen dispenser CSS odatle)
         wp_enqueue_style(
             'dexpress-checkout',
             DEXPRESS_WOO_PLUGIN_URL . 'assets/css/dexpress-checkout.css',
@@ -611,10 +689,32 @@ class D_Express_Checkout
             DEXPRESS_WOO_VERSION
         );
 
-        // Lokalizacija skripte
+        // Google Maps API - samo ako je ključ podešen
+        $google_maps_api_key = get_option('dexpress_google_maps_api_key', '');
+        if (!empty($google_maps_api_key)) {
+            wp_enqueue_script(
+                'google-maps',
+                'https://maps.googleapis.com/maps/api/js?key=' . $google_maps_api_key . '&v=weekly&libraries=geometry',
+                array(),
+                null,
+                true
+            );
+        }
+
+        // Dispenser modal JavaScript
+        wp_enqueue_script(
+            'dexpress-dispenser-modal',
+            DEXPRESS_WOO_PLUGIN_URL . 'assets/js/dexpress-dispenser-modal.js',
+            array('jquery'),
+            DEXPRESS_WOO_VERSION,
+            true
+        );
+
+        // Lokalizacija
         wp_localize_script('dexpress-checkout', 'dexpressCheckout', array(
             'ajaxUrl' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('dexpress-frontend-nonce'),
+            'hasGoogleMaps' => !empty($google_maps_api_key),
             'i18n' => array(
                 'selectStreet' => __('Izaberite ulicu', 'd-express-woo'),
                 'enterStreet' => __('Unesite ulicu', 'd-express-woo'),
@@ -626,34 +726,9 @@ class D_Express_Checkout
                 'enterNumber' => __('Unesite kućni broj', 'd-express-woo'),
                 'numberNoSpaces' => __('Kućni broj mora biti bez razmaka', 'd-express-woo'),
                 'confirm' => __('Potvrdi', 'd-express-woo'),
-                // Dodato za validaciju address_desc
                 'invalidAddressDesc' => __('Neispravan format dodatnih informacija o adresi. Dozvoljeni su samo slova, brojevi, razmaci i znakovi: , . : - _', 'd-express-woo')
             )
         ));
-
-        // Google Maps API - koristimo API ključ ako je dostupan
-        $google_maps_api_key = get_option('dexpress_google_maps_api_key', '');
-
-        $google_maps_url = empty($google_maps_api_key)
-            ? 'https://maps.googleapis.com/maps/api/js?v=weekly'
-            : 'https://maps.googleapis.com/maps/api/js?key=' . $google_maps_api_key . '&v=weekly';
-
-        wp_enqueue_script(
-            'google-maps',
-            $google_maps_url,
-            array(),
-            null,
-            true
-        );
-
-        // Učitavanje JS-a za paketomat modal
-        wp_enqueue_script(
-            'dexpress-dispenser-modal',
-            DEXPRESS_WOO_PLUGIN_URL . 'assets/js/dexpress-dispenser-modal.js',
-            array('jquery'),
-            DEXPRESS_WOO_VERSION,
-            true
-        );
     }
     /**
      * Dodaje izbor paketomata nakon opcije dostave
@@ -872,57 +947,126 @@ class D_Express_Checkout
 <?php
     }
     /**
-     * Dobavlja listu paketomata sa keširanjem
-     * 
-     * @param int $town_id ID grada za filtriranje (opciono)
-     * @return array Lista paketomata
+     * ZAMENI get_cached_dispensers METODU U class-dexpress-checkout.php
      */
     private function get_cached_dispensers($town_id = null)
     {
-        // Ključ za keširanje - uključujem town_id ako je prosleđen
-        $cache_key = 'dexpress_dispensers' . ($town_id ? '_town_' . $town_id : '_all');
+        global $wpdb;
 
-        // Pokušaj dobiti iz transient cache-a
-        $dispensers = get_transient($cache_key);
+        error_log("=== DEXPRESS DEBUG START ===");
+        error_log("Town ID filter: " . ($town_id ?: 'ALL'));
 
-        // Ako nema u cache-u, učitaj iz baze
-        if ($dispensers === false) {
-            global $wpdb;
+        // VAŽNO: PRIVREMENO SKIP CACHE ZA DEBUG
+        // $cache_key = 'dexpress_dispensers' . ($town_id ? '_town_' . $town_id : '_all');
+        // $dispensers = get_transient($cache_key);
+        // 
+        // if ($dispensers !== false) {
+        //     error_log("Found in cache: " . count($dispensers) . " dispensers");
+        //     return $dispensers;
+        // }
 
-            $query = "
-            SELECT d.id, d.name, d.address, d.town, d.town_id, 
-                   d.work_hours, d.work_days, d.coordinates, 
-                   d.pay_by_cash, d.pay_by_card, t.postal_code
-            FROM {$wpdb->prefix}dexpress_dispensers d
-            LEFT JOIN {$wpdb->prefix}dexpress_towns t ON d.town_id = t.id
-            WHERE d.deleted IS NULL OR d.deleted != 1
-        ";
+        error_log("Querying database directly (cache disabled for debug)...");
 
-            // Dodaj filter po gradu ako je prosleđen
-            if ($town_id) {
-                $query .= $wpdb->prepare(" AND d.town_id = %d", $town_id);
-            }
-
-            $query .= " ORDER BY d.town, d.name";
-
-            $dispensers = $wpdb->get_results($query);
-
-            // Sačuvaj u cache na 12 sati (može se izmeniti po potrebi)
-            set_transient($cache_key, $dispensers, 12 * HOUR_IN_SECONDS);
-
-            // Loguj operaciju
-            dexpress_structured_log('checkout', 'Učitani paketomati iz baze', 'debug', [
-                'count' => count($dispensers),
-                'town_id' => $town_id
-            ]);
-        } else {
-            // Loguj cache hit
-            dexpress_structured_log('checkout', 'Učitani paketomati iz cache-a', 'debug', [
-                'count' => count($dispensers),
-                'town_id' => $town_id
-            ]);
+        // Prvo jednostavan test da li tabela postoji
+        $table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$wpdb->prefix}dexpress_dispensers'");
+        if (!$table_exists) {
+            error_log("ERROR: Table dexpress_dispensers ne postoji!");
+            return array();
         }
 
+        // Broji ukupne paketomata
+        $total_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}dexpress_dispensers");
+        error_log("Ukupno paketomata u tabeli: $total_count");
+
+        $active_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}dexpress_dispensers WHERE (deleted IS NULL OR deleted != 1)");
+        error_log("Aktivnih paketomata: $active_count");
+
+        // Jednostavan query da vidiš šta se dešava
+        $query = "
+        SELECT 
+            d.id, 
+            d.name, 
+            d.address, 
+            d.town, 
+            d.town_id, 
+            d.work_hours, 
+            d.work_days,
+            d.latitude, 
+            d.longitude,
+            d.pay_by_cash, 
+            d.pay_by_card
+        FROM {$wpdb->prefix}dexpress_dispensers d
+        WHERE (d.deleted IS NULL OR d.deleted != 1)
+    ";
+
+        if ($town_id) {
+            $query .= $wpdb->prepare(" AND d.town_id = %d", $town_id);
+        }
+
+        $query .= " ORDER BY d.town, d.name";
+
+        error_log("SQL Query: $query");
+
+        $results = $wpdb->get_results($query, ARRAY_A);
+
+        error_log("Raw results count: " . count($results));
+
+        if ($wpdb->last_error) {
+            error_log("SQL ERROR: " . $wpdb->last_error);
+            return array();
+        }
+
+        if (empty($results)) {
+            error_log("WARNING: Query vratio 0 rezultata!");
+
+            // Debug: Pokušaj sa najjednostavnijim query-jem
+            $simple_test = $wpdb->get_results("SELECT id, name FROM {$wpdb->prefix}dexpress_dispensers LIMIT 3", ARRAY_A);
+            error_log("Simple test query results: " . print_r($simple_test, true));
+
+            return array();
+        }
+
+        // Format podataka
+        $dispensers = array();
+        foreach ($results as $index => $row) {
+         
+
+            // Dohvati postal_code iz towns tabele
+            $postal_code = '';
+            if (!empty($row['town_id'])) {
+                $postal_code = $wpdb->get_var($wpdb->prepare(
+                    "SELECT postal_code FROM {$wpdb->prefix}dexpress_towns WHERE id = %d",
+                    $row['town_id']
+                ));
+            }
+
+            $dispenser = array(
+                'id' => intval($row['id']),
+                'name' => $row['name'] ?: 'Unknown Dispenser',
+                'address' => $row['address'] ?: 'No Address',
+                'town' => $row['town'] ?: 'Unknown Town',
+                'town_id' => intval($row['town_id']),
+                'work_hours' => $row['work_hours'] ?: '0-24',
+                'work_days' => $row['work_days'] ?: 'Every Day',
+                'latitude' => !empty($row['latitude']) ? floatval($row['latitude']) : null,
+                'longitude' => !empty($row['longitude']) ? floatval($row['longitude']) : null,
+                'pay_by_cash' => intval($row['pay_by_cash']),
+                'pay_by_card' => intval($row['pay_by_card']),
+                'postal_code' => $postal_code ?: ''
+            );
+
+            $dispensers[] = $dispenser;
+        }
+
+        error_log("Final dispensers count: " . count($dispensers));
+        if (!empty($dispensers)) {
+            error_log("First dispenser sample: " . print_r($dispensers[0], true));
+        }
+
+        // PRIVREMENO NE CACHE-UJEMO ZA DEBUG
+        // set_transient($cache_key, $dispensers, 12 * HOUR_IN_SECONDS);
+
+        error_log("=== DEXPRESS DEBUG END ===");
         return $dispensers;
     }
     /**

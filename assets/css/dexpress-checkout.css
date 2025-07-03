@@ -29,7 +29,7 @@
     z-index: 9999 !important;
     background: #fff;
     font-family: inherit;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .ui-autocomplete .ui-menu-item {
@@ -175,18 +175,7 @@
     background: #555 !important;
 }
 
-/* Modal za paketomate - osnovno */
-#dexpress-dispenser-modal {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.4);
-    z-index: 99999;
-    overflow: auto;
-}
+
 
 .dexpress-modal-content {
     position: relative;
@@ -241,127 +230,6 @@
     background-color: #f5f5f5;
 }
 
-/* Kontejner za mapu i listu */
-.dexpress-dispensers-container {
-    display: flex;
-    gap: 15px;
-    height: 450px;
-    flex: 1;
-}
-
-#dexpress-dispensers-map {
-    flex: 1;
-    height: 100%;
-}
-
-#dexpress-dispensers-list {
-    flex: 1;
-    height: 100%;
-    overflow-y: auto;
-    background: #fff;
-}
-
-/* Lista paketomata */
-.dexpress-dispensers-town h4 {
-    margin: 0;
-    padding: 12px;
-    background-color: #f8f8f8;
-    font-size: 14px;
-    font-weight: 600;
-    position: sticky;
-    top: 0;
-    z-index: 5;
-}
-
-.dexpress-dispenser-item {
-    padding: 12px;
-    cursor: pointer;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-}
-
-.dexpress-dispenser-item:hover {
-    background-color: #f8f8f8;
-}
-
-.dexpress-dispenser-item.selected {
-    background-color: #e8f4f8;
-}
-
-.dispenser-content {
-    flex: 1;
-}
-
-.dexpress-dispenser-name {
-    font-weight: 600;
-    margin-bottom: 4px;
-    font-size: 14px;
-}
-
-.dexpress-dispenser-address {
-    font-size: 13px;
-    color: #666;
-    margin-bottom: 4px;
-}
-
-.dexpress-dispenser-hours {
-    font-size: 12px;
-    color: #888;
-}
-
-.dispenser-select-btn {
-    background: #666;
-    color: white;
-    border: none;
-    padding: 6px 12px;
-    cursor: pointer;
-    font-size: 12px;
-    margin-left: 10px;
-}
-
-.dispenser-select-btn:hover {
-    background: #555;
-}
-
-.dexpress-dispenser-item.selected .dispenser-select-btn {
-    background: #28a745;
-}
-
-/* Izabrani paketomat na checkout stranici */
-.dexpress-chosen-dispenser-info {
-    margin-top: 10px;
-    padding: 12px;
-    background-color: #f8f9fa;
-    font-size: 14px;
-}
-
-.dexpress-change-dispenser {
-    color: #666;
-    text-decoration: underline;
-    font-size: 13px;
-}
-
-.dexpress-change-dispenser:hover {
-    color: #333;
-}
-
-/* Dugme za izbor paketomata */
-.dexpress-select-dispenser-btn {
-    background: #666 !important;
-    color: white !important;
-    border: none !important;
-    padding: 10px 20px;
-    cursor: pointer;
-    font-size: 14px;
-    text-align: center;
-    width: 100%;
-}
-
-.dexpress-select-dispenser-btn:hover {
-    background: #555 !important;
-}
-
 /* Responsive */
 @media (max-width: 768px) {
     .dexpress-modal-content {
@@ -369,21 +237,11 @@
         width: calc(100% - 20px);
         max-height: 95vh;
     }
-    
-    .dexpress-dispensers-container {
-        flex-direction: column;
-        height: auto;
-    }
 
-    #dexpress-dispensers-map,
-    #dexpress-dispensers-list {
-        width: 100%;
-        height: 300px;
-    }
-    
     .ui-autocomplete .ui-menu-item {
         padding: 10px 12px;
-        font-size: 16px; /* Prevent zoom on iOS */
+        font-size: 16px;
+        /* Prevent zoom on iOS */
     }
 
     .dexpress-modal-header,
@@ -391,14 +249,259 @@
     .dexpress-modal-footer {
         padding: 15px;
     }
-    
+
     .dexpress-modal-footer {
         flex-direction: column;
     }
-    
+
     .dexpress-btn-primary,
     .dexpress-btn-secondary {
         width: 100%;
         margin-bottom: 10px;
+    }
+}
+
+
+
+.dexpress-modal-content {
+    position: relative;
+    background-color: #fff;
+    margin: 20px auto;
+    padding: 0;
+    max-width: 95%;
+    width: 1000px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.dexpress-modal-header {
+    padding: 20px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f8f9fa;
+    border-radius: 8px 8px 0 0;
+}
+
+.dexpress-modal-header h3 {
+    margin: 0;
+    color: #333;
+    font-size: 18px;
+}
+
+.dexpress-modal-close {
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    color: #999;
+    line-height: 1;
+    padding: 0;
+    background: none;
+    border: none;
+}
+
+.dexpress-modal-close:hover {
+    color: #333;
+}
+
+.dexpress-modal-body {
+    padding: 20px;
+    overflow: auto;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.dexpress-modal-footer {
+    padding: 15px 20px;
+    border-top: 1px solid #eee;
+    background: #f8f9fa;
+    border-radius: 0 0 8px 8px;
+}
+
+/* Filter gradova */
+.dexpress-town-filter {
+    margin-bottom: 20px;
+    position: relative;
+}
+
+.dexpress-town-filter label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #333;
+}
+
+.dexpress-town-filter input {
+    width: 100%;
+    padding: 10px 40px 10px 12px;
+    font-size: 14px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+.dexpress-town-filter input:focus {
+    outline: none;
+    border-color: #e60054;
+    box-shadow: 0 0 0 2px rgba(230, 0, 84, 0.1);
+}
+
+.dexpress-town-filter .reset-filter {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    color: #999;
+    padding: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dexpress-town-filter .reset-filter:hover {
+    color: #e60054;
+}
+
+.dexpress-town-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-top: none;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 0 0 4px 4px;
+    display: none;
+}
+
+.town-suggestion {
+    padding: 10px 12px;
+    cursor: pointer;
+    font-size: 14px;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background-color 0.2s;
+}
+
+.town-suggestion:last-child {
+    border-bottom: none;
+}
+
+.town-suggestion:hover,
+.town-suggestion.active {
+    background-color: #f5f5f5;
+}
+
+
+/* Loading animacija */
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.dexpress-container-relative {
+    position: relative !important;
+}
+
+.dexpress-loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    flex-direction: column;
+}
+
+.dexpress-loader {
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #e60054;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    animation: spin 1s linear infinite;
+    margin-bottom: 10px;
+}
+
+.dexpress-loading-overlay span {
+    font-size: 14px;
+    color: #666;
+}
+
+/* No results */
+.no-results {
+    padding: 30px 20px;
+    text-align: center;
+    color: #666;
+    font-style: italic;
+}
+
+
+.dexpress-steps-list {
+    list-style: none;
+    padding: 0;
+    margin: 15px 0;
+}
+
+.dexpress-steps-list li {
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.dexpress-steps-list li:last-child {
+    border-bottom: none;
+}
+
+
+.dexpress-delivery-time {
+    display: inline-block;
+    background: #e60054;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .dexpress-modal-content {
+        margin: 10px;
+        max-width: calc(100% - 20px);
+        max-height: calc(100vh - 20px);
+    }
+
+    .dexpress-modal-header {
+        padding: 15px;
+    }
+
+    .dexpress-modal-body {
+        padding: 15px;
     }
 }

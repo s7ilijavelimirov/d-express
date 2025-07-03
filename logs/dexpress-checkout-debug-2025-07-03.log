@@ -1,1 +1,48 @@
 {"timestamp":"2025-07-03 10:58:18","context":"checkout","level":"debug","message":"Učitani paketomati iz cache-a","data":{"count":0,"town_id":null}}
+{"timestamp":"2025-07-03 11:16:54","context":"checkout","level":"debug","message":"Učitano 98 gradova sa paketomatima iz cache-a"}
+{"timestamp":"2025-07-03 11:17:07","context":"checkout","level":"debug","message":"Učitano 0 paketomata iz cache-a"}
+{"timestamp":"2025-07-03 11:17:07","context":"checkout","level":"debug","message":"AJAX get_dispensers: Vraćam 0 paketomata"}
+{"timestamp":"2025-07-03 11:18:44","context":"checkout","level":"debug","message":"Učitano 98 gradova sa paketomatima iz cache-a"}
+{"timestamp":"2025-07-03 11:18:47","context":"checkout","level":"debug","message":"Učitano 0 paketomata iz cache-a"}
+{"timestamp":"2025-07-03 11:18:47","context":"checkout","level":"debug","message":"AJAX get_dispensers: Vraćam 0 paketomata"}
+{"timestamp":"2025-07-03 11:31:18","context":"checkout","level":"debug","message":"=== ajax_get_towns_list DEBUG ==="}
+{"timestamp":"2025-07-03 11:31:18","context":"checkout","level":"debug","message":"Towns from cache: 98"}
+{"timestamp":"2025-07-03 11:31:25","context":"checkout","level":"debug","message":"=== ajax_get_dispensers DEBUG ==="}
+{"timestamp":"2025-07-03 11:31:25","context":"checkout","level":"debug","message":"=== get_cached_dispensers DEBUG ==="}
+{"timestamp":"2025-07-03 11:31:25","context":"checkout","level":"debug","message":"Town ID filter: none"}
+{"timestamp":"2025-07-03 11:31:25","context":"checkout","level":"debug","message":"Cache key: dexpress_dispensers_all"}
+{"timestamp":"2025-07-03 11:31:25","context":"checkout","level":"debug","message":"Found in cache: 0 dispensers"}
+{"timestamp":"2025-07-03 11:31:26","context":"checkout","level":"debug","message":"AJAX get_dispensers: Vraćam 0 paketomata"}
+{"timestamp":"2025-07-03 11:31:26","context":"checkout","level":"debug","message":"Direct DB count: 219"}
+{"timestamp":"2025-07-03 11:32:17","context":"checkout","level":"debug","message":"=== ajax_get_towns_list DEBUG ==="}
+{"timestamp":"2025-07-03 11:32:17","context":"checkout","level":"debug","message":"Towns from cache: 98"}
+{"timestamp":"2025-07-03 11:32:19","context":"checkout","level":"debug","message":"=== ajax_get_dispensers DEBUG ==="}
+{"timestamp":"2025-07-03 11:32:19","context":"checkout","level":"debug","message":"=== get_cached_dispensers DEBUG ==="}
+{"timestamp":"2025-07-03 11:32:19","context":"checkout","level":"debug","message":"Town ID filter: none"}
+{"timestamp":"2025-07-03 11:32:19","context":"checkout","level":"debug","message":"Cache key: dexpress_dispensers_all"}
+{"timestamp":"2025-07-03 11:32:19","context":"checkout","level":"debug","message":"Found in cache: 0 dispensers"}
+{"timestamp":"2025-07-03 11:32:19","context":"checkout","level":"debug","message":"AJAX get_dispensers: Vraćam 0 paketomata"}
+{"timestamp":"2025-07-03 11:32:19","context":"checkout","level":"debug","message":"Direct DB count: 219"}
+{"timestamp":"2025-07-03 11:44:28","context":"checkout","level":"debug","message":"=== ajax_get_towns_list DEBUG ==="}
+{"timestamp":"2025-07-03 11:44:28","context":"checkout","level":"debug","message":"Cache miss for towns, querying database..."}
+{"timestamp":"2025-07-03 11:44:28","context":"checkout","level":"debug","message":"Towns SQL Query: \r\n            SELECT DISTINCT \r\n                t.id, \r\n                t.name, \r\n                COALESCE(t.postal_code, '') as postal_code,\r\n                COALESCE(t.display_name, t.name) as display_name,\r\n                COUNT(d.id) as dispenser_count\r\n            FROM wp_dexpress_towns t\r\n            INNER JOIN wp_dexpress_dispensers d ON t.id = d.town_id\r\n            WHERE (d.deleted IS NULL OR d.deleted != 1)\r\n            GROUP BY t.id, t.name, t.postal_code, t.display_name\r\n            HAVING dispenser_count > 0\r\n            ORDER BY t.name\r\n        "}
+{"timestamp":"2025-07-03 11:44:28","context":"checkout","level":"debug","message":"Towns query results count: 98"}
+{"timestamp":"2025-07-03 11:44:28","context":"checkout","level":"debug","message":"Towns cached: 98"}
+{"timestamp":"2025-07-03 11:44:45","context":"checkout","level":"debug","message":"=== ajax_get_dispensers DEBUG ==="}
+{"timestamp":"2025-07-03 11:44:45","context":"checkout","level":"debug","message":"AJAX get_dispensers: Vraćam 50 paketomata"}
+{"timestamp":"2025-07-03 11:44:45","context":"checkout","level":"debug","message":"First dispenser from AJAX: Array\n(\n    [id] => 273\n    [name] => Nis Petrol - Aleksinac\n    [address] => Šumatovačka bb\n    [town] => Aleksinac\n    [town_id] => 700614\n    [work_hours] => (6-22), (6-22), (6-22), (6-22), (6-22), (6-22), (6-22)\n    [work_days] => Svakim danom 6-22\n    [latitude] => 43.536341\n    [longitude] => 21.710917\n    [pay_by_cash] => 1\n    [pay_by_card] => 1\n    [postal_code] => 18220\n)\n"}
+{"timestamp":"2025-07-03 11:53:10","context":"checkout","level":"debug","message":"=== ajax_get_towns_list DEBUG ==="}
+{"timestamp":"2025-07-03 11:53:10","context":"checkout","level":"debug","message":"Towns from cache: 98"}
+{"timestamp":"2025-07-03 11:53:16","context":"checkout","level":"debug","message":"=== ajax_get_dispensers DEBUG ==="}
+{"timestamp":"2025-07-03 11:53:17","context":"checkout","level":"debug","message":"AJAX get_dispensers: Vraćam 219 paketomata"}
+{"timestamp":"2025-07-03 11:53:17","context":"checkout","level":"debug","message":"First dispenser from AJAX: Array\n(\n    [id] => 273\n    [name] => Nis Petrol - Aleksinac\n    [address] => Šumatovačka bb\n    [town] => Aleksinac\n    [town_id] => 700614\n    [work_hours] => (6-22), (6-22), (6-22), (6-22), (6-22), (6-22), (6-22)\n    [work_days] => Svakim danom 6-22\n    [latitude] => 43.536341\n    [longitude] => 21.710917\n    [pay_by_cash] => 1\n    [pay_by_card] => 1\n    [postal_code] => 18220\n)\n"}
+{"timestamp":"2025-07-03 11:56:28","context":"checkout","level":"debug","message":"=== ajax_get_towns_list DEBUG ==="}
+{"timestamp":"2025-07-03 11:56:28","context":"checkout","level":"debug","message":"Towns from cache: 98"}
+{"timestamp":"2025-07-03 11:56:31","context":"checkout","level":"debug","message":"=== ajax_get_dispensers DEBUG ==="}
+{"timestamp":"2025-07-03 11:56:31","context":"checkout","level":"debug","message":"AJAX get_dispensers: Vraćam 219 paketomata"}
+{"timestamp":"2025-07-03 11:56:31","context":"checkout","level":"debug","message":"First dispenser from AJAX: Array\n(\n    [id] => 273\n    [name] => Nis Petrol - Aleksinac\n    [address] => Šumatovačka bb\n    [town] => Aleksinac\n    [town_id] => 700614\n    [work_hours] => (6-22), (6-22), (6-22), (6-22), (6-22), (6-22), (6-22)\n    [work_days] => Svakim danom 6-22\n    [latitude] => 43.536341\n    [longitude] => 21.710917\n    [pay_by_cash] => 1\n    [pay_by_card] => 1\n    [postal_code] => 18220\n)\n"}
+{"timestamp":"2025-07-03 11:58:05","context":"checkout","level":"debug","message":"=== ajax_get_towns_list DEBUG ==="}
+{"timestamp":"2025-07-03 11:58:05","context":"checkout","level":"debug","message":"Towns from cache: 98"}
+{"timestamp":"2025-07-03 11:58:08","context":"checkout","level":"debug","message":"=== ajax_get_dispensers DEBUG ==="}
+{"timestamp":"2025-07-03 11:58:08","context":"checkout","level":"debug","message":"AJAX get_dispensers: Vraćam 219 paketomata"}
+{"timestamp":"2025-07-03 11:58:08","context":"checkout","level":"debug","message":"First dispenser from AJAX: Array\n(\n    [id] => 273\n    [name] => Nis Petrol - Aleksinac\n    [address] => Šumatovačka bb\n    [town] => Aleksinac\n    [town_id] => 700614\n    [work_hours] => (6-22), (6-22), (6-22), (6-22), (6-22), (6-22), (6-22)\n    [work_days] => Svakim danom 6-22\n    [latitude] => 43.536341\n    [longitude] => 21.710917\n    [pay_by_cash] => 1\n    [pay_by_card] => 1\n    [postal_code] => 18220\n)\n"}
