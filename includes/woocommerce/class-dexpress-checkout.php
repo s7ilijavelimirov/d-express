@@ -240,7 +240,7 @@ class D_Express_Checkout
         D_Express_Validator::validate_checkout();
     }
     /**
-     * AJAX: Pretraga ulica za određeni grad
+     * AJAX: Optimizovana pretraga ulica za određeni grad
      */
     public function ajax_search_streets_for_town()
     {
@@ -250,29 +250,48 @@ class D_Express_Checkout
         $search = sanitize_text_field($_GET['term'] ?? '');
         $town_id = intval($_GET['town_id'] ?? 0);
 
-        if (empty($search) || strlen($search) < 1 || !$town_id) { // Smanjen sa 2 na 1
+        if (!$town_id) {
             wp_send_json([]);
         }
 
+        // Cache ključ
+        $cache_key = "dexpress_streets_town_{$town_id}_" . md5($search);
+        $cached_streets = get_transient($cache_key);
+
+        if ($cached_streets !== false) {
+            wp_send_json($cached_streets);
+        }
+
+        // Uklonjen deleted iz WHERE uslova
         $streets = $wpdb->get_results($wpdb->prepare(
-            "SELECT DISTINCT s.name
+            "SELECT DISTINCT s.name, s.id
          FROM {$wpdb->prefix}dexpress_streets s
-         WHERE s.TId = %d AND s.name LIKE %s
-         ORDER BY s.name ASC LIMIT 50",
+         WHERE s.TId = %d 
+           AND s.name LIKE %s
+         ORDER BY 
+           CASE WHEN s.name LIKE %s THEN 1 ELSE 2 END,
+           LENGTH(s.name),
+           s.name ASC 
+         LIMIT 100",
             $town_id,
-            '%' . $wpdb->esc_like($search) . '%'
+            '%' . $wpdb->esc_like($search) . '%',
+            $wpdb->esc_like($search) . '%'
         ));
 
         $results = array_map(function ($street) {
             return [
-                'id'    => $street->name,
+                'id'    => $street->id,
                 'label' => $street->name,
                 'value' => $street->name,
             ];
         }, $streets);
 
+        // Cache na 1 sat
+        set_transient($cache_key, $results, HOUR_IN_SECONDS);
+
         wp_send_json($results);
     }
+
     /**
      * Čuvanje checkout polja u bazi
      */
@@ -351,6 +370,9 @@ class D_Express_Checkout
             substr($api_phone, 5, 3) . ' ' .
             substr($api_phone, 8);
     }
+    /**
+     * AJAX: Optimizovana pretraga gradova sa naseljima
+     */
     public function ajax_search_all_towns()
     {
         check_ajax_referer('dexpress-frontend-nonce', 'nonce');
@@ -358,91 +380,66 @@ class D_Express_Checkout
         global $wpdb;
         $search = sanitize_text_field($_GET['term'] ?? '');
 
-        if (empty($search) || strlen($search) < 1) { // Smanjen sa 2 na 1
+        if (empty($search) || strlen($search) < 1) {
             wp_send_json([]);
         }
 
+        // Cache ključ
+        $cache_key = 'dexpress_towns_' . md5($search);
+        $cached_towns = get_transient($cache_key);
+
+        if ($cached_towns !== false) {
+            wp_send_json($cached_towns);
+        }
+
+        // Uklonjen deleted iz WHERE uslova
         $towns = $wpdb->get_results($wpdb->prepare(
-            "SELECT DISTINCT t.id, t.name, t.display_name, t.postal_code, t.municipality_id,
-        m.name as municipality_name
- FROM {$wpdb->prefix}dexpress_towns t
- LEFT JOIN {$wpdb->prefix}dexpress_municipalities m ON t.municipality_id = m.id
- WHERE (t.name LIKE %s OR t.display_name LIKE %s)
- ORDER BY t.display_name, t.name ASC LIMIT 50",
+            "SELECT DISTINCT 
+           t.id, 
+           t.name, 
+           t.display_name, 
+           t.postal_code, 
+           t.municipality_id,
+           m.name as municipality_name
+         FROM {$wpdb->prefix}dexpress_towns t
+         LEFT JOIN {$wpdb->prefix}dexpress_municipalities m ON t.municipality_id = m.id
+         WHERE (t.name LIKE %s OR t.display_name LIKE %s)
+         ORDER BY 
+           CASE 
+             WHEN t.display_name LIKE %s THEN 1 
+             WHEN t.name LIKE %s THEN 2 
+             ELSE 3 
+           END,
+           LENGTH(COALESCE(t.display_name, t.name)),
+           t.display_name, t.name ASC 
+         LIMIT 100",
             '%' . $wpdb->esc_like($search) . '%',
-            '%' . $wpdb->esc_like($search) . '%'
+            '%' . $wpdb->esc_like($search) . '%',
+            $wpdb->esc_like($search) . '%',
+            $wpdb->esc_like($search) . '%'
         ));
 
         $results = array_map(function ($town) {
             // Koristi display_name ako postoji (naselje), inače name
-            $display_name = !empty($town->display_name) ? $town->display_name : $town->name;
+            $primary_name = !empty($town->display_name) ? $town->display_name : $town->name;
 
             return [
-                'id'          => $town->id,
-                'label'       => $display_name,
-                'value'       => $display_name,
-                'town_id'     => $town->id,
-                'postal_code' => $town->postal_code,
-            ];
-        }, $towns);
-
-        wp_send_json($results);
-    }
-    /**
-     * AJAX: Dobijanje gradova za izabranu ulicu (sa naseljima)
-     */
-    public function ajax_get_towns_for_street()
-    {
-        check_ajax_referer('dexpress-frontend-nonce', 'nonce');
-
-        global $wpdb;
-        $street_name = sanitize_text_field($_POST['street_name'] ?? '');
-
-        if (empty($street_name)) {
-            wp_send_json_error(['message' => 'Naziv ulice je obavezan.']);
-        }
-
-        // Cache key
-        $cache_key = 'dexpress_towns_for_street_' . md5($street_name);
-        $cached_towns = get_transient($cache_key);
-
-        if ($cached_towns !== false) {
-            wp_send_json_success(['towns' => $cached_towns]);
-            return;
-        }
-
-        // Dobij sve gradove koji imaju ovu ulicu - SA NASELJIMA
-        $towns = $wpdb->get_results($wpdb->prepare(
-            "SELECT DISTINCT t.id, t.name, t.display_name, t.postal_code, t.municipality_id, 
-        m.name as municipality_name, s.id as street_id
- FROM {$wpdb->prefix}dexpress_streets s
- JOIN {$wpdb->prefix}dexpress_towns t ON s.TId = t.id
- LEFT JOIN {$wpdb->prefix}dexpress_municipalities m ON t.municipality_id = m.id
- WHERE s.name = %s AND s.deleted != 1
- ORDER BY t.display_name, t.name ASC",
-            $street_name
-        ));
-
-        $towns_data = array_map(function ($town) {
-            // Koristi display_name ako postoji (naselje), inače name
-            $display_name = !empty($town->display_name) ? $town->display_name : $town->name;
-
-            return [
-                'id'          => $town->id,
-                'name'        => $town->name,
-
-                'street_id'   => $town->street_id,
+                'town_id'           => $town->id,
+                'label'             => $primary_name,
+                'value'             => $primary_name,
+                'display_name'      => $town->display_name,
                 'municipality_name' => $town->municipality_name,
+                'postal_code'       => $town->postal_code,
             ];
         }, $towns);
 
         // Cache na 1 sat
-        set_transient($cache_key, $towns_data, HOUR_IN_SECONDS);
+        set_transient($cache_key, $results, HOUR_IN_SECONDS);
 
-        wp_send_json_success(['towns' => $towns_data]);
+        wp_send_json($results);
     }
     /**
-     * AJAX: Pretraga ulica (distinct po nazivu)
+     * AJAX: Brza pretraga svih ulica (bez ograničenja na 50)
      */
     public function ajax_search_streets()
     {
@@ -451,17 +448,30 @@ class D_Express_Checkout
         global $wpdb;
         $search = sanitize_text_field($_GET['term'] ?? '');
 
-        if (empty($search) || strlen($search) < 1) { // Smanjen sa 2 na 1
+        if (empty($search) || strlen($search) < 1) {
             wp_send_json([]);
         }
 
-        // Distinct ulice po nazivu - bez vezivanja za grad
+        // Cache ključ
+        $cache_key = 'dexpress_streets_' . md5($search);
+        $cached_streets = get_transient($cache_key);
+
+        if ($cached_streets !== false) {
+            wp_send_json($cached_streets);
+        }
+
+        // Uklonjen deleted iz WHERE uslova
         $streets = $wpdb->get_results($wpdb->prepare(
             "SELECT DISTINCT s.name
          FROM {$wpdb->prefix}dexpress_streets s
          WHERE s.name LIKE %s
-         ORDER BY s.name ASC LIMIT 50",
-            '%' . $wpdb->esc_like($search) . '%'
+         ORDER BY 
+           CASE WHEN s.name LIKE %s THEN 1 ELSE 2 END,
+           LENGTH(s.name),
+           s.name ASC 
+         LIMIT 100",
+            '%' . $wpdb->esc_like($search) . '%',
+            $wpdb->esc_like($search) . '%'
         ));
 
         $results = array_map(function ($street) {
@@ -471,6 +481,9 @@ class D_Express_Checkout
                 'value' => $street->name,
             ];
         }, $streets);
+
+        // Cache na 30 minuta
+        set_transient($cache_key, $results, 30 * MINUTE_IN_SECONDS);
 
         wp_send_json($results);
     }
@@ -686,6 +699,90 @@ class D_Express_Checkout
 
         // Spajanje postavki sa default vrednostima
         return wp_parse_args($settings, $defaults);
+    }
+    /**
+     * AJAX: Optimizovano dobijanje gradova za ulicu (bez deleted)
+     */
+    public function ajax_get_towns_for_street()
+    {
+        check_ajax_referer('dexpress-frontend-nonce', 'nonce');
+
+        global $wpdb;
+        $street_name = sanitize_text_field($_POST['street_name'] ?? '');
+
+        if (empty($street_name)) {
+            wp_send_json_error(['message' => 'Naziv ulice je obavezan.']);
+        }
+
+        // Cache key
+        $cache_key = 'dexpress_towns_for_street_' . md5($street_name);
+        $cached_towns = get_transient($cache_key);
+
+        if ($cached_towns !== false) {
+            wp_send_json_success(['towns' => $cached_towns]);
+        }
+
+        // Uklonjen deleted iz WHERE uslova
+        $towns = $wpdb->get_results($wpdb->prepare(
+            "SELECT DISTINCT 
+           t.id, 
+           t.name, 
+           t.display_name, 
+           t.postal_code, 
+           t.municipality_id, 
+           m.name as municipality_name,
+           s.id as street_id
+         FROM {$wpdb->prefix}dexpress_streets s
+         INNER JOIN {$wpdb->prefix}dexpress_towns t ON s.TId = t.id
+         LEFT JOIN {$wpdb->prefix}dexpress_municipalities m ON t.municipality_id = m.id
+         WHERE s.name = %s
+         ORDER BY 
+           CASE 
+             WHEN t.display_name IS NOT NULL THEN 1 
+             ELSE 2 
+           END,
+           t.display_name, t.name ASC",
+            $street_name
+        ));
+
+        $towns_data = array_map(function ($town) {
+            return [
+                'id'                => $town->id,
+                'name'              => $town->name,
+                'display_name'      => $town->display_name,
+                'postal_code'       => $town->postal_code,
+                'street_id'         => $town->street_id,
+                'municipality_name' => $town->municipality_name,
+            ];
+        }, $towns);
+
+        // Cache na 2 sata
+        set_transient($cache_key, $towns_data, 2 * HOUR_IN_SECONDS);
+
+        wp_send_json_success(['towns' => $towns_data]);
+    }
+    /**
+     * Dodaj DB indekse za optimizaciju (pozovi jednom)
+     */
+    public function optimize_database_indexes()
+    {
+        global $wpdb;
+
+        // Dodaj indekse za brže pretrage
+        $wpdb->query("
+        CREATE INDEX IF NOT EXISTS idx_streets_name_tid 
+        ON {$wpdb->prefix}dexpress_streets(name, TId)
+    ");
+
+        $wpdb->query("
+        CREATE INDEX IF NOT EXISTS idx_towns_names 
+        ON {$wpdb->prefix}dexpress_towns(name, display_name)
+    ");
+
+        $wpdb->query("
+        CREATE INDEX IF NOT EXISTS idx_streets_tid_deleted 
+        ON {$wpdb->prefix}dexpress_streets(TId, deleted)
+    ");
     }
     /**
      * Proverava da li je metoda dostave trenutno izabrana

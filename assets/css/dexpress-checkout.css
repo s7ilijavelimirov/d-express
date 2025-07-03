@@ -1,4 +1,6 @@
-/* D Express Checkout CSS */
+/* D Express Checkout CSS - Minimalno */
+
+/* Osnovno */
 .dexpress-street,
 .dexpress-number,
 .dexpress-city,
@@ -6,141 +8,70 @@
     margin-bottom: 12px;
 }
 
-/* Sakrivanje originalnih polja */
+/* Sakri originalna polja */
 .dexpress-hidden-field {
     display: none !important;
 }
 
-/* Indikator učitavanja */
+/* Minimalan loader - samo ikonica */
 .dexpress-loading {
-    position: relative;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="none" stroke="%23ccc" stroke-width="2" opacity="0.5"/><path d="M14 8a6 6 0 0 1-6 6" fill="none" stroke="%23999" stroke-width="2"><animateTransform attributeName="transform" type="rotate" values="0 8 8;360 8 8" dur="1s" repeatCount="indefinite"/></path></svg>');
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 16px 16px;
+    padding-right: 26px !important;
 }
 
-.dexpress-loading:after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(255, 255, 255, 0.7) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="38" height="38" viewBox="0 0 38 38" stroke="%232271b1"><g fill="none" fill-rule="evenodd"><g transform="translate(1 1)" stroke-width="2"><circle stroke-opacity=".5" cx="18" cy="18" r="18"/><path d="M36 18c0-9.94-8.06-18-18-18" transform="rotate(332.092 18 18)"><animateTransform attributeName="transform" type="rotate" from="0 18 18" to="360 18 18" dur="1s" repeatCount="indefinite"/></path></g></g></svg>') no-repeat center center;
-    z-index: 1000;
-}
-
-/* Stilovi za autocomplete */
+/* Jednostavan dropdown - bez bordova */
 .ui-autocomplete {
-    max-height: 300px;
+    max-height: 250px;
     overflow-y: auto;
-    overflow-x: hidden;
     z-index: 9999 !important;
-    border: 1px solid #ddd;
-    border-radius: 4px;
     background: #fff;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    font-family: inherit;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
 .ui-autocomplete .ui-menu-item {
     padding: 8px 12px;
     cursor: pointer;
-    border-bottom: 1px solid #f5f5f5;
-}
-
-.ui-autocomplete .ui-menu-item:last-child {
-    border-bottom: none;
+    font-size: 14px;
 }
 
 .ui-autocomplete .ui-menu-item:hover,
 .ui-autocomplete .ui-menu-item-wrapper.ui-state-active {
-    background-color: #f0f0f0;
-    color: #000;
+    background-color: #f5f5f5;
+    color: #333;
 }
 
-/* Validacioni stilovi */
+/* Error stanje - minimalno */
 .dexpress-error {
-    border-color: #e2401c !important;
+    border-color: #dc3545 !important;
 }
 
 .dexpress-error-message {
+    color: #dc3545;
+    font-size: 13px;
+    margin-top: 4px;
     display: block;
-    color: #e2401c;
-    font-size: 0.857em;
-    margin-top: 3px;
-    padding: 2px 0;
-    clear: both;
 }
 
-/* Readonly polja stilovi */
-.dexpress-city[readonly],
+/* Readonly polja */
 .dexpress-postcode[readonly] {
     background-color: #f8f8f8;
-    cursor: not-allowed;
-    opacity: 0.8;
+    color: #666;
 }
 
-.dexpress-filled {
-    border-color: #bbb;
-    background-color: #f8f8f8;
-}
-
-/* Stilovi za hover na readonly poljima */
-.dexpress-city[readonly]:hover,
-.dexpress-postcode[readonly]:hover {
-    border-color: #aaa;
-}
-
-/* Pomoćni tekst za telefon */
-.phone-format-hint {
-    display: block;
-    font-size: 0.857em;
-    color: #767676;
+/* Phone hint */
+.dexpress-phone-hint {
+    font-size: 12px;
+    color: #666;
     margin-top: 3px;
-    margin-bottom: 10px;
     font-style: italic;
 }
 
-/* Poruka o grešci */
-.woocommerce-error {
-    color: #b22222;
-    background-color: #f8d7da;
-    border-left: 3px solid #b22222;
-    padding: 0.5em 1em;
-    margin: 5px 0;
-    border-radius: 3px;
-    font-size: 0.9em;
-}
-
-/* Stil za poruku o grešci validacije telefona */
-.phone-validation-error {
-    color: #b22222;
-    background-color: #f8d7da;
-    border-left: 3px solid #b22222;
-    padding: 0.5em 1em;
-    margin: 5px 0;
-    border-radius: 3px;
-    font-size: 0.9em;
-}
-
-.phone-prefix-container {
-    position: relative;
-    display: inline-block;
-    width: 100%;
-}
-
-/* Stil za input kada je neispravan */
-.woocommerce-invalid {
-    border-color: #b22222 !important;
-}
-
-.phone-format-hint {
-    display: block;
-    font-size: 0.857em;
-    color: #767676;
-    margin-top: 3px;
-}
-
-/* Modal stilovi */
-#dexpress-dispenser-modal {
-    display: none;
+/* Modal za custom ulicu - jednostavan */
+.dexpress-modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -148,169 +79,125 @@
     bottom: 0;
     background-color: rgba(0, 0, 0, 0.5);
     z-index: 999999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dexpress-modal-content {
+    background: white;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow: hidden;
+}
+
+.dexpress-modal-header {
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f8f9fa;
+}
+
+.dexpress-modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+    color: #333;
+}
+
+.dexpress-modal-close {
+    cursor: pointer;
+    font-size: 20px;
+    color: #999;
+    background: none;
+    border: none;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    text-align: center;
+}
+
+.dexpress-modal-close:hover {
+    color: #666;
+}
+
+.dexpress-modal-body {
+    padding: 20px;
+}
+
+.dexpress-modal-body label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #333;
+}
+
+.dexpress-modal-body input {
+    width: 100% !important;
+    padding: 8px 12px !important;
+    font-size: 14px !important;
+    margin-bottom: 12px !important;
+    box-sizing: border-box !important;
+}
+
+.dexpress-modal-footer {
+    padding: 15px 20px;
+    background: #f8f9fa;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.dexpress-btn-primary {
+    background: #007cba !important;
+    color: white !important;
+    border: none !important;
+    padding: 8px 16px !important;
+    cursor: pointer !important;
+    font-size: 14px !important;
+}
+
+.dexpress-btn-primary:hover {
+    background: #005a87 !important;
+}
+
+.dexpress-btn-secondary {
+    background: #666 !important;
+    color: white !important;
+    border: none !important;
+    padding: 8px 16px !important;
+    cursor: pointer !important;
+    font-size: 14px !important;
+}
+
+.dexpress-btn-secondary:hover {
+    background: #555 !important;
+}
+
+/* Modal za paketomate - osnovno */
+#dexpress-dispenser-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.4);
+    z-index: 99999;
     overflow: auto;
 }
 
 .dexpress-modal-content {
     position: relative;
     background-color: #fff;
-    margin: 50px auto;
+    margin: 30px auto;
     padding: 0;
-    border-radius: 5px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
     max-width: 90%;
-    width: 1000px;
-    max-height: 80vh;
+    width: 900px;
+    max-height: 85vh;
     display: flex;
     flex-direction: column;
-}
-.dexpress-town-selector {
-    margin: 15px 0;
-    padding: 15px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    background: #f9f9f9;
-}
-
-.dexpress-town-selector h4 {
-    margin: 0 0 10px 0;
-    font-size: 16px;
-}
-
-.dexpress-towns-list {
-    max-height: 200px;
-    overflow-y: auto;
-}
-
-.dexpress-town-option {
-    padding: 8px 12px;
-    border: 1px solid #ddd;
-    margin: 2px 0;
-    cursor: pointer;
-    background: white;
-    border-radius: 3px;
-}
-
-.dexpress-town-option:hover {
-    background: #e7f3ff;
-    border-color: #0073aa;
-}
-
-.dexpress-other-place {
-    background: #fff3cd !important;
-    border-color: #ffeaa7 !important;
-}
-
-.dexpress-other-place:hover {
-    background: #fff3cd !important;
-    border-color: #fdcb6e !important;
-}
-
-.dexpress-town-search {
-    margin-bottom: 10px;
-}
-
-.dexpress-town-search-input {
-    width: 70%;
-    padding: 8px;
-    margin-right: 10px;
-}
-/* Popravi autocomplete input ponašanje */
-.dexpress-street.ui-autocomplete-input {
-    text-align: left !important;
-    padding-left: 12px !important;
-}
-
-/* Loader sa desne strane */
-.dexpress-input-wrapper {
-    position: relative;
-    display: inline-block;
-    width: 100%;
-}
-
-.dexpress-loading {
-    background-image: none !important;
-    padding-right: 35px !important;
-}
-
-.dexpress-loading::after {
-    content: '';
-    position: absolute;
-    right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 16px;
-    height: 16px;
-    border: 2px solid #cf1111;
-    border-top-color: #0073aa;
-    border-radius: 50%;
-    animation: dexpress-spin 1s linear infinite;
-}
-
-@keyframes dexpress-spin {
-    to {
-        transform: translateY(-50%) rotate(360deg);
-    }
-}
-
-/* Autocomplete dropdown stilovi */
-.ui-autocomplete {
-    max-height: 200px;
-    overflow-y: auto;
-    z-index: 9999 !important;
-    border: 1px solid #ddd;
-    background: white;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-}
-.dexpress-custom-street-notice {
-    background: #fff3cd;
-    border: 1px solid #ffeaa7;
-    padding: 8px 12px;
-    border-radius: 4px;
-    margin: 10px 0;
-    font-size: 14px;
-    color: #856404;
-}
-.ui-autocomplete .ui-menu-item {
-    padding: 8px 12px;
-    border-bottom: 1px solid #f0f0f0;
-    cursor: pointer;
-}
-
-.ui-autocomplete .ui-menu-item:hover,
-.ui-autocomplete .ui-menu-item.ui-state-focus {
-    background: #e7f3ff !important;
-    border-color: transparent !important;
-}
-.dexpress-back-to-towns {
-    background: #f0f0f0;
-    border: 1px solid #ccc;
-    padding: 8px 12px;
-    cursor: pointer;
-}
-.dexpress-phone-hint {
-    font-size: 12px;
-    color: #666;
-    margin-top: 3px;
-    font-style: italic;
-}
-.dexpress-modal-header {
-    padding: 15px 20px;
-    border-bottom: 1px solid #eee;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.dexpress-modal-header h3 {
-    margin: 0;
-    font-size: 1.4em;
-}
-
-.dexpress-modal-close {
-    cursor: pointer;
-    font-size: 24px;
-    font-weight: bold;
 }
 
 .dexpress-modal-body {
@@ -321,13 +208,7 @@
     flex-direction: column;
 }
 
-.dexpress-modal-footer {
-    padding: 15px 20px;
-    border-top: 1px solid #eee;
-    text-align: right;
-}
-
-/* Filter stilovi */
+/* Filter gradova */
 .dexpress-town-filter {
     margin-bottom: 15px;
 }
@@ -335,274 +216,9 @@
 .dexpress-town-filter input {
     width: 100%;
     padding: 8px 12px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-}
-
-/* Kontejner za mapu i listu */
-.dexpress-dispensers-container {
-    display: flex;
-    flex-direction: row;
-    gap: 20px;
-    height: 500px;
-    flex: 1;
-}
-
-#dexpress-dispensers-map {
-    flex: 1;
-    height: 100%;
-    min-height: 400px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-}
-
-#dexpress-dispensers-list {
-    flex: 1;
-    height: 100%;
-    overflow-y: auto;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-}
-
-/* Stilovi za listu paketomata */
-.dexpress-dispensers-town h4 {
-    margin: 0;
-    padding: 10px;
-    background-color: #f5f5f5;
-    border-bottom: 1px solid #ddd;
-    position: sticky;
-    top: 0;
-    z-index: 10;
-}
-
-.dexpress-dispenser-item {
-    padding: 10px;
-    border-bottom: 1px solid #eee;
-    transition: background-color 0.2s;
-}
-
-.dexpress-dispenser-item:hover {
-    background-color: #f9f9f9;
-}
-
-.dexpress-dispenser-item.selected {
-    background-color: #e6f7ff;
-    border-left: 3px solid #1890ff;
-}
-
-.dexpress-dispenser-name {
-    font-weight: bold;
-    margin-bottom: 5px;
-}
-
-.dexpress-dispenser-address {
-    font-size: 0.9em;
-    margin-bottom: 5px;
-}
-
-.dexpress-dispenser-hours {
-    font-size: 0.85em;
-    color: #666;
-    margin-bottom: 5px;
-}
-
-.dexpress-dispenser-actions {
-    text-align: right;
-}
-
-.dexpress-select-btn {
-    padding: 5px 10px;
-    background-color: #1890ff;
-    color: white;
-    border: none;
-    border-radius: 3px;
-    cursor: pointer;
-}
-
-.dexpress-dispenser-item.selected .dexpress-select-btn {
-    background-color: #52c41a;
-}
-
-/* Stil za loader */
-.dexpress-loading {
-    padding: 20px;
-    text-align: center;
-    color: #666;
-}
-/* Dodaj ovaj CSS u assets/css/dexpress-checkout.css */
-
-/* Wrapper za input sa loader-om */
-.dexpress-input-wrapper {
-    position: relative;
-    display: inline-block;
-    width: 100%;
-}
-
-/* Loader animacija */
-.dexpress-loading {
-    background-image: url('data:image/svg+xml;charset=utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="none" stroke="%23666" stroke-width="2" opacity="0.4"/><path d="M14 8a6 6 0 0 1-6 6" fill="none" stroke="%23333" stroke-width="2"><animateTransform attributeName="transform" type="rotate" values="0 8 8;360 8 8" dur="1s" repeatCount="indefinite"/></path></svg>') !important;
-    background-repeat: no-repeat !important;
-    background-position: right 10px center !important;
-    background-size: 16px 16px !important;
-    padding-right: 35px !important;
-}
-
-/* Alternativni loader sa CSS animacijom */
-.dexpress-input-wrapper::after {
-    content: '';
-    position: absolute;
-    right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 16px;
-    height: 16px;
-    border: 2px solid #f3f3f3;
-    border-top: 2px solid #0073aa;
-    border-radius: 50%;
-    animation: dexpress-spin 1s linear infinite;
-    display: none;
-}
-
-.dexpress-input-wrapper.loading::after {
-    display: block;
-}
-
-@keyframes dexpress-spin {
-    0% { transform: translateY(-50%) rotate(0deg); }
-    100% { transform: translateY(-50%) rotate(360deg); }
-}
-
-/* Dropdown styling */
-.ui-autocomplete {
-    max-height: 200px;
-    overflow-y: auto;
-    z-index: 9999 !important;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.ui-menu-item-wrapper {
-    padding: 8px 12px;
-    border-bottom: 1px solid #f0f0f0;
-    cursor: pointer;
-}
-
-.ui-menu-item-wrapper:hover,
-.ui-state-active {
-    background-color: #0073aa !important;
-    color: white !important;
-}
-
-/* Brži focus efekti */
-.dexpress-street:focus,
-.dexpress-city:focus {
-    border-color: #0073aa !important;
-    box-shadow: 0 0 5px rgba(0,115,170,0.3) !important;
-}
-/* Responsivni dizajn */
-@media (max-width: 768px) {
-    .dexpress-dispensers-container {
-        flex-direction: column;
-    }
-
-    #dexpress-dispensers-map,
-    #dexpress-dispensers-list {
-        width: 100%;
-        height: 300px;
-    }
-}
-
-/* Stil za selektovani paketomat na checkout stranici */
-.dexpress-chosen-dispenser-info {
-    margin-top: 10px;
-    padding: 10px;
-    background-color: #f0f8ff;
-    border-radius: 4px;
-    border-left: 3px solid #1890ff;
-}
-
-.dexpress-dispenser-info {
-    background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    font-family: Arial, sans-serif;
-    max-width: 500px;
-}
-
-/* Grid za raspored u dve kolone */
-.dexpress-info-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
-    align-items: start;
-}
-
-/* Stilizacija levog i desnog dela */
-.dexpress-info-left, .dexpress-info-right {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-/* Ikonice i font stil */
-.dexpress-info-left p, .dexpress-info-right p {
-    display: flex;
-    align-items: center;
     font-size: 14px;
 }
 
-.dexpress-info-left p::before, .dexpress-info-right p::before {
-    margin-right: 6px;
-    font-size: 18px;
-}
-
-/* Stilizacija radnog vremena */
-.dexpress-info-right ul {
-    list-style: none;
-    padding: 0;
-}
-
-
-.dexpress-info-right li {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-/* Dugme */
-.dexpress-select-this-dispenser {
-    display: block;
-    width: 100%;
-    margin-top: 15px;
-    padding: 10px;
-    background: #673ab7;
-    color: white;
-    text-align: center;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-}
-
-.dexpress-select-this-dispenser:hover {
-    background: #5a2ea5;
-}
-
-/* Stilizacija za autocomplete filter gradova */
-.dexpress-town-filter {
-    position: relative;
-    margin-bottom: 15px;
-}
-
-#dexpress-town-filter {
-    width: 100%;
-    padding: 8px 12px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 14px;
-}
-
-/* Stilovi za autocomplete */
 .dexpress-town-suggestions {
     display: none;
     position: absolute;
@@ -611,111 +227,178 @@
     max-height: 200px;
     overflow-y: auto;
     background: white;
-    border: 1px solid #ddd;
-    border-top: none;
-    border-radius: 0 0 4px 4px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .town-suggestion {
     padding: 8px 12px;
     cursor: pointer;
-    border-bottom: 1px solid #f0f0f0;
+    font-size: 14px;
 }
 
 .town-suggestion:hover,
 .town-suggestion.active {
-    background-color: #f0f8ff;
+    background-color: #f5f5f5;
+}
+
+/* Kontejner za mapu i listu */
+.dexpress-dispensers-container {
+    display: flex;
+    gap: 15px;
+    height: 450px;
+    flex: 1;
+}
+
+#dexpress-dispensers-map {
+    flex: 1;
+    height: 100%;
+}
+
+#dexpress-dispensers-list {
+    flex: 1;
+    height: 100%;
+    overflow-y: auto;
+    background: #fff;
+}
+
+/* Lista paketomata */
+.dexpress-dispensers-town h4 {
+    margin: 0;
+    padding: 12px;
+    background-color: #f8f8f8;
+    font-size: 14px;
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+}
+
+.dexpress-dispenser-item {
+    padding: 12px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.dexpress-dispenser-item:hover {
+    background-color: #f8f8f8;
+}
+
+.dexpress-dispenser-item.selected {
+    background-color: #e8f4f8;
 }
 
 .dispenser-content {
     flex: 1;
-    cursor: pointer;
+}
+
+.dexpress-dispenser-name {
+    font-weight: 600;
+    margin-bottom: 4px;
+    font-size: 14px;
+}
+
+.dexpress-dispenser-address {
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 4px;
+}
+
+.dexpress-dispenser-hours {
+    font-size: 12px;
+    color: #888;
 }
 
 .dispenser-select-btn {
-    background: #0073aa;
+    background: #666;
     color: white;
     border: none;
-    border-radius: 3px;
-    padding: 5px 10px;
+    padding: 6px 12px;
     cursor: pointer;
-    white-space: nowrap;
-    min-width: 80px;
-    text-align: center;
+    font-size: 12px;
     margin-left: 10px;
 }
 
 .dispenser-select-btn:hover {
-    background: #005d87;
+    background: #555;
 }
 
-/* Reset filter dugme */
-.dexpress-town-filter {
-    position: relative;
+.dexpress-dispenser-item.selected .dispenser-select-btn {
+    background: #28a745;
 }
 
-.reset-filter {
-    position: absolute;
-    right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    background: none;
-    border: none;
+/* Izabrani paketomat na checkout stranici */
+.dexpress-chosen-dispenser-info {
+    margin-top: 10px;
+    padding: 12px;
+    background-color: #f8f9fa;
+    font-size: 14px;
+}
+
+.dexpress-change-dispenser {
+    color: #666;
+    text-decoration: underline;
+    font-size: 13px;
+}
+
+.dexpress-change-dispenser:hover {
+    color: #333;
+}
+
+/* Dugme za izbor paketomata */
+.dexpress-select-dispenser-btn {
+    background: #666 !important;
+    color: white !important;
+    border: none !important;
+    padding: 10px 20px;
     cursor: pointer;
-    color: #999;
-    font-size: 16px;
-    display: none;
-}
-
-.dexpress-town-filter.has-value .reset-filter {
-    display: block;
-}
-
-/* Spinner za učitavanje */
-.dexpress-loader {
-    display: inline-block;
-    width: 50px;
-    height: 50px;
-    border: 3px solid rgba(0, 0, 0, 0.6);
-    border-radius: 50%;
-    border-top-color: black;
-    animation: dexpress-spin 1s ease-in-out infinite;
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 10;
-}
-
-@keyframes dexpress-spin {
-    to {
-        transform: translate(-50%, -50%) rotate(360deg);
-    }
-}
-
-.dexpress-loading-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(255, 255, 255, 0.7);
-    z-index: 5;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.dexpress-loading-overlay span {
-    display: block;
+    font-size: 14px;
     text-align: center;
-    margin-top: 60px;
-    color: #0073aa;
-    font-weight: bold;
+    width: 100%;
 }
 
-.dexpress-container-relative {
-    position: relative;
-    min-height: 200px;
+.dexpress-select-dispenser-btn:hover {
+    background: #555 !important;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .dexpress-modal-content {
+        margin: 10px;
+        width: calc(100% - 20px);
+        max-height: 95vh;
+    }
+    
+    .dexpress-dispensers-container {
+        flex-direction: column;
+        height: auto;
+    }
+
+    #dexpress-dispensers-map,
+    #dexpress-dispensers-list {
+        width: 100%;
+        height: 300px;
+    }
+    
+    .ui-autocomplete .ui-menu-item {
+        padding: 10px 12px;
+        font-size: 16px; /* Prevent zoom on iOS */
+    }
+
+    .dexpress-modal-header,
+    .dexpress-modal-body,
+    .dexpress-modal-footer {
+        padding: 15px;
+    }
+    
+    .dexpress-modal-footer {
+        flex-direction: column;
+    }
+    
+    .dexpress-btn-primary,
+    .dexpress-btn-secondary {
+        width: 100%;
+        margin-bottom: 10px;
+    }
 }
