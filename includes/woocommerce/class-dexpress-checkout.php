@@ -250,7 +250,7 @@ class D_Express_Checkout
         $search = sanitize_text_field($_GET['term'] ?? '');
         $town_id = intval($_GET['town_id'] ?? 0);
 
-        if (empty($search) || strlen($search) < 2 || !$town_id) {
+        if (empty($search) || strlen($search) < 1 || !$town_id) { // Smanjen sa 2 na 1
             wp_send_json([]);
         }
 
@@ -351,9 +351,6 @@ class D_Express_Checkout
             substr($api_phone, 5, 3) . ' ' .
             substr($api_phone, 8);
     }
-    /**
-     * AJAX: Pretraga svih gradova sa naseljima (za "Drugo mesto")
-     */
     public function ajax_search_all_towns()
     {
         check_ajax_referer('dexpress-frontend-nonce', 'nonce');
@@ -361,7 +358,7 @@ class D_Express_Checkout
         global $wpdb;
         $search = sanitize_text_field($_GET['term'] ?? '');
 
-        if (empty($search) || strlen($search) < 2) {
+        if (empty($search) || strlen($search) < 1) { // Smanjen sa 2 na 1
             wp_send_json([]);
         }
 
@@ -382,7 +379,7 @@ class D_Express_Checkout
 
             return [
                 'id'          => $town->id,
-                'label'       => $display_name, // SAMO NAZIV GRADA!
+                'label'       => $display_name,
                 'value'       => $display_name,
                 'town_id'     => $town->id,
                 'postal_code' => $town->postal_code,
@@ -430,17 +427,12 @@ class D_Express_Checkout
             // Koristi display_name ako postoji (naselje), inače name
             $display_name = !empty($town->display_name) ? $town->display_name : $town->name;
 
-            // SAMO naziv grada bez PTT broja
-            $simple_display = $display_name;
-
             return [
                 'id'          => $town->id,
                 'name'        => $town->name,
-                'display_name' => $display_name,
-                'postal_code' => $town->postal_code,
+
                 'street_id'   => $town->street_id,
                 'municipality_name' => $town->municipality_name,
-                'display_simple' => $simple_display
             ];
         }, $towns);
 
@@ -459,7 +451,7 @@ class D_Express_Checkout
         global $wpdb;
         $search = sanitize_text_field($_GET['term'] ?? '');
 
-        if (empty($search) || strlen($search) < 2) {
+        if (empty($search) || strlen($search) < 1) { // Smanjen sa 2 na 1
             wp_send_json([]);
         }
 
@@ -474,7 +466,7 @@ class D_Express_Checkout
 
         $results = array_map(function ($street) {
             return [
-                'id'    => $street->name, // koristimo naziv kao ID
+                'id'    => $street->name,
                 'label' => $street->name,
                 'value' => $street->name,
             ];

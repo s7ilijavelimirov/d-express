@@ -429,7 +429,77 @@
     text-align: center;
     color: #666;
 }
+/* Dodaj ovaj CSS u assets/css/dexpress-checkout.css */
 
+/* Wrapper za input sa loader-om */
+.dexpress-input-wrapper {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+}
+
+/* Loader animacija */
+.dexpress-loading {
+    background-image: url('data:image/svg+xml;charset=utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="none" stroke="%23666" stroke-width="2" opacity="0.4"/><path d="M14 8a6 6 0 0 1-6 6" fill="none" stroke="%23333" stroke-width="2"><animateTransform attributeName="transform" type="rotate" values="0 8 8;360 8 8" dur="1s" repeatCount="indefinite"/></path></svg>') !important;
+    background-repeat: no-repeat !important;
+    background-position: right 10px center !important;
+    background-size: 16px 16px !important;
+    padding-right: 35px !important;
+}
+
+/* Alternativni loader sa CSS animacijom */
+.dexpress-input-wrapper::after {
+    content: '';
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #0073aa;
+    border-radius: 50%;
+    animation: dexpress-spin 1s linear infinite;
+    display: none;
+}
+
+.dexpress-input-wrapper.loading::after {
+    display: block;
+}
+
+@keyframes dexpress-spin {
+    0% { transform: translateY(-50%) rotate(0deg); }
+    100% { transform: translateY(-50%) rotate(360deg); }
+}
+
+/* Dropdown styling */
+.ui-autocomplete {
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 9999 !important;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.ui-menu-item-wrapper {
+    padding: 8px 12px;
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+}
+
+.ui-menu-item-wrapper:hover,
+.ui-state-active {
+    background-color: #0073aa !important;
+    color: white !important;
+}
+
+/* Brži focus efekti */
+.dexpress-street:focus,
+.dexpress-city:focus {
+    border-color: #0073aa !important;
+    box-shadow: 0 0 5px rgba(0,115,170,0.3) !important;
+}
 /* Responsivni dizajn */
 @media (max-width: 768px) {
     .dexpress-dispensers-container {

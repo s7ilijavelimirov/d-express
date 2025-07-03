@@ -267,6 +267,9 @@ function dexpress_log_error($message, $context = array())
  *
  * @return array Opcije za dropdown
  */
+// U fajlu includes/dexpress-woo-helpers.php
+// Zameni funkciju dexpress_get_towns_options() sa ovom:
+
 function dexpress_get_towns_options()
 {
     global $wpdb;
@@ -284,8 +287,9 @@ function dexpress_get_towns_options()
     $options = array();
     if ($results) {
         foreach ($results as $town) {
+            // Koristi display_name ako postoji, inače name - BEZ PTT broja
             $display_name = !empty($town->display_name) ? $town->display_name : $town->name;
-            $options[$town->id] = $display_name;
+            $options[$town->id] = $display_name; // SAMO naziv grada
         }
     }
 

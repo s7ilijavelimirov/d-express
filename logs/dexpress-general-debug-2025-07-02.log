@@ -1,3 +1,5 @@
 {"timestamp":"2025-07-02 11:38:17","context":"general","level":"debug","message":"[SIMULATION] Dodat status 0 za pošiljku TT0000000044"}
 {"timestamp":"2025-07-02 11:38:17","context":"general","level":"debug","message":"[SIMULATION] Dodat status 0 za pošiljku TT0000000045"}
 {"timestamp":"2025-07-02 12:47:27","context":"general","level":"debug","message":"[SIMULATION] Dodat status 3 za pošiljku TT0000000043"}
+{"timestamp":"2025-07-02 13:43:49","context":"general","level":"debug","message":"[SIMULATION] Dodat status 3 za pošiljku TT0000000044"}
+{"timestamp":"2025-07-02 13:43:49","context":"general","level":"debug","message":"[SIMULATION] Dodat status 3 za pošiljku TT0000000045"}

@@ -10,7 +10,24 @@
     var DExpressCheckout = {
         selectedStreet: {}, // {billing: 'Street Name', shipping: 'Street Name'}
         selectedTown: {}, // {billing: {id: 123, name: 'Town'}, shipping: {...}}
+        cache: {
+            streets: {},
+            towns: {}
+        },
 
+        // DODAJ ove funkcije u DExpressCheckout objekat:
+
+        // Prikaži loader
+        showLoader: function ($element) {
+            $element.addClass('dexpress-loading');
+            $element.parent('.dexpress-input-wrapper').addClass('loading');
+        },
+
+        // Sakrij loader  
+        hideLoader: function ($element) {
+            $element.removeClass('dexpress-loading');
+            $element.parent('.dexpress-input-wrapper').removeClass('loading');
+        },
         init: function () {
             if (!$('#billing_first_name').length) {
                 return;
@@ -50,12 +67,12 @@
                 $street.wrap('<div class="dexpress-input-wrapper"></div>');
             }
 
-            // Autocomplete za ulice
+            // Autocomplete za ulice - INSTANT
             $street.autocomplete({
                 source: function (request, response) {
-                    if (request.term.length < 2) return;
+                    if (request.term.length < 1) return;
 
-                    $street.addClass('dexpress-loading');
+                    self.showLoader($street);
 
                     // Ako je izabran grad, pretraži ulice u tom gradu
                     if (self.selectedTown[addressType]) {
@@ -65,24 +82,22 @@
                         self.searchAllStreets(request.term, response);
                     }
                 },
-                minLength: 2,
-                delay: 300,
+                minLength: 1,
+                delay: 0,     // POTPUNO UKLONJEN DELAY!
                 select: function (event, ui) {
-                    console.log('Street selected:', ui.item); // DEBUG
+                    console.log('Street selected:', ui.item);
 
                     if (ui.item.is_custom) {
-                        // Custom ulica
                         $streetId.val(ui.item.value);
                         $street.val(ui.item.value);
                         self.selectedStreet[addressType] = ui.item.value;
                     } else {
-                        // Postojeća ulica
                         $streetId.val(ui.item.value);
                         $street.val(ui.item.value);
                         self.selectedStreet[addressType] = ui.item.value;
                     }
 
-                    console.log('selectedStreet after setting:', self.selectedStreet[addressType]); // DEBUG
+                    console.log('selectedStreet after setting:', self.selectedStreet[addressType]);
                     self.updateStandardAddressField(addressType);
                     return false;
                 },
@@ -105,7 +120,7 @@
                 return $li;
             };
 
-            // Kada se fokusira polje i već ima izabranu ulicu
+            // Event listeneri...
             $street.on('focus', function () {
                 $(this).css('text-align', 'left');
             });
@@ -118,7 +133,6 @@
                 }
             });
         },
-        // GRAD polje sa pametnim vezivanjem  
         // GRAD polje sa pametnim vezivanjem  
         initCityField: function (addressType) {
             var self = this;
@@ -133,19 +147,19 @@
                 $city.wrap('<div class="dexpress-input-wrapper"></div>');
             }
 
-            // Autocomplete za gradove
+            // Autocomplete za gradove - INSTANT
             $city.autocomplete({
                 source: function (request, response) {
                     $city.addClass('dexpress-loading');
 
                     // Ako je izabrana ulica, pretraži gradove koji imaju tu ulicu
                     if (self.selectedStreet[addressType]) {
-                        console.log('Using searchTownsWithStreet for:', self.selectedStreet[addressType]); // DEBUG
+                        console.log('Using searchTownsWithStreet for:', self.selectedStreet[addressType]);
                         self.searchTownsWithStreet(request.term, self.selectedStreet[addressType], response);
                     } else {
-                        console.log('Using searchAllTowns'); // DEBUG
-                        // Inače pretraži sve gradove - SAMO KADA NEMA IZABRANU ULICU
-                        if (request.term.length >= 2) {
+                        console.log('Using searchAllTowns');
+                        // Inače pretraži sve gradove - čim krene da kuca
+                        if (request.term.length >= 1) {
                             self.searchAllTowns(request.term, response);
                         } else {
                             response([]);
@@ -153,26 +167,30 @@
                     }
                 },
                 minLength: 0,
-                delay: 300,
+                delay: 0,     // POTPUNO UKLONJEN DELAY!
                 select: function (event, ui) {
-                    $cityId.val(ui.item.town_id);
-                    $city.val(ui.item.value);
-                    $postcode.val(ui.item.postal_code);
+                    console.log('City selected:', ui.item);
 
-                    self.selectedTown[addressType] = {
-                        id: ui.item.town_id,
-                        name: ui.item.value
-                    };
+                    if (ui.item.town_id) {
+                        // Postavi vrednosti
+                        $city.val(ui.item.value);
+                        $cityId.val(ui.item.town_id);
 
-                    // Ažuriraj standardna polja
-                    $('#' + addressType + '_city').val(ui.item.value);
-                    $('#' + addressType + '_postcode').val(ui.item.postal_code);
+                        // Postavi PTT broj u polje postcode
+                        var $postcode = $('#' + addressType + '_postcode');
+                        if (ui.item.postal_code && $postcode.length) {
+                            $postcode.val(ui.item.postal_code);
+                        }
 
-                    // Vizuelno označi kao popunjeno
-                    $city.addClass('dexpress-filled');
-                    $postcode.addClass('dexpress-filled');
+                        self.selectedTown[addressType] = {
+                            id: ui.item.town_id,
+                            name: ui.item.value
+                        };
 
-                    self.updateStandardAddressField(addressType);
+                        console.log('Selected town stored:', self.selectedTown[addressType]);
+                        self.updateStandardAddressField(addressType);
+                    }
+
                     return false;
                 },
                 focus: function (event, ui) {
@@ -185,7 +203,7 @@
                 var $li = $("<li>").appendTo(ul);
                 var $div = $("<div>").appendTo($li);
 
-                console.log('Rendering item:', item.label); // DEBUG
+                console.log('Rendering item:', item.label);
 
                 // Prikaži samo naziv grada BEZ PTT broja
                 $div.text(item.label);
@@ -193,16 +211,14 @@
                 return $li;
             };
 
-            // NOVI FOCUS EVENT - direktan i prost
+            // FOCUS EVENT - odmah otvara dropdown
             $city.on('focus', function () {
-                console.log('City field focused, selected street:', self.selectedStreet[addressType]); // DEBUG
+                console.log('City field focused, selected street:', self.selectedStreet[addressType]);
                 $(this).css('text-align', 'left');
 
-                // Ako ima izabranu ulicu i polje je prazno
+                // Ako ima izabranu ulicu i polje je prazno - ODMAH otvori
                 if (self.selectedStreet[addressType] && !$(this).val().trim()) {
-                    console.log('Triggering search for street:', self.selectedStreet[addressType]); // DEBUG
-
-                    // Direktno trigger autocomplete search sa praznim stringom
+                    console.log('Triggering search for street:', self.selectedStreet[addressType]);
                     $city.autocomplete('search', '');
                 }
             });
@@ -244,6 +260,13 @@
         // AJAX pozivi
         searchAllStreets: function (term, callback) {
             var self = this;
+
+            // Proveri cache
+            if (self.cache.streets[term]) {
+                callback(self.cache.streets[term]);
+                return;
+            }
+
             $.ajax({
                 url: dexpressCheckout.ajaxUrl,
                 dataType: 'json',
@@ -253,15 +276,21 @@
                     nonce: dexpressCheckout.nonce
                 },
                 success: function (data) {
-                    $('#billing_street, #shipping_street').removeClass('dexpress-loading');
+                    // Sakrij loader
+                    self.hideLoader($('#billing_street, #shipping_street'));
+
+                    // Sačuvaj u cache
+                    self.cache.streets[term] = data;
+
                     callback(data);
                 },
                 error: function () {
-                    $('#billing_street, #shipping_street').removeClass('dexpress-loading');
+                    self.hideLoader($('#billing_street, #shipping_street'));
                     callback([]);
                 }
             });
         },
+
 
         searchStreetsInTown: function (term, townId, callback) {
             var self = this;
@@ -300,6 +329,13 @@
 
         searchAllTowns: function (term, callback) {
             var self = this;
+
+            // Proveri cache
+            if (self.cache.towns[term]) {
+                callback(self.cache.towns[term]);
+                return;
+            }
+
             $.ajax({
                 url: dexpressCheckout.ajaxUrl,
                 dataType: 'json',
@@ -309,22 +345,25 @@
                     nonce: dexpressCheckout.nonce
                 },
                 success: function (data) {
-                    $('#billing_city, #shipping_city').removeClass('dexpress-loading');
+                    // Sakrij loader
+                    self.hideLoader($('#billing_city, #shipping_city'));
 
-                    // DODAJ OVAJ DEBUG:
                     console.log('All towns data received:', data);
                     if (data && data.length > 0) {
                         data.forEach(function (item, index) {
-                            if (index < 3) { // prikaži samo prva 3
+                            if (index < 3) {
                                 console.log('Town ' + index + ':', 'label=' + item.label, 'value=' + item.value);
                             }
                         });
                     }
 
+                    // Sačuvaj u cache
+                    self.cache.towns[term] = data;
+
                     callback(data);
                 },
                 error: function () {
-                    $('#billing_city, #shipping_city').removeClass('dexpress-loading');
+                    self.hideLoader($('#billing_city, #shipping_city'));
                     callback([]);
                 }
             });
@@ -332,7 +371,7 @@
 
         searchTownsWithStreet: function (term, streetName, callback) {
             var self = this;
-            console.log('Searching towns for street:', streetName, 'with term:', term); // DEBUG
+            console.log('Searching towns for street:', streetName, 'with term:', term);
 
             $.ajax({
                 url: dexpressCheckout.ajaxUrl,
@@ -345,7 +384,7 @@
                 },
                 success: function (response) {
                     $('#billing_city, #shipping_city').removeClass('dexpress-loading');
-                    console.log('Towns response:', response); // DEBUG
+                    console.log('Towns response:', response);
 
                     if (response.success && response.data.towns) {
                         // Filtriraj gradove po unetom terminu
@@ -354,18 +393,18 @@
                             return displayName.toLowerCase().includes(term.toLowerCase());
                         });
 
-                        // Konvertuj u format za autocomplete - BEZ PTT broja
+                        // Konvertuj u format za autocomplete - SAMO naziv grada
                         var results = filtered.map(function (town) {
                             var displayName = town.display_name || town.name;
                             return {
                                 town_id: town.id,
-                                value: displayName,
-                                label: displayName, // SAMO naziv grada
-                                postal_code: town.postal_code
+                                value: displayName,           // SAMO naziv grada
+                                label: displayName,           // SAMO naziv grada - bez PTT!
+                                postal_code: town.postal_code // PTT se čuva ali ne prikazuje
                             };
                         });
 
-                        console.log('Final results:', results); // DEBUG
+                        console.log('Final results:', results);
                         callback(results);
                     } else {
                         callback([]);

@@ -1,0 +1,5 @@
+{"timestamp":"2025-07-03 05:58:00","context":"general","level":"info","message":"CRON: Započeto dnevno ažuriranje"}
+{"timestamp":"2025-07-03 05:58:00","context":"general","level":"info","message":"CRON: Ažuriranje paketomata..."}
+{"timestamp":"2025-07-03 05:58:00","context":"general","level":"info","message":"CRON: Ažurirano 218 paketomata"}
+{"timestamp":"2025-07-03 05:58:01","context":"general","level":"info","message":"CRON: Osnovni šifarnici ažurirani"}
+{"timestamp":"2025-07-03 05:58:01","context":"general","level":"info","message":"CRON: Završeno dnevno ažuriranje"}
