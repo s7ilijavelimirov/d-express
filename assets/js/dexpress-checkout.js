@@ -315,18 +315,26 @@
                     $('.dexpress-city').removeClass('dexpress-loading');
 
                     var formattedData = (data || []).map(town => {
+                        // Drugi deo - u .done callback-u:
                         var displayText = '';
-                        if (town.display_name) {
-                            displayText = town.display_name;
-                            if (town.municipality_name) {
-                                displayText += ' (' + town.municipality_name + ')';
-                            }
-                        } else {
-                            displayText = town.label || town.value || '';
-                        }
 
-                        if (town.postal_code) {
-                            displayText += ' - ' + town.postal_code;
+                        // Ako display_name već sadrži zagrade i crticu, koristi ga direktno  
+                        if (town.display_name && (town.display_name.includes('(') || town.display_name.includes('-'))) {
+                            displayText = town.display_name;
+                        } else {
+                            // Inače formatiraj normalno
+                            if (town.display_name) {
+                                displayText = town.display_name;
+                                if (town.municipality_name && town.municipality_name !== town.display_name) {
+                                    displayText += ' (' + town.municipality_name + ')';
+                                }
+                            } else {
+                                displayText = town.label || town.value || '';
+                            }
+
+                            if (town.postal_code) {
+                                displayText += ' - ' + town.postal_code;
+                            }
                         }
 
                         return {
@@ -409,19 +417,23 @@
 
                             var displayText = '';
 
-                            if (town.display_name) {
-
+                            // Ako display_name već sadrži zagrade i crticu, koristi ga direktno
+                            if (town.display_name && (town.display_name.includes('(') || town.display_name.includes('-'))) {
                                 displayText = town.display_name;
-                                if (town.municipality_name) {
-                                    displayText += ' (' + town.municipality_name + ')';
-                                }
                             } else {
+                                // Inače formatiraj normalno
+                                if (town.display_name) {
+                                    displayText = town.display_name;
+                                    if (town.municipality_name && town.municipality_name !== town.display_name) {
+                                        displayText += ' (' + town.municipality_name + ')';
+                                    }
+                                } else {
+                                    displayText = town.name || '';
+                                }
 
-                                displayText = town.name || '';
-                            }
-
-                            if (town.postal_code) {
-                                displayText += ' - ' + town.postal_code;
+                                if (town.postal_code) {
+                                    displayText += ' - ' + town.postal_code;
+                                }
                             }
 
                             return {
@@ -459,14 +471,14 @@
                             }, 50);
                         }
 
-                        console.log('Towns loaded for street:', streetName, 'Count:', towns.length);
+
                     }
 
                     // Ukloni loading flag
                     delete self.loadingTowns[loadKey];
                 })
                 .fail(() => {
-                    console.log('Failed to load towns for street:', streetName);
+
                     delete self.loadingTowns[loadKey];
                 });
         },

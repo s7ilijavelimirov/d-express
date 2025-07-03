@@ -430,9 +430,9 @@ class D_Express_Checkout
                 'display_name'      => $town->display_name,
                 'municipality_name' => $town->municipality_name,
                 'postal_code'       => $town->postal_code,
+                // OBRIŠI debug_info kompleto
             ];
         }, $towns);
-
         // Cache na 1 sat
         set_transient($cache_key, $results, HOUR_IN_SECONDS);
 
