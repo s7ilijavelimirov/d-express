@@ -750,6 +750,30 @@ class D_Express_Admin
                         $towns_options = dexpress_get_towns_options();
                         ?>
 
+                        <!-- DODAJ: Globalni bankovni račun na vrhu -->
+                        <div class="dexpress-global-bank-account" style="margin-bottom: 30px; padding: 20px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 5px;">
+                            <h3 style="margin-top: 0;"><?php _e('Globalne postavke', 'd-express-woo'); ?></h3>
+                            <table class="form-table">
+                                <tr>
+                                    <th scope="row">
+                                        <label for="dexpress_buyout_account"><?php _e('Bankovni račun za otkupninu', 'd-express-woo'); ?></label>
+                                    </th>
+                                    <td>
+                                        <input type="text"
+                                            id="dexpress_buyout_account"
+                                            name="dexpress_buyout_account"
+                                            value="<?php echo esc_attr(get_option('dexpress_buyout_account', '')); ?>"
+                                            placeholder="160-0000123456789-12"
+                                            class="regular-text">
+                                        <p class="description">
+                                            <?php _e('Bankovni račun na koji D-Express uplaćuje novac od pouzeća. Format: 160-0000123456789-12', 'd-express-woo'); ?>
+                                            <span class="dexpress-tooltip dashicons dashicons-info" data-wp-tooltip="<?php _e('Ovaj račun se koristi za sve lokacije i sve pouzeće pošiljke. D-Express će na ovaj račun uplaćivati sav novac koji naplate od kupaca prilikom dostave.', 'd-express-woo'); ?>"></span>
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+
                         <!-- Lista postojećih lokacija -->
                         <div class="dexpress-locations-list">
                             <h3><?php _e('Postojeće lokacije', 'd-express-woo'); ?></h3>
@@ -782,13 +806,9 @@ class D_Express_Admin
                                                     <?php echo esc_html($location->town_name); ?>
                                                 </td>
                                                 <td>
+                                                    <!-- ISPRAVKA: Ukloni bank_account prikaz -->
                                                     <?php echo esc_html($location->contact_name); ?><br>
                                                     <small><?php echo esc_html($location->contact_phone); ?></small>
-                                                    <?php if (!empty($location->bank_account)): ?>
-                                                        <br><small style="color: #28a745;">💳 <?php echo esc_html($location->bank_account); ?></small>
-                                                    <?php else: ?>
-                                                        <br><small style="color: #dc3545;">⚠️ Nema računa</small>
-                                                    <?php endif; ?>
                                                 </td>
                                                 <td>
                                                     <?php if ($location->is_default): ?>
@@ -1275,16 +1295,6 @@ class D_Express_Admin
                                     <input type="text" id="location-contact-phone" name="contact_phone" class="regular-text" data-required="true" placeholder="+381641234567">
                                 </td>
                             </tr>
-
-                            <tr>
-                                <th scope="row">
-                                    <label for="location-bank-account"><?php _e('Broj računa za otkupninu', 'd-express-woo'); ?></label>
-                                </th>
-                                <td>
-                                    <input type="text" id="location-bank-account" name="bank_account" class="regular-text" placeholder="160-0000000000-00">
-                                </td>
-                            </tr>
-
                             <tr>
                                 <th scope="row">
                                     <label for="location-is-default"><?php _e('Glavna lokacija', 'd-express-woo'); ?></label>
@@ -1573,6 +1583,7 @@ class D_Express_Admin
         update_option('dexpress_payment_type', $payment_type);
         update_option('dexpress_return_doc', $return_doc);
         update_option('dexpress_default_content', $default_content);
+        update_option('dexpress_buyout_account', $buyout_account);
         update_option('dexpress_webhook_secret', $webhook_secret);
         update_option('dexpress_require_buyout_account', $require_buyout_account);
         update_option('dexpress_clean_uninstall', $clean_uninstall);

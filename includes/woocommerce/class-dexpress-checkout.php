@@ -182,13 +182,13 @@ class D_Express_Checkout
         wp_send_json_success(array('towns' => $towns_data));
     }
     /**
-     * AJAX: Dobavljanje liste paketomata za mapu - AŽURIRANO SA DEBUG-om
+     * AJAX: Dobavljanje liste paketomata - OPTIMIZOVANO
      */
     public function ajax_get_dispensers()
     {
         check_ajax_referer('dexpress-frontend-nonce', 'nonce');
 
-        dexpress_log("=== ajax_get_dispensers DEBUG ===", 'debug');
+        dexpress_log("=== ajax_get_dispensers START ===", 'debug');
 
         $dispensers = $this->get_cached_dispensers();
 
@@ -947,41 +947,26 @@ class D_Express_Checkout
 <?php
     }
     /**
-     * ZAMENI get_cached_dispensers METODU U class-dexpress-checkout.php
+     * OPTIMIZOVANA METODA - get_cached_dispensers sa boljim performansama
      */
-    private function get_cached_dispensers($town_id = null)
+    private function get_cached_dispensers($town_id = null, $force_refresh = false)
     {
         global $wpdb;
 
-        error_log("=== DEXPRESS DEBUG START ===");
-        error_log("Town ID filter: " . ($town_id ?: 'ALL'));
+        // Cache key zavisi od town_id
+        $cache_key = 'dexpress_dispensers' . ($town_id ? '_town_' . $town_id : '_all');
 
-        // VAŽNO: PRIVREMENO SKIP CACHE ZA DEBUG
-        // $cache_key = 'dexpress_dispensers' . ($town_id ? '_town_' . $town_id : '_all');
-        // $dispensers = get_transient($cache_key);
-        // 
-        // if ($dispensers !== false) {
-        //     error_log("Found in cache: " . count($dispensers) . " dispensers");
-        //     return $dispensers;
-        // }
-
-        error_log("Querying database directly (cache disabled for debug)...");
-
-        // Prvo jednostavan test da li tabela postoji
-        $table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$wpdb->prefix}dexpress_dispensers'");
-        if (!$table_exists) {
-            error_log("ERROR: Table dexpress_dispensers ne postoji!");
-            return array();
+        if (!$force_refresh) {
+            $dispensers = get_transient($cache_key);
+            if ($dispensers !== false) {
+                dexpress_log("Cache hit for dispensers: " . count($dispensers), 'debug');
+                return $dispensers;
+            }
         }
 
-        // Broji ukupne paketomata
-        $total_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}dexpress_dispensers");
-        error_log("Ukupno paketomata u tabeli: $total_count");
+        dexpress_log("Cache miss, querying database for dispensers...", 'debug');
 
-        $active_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}dexpress_dispensers WHERE (deleted IS NULL OR deleted != 1)");
-        error_log("Aktivnih paketomata: $active_count");
-
-        // Jednostavan query da vidiš šta se dešava
+        // Optimizovan query sa JOIN-om umesto subquery-ja
         $query = "
         SELECT 
             d.id, 
@@ -994,8 +979,10 @@ class D_Express_Checkout
             d.latitude, 
             d.longitude,
             d.pay_by_cash, 
-            d.pay_by_card
+            d.pay_by_card,
+            t.postal_code
         FROM {$wpdb->prefix}dexpress_dispensers d
+        LEFT JOIN {$wpdb->prefix}dexpress_towns t ON d.town_id = t.id
         WHERE (d.deleted IS NULL OR d.deleted != 1)
     ";
 
@@ -1005,41 +992,25 @@ class D_Express_Checkout
 
         $query .= " ORDER BY d.town, d.name";
 
-        error_log("SQL Query: $query");
+        dexpress_log("Dispensers SQL Query: $query", 'debug');
 
         $results = $wpdb->get_results($query, ARRAY_A);
 
-        error_log("Raw results count: " . count($results));
-
         if ($wpdb->last_error) {
-            error_log("SQL ERROR: " . $wpdb->last_error);
+            dexpress_log("SQL ERROR: " . $wpdb->last_error, 'error');
             return array();
         }
 
+        dexpress_log("Raw results count: " . count($results), 'debug');
+
         if (empty($results)) {
-            error_log("WARNING: Query vratio 0 rezultata!");
-
-            // Debug: Pokušaj sa najjednostavnijim query-jem
-            $simple_test = $wpdb->get_results("SELECT id, name FROM {$wpdb->prefix}dexpress_dispensers LIMIT 3", ARRAY_A);
-            error_log("Simple test query results: " . print_r($simple_test, true));
-
+            dexpress_log("WARNING: Query vratio 0 rezultata!", 'warning');
             return array();
         }
 
         // Format podataka
         $dispensers = array();
-        foreach ($results as $index => $row) {
-         
-
-            // Dohvati postal_code iz towns tabele
-            $postal_code = '';
-            if (!empty($row['town_id'])) {
-                $postal_code = $wpdb->get_var($wpdb->prepare(
-                    "SELECT postal_code FROM {$wpdb->prefix}dexpress_towns WHERE id = %d",
-                    $row['town_id']
-                ));
-            }
-
+        foreach ($results as $row) {
             $dispenser = array(
                 'id' => intval($row['id']),
                 'name' => $row['name'] ?: 'Unknown Dispenser',
@@ -1052,21 +1023,17 @@ class D_Express_Checkout
                 'longitude' => !empty($row['longitude']) ? floatval($row['longitude']) : null,
                 'pay_by_cash' => intval($row['pay_by_cash']),
                 'pay_by_card' => intval($row['pay_by_card']),
-                'postal_code' => $postal_code ?: ''
+                'postal_code' => $row['postal_code'] ?: ''
             );
 
             $dispensers[] = $dispenser;
         }
 
-        error_log("Final dispensers count: " . count($dispensers));
-        if (!empty($dispensers)) {
-            error_log("First dispenser sample: " . print_r($dispensers[0], true));
-        }
+        dexpress_log("Final dispensers count: " . count($dispensers), 'debug');
 
-        // PRIVREMENO NE CACHE-UJEMO ZA DEBUG
-        // set_transient($cache_key, $dispensers, 12 * HOUR_IN_SECONDS);
+        // Cache na 6 sati (kraće od ranije zbog češćih ažuriranja)
+        set_transient($cache_key, $dispensers, 6 * HOUR_IN_SECONDS);
 
-        error_log("=== DEXPRESS DEBUG END ===");
         return $dispensers;
     }
     /**

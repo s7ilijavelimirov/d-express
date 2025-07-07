@@ -16,12 +16,12 @@ class D_Express_DB_Installer
      */
     public function install()
     {
-         D_Express_DB::update_shipments_table_schema();
+        D_Express_DB::update_shipments_table_schema();
         $this->create_tables();
 
-
+        $this->migrate_bank_account_removal();
         $this->migrate_sender_data();
-        
+
         // Dodaj indekse za optimizaciju performansi
         global $wpdb;
 
@@ -51,7 +51,7 @@ class D_Express_DB_Installer
         // Proveri da li već postoje lokacije
         $existing = $wpdb->get_var("SELECT COUNT(*) FROM $table_name");
         if ($existing > 0) {
-            return; // Već migrováno
+            return; // Već migráno
         }
 
         // Uzmi postojeće podatke iz options
@@ -73,11 +73,69 @@ class D_Express_DB_Installer
                 'contact_phone' => $sender_contact_phone,
                 'is_default' => 1,
                 'is_active' => 1
+                // UKLONIO: bank_account liniju
             ]);
 
             if (function_exists('dexpress_log')) {
                 dexpress_log('Migrirani podaci pošiljaoca u sender_locations', 'info');
             }
+        }
+    }
+    /**
+     * NOVA METODA - Uklanja bank_account kolonu iz sender_locations
+     */
+    private function migrate_bank_account_removal()
+    {
+        global $wpdb;
+
+        $current_version = get_option('dexpress_db_version', '1.0');
+
+        if (version_compare($current_version, '1.1', '<')) {
+            dexpress_log('Starting database migration 1.1: Removing bank_account from sender_locations', 'info');
+
+            $table_name = $wpdb->prefix . 'dexpress_sender_locations';
+
+            // Proveri da li tabela postoji
+            $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table_name'");
+
+            if ($table_exists) {
+                // Proveri da li kolona postoji
+                $column_exists = $wpdb->get_results($wpdb->prepare(
+                    "SHOW COLUMNS FROM {$table_name} LIKE %s",
+                    'bank_account'
+                ));
+
+                if (!empty($column_exists)) {
+                    // Pre brisanja, migriraj podatke u globalne settings ako je potrebno
+                    $existing_accounts = $wpdb->get_results(
+                        "SELECT DISTINCT bank_account FROM {$table_name} WHERE bank_account IS NOT NULL AND bank_account != ''"
+                    );
+
+                    if (!empty($existing_accounts)) {
+                        // Uzmi prvi pronađeni račun kao globalni (ako globalni ne postoji)
+                        $global_account = get_option('dexpress_buyout_account', '');
+                        if (empty($global_account) && !empty($existing_accounts[0]->bank_account)) {
+                            update_option('dexpress_buyout_account', $existing_accounts[0]->bank_account);
+                            dexpress_log('Migrated bank account to global settings: ' . $existing_accounts[0]->bank_account, 'info');
+                        }
+                    }
+
+                    // Sada ukloni kolonu
+                    $result = $wpdb->query("ALTER TABLE {$table_name} DROP COLUMN bank_account");
+
+                    if ($result !== false) {
+                        dexpress_log('Successfully removed bank_account column from sender_locations', 'info');
+                    } else {
+                        dexpress_log('Error removing bank_account column: ' . $wpdb->last_error, 'error');
+                    }
+                } else {
+                    dexpress_log('bank_account column does not exist in sender_locations', 'debug');
+                }
+            }
+
+            // Ažuriraj verziju baze
+            update_option('dexpress_db_version', '1.1');
+            dexpress_log('Database migration 1.1 completed', 'info');
         }
     }
     /**
@@ -286,7 +344,6 @@ class D_Express_DB_Installer
             town_id int(11) NOT NULL COMMENT 'ID grada iz dexpress_towns',
             contact_name varchar(255) NOT NULL COMMENT 'Ime kontakt osobe',
             contact_phone varchar(20) NOT NULL COMMENT 'Telefon (+381...)',
-            bank_account varchar(30) DEFAULT NULL COMMENT 'Račun za otkupninu',
             is_default tinyint(1) DEFAULT 0 COMMENT 'Glavna lokacija',
             is_active tinyint(1) DEFAULT 1 COMMENT 'Aktivna lokacija',
             created_at datetime DEFAULT CURRENT_TIMESTAMP,
