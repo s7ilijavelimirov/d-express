@@ -806,9 +806,9 @@ class D_Express_Admin
                                                     <?php echo esc_html($location->town_name); ?>
                                                 </td>
                                                 <td>
-                                                    <!-- ISPRAVKA: Ukloni bank_account prikaz -->
                                                     <?php echo esc_html($location->contact_name); ?><br>
                                                     <small><?php echo esc_html($location->contact_phone); ?></small>
+                                                    <!-- UKLONJEN: Prikaz bank_account, sada se koristi globalni -->
                                                 </td>
                                                 <td>
                                                     <?php if ($location->is_default): ?>

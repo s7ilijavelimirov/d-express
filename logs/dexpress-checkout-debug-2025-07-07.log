@@ -1,0 +1,95 @@
+{"timestamp":"2025-07-07 11:09:30","context":"checkout","level":"debug","message":"=== ajax_get_towns_list DEBUG ==="}
+{"timestamp":"2025-07-07 11:09:30","context":"checkout","level":"debug","message":"Towns from cache: 99"}
+{"timestamp":"2025-07-07 11:09:31","context":"checkout","level":"debug","message":"=== ajax_get_dispensers START ==="}
+{"timestamp":"2025-07-07 11:09:31","context":"checkout","level":"debug","message":"Cache hit for dispensers: 221"}
+{"timestamp":"2025-07-07 11:09:31","context":"checkout","level":"debug","message":"AJAX get_dispensers: Vraćam 221 paketomata"}
+{"timestamp":"2025-07-07 11:09:31","context":"checkout","level":"debug","message":"First dispenser from AJAX: Array\n(\n    [id] => 189\n    [name] => Ada Mall - Beograd\n    [address] => Visoka 29\n    [town] => Unknown Town\n    [town_id] => 791113\n    [work_hours] => 0-24\n    [work_days] => Every Day\n    [latitude] => 44.786369\n    [longitude] => 20.41891\n    [pay_by_cash] => 0\n    [pay_by_card] => 0\n    [postal_code] => 11030\n)\n"}
+{"timestamp":"2025-07-07 11:11:37","context":"checkout","level":"debug","message":"=== ajax_get_towns_list DEBUG ==="}
+{"timestamp":"2025-07-07 11:11:37","context":"checkout","level":"debug","message":"Towns from cache: 99"}
+{"timestamp":"2025-07-07 11:11:38","context":"checkout","level":"debug","message":"=== ajax_get_dispensers START ==="}
+{"timestamp":"2025-07-07 11:11:38","context":"checkout","level":"debug","message":"Cache miss, querying database for dispensers..."}
+{"timestamp":"2025-07-07 11:11:38","context":"checkout","level":"debug","message":"Dispensers SQL Query: \r\n        SELECT \r\n            d.id, \r\n            d.name, \r\n            d.address, \r\n            COALESCE(NULLIF(d.town, ''), NULLIF(t.display_name, ''), t.name, 'Nepoznat grad') as town,\r\n            d.town_id, \r\n            d.work_hours, \r\n            d.work_days,\r\n            d.latitude, \r\n            d.longitude,\r\n            d.pay_by_cash, \r\n            d.pay_by_card,\r\n            t.postal_code,\r\n            t.name as town_db_name,\r\n            t.display_name as town_display_name\r\n        FROM wp_dexpress_dispensers d\r\n        LEFT JOIN wp_dexpress_towns t ON d.town_id = t.id\r\n        WHERE (d.deleted IS NULL OR d.deleted != 1)\r\n     ORDER BY d.town, d.name"}
+{"timestamp":"2025-07-07 11:11:38","context":"checkout","level":"debug","message":"Raw results count: 221"}
+{"timestamp":"2025-07-07 11:11:38","context":"checkout","level":"debug","message":"=== PRVI PAKETOMAT DEBUG ==="}
+{"timestamp":"2025-07-07 11:11:38","context":"checkout","level":"debug","message":"ID: 189"}
+{"timestamp":"2025-07-07 11:11:38","context":"checkout","level":"debug","message":"Name: Ada Mall - Beograd"}
+{"timestamp":"2025-07-07 11:11:38","context":"checkout","level":"debug","message":"Town: 'Beograd (Čukarica) (Čukarica) - 11030'"}
+{"timestamp":"2025-07-07 11:11:38","context":"checkout","level":"debug","message":"Town_ID: 791113"}
+{"timestamp":"2025-07-07 11:11:38","context":"checkout","level":"debug","message":"Address: Visoka 29"}
+{"timestamp":"2025-07-07 11:11:38","context":"checkout","level":"debug","message":"Postal_code: 11030"}
+{"timestamp":"2025-07-07 11:11:38","context":"checkout","level":"debug","message":"==============================="}
+{"timestamp":"2025-07-07 11:11:38","context":"checkout","level":"debug","message":"Final dispensers count: 221"}
+{"timestamp":"2025-07-07 11:11:38","context":"checkout","level":"debug","message":"AJAX get_dispensers: Vraćam 221 paketomata"}
+{"timestamp":"2025-07-07 11:11:38","context":"checkout","level":"debug","message":"First dispenser from AJAX: Array\n(\n    [id] => 189\n    [name] => Ada Mall - Beograd\n    [address] => Visoka 29\n    [town] => Beograd (Čukarica) (Čukarica) - 11030\n    [town_id] => 791113\n    [work_hours] => 0-24\n    [work_days] => Every Day\n    [latitude] => 44.786369\n    [longitude] => 20.41891\n    [pay_by_cash] => 0\n    [pay_by_card] => 0\n    [postal_code] => 11030\n    [town_db_name] => Beograd (Čukarica)\n    [town_display_name] => Beograd (Čukarica) (Čukarica) - 11030\n)\n"}
+{"timestamp":"2025-07-07 11:12:03","context":"checkout","level":"debug","message":"=== ajax_get_towns_list DEBUG ==="}
+{"timestamp":"2025-07-07 11:12:03","context":"checkout","level":"debug","message":"Towns from cache: 99"}
+{"timestamp":"2025-07-07 11:12:04","context":"checkout","level":"debug","message":"=== ajax_get_dispensers START ==="}
+{"timestamp":"2025-07-07 11:12:04","context":"checkout","level":"debug","message":"Cache miss, querying database for dispensers..."}
+{"timestamp":"2025-07-07 11:12:04","context":"checkout","level":"debug","message":"Dispensers SQL Query: \r\n        SELECT \r\n            d.id, \r\n            d.name, \r\n            d.address, \r\n            COALESCE(NULLIF(d.town, ''), NULLIF(t.display_name, ''), t.name, 'Nepoznat grad') as town,\r\n            d.town_id, \r\n            d.work_hours, \r\n            d.work_days,\r\n            d.latitude, \r\n            d.longitude,\r\n            d.pay_by_cash, \r\n            d.pay_by_card,\r\n            t.postal_code,\r\n            t.name as town_db_name,\r\n            t.display_name as town_display_name\r\n        FROM wp_dexpress_dispensers d\r\n        LEFT JOIN wp_dexpress_towns t ON d.town_id = t.id\r\n        WHERE (d.deleted IS NULL OR d.deleted != 1)\r\n     ORDER BY d.town, d.name"}
+{"timestamp":"2025-07-07 11:12:04","context":"checkout","level":"debug","message":"Raw results count: 221"}
+{"timestamp":"2025-07-07 11:12:04","context":"checkout","level":"debug","message":"=== PRVI PAKETOMAT DEBUG ==="}
+{"timestamp":"2025-07-07 11:12:04","context":"checkout","level":"debug","message":"ID: 189"}
+{"timestamp":"2025-07-07 11:12:04","context":"checkout","level":"debug","message":"Name: Ada Mall - Beograd"}
+{"timestamp":"2025-07-07 11:12:04","context":"checkout","level":"debug","message":"Town: 'Beograd (Čukarica) (Čukarica) - 11030'"}
+{"timestamp":"2025-07-07 11:12:04","context":"checkout","level":"debug","message":"Town_ID: 791113"}
+{"timestamp":"2025-07-07 11:12:04","context":"checkout","level":"debug","message":"Address: Visoka 29"}
+{"timestamp":"2025-07-07 11:12:04","context":"checkout","level":"debug","message":"Postal_code: 11030"}
+{"timestamp":"2025-07-07 11:12:04","context":"checkout","level":"debug","message":"==============================="}
+{"timestamp":"2025-07-07 11:12:04","context":"checkout","level":"debug","message":"Final dispensers count: 221"}
+{"timestamp":"2025-07-07 11:12:04","context":"checkout","level":"debug","message":"AJAX get_dispensers: Vraćam 221 paketomata"}
+{"timestamp":"2025-07-07 11:12:04","context":"checkout","level":"debug","message":"First dispenser from AJAX: Array\n(\n    [id] => 189\n    [name] => Ada Mall - Beograd\n    [address] => Visoka 29\n    [town] => Beograd (Čukarica) (Čukarica) - 11030\n    [town_id] => 791113\n    [work_hours] => 0-24\n    [work_days] => Every Day\n    [latitude] => 44.786369\n    [longitude] => 20.41891\n    [pay_by_cash] => 0\n    [pay_by_card] => 0\n    [postal_code] => 11030\n    [town_db_name] => Beograd (Čukarica)\n    [town_display_name] => Beograd (Čukarica) (Čukarica) - 11030\n)\n"}
+{"timestamp":"2025-07-07 11:18:00","context":"checkout","level":"debug","message":"=== ajax_get_dispensers START ==="}
+{"timestamp":"2025-07-07 11:18:00","context":"checkout","level":"debug","message":"Cache miss, querying database for dispensers..."}
+{"timestamp":"2025-07-07 11:18:00","context":"checkout","level":"debug","message":"Dispensers SQL Query: \r\n        SELECT \r\n            d.id, \r\n            d.name, \r\n            d.address, \r\n            COALESCE(NULLIF(d.town, ''), NULLIF(t.display_name, ''), t.name, 'Nepoznat grad') as town,\r\n            d.town_id, \r\n            d.work_hours, \r\n            d.work_days,\r\n            d.latitude, \r\n            d.longitude,\r\n            d.pay_by_cash, \r\n            d.pay_by_card,\r\n            t.postal_code,\r\n            t.name as town_db_name,\r\n            t.display_name as town_display_name\r\n        FROM wp_dexpress_dispensers d\r\n        LEFT JOIN wp_dexpress_towns t ON d.town_id = t.id\r\n        WHERE (d.deleted IS NULL OR d.deleted != 1)\r\n     ORDER BY d.town, d.name"}
+{"timestamp":"2025-07-07 11:18:00","context":"checkout","level":"debug","message":"Raw results count: 221"}
+{"timestamp":"2025-07-07 11:18:00","context":"checkout","level":"debug","message":"=== PRVI PAKETOMAT DEBUG ==="}
+{"timestamp":"2025-07-07 11:18:00","context":"checkout","level":"debug","message":"ID: 273"}
+{"timestamp":"2025-07-07 11:18:00","context":"checkout","level":"debug","message":"Name: Nis Petrol - Aleksinac"}
+{"timestamp":"2025-07-07 11:18:00","context":"checkout","level":"debug","message":"Town: 'Aleksinac'"}
+{"timestamp":"2025-07-07 11:18:00","context":"checkout","level":"debug","message":"Town_ID: 700614"}
+{"timestamp":"2025-07-07 11:18:00","context":"checkout","level":"debug","message":"Address: Šumatovačka bb"}
+{"timestamp":"2025-07-07 11:18:00","context":"checkout","level":"debug","message":"Postal_code: 18220"}
+{"timestamp":"2025-07-07 11:18:00","context":"checkout","level":"debug","message":"==============================="}
+{"timestamp":"2025-07-07 11:18:00","context":"checkout","level":"debug","message":"Final dispensers count: 221"}
+{"timestamp":"2025-07-07 11:18:00","context":"checkout","level":"debug","message":"AJAX get_dispensers: Vraćam 221 paketomata"}
+{"timestamp":"2025-07-07 11:18:00","context":"checkout","level":"debug","message":"First dispenser from AJAX: Array\n(\n    [id] => 273\n    [name] => Nis Petrol - Aleksinac\n    [address] => Šumatovačka bb\n    [town] => Aleksinac\n    [town_id] => 700614\n    [work_hours] => (6-22), (6-22), (6-22), (6-22), (6-22), (6-22), (6-22)\n    [work_days] => Svakim danom 6-22\n    [latitude] => 43.536341\n    [longitude] => 21.710917\n    [pay_by_cash] => 1\n    [pay_by_card] => 1\n    [postal_code] => 18220\n    [town_db_name] => Aleksinac\n    [town_display_name] => Aleksinac (Aleksinac) - 18220\n)\n"}
+{"timestamp":"2025-07-07 11:18:01","context":"checkout","level":"debug","message":"=== ajax_get_towns_list DEBUG ==="}
+{"timestamp":"2025-07-07 11:18:01","context":"checkout","level":"debug","message":"Towns from cache: 99"}
+{"timestamp":"2025-07-07 11:18:06","context":"checkout","level":"debug","message":"=== ajax_get_towns_list DEBUG ==="}
+{"timestamp":"2025-07-07 11:18:06","context":"checkout","level":"debug","message":"Towns from cache: 99"}
+{"timestamp":"2025-07-07 11:24:26","context":"checkout","level":"debug","message":"=== ajax_get_dispensers START ==="}
+{"timestamp":"2025-07-07 11:24:26","context":"checkout","level":"debug","message":"Cache miss, querying database for dispensers..."}
+{"timestamp":"2025-07-07 11:24:26","context":"checkout","level":"debug","message":"Dispensers SQL Query: \r\n        SELECT \r\n            d.id, \r\n            d.name, \r\n            d.address, \r\n          COALESCE(\r\n    NULLIF(TRIM(d.town), ''), \r\n    CASE \r\n        WHEN t.name LIKE '%(%' THEN TRIM(SUBSTRING_INDEX(t.name, '(', 1))\r\n        ELSE TRIM(t.name) \r\n    END,\r\n    'Nepoznat grad'\r\n) as town,\r\n            d.town_id, \r\n            d.work_hours, \r\n            d.work_days,\r\n            d.latitude, \r\n            d.longitude,\r\n            d.pay_by_cash, \r\n            d.pay_by_card,\r\n            t.postal_code,\r\n            t.name as town_db_name,\r\n            t.display_name as town_display_name\r\n        FROM wp_dexpress_dispensers d\r\n        LEFT JOIN wp_dexpress_towns t ON d.town_id = t.id\r\n        WHERE (d.deleted IS NULL OR d.deleted != 1)\r\n     ORDER BY d.town, d.name"}
+{"timestamp":"2025-07-07 11:24:26","context":"checkout","level":"debug","message":"Raw results count: 221"}
+{"timestamp":"2025-07-07 11:24:26","context":"checkout","level":"debug","message":"=== PRVI PAKETOMAT DEBUG ==="}
+{"timestamp":"2025-07-07 11:24:26","context":"checkout","level":"debug","message":"ID: 273"}
+{"timestamp":"2025-07-07 11:24:26","context":"checkout","level":"debug","message":"Name: Nis Petrol - Aleksinac"}
+{"timestamp":"2025-07-07 11:24:26","context":"checkout","level":"debug","message":"Town: 'Aleksinac'"}
+{"timestamp":"2025-07-07 11:24:26","context":"checkout","level":"debug","message":"Town_ID: 700614"}
+{"timestamp":"2025-07-07 11:24:26","context":"checkout","level":"debug","message":"Address: Šumatovačka bb"}
+{"timestamp":"2025-07-07 11:24:26","context":"checkout","level":"debug","message":"Postal_code: 18220"}
+{"timestamp":"2025-07-07 11:24:26","context":"checkout","level":"debug","message":"==============================="}
+{"timestamp":"2025-07-07 11:24:26","context":"checkout","level":"debug","message":"Final dispensers count: 221"}
+{"timestamp":"2025-07-07 11:24:26","context":"checkout","level":"debug","message":"AJAX get_dispensers: Vraćam 221 paketomata"}
+{"timestamp":"2025-07-07 11:24:26","context":"checkout","level":"debug","message":"First dispenser from AJAX: Array\n(\n    [id] => 273\n    [name] => Nis Petrol - Aleksinac\n    [address] => Šumatovačka bb\n    [town] => Aleksinac\n    [town_id] => 700614\n    [work_hours] => (6-22), (6-22), (6-22), (6-22), (6-22), (6-22), (6-22)\n    [work_days] => Svakim danom 6-22\n    [latitude] => 43.536341\n    [longitude] => 21.710917\n    [pay_by_cash] => 1\n    [pay_by_card] => 1\n    [postal_code] => 18220\n    [town_db_name] => Aleksinac\n    [town_display_name] => Aleksinac (Aleksinac) - 18220\n)\n"}
+{"timestamp":"2025-07-07 11:24:27","context":"checkout","level":"debug","message":"=== ajax_get_towns_list DEBUG ==="}
+{"timestamp":"2025-07-07 11:24:27","context":"checkout","level":"debug","message":"Towns from cache: 99"}
+{"timestamp":"2025-07-07 11:24:32","context":"checkout","level":"debug","message":"=== ajax_get_towns_list DEBUG ==="}
+{"timestamp":"2025-07-07 11:24:32","context":"checkout","level":"debug","message":"Towns from cache: 99"}
+{"timestamp":"2025-07-07 11:28:37","context":"checkout","level":"debug","message":"=== ajax_get_dispensers START ==="}
+{"timestamp":"2025-07-07 11:28:37","context":"checkout","level":"debug","message":"Cache miss, querying database for dispensers..."}
+{"timestamp":"2025-07-07 11:28:37","context":"checkout","level":"debug","message":"Dispensers SQL Query: \r\n    SELECT \r\n        d.id, \r\n        d.name, \r\n        d.address, \r\n        CASE \r\n            WHEN d.town LIKE '%(%' THEN TRIM(SUBSTRING_INDEX(d.town, '(', 1))\r\n            WHEN t.name LIKE '%(%' THEN TRIM(SUBSTRING_INDEX(t.name, '(', 1)) \r\n            ELSE TRIM(COALESCE(NULLIF(d.town, ''), t.name, 'Nepoznat grad'))\r\n        END as town,\r\n        d.town_id, \r\n        d.work_hours, \r\n        d.work_days,\r\n        d.latitude, \r\n        d.longitude,\r\n        d.pay_by_cash, \r\n        d.pay_by_card,\r\n        t.postal_code\r\n    FROM wp_dexpress_dispensers d\r\n    LEFT JOIN wp_dexpress_towns t ON d.town_id = t.id\r\n    WHERE (d.deleted IS NULL OR d.deleted != 1)\r\n ORDER BY d.town, d.name"}
+{"timestamp":"2025-07-07 11:28:37","context":"checkout","level":"debug","message":"Raw results count: 221"}
+{"timestamp":"2025-07-07 11:28:37","context":"checkout","level":"debug","message":"=== PRVI PAKETOMAT DEBUG ==="}
+{"timestamp":"2025-07-07 11:28:37","context":"checkout","level":"debug","message":"ID: 273"}
+{"timestamp":"2025-07-07 11:28:37","context":"checkout","level":"debug","message":"Name: Nis Petrol - Aleksinac"}
+{"timestamp":"2025-07-07 11:28:37","context":"checkout","level":"debug","message":"Town: 'Aleksinac'"}
+{"timestamp":"2025-07-07 11:28:37","context":"checkout","level":"debug","message":"Town_ID: 700614"}
+{"timestamp":"2025-07-07 11:28:37","context":"checkout","level":"debug","message":"Address: Šumatovačka bb"}
+{"timestamp":"2025-07-07 11:28:37","context":"checkout","level":"debug","message":"Postal_code: 18220"}
+{"timestamp":"2025-07-07 11:28:37","context":"checkout","level":"debug","message":"==============================="}
+{"timestamp":"2025-07-07 11:28:37","context":"checkout","level":"debug","message":"Final dispensers count: 221"}
+{"timestamp":"2025-07-07 11:28:37","context":"checkout","level":"debug","message":"AJAX get_dispensers: Vraćam 221 paketomata"}
+{"timestamp":"2025-07-07 11:28:37","context":"checkout","level":"debug","message":"First dispenser from AJAX: Array\n(\n    [id] => 273\n    [name] => Nis Petrol - Aleksinac\n    [address] => Šumatovačka bb\n    [town] => Aleksinac\n    [town_id] => 700614\n    [work_hours] => (6-22), (6-22), (6-22), (6-22), (6-22), (6-22), (6-22)\n    [work_days] => Svakim danom 6-22\n    [latitude] => 43.536341\n    [longitude] => 21.710917\n    [pay_by_cash] => 1\n    [pay_by_card] => 1\n    [postal_code] => 18220\n    [town_db_name] => \n    [town_display_name] => \n)\n"}
+{"timestamp":"2025-07-07 11:28:38","context":"checkout","level":"debug","message":"=== ajax_get_towns_list DEBUG ==="}
+{"timestamp":"2025-07-07 11:28:38","context":"checkout","level":"debug","message":"Towns from cache: 99"}

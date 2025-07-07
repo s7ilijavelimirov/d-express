@@ -190,7 +190,7 @@ class D_Express_Checkout
 
         dexpress_log("=== ajax_get_dispensers START ===", 'debug');
 
-        $dispensers = $this->get_cached_dispensers();
+        $dispensers = $this->get_cached_dispensers(null, true); // Force refresh
 
         dexpress_log("AJAX get_dispensers: Vraćam " . count($dispensers) . " paketomata", 'debug');
 
@@ -968,23 +968,27 @@ class D_Express_Checkout
 
         // Optimizovan query sa JOIN-om umesto subquery-ja
         $query = "
-        SELECT 
-            d.id, 
-            d.name, 
-            d.address, 
-            d.town, 
-            d.town_id, 
-            d.work_hours, 
-            d.work_days,
-            d.latitude, 
-            d.longitude,
-            d.pay_by_cash, 
-            d.pay_by_card,
-            t.postal_code
-        FROM {$wpdb->prefix}dexpress_dispensers d
-        LEFT JOIN {$wpdb->prefix}dexpress_towns t ON d.town_id = t.id
-        WHERE (d.deleted IS NULL OR d.deleted != 1)
-    ";
+    SELECT 
+        d.id, 
+        d.name, 
+        d.address, 
+        CASE 
+            WHEN d.town LIKE '%(%' THEN TRIM(SUBSTRING_INDEX(d.town, '(', 1))
+            WHEN t.name LIKE '%(%' THEN TRIM(SUBSTRING_INDEX(t.name, '(', 1)) 
+            ELSE TRIM(COALESCE(NULLIF(d.town, ''), t.name, 'Nepoznat grad'))
+        END as town,
+        d.town_id, 
+        d.work_hours, 
+        d.work_days,
+        d.latitude, 
+        d.longitude,
+        d.pay_by_cash, 
+        d.pay_by_card,
+        t.postal_code
+    FROM {$wpdb->prefix}dexpress_dispensers d
+    LEFT JOIN {$wpdb->prefix}dexpress_towns t ON d.town_id = t.id
+    WHERE (d.deleted IS NULL OR d.deleted != 1)
+";
 
         if ($town_id) {
             $query .= $wpdb->prepare(" AND d.town_id = %d", $town_id);
@@ -1002,7 +1006,17 @@ class D_Express_Checkout
         }
 
         dexpress_log("Raw results count: " . count($results), 'debug');
-
+        // Debug - isprintaj prvi paketomat da vidimo strukturu
+        if (!empty($results)) {
+            dexpress_log("=== PRVI PAKETOMAT DEBUG ===", 'debug');
+            dexpress_log("ID: " . $results[0]['id'], 'debug');
+            dexpress_log("Name: " . $results[0]['name'], 'debug');
+            dexpress_log("Town: '" . $results[0]['town'] . "'", 'debug');
+            dexpress_log("Town_ID: " . $results[0]['town_id'], 'debug');
+            dexpress_log("Address: " . $results[0]['address'], 'debug');
+            dexpress_log("Postal_code: " . $results[0]['postal_code'], 'debug');
+            dexpress_log("===============================", 'debug');
+        }
         if (empty($results)) {
             dexpress_log("WARNING: Query vratio 0 rezultata!", 'warning');
             return array();
@@ -1013,9 +1027,9 @@ class D_Express_Checkout
         foreach ($results as $row) {
             $dispenser = array(
                 'id' => intval($row['id']),
-                'name' => $row['name'] ?: 'Unknown Dispenser',
+                'name' => $row['name'] ?: 'Paketomat',
                 'address' => $row['address'] ?: 'No Address',
-                'town' => $row['town'] ?: 'Unknown Town',
+                'town' => $row['town'], // Već obrađeno u SQL-u
                 'town_id' => intval($row['town_id']),
                 'work_hours' => $row['work_hours'] ?: '0-24',
                 'work_days' => $row['work_days'] ?: 'Every Day',
@@ -1023,7 +1037,10 @@ class D_Express_Checkout
                 'longitude' => !empty($row['longitude']) ? floatval($row['longitude']) : null,
                 'pay_by_cash' => intval($row['pay_by_cash']),
                 'pay_by_card' => intval($row['pay_by_card']),
-                'postal_code' => $row['postal_code'] ?: ''
+                'postal_code' => $row['postal_code'] ?: '',
+                // Debug polja
+                'town_db_name' => $row['town_db_name'],
+                'town_display_name' => $row['town_display_name']
             );
 
             $dispensers[] = $dispenser;

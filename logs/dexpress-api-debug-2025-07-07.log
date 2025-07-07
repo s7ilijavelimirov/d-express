@@ -1,0 +1,8 @@
+{"timestamp":"2025-07-07 11:17:01","context":"api","level":"debug","message":"Ažuriranje shops napredak: 44\/44"}
+{"timestamp":"2025-07-07 11:17:01","context":"api","level":"debug","message":"Ažuriranje locations napredak: 100\/289"}
+{"timestamp":"2025-07-07 11:17:01","context":"api","level":"debug","message":"Ažuriranje locations napredak: 200\/289"}
+{"timestamp":"2025-07-07 11:17:02","context":"api","level":"debug","message":"Ažuriranje locations napredak: 289\/289"}
+{"timestamp":"2025-07-07 11:17:02","context":"api","level":"debug","message":"Ažuriranje dispensers napredak: 100\/219"}
+{"timestamp":"2025-07-07 11:17:02","context":"api","level":"debug","message":"Ažuriranje dispensers napredak: 200\/219"}
+{"timestamp":"2025-07-07 11:17:02","context":"api","level":"debug","message":"Ažuriranje dispensers napredak: 219\/219"}
+{"timestamp":"2025-07-07 11:17:02","context":"api","level":"debug","message":"Ažuriranje centres napredak: 27\/27"}

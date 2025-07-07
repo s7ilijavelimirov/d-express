@@ -104,11 +104,11 @@ class D_Express_Sender_Locations
                 'town_id' => intval($data['town_id']),
                 'contact_name' => sanitize_text_field($data['contact_name']),
                 'contact_phone' => sanitize_text_field($data['contact_phone']),
-                'bank_account' => sanitize_text_field($data['bank_account'] ?? ''),
+                // UKLONJEN: bank_account - više se ne čuva po lokaciji
                 'is_default' => !empty($data['is_default']) ? 1 : 0,
                 'is_active' => 1
             ),
-            array('%s', '%s', '%s', '%d', '%s', '%s', '%s', '%d', '%d')
+            array('%s', '%s', '%s', '%d', '%s', '%s', '%d', '%d') // Uklonjen %s za bank_account
         );
 
         if ($result === false) {
@@ -162,11 +162,11 @@ class D_Express_Sender_Locations
                 'town_id' => intval($data['town_id']),
                 'contact_name' => sanitize_text_field($data['contact_name']),
                 'contact_phone' => sanitize_text_field($data['contact_phone']),
-                'bank_account' => sanitize_text_field($data['bank_account'] ?? ''),
+                // UKLONJEN: bank_account - više se ne čuva po lokaciji
                 'is_default' => !empty($data['is_default']) ? 1 : 0
             ),
             array('id' => $location_id),
-            array('%s', '%s', '%s', '%d', '%s', '%s', '%s', '%d'),
+            array('%s', '%s', '%s', '%d', '%s', '%s', '%d'), // Uklonjen %s za bank_account
             array('%d')
         );
 
