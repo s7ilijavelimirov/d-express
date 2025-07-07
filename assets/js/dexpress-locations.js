@@ -130,7 +130,6 @@ jQuery(document).ready(function ($) {
             $('#location-town').val(locationData.town_id);
             $('#location-contact-name').val(locationData.contact_name);
             $('#location-contact-phone').val(locationData.contact_phone);
-            $('#location-bank-account').val(locationData.bank_account || '');
             $('#location-is-default').prop('checked', locationData.is_default == 1);
             $('#dexpress-save-location').text('Ažuriraj lokaciju');
         } else {
@@ -208,7 +207,6 @@ jQuery(document).ready(function ($) {
             town_id: $('#location-town').val(),
             contact_name: $('#location-contact-name').val().trim(),
             contact_phone: $('#location-contact-phone').val().trim(),
-            bank_account: $('#location-bank-account').val().trim(),
             is_default: $('#location-is-default').is(':checked') ? 1 : 0
         };
 

@@ -74,7 +74,6 @@ class D_Express_Admin_Ajax
                 'town_id' => intval($_POST['town_id']),
                 'contact_name' => sanitize_text_field($_POST['contact_name']),
                 'contact_phone' => sanitize_text_field($_POST['contact_phone']),
-                'bank_account' => sanitize_text_field($_POST['bank_account'] ?? ''),
                 'is_default' => !empty($_POST['is_default']) ? 1 : 0
             ];
 
@@ -125,7 +124,6 @@ class D_Express_Admin_Ajax
                 'town_id' => intval($_POST['town_id']),
                 'contact_name' => sanitize_text_field($_POST['contact_name']),
                 'contact_phone' => sanitize_text_field($_POST['contact_phone']),
-                'bank_account' => sanitize_text_field($_POST['bank_account'] ?? ''),
                 'is_default' => !empty($_POST['is_default']) ? 1 : 0
             ];
 
