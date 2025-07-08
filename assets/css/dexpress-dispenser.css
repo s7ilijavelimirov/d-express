@@ -1,4 +1,4 @@
-/* D-Express Dispenser Modal - Kompletno novi CSS sa paginacijom */
+/* D-Express Dispenser Modal - Optimizovani CSS sa autocomplete */
 
 /* Modal overlay */
 #dexpress-dispenser-modal {
@@ -89,7 +89,7 @@
     overflow: hidden;
 }
 
-/* Town filter */
+/* Town filter sa autocomplete */
 .dexpress-town-filter {
     margin-bottom: 20px;
     position: relative;
@@ -103,7 +103,8 @@
     font-size: 14px;
 }
 
-.dexpress-town-filter input {
+/* Input polje umesto dropdown */
+#dexpress-town-select {
     width: 100%;
     padding: 12px 45px 12px 15px;
     border: 2px solid #e0e0e0;
@@ -111,19 +112,20 @@
     font-size: 14px;
     transition: border-color 0.2s, box-shadow 0.2s;
     box-sizing: border-box;
+    background: white;
 }
 
-.dexpress-town-filter input:focus {
+#dexpress-town-select:focus {
     outline: none;
     border-color: #E90000;
     box-shadow: 0 0 0 3px rgba(230, 0, 84, 0.1);
 }
 
-.dexpress-town-filter .reset-filter {
+/* Reset dugme */
+.dexpress-reset-filter {
     position: absolute;
     right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
+    top: 38px;
     background: #e0e0e0;
     border: none;
     color: #666;
@@ -132,18 +134,22 @@
     height: 24px;
     border-radius: 50%;
     cursor: pointer;
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: center;
     transition: all 0.2s;
 }
 
-.dexpress-town-filter .reset-filter:hover {
+.dexpress-reset-filter.show {
+    display: flex;
+}
+
+.dexpress-reset-filter:hover {
     background: #E90000;
     color: white;
 }
 
-/* Town suggestions dropdown */
+/* Autocomplete suggestions */
 .dexpress-town-suggestions {
     position: absolute;
     top: 100%;
@@ -153,7 +159,7 @@
     border: 2px solid #e0e0e0;
     border-top: none;
     border-radius: 0 0 8px 8px;
-    max-height: 200px;
+    max-height: 300px;
     overflow-y: auto;
     z-index: 1000;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -164,22 +170,95 @@
     display: block;
 }
 
-.town-suggestion {
-    padding: 12px 15px;
+/* Autocomplete loader */
+.dexpress-autocomplete-loader {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 15px;
+    color: #666;
+    font-size: 14px;
+}
+
+.dexpress-loader-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #E90000;
+    border-radius: 50%;
+    animation: dexpress-spin 1s linear infinite;
+    margin-right: 8px;
+}
+
+@keyframes dexpress-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Town suggestion header */
+.town-suggestion-header {
+    padding: 12px 15px 8px 15px;
     cursor: pointer;
     border-bottom: 1px solid #f0f0f0;
     transition: background 0.2s;
     font-size: 14px;
+    background: #f8f9fa;
+    font-weight: bold;
+    color: #333;
 }
 
-.town-suggestion:last-child {
-    border-bottom: none;
-}
-
-.town-suggestion:hover,
-.town-suggestion.active {
-    background: #f8f9ff;
+.town-suggestion-header:hover {
+    background: #e9ecef;
     color: #E90000;
+}
+
+/* Individual dispenser suggestions */
+.dispenser-suggestion {
+    padding: 8px 15px 8px 30px;
+    cursor: pointer;
+    border-bottom: 1px solid #f8f8f8;
+    transition: background 0.2s;
+    font-size: 13px;
+    color: #666;
+}
+
+.dispenser-suggestion:hover {
+    background: #f0f7ff;
+    color: #E90000;
+}
+
+/* Show more suggestion */
+.dispenser-suggestion-more {
+    padding: 8px 15px 8px 30px;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background 0.2s;
+    font-size: 12px;
+    color: #888;
+    font-style: italic;
+}
+
+.dispenser-suggestion-more:hover {
+    background: #fff9e6;
+    color: #E90000;
+}
+
+/* No suggestion */
+.no-suggestion {
+    padding: 12px 15px;
+    color: #999;
+    font-style: italic;
+    text-align: center;
+}
+
+.dexpress-autocomplete-error {
+    padding: 15px;
+    text-align: center;
+    color: #dc3545;
+    font-size: 14px;
+    background-color: #f8d7da;
+    border-radius: 4px;
+    margin: 5px 0;
 }
 
 /* Main container */
@@ -228,31 +307,39 @@
     max-height: 100%;
 }
 
-/* Town groups */
-.dexpress-dispensers-town h4 {
-    margin: 0;
+/* Info header */
+.dexpress-dispensers-info {
     padding: 15px 20px;
     background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-    color: #495057;
-    font-size: 15px;
-    font-weight: 600;
     border-bottom: 2px solid #dee2e6;
-    position: sticky;
-    top: 0;
-    z-index: 10;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 10;
 }
 
-.dexpress-dispensers-town h4::after {
-    content: attr(data-count);
+.dexpress-dispensers-info p {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 500;
+    color: #495057;
+}
+
+.dexpress-reset-filter-btn {
     background: #E90000;
     color: white;
-    padding: 2px 8px;
-    border-radius: 12px;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
     font-size: 12px;
-    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.dexpress-reset-filter-btn:hover {
+    background: #cc0048;
 }
 
 /* Dispenser items */
@@ -266,147 +353,7 @@
     align-items: flex-start;
     position: relative;
 }
-/* Dodaj ovo u dexpress-dispenser.css */
 
-.town-suggestion-header {
-    padding: 12px 15px 8px 15px;
-    cursor: pointer;
-    border-bottom: 1px solid #f0f0f0;
-    transition: background 0.2s;
-    font-size: 14px;
-    background: #f8f9fa;
-    font-weight: bold;
-    color: #333;
-}
-
-.town-suggestion-header:hover {
-    background: #e9ecef;
-}
-
-.dispenser-suggestion {
-    padding: 8px 15px 8px 30px; /* Uvučeno u odnosu na header */
-    cursor: pointer;
-    border-bottom: 1px solid #f8f8f8;
-    transition: background 0.2s;
-    font-size: 13px;
-    color: #666;
-}
-/* Autocomplete loader styles */
-.dexpress-autocomplete-loader {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 15px;
-    color: #666;
-    font-size: 14px;
-}
-
-.dexpress-loader-spinner {
-    width: 16px;
-    height: 16px;
-    border: 2px solid #f3f3f3;
-    border-top: 2px solid #E90000;
-    border-radius: 50%;
-    animation: dexpress-spin 1s linear infinite;
-    margin-right: 8px;
-}
-
-.dexpress-autocomplete-error {
-    padding: 15px;
-    text-align: center;
-    color: #dc3545;
-    font-size: 14px;
-    background-color: #f8d7da;
-    border-radius: 4px;
-    margin: 5px 0;
-}
-
-@keyframes dexpress-spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-/* Poboljšanja za town suggestions */
-.dexpress-town-suggestions {
-    max-height: 300px;
-    overflow-y: auto;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    background: white;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    z-index: 9999;
-}
-
-.town-suggestion-header {
-    padding: 10px 15px;
-    background: #f8f9fa;
-    border-bottom: 1px solid #eee;
-    cursor: pointer;
-    font-weight: 500;
-}
-
-.town-suggestion-header:hover {
-    background: #e9ecef;
-}
-
-.dispenser-suggestion {
-    padding: 8px 20px;
-    cursor: pointer;
-    border-bottom: 1px solid #f0f0f0;
-    font-size: 13px;
-    color: #555;
-}
-
-.dispenser-suggestion:hover {
-    background: #f8f9fa;
-    color: #E90000;
-}
-
-.dispenser-suggestion-more {
-    padding: 8px 20px;
-    cursor: pointer;
-    font-style: italic;
-    color: #666;
-    background: #f9f9f9;
-}
-
-.dispenser-suggestion-more:hover {
-    background: #e9ecef;
-    color: #E90000;
-}
-
-.no-suggestion {
-    padding: 15px;
-    text-align: center;
-    color: #999;
-    font-style: italic;
-}
-.dispenser-suggestion:hover {
-    background: #f0f7ff;
-    color: #E90000;
-}
-
-.dispenser-suggestion-more {
-    padding: 8px 15px 8px 30px;
-    cursor: pointer;
-    border-bottom: 1px solid #f0f0f0;
-    transition: background 0.2s;
-    font-size: 12px;
-    color: #888;
-    font-style: italic;
-}
-
-.dispenser-suggestion-more:hover {
-    background: #fff9e6;
-    color: #E90000;
-}
-
-.no-suggestion {
-    padding: 12px 15px;
-    color: #999;
-    font-style: italic;
-    text-align: center;
-}
 .dexpress-dispenser-item::before {
     content: '';
     position: absolute;
@@ -420,7 +367,6 @@
 
 .dexpress-dispenser-item:hover {
     background: #f8f9ff;
-   
 }
 
 .dexpress-dispenser-item:hover::before {
@@ -442,12 +388,38 @@
     margin-right: 15px;
 }
 
+.dispenser-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 6px;
+}
+
 .dispenser-name {
     font-weight: 600;
     color: #2c3e50;
     font-size: 15px;
-    margin-bottom: 6px;
-    display: block;
+    margin: 0;
+}
+
+.dispenser-status {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-left: 8px;
+}
+
+.dispenser-status.online {
+    background: #28a745;
+}
+
+.dispenser-status.offline {
+    background: #dc3545;
+}
+
+.dispenser-status.unknown {
+    background: #6c757d;
 }
 
 .dispenser-address {
@@ -457,35 +429,27 @@
     line-height: 1.3;
 }
 
-.dispenser-info {
+.dispenser-town {
+    color: #888;
+    font-size: 12px;
+    margin-bottom: 6px;
+    font-weight: 500;
+}
+
+.dispenser-details {
     font-size: 12px;
     color: #888;
     line-height: 1.3;
 }
 
-.dispenser-payment {
-    display: inline-flex;
-    gap: 6px;
-    margin-top: 4px;
+.work-hours {
+    display: block;
+    margin-bottom: 2px;
 }
 
-.payment-badge {
-    background: #e9ecef;
-    color: #495057;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 10px;
-    font-weight: 500;
-}
-
-.payment-badge.cash {
-    background: #d4edda;
-    color: #155724;
-}
-
-.payment-badge.card {
-    background: #d1ecf1;
-    color: #0c5460;
+.payment-methods {
+    display: block;
+    color: #666;
 }
 
 /* Select button */
@@ -554,27 +518,27 @@
 }
 
 /* Map info window */
-.dexpress-dispenser-info {
+.dexpress-info-window {
     min-width: 300px;
     padding: 20px;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
-.dexpress-dispenser-info h4 {
+.dexpress-info-window h4 {
     margin: 0 0 12px 0;
     color: #2c3e50;
     font-size: 18px;
     font-weight: 600;
 }
 
-.dexpress-dispenser-info p {
+.dexpress-info-window p {
     margin: 8px 0;
     font-size: 14px;
     line-height: 1.4;
     color: #555;
 }
 
-.dexpress-dispenser-info strong {
+.dexpress-info-window strong {
     color: #2c3e50;
 }
 
@@ -599,7 +563,267 @@
     box-shadow: 0 4px 8px rgba(230, 0, 84, 0.3);
 }
 
+/* Success Animation - UNUTAR MODALA */
+.dexpress-modal-body {
+    position: relative;
+}
+
+.dexpress-success-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.96);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    border-radius: 8px;
+    backdrop-filter: blur(4px);
+}
+
+.dexpress-success-overlay.show {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.dexpress-success-overlay.fade-out {
+    opacity: 0;
+    transform: scale(0.9);
+}
+
+.dexpress-success-content {
+    text-align: center;
+    padding: 40px;
+    max-width: 350px;
+}
+
+.dexpress-success-icon {
+    margin-bottom: 25px;
+}
+
+/* Checkmark Animation */
+.checkmark {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    display: block;
+    stroke-width: 3;
+    stroke: #28a745;
+    stroke-miterlimit: 10;
+    margin: 0 auto 20px;
+    box-shadow: inset 0px 0px 0px #28a745;
+    animation: fill 0.4s ease-in-out 0.4s forwards, scale 0.3s ease-in-out 0.9s both;
+    position: relative;
+    background: white;
+    border: 3px solid #28a745;
+    transition: border-color 0.3s ease;
+}
+
+.checkmark_stem {
+    position: absolute;
+    width: 3px;
+    height: 16px;
+    background: #28a745;
+    left: 33px;
+    top: 22px;
+    transform: rotate(45deg);
+    transform-origin: bottom;
+    animation: stem 0.3s ease-in-out 1.2s both;
+}
+
+.checkmark_kick {
+    position: absolute;
+    width: 3px;
+    height: 10px;
+    background: #28a745;
+    left: 26px;
+    top: 32px;
+    transform: rotate(-45deg);
+    transform-origin: bottom;
+    animation: kick 0.3s ease-in-out 1.4s both;
+}
+
+@keyframes fill {
+    100% {
+        box-shadow: inset 0px 0px 0px 35px #28a745;
+    }
+}
+
+@keyframes scale {
+    0%, 100% {
+        transform: none;
+    }
+    50% {
+        transform: scale3d(1.1, 1.1, 1);
+    }
+}
+
+@keyframes stem {
+    0% {
+        height: 0;
+        opacity: 0;
+    }
+    100% {
+        height: 16px;
+        opacity: 1;
+    }
+}
+
+@keyframes kick {
+    0% {
+        height: 0;
+        opacity: 0;
+    }
+    100% {
+        height: 10px;
+        opacity: 1;
+    }
+}
+
+.dexpress-success-content h3 {
+    color: #28a745;
+    font-size: 22px;
+    font-weight: 600;
+    margin: 0 0 15px 0;
+    animation: slideInUp 0.5s ease-out 0.6s both;
+    transition: color 0.3s ease;
+}
+
+.dexpress-success-details {
+    color: #333;
+    font-size: 15px;
+    margin-bottom: 20px;
+    line-height: 1.4;
+    animation: slideInUp 0.5s ease-out 0.8s both;
+}
+
+.dexpress-success-details strong {
+    color: #E90000;
+    font-size: 16px;
+}
+
+.dexpress-success-message {
+    animation: slideInUp 0.5s ease-out 1s both;
+}
+
+.dexpress-success-message span {
+    color: #666;
+    font-size: 14px;
+    font-weight: 500;
+    display: block;
+    margin-top: 10px;
+}
+
+/* Progress Bar */
+.dexpress-progress-bar {
+    width: 200px;
+    height: 4px;
+    background: #e9ecef;
+    border-radius: 2px;
+    margin: 0 auto 10px;
+    overflow: hidden;
+}
+
+.dexpress-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #28a745, #20c997);
+    border-radius: 2px;
+    width: 0%;
+    transition: width 0.8s ease-out;
+    animation: progressPulse 2s ease-in-out infinite;
+}
+
+@keyframes progressPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+@keyframes slideInUp {
+    0% {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive za success overlay */
+@media (max-width: 768px) {
+    .dexpress-success-content {
+        padding: 30px 20px;
+        max-width: 300px;
+    }
+    
+    .checkmark {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .dexpress-success-content h3 {
+        font-size: 20px;
+    }
+    
+    .dexpress-progress-bar {
+        width: 160px;
+    }
+}
+
 /* Loading states */
+.dexpress-loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.95);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    z-index: 1000;
+    border-radius: 8px;
+    backdrop-filter: blur(2px);
+}
+
+.dexpress-loader {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #E90000;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 15px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.dexpress-loading-text {
+    color: #666;
+    font-size: 14px;
+    font-weight: 500;
+    animation: pulse 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes pulse {
+    0% { opacity: 0.6; }
+    100% { opacity: 1; }
+}
+
+/* No results */
+.dexpress-loading {
+    position: relative;
+}
+
 .dexpress-loading-overlay {
     position: absolute;
     top: 0;
@@ -691,27 +915,6 @@
     background: #5a6268;
 }
 
-/* Status indicators */
-.dispenser-status {
-    display: inline-block;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    margin-right: 8px;
-}
-
-.dispenser-status.online {
-    background: #28a745;
-}
-
-.dispenser-status.offline {
-    background: #dc3545;
-}
-
-.dispenser-status.unknown {
-    background: #6c757d;
-}
-
 /* Responsive design */
 @media (max-width: 1024px) {
     .dexpress-modal-content {
@@ -766,6 +969,12 @@
         min-width: auto;
         width: 100%;
     }
+
+    .dexpress-dispensers-info {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
 }
 
 @media (max-width: 480px) {
@@ -802,7 +1011,7 @@
     display: block !important;
 }
 
-/* Custom scrollbar for dispensers list */
+/* Custom scrollbar za dispensers list */
 #dexpress-dispensers-list::-webkit-scrollbar {
     width: 6px;
 }
@@ -819,4 +1028,23 @@
 
 #dexpress-dispensers-list::-webkit-scrollbar-thumb:hover {
     background: #cc0048;
+}
+
+/* Autocomplete scrollbar */
+.dexpress-town-suggestions::-webkit-scrollbar {
+    width: 6px;
+}
+
+.dexpress-town-suggestions::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.dexpress-town-suggestions::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 3px;
+}
+
+.dexpress-town-suggestions::-webkit-scrollbar-thumb:hover {
+    background: #999;
 }
