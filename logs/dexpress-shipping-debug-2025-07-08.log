@@ -1,0 +1,3 @@
+{"timestamp":"2025-07-08 14:24:48","context":"shipping","level":"debug","message":"[SHIPPING] Priprema podataka za API..."}
+{"timestamp":"2025-07-08 14:24:48","context":"shipping","level":"debug","message":"[SHIPPING] Čuvam pošiljku u bazu podataka..."}
+{"timestamp":"2025-07-08 14:24:48","context":"shipping","level":"debug","message":"[SHIPPING] Paket sačuvan sa ID: 42"}

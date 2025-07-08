@@ -4,3 +4,5 @@
 {"timestamp":"2025-07-08 06:48:16","context":"general","level":"info","message":"CRON: Ažurirano 221 paketomata"}
 {"timestamp":"2025-07-08 06:48:16","context":"general","level":"info","message":"CRON: Osnovni šifarnici ažurirani"}
 {"timestamp":"2025-07-08 06:48:16","context":"general","level":"info","message":"CRON: Završeno dnevno ažuriranje"}
+{"timestamp":"2025-07-08 14:24:48","context":"general","level":"info","message":"[AJAX] Kreiranje single shipment - Order: 917, Lokacija: 12, Kod: TT0000000049"}
+{"timestamp":"2025-07-08 14:24:50","context":"general","level":"info","message":"[AJAX] Uspešno kreirana pošiljka: Array\n(\n    [shipment_id] => 42\n    [shipment_code] => TT0000000049\n    [tracking_number] => TT0000000049\n    [used_location_id] => 12\n    [location_name] => s7Code NS DOO\n    [is_test] => 1\n    [api_response] => TEST\n)\n"}

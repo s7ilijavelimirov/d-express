@@ -1,1 +1,4 @@
 {"timestamp":"2025-07-08 06:48:15","context":"general","level":"debug","message":"CRON DEBUG: Prva stavka API-ja: Array\n(\n    [ID] => 273\n    [Name] => Nis Petrol - Aleksinac\n    [Address] => Šumatovačka bb\n    [Town] => Aleksinac\n    [TownID] => 700614\n    [WorkingHours] => 6-22\n    [WorkHours] => (6-22), (6-22), (6-22), (6-22), (6-22), (6-22), (6-22)\n    [WorkDays] => Svakim danom 6-22\n    [Latitude] => 43.536340873\n    [Longitude] => 21.710916759\n    [PayByCash] => 1\n    [PayByCard] => 1\n)\n"}
+{"timestamp":"2025-07-08 14:24:18","context":"general","level":"debug","message":"Checkout order processed: 917"}
+{"timestamp":"2025-07-08 14:24:18","context":"general","level":"debug","message":"Has D Express shipping: Yes"}
+{"timestamp":"2025-07-08 14:24:18","context":"general","level":"debug","message":"Order processed - manual shipment creation required: 917"}

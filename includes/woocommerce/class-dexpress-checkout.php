@@ -447,6 +447,8 @@ class D_Express_Checkout
             <div class="dexpress-modal-content">
                 <div class="dexpress-modal-header">
                     <h3>Izaberite paketomat za dostavu</h3>
+                    <?php $dispensers_head = DEXPRESS_WOO_PLUGIN_URL . 'assets/images/dexpress-dispenser-picture.png'; ?>
+                    <img width="120" src="<?php echo $dispensers_head; ?>" alt="dexpress dispensers">
                     <button type="button" class="dexpress-modal-close">&times;</button>
                 </div>
 
@@ -463,7 +465,7 @@ class D_Express_Checkout
                     <div class="dexpress-dispensers-container">
                         <div id="dexpress-dispensers-map">
                             <div class="dexpress-map-placeholder">
-                                <div class="icon">🗺️</div>
+                                <div class="icon"></div>
                                 <p>Učitavanje mape...</p>
                             </div>
                         </div>
