@@ -46,10 +46,10 @@ class D_Express_Checkout
         // Novi optimizovani AJAX handleri
         add_action('wp_ajax_dexpress_get_towns_with_dispensers', [$this, 'ajax_get_towns_with_dispensers']);
         add_action('wp_ajax_nopriv_dexpress_get_towns_with_dispensers', [$this, 'ajax_get_towns_with_dispensers']);
-        
+
         add_action('wp_ajax_dexpress_get_all_dispensers', [$this, 'ajax_get_all_dispensers']);
         add_action('wp_ajax_nopriv_dexpress_get_all_dispensers', [$this, 'ajax_get_all_dispensers']);
-        
+
         add_action('wp_ajax_dexpress_save_chosen_dispenser', [$this, 'ajax_save_chosen_dispenser']);
         add_action('wp_ajax_nopriv_dexpress_save_chosen_dispenser', [$this, 'ajax_save_chosen_dispenser']);
 
@@ -61,6 +61,10 @@ class D_Express_Checkout
         add_action('woocommerce_after_shipping_rate', [$this, 'add_dispenser_selection'], 10, 2);
         add_action('wp_footer', [$this, 'add_dispenser_modal']);
         add_action('woocommerce_checkout_update_order_meta', [$this, 'save_dispenser_to_order'], 10, 2);
+
+        // Dodaj ovu liniju u init_dispensers funkciju
+        add_action('wp_ajax_dexpress_search_dispensers', [$this, 'ajax_search_dispensers']);
+        add_action('wp_ajax_nopriv_dexpress_search_dispensers', [$this, 'ajax_search_dispensers']);
     }
 
     /**
@@ -70,29 +74,29 @@ class D_Express_Checkout
     {
         check_ajax_referer('dexpress-frontend-nonce', 'nonce');
 
-        // Cache check
-        $cache_key = 'dexpress_towns_with_dispensers_v2';
+        // Cache check - promeni verziju za refresh
+        $cache_key = 'dexpress_towns_with_dispensers_v3';
         $towns = get_transient($cache_key);
 
         if ($towns === false) {
             global $wpdb;
 
             $query = "
-                SELECT 
-                    t.id, 
-                    COALESCE(
-                        NULLIF(TRIM(t.display_name), ''),
-                        NULLIF(TRIM(t.name), ''),
-                        'Nepoznat grad'
-                    ) as name,
-                    COUNT(d.id) as dispenser_count
-                FROM {$wpdb->prefix}dexpress_towns t
-                INNER JOIN {$wpdb->prefix}dexpress_dispensers d ON t.id = d.town_id
-                WHERE (d.deleted IS NULL OR d.deleted != 1)
-                GROUP BY t.id, t.name, t.display_name
-                HAVING dispenser_count > 0
-                ORDER BY name
-            ";
+            SELECT 
+                t.id, 
+                COALESCE(
+                    NULLIF(TRIM(t.display_name), ''),
+                    NULLIF(TRIM(t.name), ''),
+                    'Nepoznat grad'
+                ) as name,
+                COUNT(d.id) as dispenser_count
+            FROM {$wpdb->prefix}dexpress_towns t
+            INNER JOIN {$wpdb->prefix}dexpress_dispensers d ON t.id = d.town_id
+            WHERE (d.deleted IS NULL OR d.deleted != 1)
+            GROUP BY t.id, t.name, t.display_name
+            HAVING dispenser_count > 0
+            ORDER BY name
+        ";
 
             $results = $wpdb->get_results($query, ARRAY_A);
 
@@ -102,10 +106,21 @@ class D_Express_Checkout
                 return;
             }
 
-            $towns = array_map(function($row) {
+            $towns = array_map(function ($row) {
+                $cleanName = $row['name'];
+
+                // Ukloni duplikat u zagradama: "Beograd (Zemun) (Zemun)" → "Beograd (Zemun)"
+                $cleanName = preg_replace('/\s*\(([^)]+)\)\s*\(\1\)/', ' ($1)', $cleanName);
+
+                // Ukloni poštanski broj: " - 11080" → ""
+                $cleanName = preg_replace('/\s*-\s*\d{5}/', '', $cleanName);
+
+                // Očisti razmake
+                $cleanName = trim(preg_replace('/\s+/', ' ', $cleanName));
+
                 return [
                     'id' => intval($row['id']),
-                    'name' => $row['name'],
+                    'name' => $cleanName,
                     'dispenser_count' => intval($row['dispenser_count'])
                 ];
             }, $results);
@@ -130,35 +145,33 @@ class D_Express_Checkout
             global $wpdb;
 
             $query = "
-                SELECT 
-                    d.id, 
-                    d.name, 
-                    d.address, 
-                    d.town_id, 
-                    d.work_hours,
-                    d.latitude, 
-                    d.longitude, 
-                    d.pay_by_cash, 
-                    d.pay_by_card,
-                    COALESCE(
-                        NULLIF(TRIM(d.town), ''), 
-                        CASE 
-                            WHEN t.name LIKE '%(%' THEN TRIM(SUBSTRING_INDEX(t.name, '(', 1))
-                            ELSE TRIM(t.name) 
-                        END,
-                        'Nepoznat grad'
-                    ) as town,
-                    COALESCE(t.postal_code, '') as postal_code
-                FROM {$wpdb->prefix}dexpress_dispensers d
-                LEFT JOIN {$wpdb->prefix}dexpress_towns t ON d.town_id = t.id
-                WHERE (d.deleted IS NULL OR d.deleted != 1)
-                    AND d.latitude IS NOT NULL 
-                    AND d.longitude IS NOT NULL
-                    AND d.latitude != 0 
-                    AND d.longitude != 0
-                ORDER BY d.town, d.name
-                LIMIT 2000
-            ";
+                    SELECT 
+                        d.id, 
+                        d.name, 
+                        d.address, 
+                        d.town_id, 
+                        d.work_hours,
+                        d.latitude, 
+                        d.longitude, 
+                        d.pay_by_cash, 
+                        d.pay_by_card,
+                        COALESCE(
+                            NULLIF(TRIM(d.town), ''),
+                            NULLIF(TRIM(t.display_name), ''),
+                            TRIM(t.name),
+                            'Nepoznat grad'
+                        ) as town,
+                        COALESCE(t.postal_code, '') as postal_code
+                    FROM {$wpdb->prefix}dexpress_dispensers d
+                    LEFT JOIN {$wpdb->prefix}dexpress_towns t ON d.town_id = t.id
+                    WHERE (d.deleted IS NULL OR d.deleted != 1)
+                        AND d.latitude IS NOT NULL 
+                        AND d.longitude IS NOT NULL
+                        AND d.latitude != 0 
+                        AND d.longitude != 0
+                    ORDER BY d.town, d.name
+                    LIMIT 2000
+                ";
 
             $results = $wpdb->get_results($query, ARRAY_A);
 
@@ -168,7 +181,7 @@ class D_Express_Checkout
                 return;
             }
 
-            $dispensers = array_map(function($row) {
+            $dispensers = array_map(function ($row) {
                 return [
                     'id' => intval($row['id']),
                     'name' => $row['name'] ?: 'Paketomat',
@@ -189,7 +202,114 @@ class D_Express_Checkout
 
         wp_send_json_success(['dispensers' => $dispensers]);
     }
+    /**
+     * NOVI: AJAX za pretragu paketomata po imenu, adresi, gradu
+     */
+    public function ajax_search_dispensers()
+    {
+        check_ajax_referer('dexpress-frontend-nonce', 'nonce');
 
+        $search_term = sanitize_text_field($_GET['term'] ?? '');
+
+        if (strlen($search_term) < 2) {
+            wp_send_json_success(['dispensers' => []]);
+        }
+
+        global $wpdb;
+
+        // Cache ključ
+        $cache_key = 'dexpress_search_dispensers_' . md5($search_term);
+        $cached_results = get_transient($cache_key);
+
+        if ($cached_results !== false) {
+            wp_send_json_success(['dispensers' => $cached_results]);
+        }
+
+        $query = "
+        SELECT 
+            d.id, 
+            d.name, 
+            d.address, 
+            d.town_id, 
+            d.work_hours,
+            d.latitude, 
+            d.longitude, 
+            d.pay_by_cash, 
+            d.pay_by_card,
+            COALESCE(
+                NULLIF(TRIM(d.town), ''),
+                NULLIF(TRIM(t.display_name), ''),
+                TRIM(t.name),
+                'Nepoznat grad'
+            ) as town,
+            COALESCE(t.postal_code, '') as postal_code
+        FROM {$wpdb->prefix}dexpress_dispensers d
+        LEFT JOIN {$wpdb->prefix}dexpress_towns t ON d.town_id = t.id
+        WHERE (d.deleted IS NULL OR d.deleted != 1)
+            AND d.latitude IS NOT NULL 
+            AND d.longitude IS NOT NULL
+            AND d.latitude != 0 
+            AND d.longitude != 0
+            AND (
+                d.name LIKE %s 
+                OR d.address LIKE %s 
+                OR d.town LIKE %s
+                OR t.name LIKE %s
+                OR t.display_name LIKE %s
+            )
+        ORDER BY 
+            CASE 
+                WHEN d.name LIKE %s THEN 1
+                WHEN d.address LIKE %s THEN 2
+                WHEN d.town LIKE %s THEN 3
+                ELSE 4
+            END,
+            d.name ASC
+        LIMIT 50
+    ";
+
+        $search_pattern = '%' . $wpdb->esc_like($search_term) . '%';
+        $search_start = $wpdb->esc_like($search_term) . '%';
+
+        $results = $wpdb->get_results($wpdb->prepare(
+            $query,
+            $search_pattern,
+            $search_pattern,
+            $search_pattern,
+            $search_pattern,
+            $search_pattern,
+            $search_start,
+            $search_start,
+            $search_start
+        ), ARRAY_A);
+
+        if ($wpdb->last_error) {
+            dexpress_log("Dispenser Search SQL Error: " . $wpdb->last_error, 'error');
+            wp_send_json_error(['message' => 'Database error']);
+            return;
+        }
+
+        $dispensers = array_map(function ($row) {
+            return [
+                'id' => intval($row['id']),
+                'name' => $row['name'] ?: 'Paketomat',
+                'address' => $row['address'] ?: 'Nepoznata adresa',
+                'town' => $row['town'],
+                'town_id' => intval($row['town_id']),
+                'work_hours' => $row['work_hours'] ?: '0-24',
+                'latitude' => floatval($row['latitude']),
+                'longitude' => floatval($row['longitude']),
+                'pay_by_cash' => intval($row['pay_by_cash']),
+                'pay_by_card' => intval($row['pay_by_card']),
+                'postal_code' => $row['postal_code']
+            ];
+        }, $results);
+
+        // Cache na 15 minuta
+        set_transient($cache_key, $dispensers, 15 * MINUTE_IN_SECONDS);
+
+        wp_send_json_success(['dispensers' => $dispensers]);
+    }
     /**
      * NOVI: AJAX za autocomplete pretragu gradova
      */
@@ -206,41 +326,39 @@ class D_Express_Checkout
         global $wpdb;
 
         // Cache ključ
-        $cache_key = 'dexpress_autocomplete_towns_' . md5($search_term);
+        $cache_key = 'dexpress_autocomplete_towns_v2_' . md5($search_term);
         $cached_results = get_transient($cache_key);
 
         if ($cached_results !== false) {
             wp_send_json_success(['towns' => $cached_results]);
         }
 
-        // Proširena pretraga - uključuje i gradove bez paketomata za bolji UX
         $query = "
-            SELECT DISTINCT 
-                t.id, 
-                COALESCE(
-                    NULLIF(TRIM(t.display_name), ''),
-                    NULLIF(TRIM(t.name), ''),
-                    'Nepoznat grad'
-                ) as name,
-                COUNT(d.id) as dispenser_count
-            FROM {$wpdb->prefix}dexpress_towns t
-            LEFT JOIN {$wpdb->prefix}dexpress_dispensers d ON t.id = d.town_id 
-                AND (d.deleted IS NULL OR d.deleted != 1)
-            WHERE (
-                t.name LIKE %s 
-                OR t.display_name LIKE %s
-            )
-            GROUP BY t.id, t.name, t.display_name
-            HAVING dispenser_count > 0
-            ORDER BY 
-                CASE 
-                    WHEN COALESCE(t.display_name, t.name) LIKE %s THEN 1
-                    ELSE 2
-                END,
-                dispenser_count DESC,
-                name ASC
-            LIMIT 50
-        ";
+        SELECT DISTINCT 
+            t.id, 
+            COALESCE(
+                NULLIF(TRIM(t.display_name), ''),
+                NULLIF(TRIM(t.name), ''),
+                'Nepoznat grad'
+            ) as name,
+            COUNT(d.id) as dispenser_count
+        FROM {$wpdb->prefix}dexpress_towns t
+        LEFT JOIN {$wpdb->prefix}dexpress_dispensers d ON t.id = d.town_id 
+            AND (d.deleted IS NULL OR d.deleted != 1)
+        WHERE (
+            t.name LIKE %s 
+            OR t.display_name LIKE %s
+        )
+        GROUP BY t.id, t.name, t.display_name
+        HAVING dispenser_count > 0
+        ORDER BY 
+            CASE 
+                WHEN COALESCE(t.display_name, t.name) LIKE %s THEN 1
+                ELSE 2
+            END,
+            dispenser_count DESC,
+            name ASC
+    ";
 
         $search_pattern = '%' . $wpdb->esc_like($search_term) . '%';
         $search_start = $wpdb->esc_like($search_term) . '%';
@@ -258,10 +376,17 @@ class D_Express_Checkout
             return;
         }
 
-        $towns = array_map(function($row) {
+        $towns = array_map(function ($row) {
+            $cleanName = $row['name'];
+
+            // Isti regex za čišćenje kao gore
+            $cleanName = preg_replace('/\s*\(([^)]+)\)\s*\(\1\)/', ' ($1)', $cleanName);
+            $cleanName = preg_replace('/\s*-\s*\d{5}/', '', $cleanName);
+            $cleanName = trim(preg_replace('/\s+/', ' ', $cleanName));
+
             return [
                 'id' => intval($row['id']),
-                'name' => $row['name'],
+                'name' => $cleanName,
                 'dispenser_count' => intval($row['dispenser_count'])
             ];
         }, $results);
@@ -296,7 +421,16 @@ class D_Express_Checkout
             wp_send_json_error(['message' => 'Nevažeći podaci o paketomatu']);
         }
 
+        // DODAJ OVO - eksplicitno startovanje sesije ako nije
+        if (!WC()->session) {
+            WC()->initialize_session();
+        }
+
         WC()->session->set('chosen_dispenser', $dispenser);
+
+        // DODAJ OVO - forsira čuvanje sesije
+        WC()->session->save_data();
+
         wp_send_json_success(['message' => 'Paketomat je uspešno sačuvan']);
     }
 
@@ -308,7 +442,7 @@ class D_Express_Checkout
         if (!is_checkout()) {
             return;
         }
-        ?>
+?>
         <div id="dexpress-dispenser-modal">
             <div class="dexpress-modal-content">
                 <div class="dexpress-modal-header">
@@ -319,8 +453,8 @@ class D_Express_Checkout
                 <div class="dexpress-modal-body">
                     <!-- Filter gradova -->
                     <div class="dexpress-town-filter">
-                        <label for="dexpress-town-select">Filtrirajte po gradu:</label>
-                        <input type="text" id="dexpress-town-select" placeholder="Unesite naziv grada ili mesta..." autocomplete="off">
+                        <label for="dexpress-town-select">Pretražite paketomata:</label>
+                        <input type="text" id="dexpress-town-select" placeholder="Unesite naziv paketomata, adresu ili grad..." autocomplete="off">
                         <button type="button" class="dexpress-reset-filter">&times;</button>
                         <div id="dexpress-town-suggestions" class="dexpress-town-suggestions"></div>
                     </div>
@@ -350,7 +484,7 @@ class D_Express_Checkout
                 </div>
             </div>
         </div>
-        <?php
+    <?php
     }
 
     /**
@@ -408,13 +542,13 @@ class D_Express_Checkout
         $currency_symbol = get_woocommerce_currency_symbol();
         $formatted_cost = number_format($cost, 0, ',', '.');
         $steps_html = $this->format_steps_as_html($settings['steps_text']);
-        ?>
+    ?>
         <div class="dexpress-dispenser-wrapper" style="margin-top: 15px; padding: 15px; border: 1px solid #eee; border-radius: 4px; background-color: #f9f9f9; display: <?php echo esc_attr($display_style); ?>;">
-            
+
             <div class="dexpress-dispenser-info-method">
                 <p class="dexpress-dispenser-description"><?php echo wp_kses_post($settings['description_text']); ?></p>
                 <p class="dexpress-dispenser-price">Cena isporuke je <?php echo esc_html($formatted_cost . ' ' . $currency_symbol); ?>.</p>
-                
+
                 <div class="dexpress-delivery-time" style="margin: 10px 0; text-align: right; font-weight: bold;">
                     <?php echo esc_html($settings['delivery_time_text']); ?>
                 </div>
@@ -451,9 +585,9 @@ class D_Express_Checkout
                     Morate izabrati paketomat za dostavu
                 </div>
             <?php endif; ?>
-            
+
         </div>
-        <?php
+<?php
     }
 
     /**
