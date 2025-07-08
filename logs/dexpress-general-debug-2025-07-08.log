@@ -1,9 +1,1 @@
-{"timestamp":"2025-07-08 06:09:49","context":"general","level":"debug","message":"[SIMULATION] Dodat status 3 za pošiljku TT0000000046"}
-{"timestamp":"2025-07-08 06:09:49","context":"general","level":"debug","message":"[SIMULATION] Dodat status 4 za pošiljku TT0000000046"}
-{"timestamp":"2025-07-08 06:09:49","context":"general","level":"debug","message":"[SIMULATION] Dodat status 1 za pošiljku TT0000000046"}
-{"timestamp":"2025-07-08 06:09:49","context":"general","level":"debug","message":"[SIMULATION] Dodat status 3 za pošiljku TT0000000047"}
-{"timestamp":"2025-07-08 06:09:49","context":"general","level":"debug","message":"[SIMULATION] Dodat status 4 za pošiljku TT0000000047"}
-{"timestamp":"2025-07-08 06:09:49","context":"general","level":"debug","message":"[SIMULATION] Dodat status 1 za pošiljku TT0000000047"}
-{"timestamp":"2025-07-08 06:09:49","context":"general","level":"debug","message":"[SIMULATION] Dodat status 3 za pošiljku TT0000000048"}
-{"timestamp":"2025-07-08 06:09:49","context":"general","level":"debug","message":"[SIMULATION] Dodat status 4 za pošiljku TT0000000048"}
-{"timestamp":"2025-07-08 06:09:49","context":"general","level":"debug","message":"[SIMULATION] Dodat status 1 za pošiljku TT0000000048"}
+{"timestamp":"2025-07-08 06:48:15","context":"general","level":"debug","message":"CRON DEBUG: Prva stavka API-ja: Array\n(\n    [ID] => 273\n    [Name] => Nis Petrol - Aleksinac\n    [Address] => Šumatovačka bb\n    [Town] => Aleksinac\n    [TownID] => 700614\n    [WorkingHours] => 6-22\n    [WorkHours] => (6-22), (6-22), (6-22), (6-22), (6-22), (6-22), (6-22)\n    [WorkDays] => Svakim danom 6-22\n    [Latitude] => 43.536340873\n    [Longitude] => 21.710916759\n    [PayByCash] => 1\n    [PayByCard] => 1\n)\n"}

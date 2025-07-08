@@ -89,24 +89,57 @@ class D_Express_Cron_Manager
             global $wpdb;
             $table = $wpdb->prefix . 'dexpress_dispensers';
 
-            // Batch insert/update
+            // Debug prvi element da vidimo strukturu
+            if (!empty($dispensers)) {
+                dexpress_log('CRON DEBUG: Prva stavka API-ja: ' . print_r($dispensers[0], true), 'debug');
+            }
+
+            // Batch insert/update sa SVIM poljima
             $batch_size = get_option('dexpress_batch_size', 500);
             $chunks = array_chunk($dispensers, $batch_size);
             $total_updated = 0;
 
             foreach ($chunks as $chunk) {
                 foreach ($chunk as $dispenser) {
-                    $result = $wpdb->replace($table, [
+                    // ISPRAVKA: Mapiramo sva polja iz API-ja 
+                    $data = [
                         'id' => $dispenser['ID'],
                         'name' => $dispenser['Name'],
                         'address' => $dispenser['Address'] ?? '',
+                        'town' => $dispenser['Town'] ?? '', // ISPRAVKA: Dodano town polje
                         'town_id' => $dispenser['TownID'] ?? 0,
-                        'latitude' => $dispenser['Latitude'] ?? 0,
-                        'longitude' => $dispenser['Longitude'] ?? 0,
+                        'work_hours' => $dispenser['WorkHours'] ?? '', // ISPRAVKA: Dodano work_hours
+                        'work_days' => $dispenser['WorkDays'] ?? '', // ISPRAVKA: Dodano work_days
+                        'latitude' => isset($dispenser['Latitude']) ? (float)$dispenser['Latitude'] : null,
+                        'longitude' => isset($dispenser['Longitude']) ? (float)$dispenser['Longitude'] : null,
+                        'pay_by_cash' => isset($dispenser['PayByCash']) ? (int)$dispenser['PayByCash'] : 0,
+                        'pay_by_card' => isset($dispenser['PayByCard']) ? (int)$dispenser['PayByCard'] : 0,
                         'last_updated' => current_time('mysql')
-                    ]);
+                    ];
 
-                    if ($result) $total_updated++;
+                    // ISPRAVKA: Koristimo proper format specifiers
+                    $format = [
+                        '%d', // id
+                        '%s', // name
+                        '%s', // address  
+                        '%s', // town
+                        '%d', // town_id
+                        '%s', // work_hours
+                        '%s', // work_days
+                        '%f', // latitude
+                        '%f', // longitude
+                        '%d', // pay_by_cash
+                        '%d', // pay_by_card
+                        '%s'  // last_updated
+                    ];
+
+                    $result = $wpdb->replace($table, $data, $format);
+
+                    if ($result) {
+                        $total_updated++;
+                    } else {
+                        dexpress_log('CRON: Greška kod ažuriranja paketomata ID: ' . $dispenser['ID'] . ' - ' . $wpdb->last_error, 'error');
+                    }
                 }
 
                 // Kratka pauza između batch-eva

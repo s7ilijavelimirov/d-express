@@ -291,7 +291,96 @@
     font-size: 13px;
     color: #666;
 }
+/* Autocomplete loader styles */
+.dexpress-autocomplete-loader {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 15px;
+    color: #666;
+    font-size: 14px;
+}
 
+.dexpress-loader-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #E90000;
+    border-radius: 50%;
+    animation: dexpress-spin 1s linear infinite;
+    margin-right: 8px;
+}
+
+.dexpress-autocomplete-error {
+    padding: 15px;
+    text-align: center;
+    color: #dc3545;
+    font-size: 14px;
+    background-color: #f8d7da;
+    border-radius: 4px;
+    margin: 5px 0;
+}
+
+@keyframes dexpress-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Poboljšanja za town suggestions */
+.dexpress-town-suggestions {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    z-index: 9999;
+}
+
+.town-suggestion-header {
+    padding: 10px 15px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.town-suggestion-header:hover {
+    background: #e9ecef;
+}
+
+.dispenser-suggestion {
+    padding: 8px 20px;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 13px;
+    color: #555;
+}
+
+.dispenser-suggestion:hover {
+    background: #f8f9fa;
+    color: #E90000;
+}
+
+.dispenser-suggestion-more {
+    padding: 8px 20px;
+    cursor: pointer;
+    font-style: italic;
+    color: #666;
+    background: #f9f9f9;
+}
+
+.dispenser-suggestion-more:hover {
+    background: #e9ecef;
+    color: #E90000;
+}
+
+.no-suggestion {
+    padding: 15px;
+    text-align: center;
+    color: #999;
+    font-style: italic;
+}
 .dispenser-suggestion:hover {
     background: #f0f7ff;
     color: #E90000;

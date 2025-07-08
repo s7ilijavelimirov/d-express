@@ -54,7 +54,7 @@ class D_Express_Checkout
         add_action('wp_ajax_nopriv_dexpress_search_dispensers_by_town', array($this, 'ajax_search_dispensers_by_town'));
     }
     /**
-     * NOVI: AJAX za pretragu paketomata po gradu - za autocomplete
+     * OPTIMIZOVANA: AJAX za pretragu paketomata po gradu - bez duplikata
      */
     public function ajax_search_dispensers_by_town()
     {
@@ -76,44 +76,44 @@ class D_Express_Checkout
             wp_send_json($cached_results);
         }
 
-        // ISPRAVLJEN QUERY za pretragu paketomata po gradu
+        // NOVI QUERY - grupiši po city_clean_name umesto town_id
         $query = "
-            SELECT 
-                d.id, 
-                d.name, 
-                d.address, 
-                COALESCE(
-                    NULLIF(TRIM(d.town), ''), 
-                    CASE 
-                        WHEN t.name LIKE '%(%' THEN TRIM(SUBSTRING_INDEX(t.name, '(', 1))
-                        ELSE TRIM(t.name) 
-                    END,
-                    'Nepoznat grad'
-                ) as town_clean,
-                d.town_id,
-                d.latitude, 
-                d.longitude,
-                d.work_hours,
-                d.pay_by_cash, 
-                d.pay_by_card,
-                t.postal_code
-            FROM {$wpdb->prefix}dexpress_dispensers d
-            LEFT JOIN {$wpdb->prefix}dexpress_towns t ON d.town_id = t.id
-            WHERE (d.deleted IS NULL OR d.deleted != 1)
-                AND (
-                    TRIM(d.town) LIKE %s 
-                    OR t.name LIKE %s 
-                    OR t.display_name LIKE %s
-                )
-            ORDER BY 
+        SELECT 
+            d.id, 
+            d.name, 
+            d.address, 
+            COALESCE(
+                NULLIF(TRIM(d.town), ''), 
                 CASE 
-                    WHEN TRIM(d.town) LIKE %s THEN 1
-                    WHEN t.name LIKE %s THEN 2
-                    ELSE 3
+                    WHEN t.name LIKE '%(%' THEN TRIM(SUBSTRING_INDEX(t.name, '(', 1))
+                    ELSE TRIM(t.name) 
                 END,
-                d.town, d.name
-            LIMIT 100
-        ";
+                'Nepoznat grad'
+            ) as town_clean,
+            d.town_id,
+            d.latitude, 
+            d.longitude,
+            d.work_hours,
+            d.pay_by_cash, 
+            d.pay_by_card,
+            t.postal_code
+        FROM {$wpdb->prefix}dexpress_dispensers d
+        LEFT JOIN {$wpdb->prefix}dexpress_towns t ON d.town_id = t.id
+        WHERE (d.deleted IS NULL OR d.deleted != 1)
+            AND (
+                TRIM(d.town) LIKE %s 
+                OR t.name LIKE %s 
+                OR t.display_name LIKE %s
+            )
+        ORDER BY 
+            CASE 
+                WHEN TRIM(d.town) LIKE %s THEN 1
+                WHEN t.name LIKE %s THEN 2
+                ELSE 3
+            END,
+            d.town, d.name
+        LIMIT 200
+    ";
 
         $search_pattern = '%' . $wpdb->esc_like($search_term) . '%';
         $search_start = $wpdb->esc_like($search_term) . '%';
@@ -127,27 +127,35 @@ class D_Express_Checkout
             $search_start
         ), ARRAY_A);
 
-        // Grupiši po gradovima
+        // KLJUČNO REŠENJE: Grupiši po town_clean umesto town_id
         $grouped_results = [];
 
         foreach ($results as $row) {
             $town_name = $row['town_clean'];
-            $town_id = intval($row['town_id']);
 
-            if (!isset($grouped_results[$town_id])) {
-                $grouped_results[$town_id] = [
-                    'town_id' => $town_id,
-                    'town_name' => $town_name,
-                    'dispensers' => []
+            // Normalizuj naziv grada (ukloni različite delove)
+            $city_key = $this->normalize_city_name($town_name);
+
+            if (!isset($grouped_results[$city_key])) {
+                $grouped_results[$city_key] = [
+                    'city_key' => $city_key,
+                    'town_name' => $city_key, // Koristi normalizovani naziv
+                    'dispensers' => [],
+                    'town_ids' => [] // Dodaj array za town_ids
                 ];
             }
 
-            $grouped_results[$town_id]['dispensers'][] = [
+            // Dodaj town_id u array ako već nije
+            if (!in_array($row['town_id'], $grouped_results[$city_key]['town_ids'])) {
+                $grouped_results[$city_key]['town_ids'][] = intval($row['town_id']);
+            }
+
+            $grouped_results[$city_key]['dispensers'][] = [
                 'id' => intval($row['id']),
                 'name' => $row['name'],
                 'address' => $row['address'],
                 'town' => $town_name,
-                'town_id' => $town_id,
+                'town_id' => intval($row['town_id']),
                 'work_hours' => $row['work_hours'],
                 'pay_by_cash' => intval($row['pay_by_cash']),
                 'pay_by_card' => intval($row['pay_by_card']),
@@ -159,6 +167,38 @@ class D_Express_Checkout
         set_transient($cache_key, $grouped_results, 30 * MINUTE_IN_SECONDS);
 
         wp_send_json($grouped_results);
+    }
+    /**
+     * Normalizuje naziv grada (uklanja opštine/delove)
+     */
+    private function normalize_city_name($town_name)
+    {
+        $normalized = trim(strtolower($town_name));
+
+        // Mapiranje različitih delova grada u glavni grad
+        $city_mappings = [
+            'novi beograd' => 'beograd',
+            'zemun' => 'beograd',
+            'voždovac' => 'beograd',
+            'zvezdara' => 'beograd',
+            'palilula' => 'beograd',
+            'čukarica' => 'beograd',
+            'rakovica' => 'beograd',
+            'savski venac' => 'beograd',
+            'stari grad' => 'beograd',
+            'vračar' => 'beograd',
+            // Dodaj ostale gradove po potrebi
+            'petrovaradin' => 'novi sad',
+            'sremska kamenica' => 'novi sad'
+        ];
+
+        // Probaj mapiranje
+        if (isset($city_mappings[$normalized])) {
+            return ucfirst($city_mappings[$normalized]);
+        }
+
+        // Vrati originalni naziv sa velikim slovom
+        return ucfirst($normalized);
     }
     /**
      * Dodaje modal za izbor paketomata
@@ -418,9 +458,9 @@ class D_Express_Checkout
         require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/class-dexpress-validator.php';
         D_Express_Validator::validate_checkout();
     }
-    /**
-     * AJAX: Optimizovana pretraga ulica za određeni grad
-     */
+    // /**
+    //  * AJAX: Optimizovana pretraga ulica za određeni grad
+    //  */
     public function ajax_search_streets_for_town()
     {
         check_ajax_referer('dexpress-frontend-nonce', 'nonce');
@@ -945,29 +985,6 @@ class D_Express_Checkout
         wp_send_json_success(['towns' => $towns_data]);
     }
     /**
-     * Dodaj DB indekse za optimizaciju (pozovi jednom)
-     */
-    public function optimize_database_indexes()
-    {
-        global $wpdb;
-
-        // Dodaj indekse za brže pretrage
-        $wpdb->query("
-        CREATE INDEX IF NOT EXISTS idx_streets_name_tid 
-        ON {$wpdb->prefix}dexpress_streets(name, TId)
-    ");
-
-        $wpdb->query("
-        CREATE INDEX IF NOT EXISTS idx_towns_names 
-        ON {$wpdb->prefix}dexpress_towns(name, display_name)
-    ");
-
-        $wpdb->query("
-        CREATE INDEX IF NOT EXISTS idx_streets_tid_deleted 
-        ON {$wpdb->prefix}dexpress_streets(TId, deleted)
-    ");
-    }
-    /**
      * Proverava da li je metoda dostave trenutno izabrana
      */
     private function is_selected_shipping_method($method_id)
@@ -1055,88 +1072,58 @@ class D_Express_Checkout
 <?php
     }
     /**
-     * OPTIMIZOVANA METODA - get_cached_dispensers sa boljim performansama
+     * KOMBINOVANA funkcija za caching paketomata sa optimizacijom
      */
     private function get_cached_dispensers($town_id = null, $force_refresh = false)
     {
         global $wpdb;
 
-        // Cache key zavisi od town_id
-        $cache_key = 'dexpress_dispensers' . ($town_id ? '_town_' . $town_id : '_all');
+        $cache_key = 'dexpress_dispensers' . ($town_id ? '_town_' . $town_id : '_all_v2'); // Dodaj verziju
 
         if (!$force_refresh) {
             $dispensers = get_transient($cache_key);
             if ($dispensers !== false) {
-                dexpress_log("Cache hit for dispensers: " . count($dispensers), 'debug');
                 return $dispensers;
             }
         }
 
-        dexpress_log("Cache miss, querying database for dispensers...", 'debug');
-
-        // ISPRAVLJEN QUERY - optimizovan za brzinu
+        // OPTIMIZOVAN QUERY sa LIMIT-om za bolje performanse
         $query = "
-            SELECT 
-                d.id, 
-                d.name, 
-                d.address, 
-                COALESCE(
-                    NULLIF(TRIM(d.town), ''), 
-                    CASE 
-                        WHEN t.name LIKE '%(%' THEN TRIM(SUBSTRING_INDEX(t.name, '(', 1))
-                        ELSE TRIM(t.name) 
-                    END,
-                    'Nepoznat grad'
-                ) as town,
-                d.town_id, 
-                d.work_hours, 
-                d.work_days,
-                d.latitude, 
-                d.longitude,
-                d.pay_by_cash, 
-                d.pay_by_card,
-                COALESCE(t.postal_code, '') as postal_code
-            FROM {$wpdb->prefix}dexpress_dispensers d
-            LEFT JOIN {$wpdb->prefix}dexpress_towns t ON d.town_id = t.id
-            WHERE (d.deleted IS NULL OR d.deleted != 1)
-        ";
+        SELECT 
+            d.id, d.name, d.address, d.town_id, d.work_hours, d.work_days,
+            d.latitude, d.longitude, d.pay_by_cash, d.pay_by_card,
+            COALESCE(
+                NULLIF(TRIM(d.town), ''), 
+                CASE WHEN t.name LIKE '%(%' THEN TRIM(SUBSTRING_INDEX(t.name, '(', 1))
+                     ELSE TRIM(t.name) END,
+                'Nepoznat grad'
+            ) as town,
+            COALESCE(t.postal_code, '') as postal_code
+        FROM {$wpdb->prefix}dexpress_dispensers d
+        LEFT JOIN {$wpdb->prefix}dexpress_towns t ON d.town_id = t.id
+        WHERE (d.deleted IS NULL OR d.deleted != 1)
+    ";
 
         if ($town_id) {
             $query .= $wpdb->prepare(" AND d.town_id = %d", $town_id);
         }
 
-        $query .= " ORDER BY d.town, d.name";
-
-        dexpress_log("Dispensers SQL Query: $query", 'debug');
+        $query .= " ORDER BY d.town, d.name LIMIT 1000"; // Dodaj limit za sigurnost
 
         $results = $wpdb->get_results($query, ARRAY_A);
 
         if ($wpdb->last_error) {
             dexpress_log("SQL ERROR: " . $wpdb->last_error, 'error');
-            return array();
+            return [];
         }
 
-        dexpress_log("Raw results count: " . count($results), 'debug');
-
-        if (!empty($results)) {
-            dexpress_log("=== PRVI PAKETOMAT DEBUG ===", 'debug');
-            dexpress_log("ID: " . $results[0]['id'], 'debug');
-            dexpress_log("Name: " . $results[0]['name'], 'debug');
-            dexpress_log("Town: '" . $results[0]['town'] . "'", 'debug');
-            dexpress_log("Town_ID: " . $results[0]['town_id'], 'debug');
-            dexpress_log("Address: " . $results[0]['address'], 'debug');
-            dexpress_log("Postal_code: " . ($results[0]['postal_code'] ?? 'N/A'), 'debug');
-            dexpress_log("===============================", 'debug');
-        }
-
-        // Formatiranje podataka za frontend
-        $dispensers = array();
-        foreach ($results as $row) {
-            $dispensers[] = array(
+        // Optimizovano formatiranje
+        $dispensers = array_map(function ($row) {
+            return [
                 'id' => intval($row['id']),
                 'name' => $row['name'] ?: 'Paketomat',
                 'address' => $row['address'] ?: 'No Address',
-                'town' => $row['town'], // Već obrađeno u SQL-u
+                'town' => $row['town'],
                 'town_id' => intval($row['town_id']),
                 'work_hours' => $row['work_hours'] ?: '0-24',
                 'work_days' => $row['work_days'] ?: 'Every Day',
@@ -1145,14 +1132,11 @@ class D_Express_Checkout
                 'pay_by_cash' => intval($row['pay_by_cash']),
                 'pay_by_card' => intval($row['pay_by_card']),
                 'postal_code' => $row['postal_code']
-            );
-        }
+            ];
+        }, $results);
 
-        dexpress_log("Final dispensers count: " . count($dispensers), 'debug');
-
-        // Cache na 2 sata (ne briši previše često)
+        // Cache na 2 sata
         set_transient($cache_key, $dispensers, 2 * HOUR_IN_SECONDS);
-
         return $dispensers;
     }
     /**
@@ -1175,13 +1159,6 @@ class D_Express_Checkout
         }
 
         return $steps_html;
-    }
-    /**
-     * Dobija listu paketomata
-     */
-    private function get_dispensers_list()
-    {
-        return $this->get_cached_dispensers();
     }
     /**
      * Čuvanje izabranog paketomata u narudžbini
