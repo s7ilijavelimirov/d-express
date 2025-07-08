@@ -38,6 +38,7 @@
         opacity: 0;
         transform: scale(0.9) translateY(-20px);
     }
+
     to {
         opacity: 1;
         transform: scale(1) translateY(0);
@@ -191,8 +192,13 @@
 }
 
 @keyframes dexpress-spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 /* Town suggestion header */
@@ -542,6 +548,49 @@
 }
 
 .dexpress-select-this-dispenser {
+    background: #E90000 !important;
+    color: white !important;
+    border: none !important;
+    padding: 8px 16px !important;
+    border-radius: 4px !important;
+    cursor: pointer !important;
+}
+
+/* DODAJ OVO U dexpress-dispenser.css */
+
+/* Input loader */
+.dexpress-input-loader {
+    position: absolute;
+    right: 12px;
+    top: 38px;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1001;
+}
+
+.dexpress-input-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #E90000;
+    border-radius: 50%;
+    animation: dexpress-input-spin 0.8s linear infinite;
+}
+
+@keyframes dexpress-input-spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.dexpress-select-this-dispenser {
     background: linear-gradient(135deg, #E90000, #cc0048);
     color: white;
     border: none;
@@ -631,6 +680,7 @@
     opacity: 0;
     animation: checkmarkDraw 0.4s ease-in-out 0.3s forwards;
 }
+
 /* NOVO: Styling za dispenser suggestions */
 .dispenser-suggestion {
     padding: 12px 15px;
@@ -694,20 +744,25 @@
     font-size: 10px;
     margin-right: 8px;
 }
+
 @keyframes checkmarkBounce {
     0%, 20%, 53%, 80%, 100% {
         transform: scale(1);
     }
+
     40%, 43% {
         transform: scale(1.1);
     }
+
     70% {
         transform: scale(1.05);
     }
+
     90% {
         transform: scale(1.02);
     }
 }
+
 /* Error state za checkmark */
 .checkmark.error {
     border-color: #dc3545;
@@ -745,6 +800,7 @@
     0%, 20%, 53%, 80%, 100% {
         transform: scale(1);
     }
+
     40%, 43% {
         transform: scale(1.1);
     }
@@ -755,20 +811,24 @@
         opacity: 0;
         transform: translate(-50%, -50%) scale(0);
     }
+
     100% {
         opacity: 1;
         transform: translate(-50%, -50%) scale(1);
     }
 }
+
 @keyframes checkmarkDraw {
     0% {
         opacity: 0;
         transform: translate(-50%, -50%) rotate(45deg) scale(0);
     }
+
     50% {
         opacity: 1;
         transform: translate(-50%, -50%) rotate(45deg) scale(1.2);
     }
+
     100% {
         opacity: 1;
         transform: translate(-50%, -50%) rotate(45deg) scale(1);
@@ -791,6 +851,7 @@
     0%, 100% {
         transform: none;
     }
+
     50% {
         transform: scale3d(1.1, 1.1, 1);
     }
@@ -801,6 +862,7 @@
         height: 0;
         opacity: 0;
     }
+
     100% {
         height: 16px;
         opacity: 1;
@@ -812,6 +874,7 @@
         height: 0;
         opacity: 0;
     }
+
     100% {
         height: 10px;
         opacity: 1;
@@ -872,8 +935,13 @@
 }
 
 @keyframes progressPulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.7; }
+    0%, 100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+    }
 }
 
 @keyframes slideInUp {
@@ -881,6 +949,7 @@
         opacity: 0;
         transform: translateY(30px);
     }
+
     100% {
         opacity: 1;
         transform: translateY(0);
@@ -893,16 +962,16 @@
         padding: 30px 20px;
         max-width: 300px;
     }
-    
+
     .checkmark {
         width: 60px;
         height: 60px;
     }
-    
+
     .dexpress-success-content h3 {
         font-size: 20px;
     }
-    
+
     .dexpress-progress-bar {
         width: 160px;
     }
@@ -936,8 +1005,13 @@
 }
 
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 .dexpress-loading-text {
@@ -948,8 +1022,13 @@
 }
 
 @keyframes pulse {
-    0% { opacity: 0.6; }
-    100% { opacity: 1; }
+    0% {
+        opacity: 0.6;
+    }
+
+    100% {
+        opacity: 1;
+    }
 }
 
 /* No results */
@@ -983,8 +1062,13 @@
 }
 
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 .dexpress-loading-text {
@@ -1054,11 +1138,11 @@
         width: 98%;
         height: 95vh;
     }
-    
+
     .dexpress-dispensers-container {
         flex-direction: column;
     }
-    
+
     #dexpress-dispensers-map,
     #dexpress-dispensers-list {
         flex: none;
@@ -1070,30 +1154,30 @@
     .dexpress-modal-header {
         padding: 15px 20px;
     }
-    
+
     .dexpress-modal-header h3 {
         font-size: 18px;
     }
-    
+
     .dexpress-modal-body {
         padding: 20px;
     }
-    
+
     .dexpress-dispensers-container {
         gap: 15px;
     }
-    
+
     .dexpress-dispenser-item {
         padding: 15px;
         flex-direction: column;
         align-items: stretch;
     }
-    
+
     .dispenser-content {
         margin-right: 0;
         margin-bottom: 10px;
     }
-    
+
     .dispenser-select-btn {
         align-self: flex-start;
     }
@@ -1116,15 +1200,15 @@
         height: 100vh;
         border-radius: 0;
     }
-    
+
     .dexpress-modal-header {
         border-radius: 0;
     }
-    
+
     .dexpress-modal-footer {
         border-radius: 0;
     }
-    
+
     #dexpress-dispensers-map,
     #dexpress-dispensers-list {
         height: 250px;
