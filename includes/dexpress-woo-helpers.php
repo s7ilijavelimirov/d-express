@@ -145,7 +145,7 @@ function dexpress_get_all_status_codes()
  */
 function dexpress_structured_log($context, $message, $level = 'info', $data = [])
 {
-    // Proveravamo da li je logovanje omogućeno
+
     static $logging_enabled = null;
     if ($logging_enabled === null) {
         $logging_enabled = (get_option('dexpress_enable_logging', 'no') === 'yes');
