@@ -217,9 +217,10 @@ class D_Express_Validator
             );
             $has_errors = true;
         } elseif (!self::validate_address_number($_POST[$address_type . '_number'])) {
+            // POBOLJŠANA PORUKA GREŠKE
             wc_add_notice(
                 sprintf(
-                    __('%s nije u ispravnom formatu. Podržani formati: 15, bb, 23a, 44/2', 'd-express-woo'),
+                    __('%s nije u ispravnom formatu. Primeri ispravnih formata: bb, BB, 10, 15a, 23/4, 44b/2, 7c', 'd-express-woo'),
                     __($address_type == 'billing' ? 'Kućni broj za račun' : 'Kućni broj za dostavu', 'd-express-woo')
                 ),
                 'error',
@@ -814,8 +815,22 @@ class D_Express_Validator
      */
     public static function validate_address_number($number)
     {
-        $pattern = '/^((bb|BB|b\.b\.|B\.B\.)(\/[-a-zžćčđšA-ZĐŠĆŽČ_0-9]+)*|(\d(-\d){0,1}[a-zžćčđšA-ZĐŠĆŽČ_0-9]{0,2})+(\/[-a-zžćčđšA-ZĐŠĆŽČ_0-9]+)*)$/';
-        return preg_match($pattern, $number) && strlen($number) <= 10;
+        // Trim i proveri da li je prazan
+        $number = trim($number);
+        if (empty($number)) {
+            return false;
+        }
+
+        // Proveri maksimalnu dužinu
+        if (strlen($number) > 10) {
+            return false;
+        }
+
+        // Regex pattern iz API dokumentacije
+        // ^((bb|BB|b\.b\.|B\.B\.)(\/[-a-zžćčđšA-ZĐŠĆŽČ_0-9]+)*|(\d(-\d){0,1}[a-zžćčđšA-ZĐŠĆŽČ_0-9]{0,2})+(\/[-a-zžćčđšA-ZĐŠĆŽČ_0-9]+)*)$
+        $pattern = '/^((bb|BB|b\.b\.|B\.B\.)(\/[-a-zžćčđšA-ZĐŠĆŽČ_0-9]+)*|(\d(-\d){0,1}[a-zžćčđšA-ZĐŠĆŽČ_0-9]{0,2})+(\/[-a-zžćčđšA-ZĐŠĆŽČ_0-9]+)*)$/u';
+
+        return preg_match($pattern, $number);
     }
 
     /**

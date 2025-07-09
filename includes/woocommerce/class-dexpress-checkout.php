@@ -16,8 +16,8 @@ class D_Express_Checkout
         add_action('woocommerce_checkout_process', [$this, 'validate_checkout_fields']);
 
         // Čuvanje podataka u narudžbini
-        add_action('woocommerce_checkout_update_order_meta', [$this, 'save_checkout_fields']);
-
+        add_action('woocommerce_checkout_update_order_meta', [$this, 'save_checkout_fields'], 999);
+        add_action('woocommerce_checkout_update_order_meta', [$this, 'force_save_number'], 1000);
         // AJAX handleri za pretragu i dobijanje podataka (ZADRŽANO)
         add_action('wp_ajax_dexpress_search_streets', [$this, 'ajax_search_streets']);
         add_action('wp_ajax_nopriv_dexpress_search_streets', [$this, 'ajax_search_streets']);
@@ -37,7 +37,64 @@ class D_Express_Checkout
         // Enqueue scripts
         add_action('wp_enqueue_scripts', [$this, 'enqueue_checkout_scripts']);
     }
+    public function force_save_number($order_id)
+    {
+        dexpress_log("=== FORCE SAVE NUMBER za order {$order_id} ===", 'debug');
 
+        $address_types = ['billing', 'shipping'];
+        foreach ($address_types as $type) {
+            $number_field = "{$type}_number";
+
+            if (isset($_POST[$number_field])) {
+                $number_value = trim($_POST[$number_field]);
+                $meta_key = "_{$number_field}";
+
+                // Proveri šta je trenutno sačuvano
+                $current_value = get_post_meta($order_id, $meta_key, true);
+                dexpress_log("Trenutno sačuvano {$meta_key}: '{$current_value}'", 'debug');
+                dexpress_log("Trebalo bi da bude: '{$number_value}'", 'debug');
+
+                // Ako se razlikuje, FORSIRA čuvanje
+                if ($current_value !== $number_value) {
+                    dexpress_log("RAZLIKUJE SE! Forsiram čuvanje...", 'debug');
+
+                    // Obrišii postojeći meta
+                    delete_post_meta($order_id, $meta_key);
+
+                    // Sačuvaj novi
+                    update_post_meta($order_id, $meta_key, $number_value);
+
+                    // Proveri da li je sačuvano
+                    $new_value = get_post_meta($order_id, $meta_key, true);
+                    dexpress_log("Nakon force save: '{$new_value}'", 'debug');
+
+                    // TAKOĐE ažuriraj address_1 polje
+                    if (!empty($_POST["{$type}_street"])) {
+                        $street = sanitize_text_field($_POST["{$type}_street"]);
+                        $address1 = $street . ' ' . $number_value;
+
+                        delete_post_meta($order_id, "_{$type}_address_1");
+                        update_post_meta($order_id, "_{$type}_address_1", $address1);
+
+                        dexpress_log("Ažuriram address_1: '{$address1}'", 'debug');
+                    }
+                } else {
+                    dexpress_log("Vrednost je OK, ne treba forsirati", 'debug');
+                }
+            }
+        }
+
+        dexpress_log("=== END FORCE SAVE NUMBER ===", 'debug');
+    }
+    public function debug_woocommerce_hooks()
+    {
+        // Listing svih hook-ova koji se izvršavaju
+        add_action('all', function ($hook) {
+            if (strpos($hook, 'checkout') !== false || strpos($hook, 'order') !== false) {
+                dexpress_log("Hook: {$hook}", 'debug');
+            }
+        });
+    }
     /**
      * NOVA: Inicijalizacija optimizovane dispenser funkcionalnosti
      */
@@ -856,9 +913,24 @@ class D_Express_Checkout
             foreach ($fields_to_save as $key) {
                 $field_name = "{$type}_{$key}";
                 if (isset($_POST[$field_name])) {
-                    $value = sanitize_text_field($_POST[$field_name]);
+                    $value = $_POST[$field_name];
 
-                    if ($key === 'address_desc') {
+                    // SPECIJALNO RUKOVANJE ZA KUĆNI BROJ
+                    if ($key === 'number') {
+                        // NE KORISTI sanitize_text_field za broj - samo osnovnu validaciju
+                        $value = trim($value);
+
+                        // Validacija pomoću naše funkcije
+                        if (!D_Express_Validator::validate_address_number($value)) {
+                            dexpress_log("GREŠKA: Neispravan format kućnog broja '{$value}' za narudžbinu {$order_id}", 'error');
+                            // Nastavi sa čuvanjem - možda je greška u validaciji
+                        }
+
+                        dexpress_log("Čuvam {$type}_number: '{$value}'", 'debug');
+                    }
+                    // SPECIJALNO RUKOVANJE ZA OPIS ADRESE
+                    else if ($key === 'address_desc') {
+                        $value = sanitize_text_field($value);
                         $value = preg_replace('/[^a-zžćčđšA-ZĐŠĆŽČ:,._0-9\-\s]/u', '', $value);
                         $value = preg_replace('/\s+/', ' ', $value);
                         $value = trim($value);
@@ -868,24 +940,32 @@ class D_Express_Checkout
                             $value = mb_substr($value, 0, 150, 'UTF-8');
                         }
                     }
+                    // STANDARDNO RUKOVANJE ZA OSTALA POLJA
+                    else {
+                        $value = sanitize_text_field($value);
+                    }
 
                     $updated_values["_{$field_name}"] = $value;
                 }
             }
 
-            // ISPRAVKA: Formiraj address_1 i city za WooCommerce format
+            // ISPRAVKA: Formiraj address_1 za WooCommerce format
             if (!empty($_POST["{$type}_street"]) && !empty($_POST["{$type}_number"])) {
                 $street = sanitize_text_field($_POST["{$type}_street"]);
-                $number = sanitize_text_field($_POST["{$type}_number"]);
+                $number = trim($_POST["{$type}_number"]); // NE SANITIZE broj!
                 $updated_values["_{$type}_address_1"] = $street . ' ' . $number;
+
+                dexpress_log("Formiram address_1: '{$street} {$number}'", 'debug');
             }
 
+            // SAČUVAJ SVE VREDNOSTI
             foreach ($updated_values as $meta_key => $meta_value) {
                 update_post_meta($order_id, $meta_key, $meta_value);
+                dexpress_log("Sačuvao {$meta_key}: '{$meta_value}'", 'debug');
             }
         }
 
-        // Telefon handling - isti kao pre
+        // TELEFON - isto kao pre
         if (isset($_POST['dexpress_phone_api'])) {
             $api_phone = sanitize_text_field($_POST['dexpress_phone_api']);
             update_post_meta($order_id, '_billing_phone_api_format', $api_phone);

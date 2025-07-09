@@ -570,10 +570,9 @@
         },
 
         clearFieldError: function ($field) {
-            $field.removeClass('dexpress-error woocommerce-invalid');
+            $field.removeClass('dexpress-error woocommerce-invalid woocommerce-invalid-required-field');
             $field.next('.dexpress-error-message').remove();
         },
-
         showCustomStreetModal: function (type, searchTerm) {
             var modalId = 'dexpress-custom-street-modal';
             $('#' + modalId).remove();
@@ -823,15 +822,22 @@
                 $phoneField.removeAttr('required');
             }
         },
-
+        validateNumberFormat: function (number) {
+            // Regex pattern prema API dokumentaciji
+            // ^((bb|BB|b\.b\.|B\.B\.)(\/[-a-zžćčđšA-ZĐŠĆŽČ_0-9]+)*|(\d(-\d){0,1}[a-zžćčđšA-ZĐŠĆŽČ_0-9]{0,2})+(\/[-a-zžćčđšA-ZĐŠĆŽČ_0-9]+)*)$
+            var pattern = /^((bb|BB|b\.b\.|B\.B\.)(\/[-a-zžćčđšA-ZĐŠĆŽČ_0-9]+)*|(\d(-\d){0,1}[a-zžćčđšA-ZĐŠĆŽČ_0-9]{0,2})+(\/[-a-zžćčđšA-ZĐŠĆŽČ_0-9]+)*)$/;
+            return pattern.test(number) && number.length <= 10;
+        },
         initValidation: function () {
-            $(document).on('checkout_place_order', () => {
-                if (!this.isDExpressSelected()) return true;
+            var self = this;
+
+            $(document).on('checkout_place_order', function () {
+                if (!self.isDExpressSelected()) return true;
 
                 var type = $('#ship-to-different-address-checkbox').is(':checked') ? 'shipping' : 'billing';
                 var isValid = true;
 
-                if (!this.validateStreetSelection(type)) {
+                if (!self.validateStreetSelection(type)) {
                     isValid = false;
                 }
 
@@ -844,15 +850,29 @@
                 Object.keys(fields).forEach(field => {
                     var $field = $('#' + type + '_' + field);
                     if (!$field.val()) {
-                        this.showError($field, fields[field]);
+                        self.showError($field, fields[field]);
                         isValid = false;
                     }
                 });
 
+                // POBOLJŠANA VALIDACIJA KUĆNOG BROJA
                 var $number = $('#' + type + '_number');
-                if ($number.val() && $number.val().includes(' ')) {
-                    this.showError($number, 'Kućni broj ne sme sadržati razmake');
-                    isValid = false;
+                var numberValue = $number.val();
+
+                if (numberValue) {
+                    // Ukloni greške sa prethodnih validacija
+                    self.clearFieldError($number);
+
+                    // Proveri da li ima razmake - to je greška
+                    if (numberValue.includes(' ')) {
+                        self.showError($number, 'Kućni broj ne sme sadržati razmake');
+                        isValid = false;
+                    }
+                    // Proveri da li je u ispravnom formatu prema API dokumentaciji
+                    else if (!self.validateNumberFormat(numberValue)) {
+                        self.showError($number, 'Neispravan format kućnog broja. Podržani formati: bb, 10, 15a, 23/4, 44b/2');
+                        isValid = false;
+                    }
                 }
 
                 if (!isValid) {
