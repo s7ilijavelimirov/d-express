@@ -89,8 +89,17 @@ class D_Express_API
 
         // Logovanje zahteva u test modu
         if ($this->test_mode) {
-            dexpress_log('API Zahtev: ' . $url . ', Metod: ' . $method . ', Podaci: ' . ($data ? json_encode($data, JSON_PRETTY_PRINT) : 'nema'));
+            dexpress_log('API Zahtev: ' . $url);
+            dexpress_log('Metod: ' . $method);
+
+            if (!empty($data)) {
+                $formatted_json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                dexpress_log("Podaci:\n" . $formatted_json);
+            } else {
+                dexpress_log("Podaci: nema");
+            }
         }
+
 
         $response = wp_remote_request($url, $args);
 

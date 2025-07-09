@@ -70,6 +70,39 @@
     font-style: italic;
 }
 
+/* Fokus efekat za telefon */
+#billing_phone:focus {
+    border-color: #0073aa;
+    box-shadow: 0 0 5px rgba(0, 115, 170, 0.3);
+}
+
+/* Responsive styling */
+@media (max-width: 768px) {
+
+    .dexpress-phone-hint,
+    .dexpress-phone-error {
+        font-size: 11px;
+    }
+}
+
+/* Styling za error input */
+#billing_phone.dexpress-error,
+#billing_phone.woocommerce-invalid {
+    border-color: #e2401c !important;
+    box-shadow: 0 0 5px rgba(226, 64, 28, 0.3) !important;
+}
+
+.dexpress-phone-error {
+    font-size: 12px;
+    color: #e2401c;
+    margin-top: 5px;
+    font-weight: bold;
+    background: #f8d7da;
+    padding: 5px 8px;
+    border-radius: 3px;
+    border-left: 3px solid #e2401c;
+}
+
 /* Modal za custom ulicu - jednostavan */
 .dexpress-modal-overlay {
     position: fixed;

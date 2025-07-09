@@ -156,7 +156,7 @@ class D_Express_Validator
         return $reference_id;
     }
     /**
-     * Validacija za checkout proces
+     * Validacija za checkout proces (IZMENJENO)
      * Koristi se pre završetka narudžbine
      * 
      * @return bool True ako validacija prolazi
@@ -166,6 +166,11 @@ class D_Express_Validator
         // Proveravamo samo ako je checkout forma poslata
         if (empty($_POST['woocommerce-process-checkout-nonce'])) {
             return true;
+        }
+
+        // NOVO: Osiguranje da je WooCommerce sesija inicijalizovana
+        if (!WC()->session) {
+            WC()->initialize_session();
         }
 
         // Proverava da li je odabrana D Express dostava
@@ -190,8 +195,6 @@ class D_Express_Validator
         // Provera obaveznih polja adrese
         $address_type = isset($_POST['ship_to_different_address']) ? 'shipping' : 'billing';
         $has_errors = false;
-
-        // Umesto da postavljamo polja kao obavezna, koristićemo WooCommerce funkciju za direktno dodavanje grešaka
 
         // Provera ulice
         if (empty($_POST[$address_type . '_street']) || empty($_POST[$address_type . '_street_id'])) {
@@ -238,38 +241,60 @@ class D_Express_Validator
             $has_errors = true;
         }
 
-        // Provera telefona
-        // Poboljšana validacija telefona - ZAMENI POSTOJEĆU LOGIKU
-        if (empty($_POST['dexpress_phone_api'])) {
-            // Ako nema API telefon, pokušaj sa standardnim
-            if (empty($_POST['billing_phone'])) {
+        if ($is_dexpress) {
+            $phone_validation = true;
+
+            if (!empty($_POST['dexpress_phone_api'])) {
+                $api_phone = sanitize_text_field($_POST['dexpress_phone_api']);
+                $phone_validation = self::validate_phone_detailed($api_phone);
+            } elseif (!empty($_POST['billing_phone'])) {
+                $display_phone = sanitize_text_field($_POST['billing_phone']);
+                $phone_validation = self::validate_phone_detailed($display_phone);
+            } else {
+                $phone_validation = 'Broj telefona je obavezan za D Express dostavu.';
+            }
+
+            if ($phone_validation !== true) {
+                wc_add_notice($phone_validation, 'error', ['data-id' => 'billing_phone']);
+                $has_errors = true;
+            }
+        }
+
+        // IZMENJENO: Provera paketomata koristeći sesiju
+        if ($is_dispenser) {
+            $chosen_dispenser = WC()->session->get('chosen_dispenser');
+
+            // Prvo probaj iz sesije
+            if (empty($chosen_dispenser) || empty($chosen_dispenser['id'])) {
+                // Ako nema u sesiji, probaj iz POST podataka
+                if (!empty($_POST['dexpress_chosen_dispenser'])) {
+                    $dispenser_data = json_decode(stripslashes($_POST['dexpress_chosen_dispenser']), true);
+                    if ($dispenser_data && !empty($dispenser_data['id'])) {
+                        // Sačuvaj u sesiju za buduće korišćenje
+                        WC()->session->set('chosen_dispenser', $dispenser_data);
+                        $chosen_dispenser = $dispenser_data;
+                    }
+                }
+            }
+
+            // Konačna validacija
+            if (empty($chosen_dispenser) || empty($chosen_dispenser['id'])) {
                 wc_add_notice(
-                    __('Broj telefona je obavezan za D Express dostavu.', 'd-express-woo'),
+                    __('Morate izabrati paketomat za dostavu.', 'd-express-woo'),
                     'error',
-                    ['data-id' => 'billing_phone']
+                    ['data-id' => 'dexpress_chosen_dispenser']
                 );
                 $has_errors = true;
             } else {
-                // Pokušaj validirati standardni format
-                if (!self::validate_phone_format($_POST['billing_phone'])) {
+                // Dodatna validacija da je paketomat valjan
+                $dispenser_id = intval($chosen_dispenser['id']);
+                if ($dispenser_id <= 0) {
                     wc_add_notice(
-                        __('Broj telefona mora biti valjan srpski broj.', 'd-express-woo'),
-                        'error',
-                        ['data-id' => 'billing_phone']
+                        __('Izabrani paketomat nije valjan. Molimo izaberite ponovo.', 'd-express-woo'),
+                        'error'
                     );
                     $has_errors = true;
                 }
-            }
-        } else {
-            // Validacija API telefona
-            $api_phone = sanitize_text_field($_POST['dexpress_phone_api']);
-            if (!preg_match('/^(381[1-9][0-9]{7,8}|38167[0-9]{6,8})$/', $api_phone)) {
-                wc_add_notice(
-                    __('Broj telefona mora biti valjan srpski broj (mobilni ili fiksni).', 'd-express-woo'),
-                    'error',
-                    ['data-id' => 'billing_phone']
-                );
-                $has_errors = true;
             }
         }
 
@@ -284,37 +309,15 @@ class D_Express_Validator
             return $fields;
         }, 999);
 
-        // Provera paketomata ako je odabran
-        $is_dispenser_shipping = false;
-        foreach (WC()->session->get('chosen_shipping_methods', array()) as $method) {
-            if (strpos($method, 'dexpress_dispenser') !== false) {
-                $is_dispenser_shipping = true;
-                break;
-            }
-        }
-
-        if ($is_dispenser_shipping && empty($_POST['dexpress_chosen_dispenser'])) {
-            wc_add_notice(
-                __('Morate izabrati paketomat za dostavu.', 'd-express-woo'),
-                'error',
-                ['data-id' => 'dexpress_chosen_dispenser']
-            );
-            $has_errors = true;
-        }
-
-        // Ostale validacije
-
-        // Provera težine narudžbine
+        // Ostale validacije (težina, dimenzije, itd.) - zadržano isto kao pre
         $cart_weight = self::calculate_cart_weight();
         if ($is_dispenser) {
-            // Paketomat ima limit od 20kg
-            if ($cart_weight > 20000) { // 20kg u gramima
+            if ($cart_weight > 20000) {
                 wc_add_notice(__('Za dostavu u paketomat, ukupna težina narudžbine ne može biti teža od 20kg.', 'd-express-woo'), 'error');
                 $has_errors = true;
             }
         } else {
-            // Standardna dostava ima limit od 10.000kg
-            if ($cart_weight > 10000000) { // 10.000kg u gramima
+            if ($cart_weight > 10000000) {
                 wc_add_notice(sprintf(
                     __('Ukupna težina narudžbine ne može biti teža od %s kg za D Express dostavu.', 'd-express-woo'),
                     number_format(10000, 0, ',', '.')
@@ -328,15 +331,12 @@ class D_Express_Validator
         $is_cod = ($payment_method === 'cod' || $payment_method === 'bacs' || $payment_method === 'cheque');
 
         if ($is_cod) {
-            // Maksimalna vrednost otkupnine za standardnu dostavu
-            $max_buyout = 1000000000; // 10.000.000 RSD u para (100 para = 1 RSD)
+            $max_buyout = 1000000000; // 10.000.000 RSD u para
 
-            // Ako je paketomat, poseban limit
-            if ($is_dispenser_shipping) {
+            if ($is_dispenser) {
                 $max_buyout = 20000000; // 200.000 RSD u para
             }
 
-            // Provera iznosa
             $cart_total_para = WC()->cart->get_total('edit') * 100;
             if ($cart_total_para > $max_buyout) {
                 wc_add_notice(sprintf(
@@ -346,7 +346,6 @@ class D_Express_Validator
                 $has_errors = true;
             }
 
-            // Provera postojanja računa za otkupninu
             if (get_option('dexpress_require_buyout_account', 'no') === 'yes') {
                 $buyout_account = get_option('dexpress_buyout_account', '');
                 if (empty($buyout_account) || !self::validate_bank_account($buyout_account)) {
@@ -357,7 +356,7 @@ class D_Express_Validator
         }
 
         // Provera dimenzija proizvoda za paketomat
-        if ($is_dispenser_shipping) {
+        if ($is_dispenser) {
             $max_dimensions = array(
                 'length' => 470, // mm
                 'width'  => 440, // mm
@@ -732,9 +731,10 @@ class D_Express_Validator
      */
     public static function validate_phone_format($phone)
     {
-        // Prihvata sve brojeve koji počinju sa +381 i imaju cifru 1-9 iza toga, pa još 7-8 cifara
-        $pattern = '/^\+381[1-9][0-9]{7,8}$/';
-        return preg_match($pattern, $phone);
+        // Display format: +381 XX XXX XXXX
+        // Ukloni razmake i +, zatim validuj
+        $clean_phone = self::format_phone($phone);
+        return self::validate_phone($clean_phone);
     }
 
     /**
@@ -745,18 +745,17 @@ class D_Express_Validator
      */
     public static function format_phone($phone)
     {
-        // Ukloni sve osim brojeva
+        // Ukloni sve što nije broj
         $digits_only = preg_replace('/[^0-9]/', '', $phone);
 
-        // Ako počinje sa + (koji je uklonjen), proverimo da li imamo kompletan broj
+        // Ako počinje sa +, već je obrađeno gore
         if (substr($phone, 0, 1) === '+') {
-            // Ako već ima +381, samo formatiramo ostatak
             if (strpos($digits_only, '381') === 0) {
                 return $digits_only;
             }
         }
 
-        // Uklonimo početnu nulu ako postoji
+        // KRITIČNO: Ukloni početnu nulu ako postoji
         if (strlen($digits_only) > 0 && $digits_only[0] === '0') {
             $digits_only = substr($digits_only, 1);
         }
@@ -768,7 +767,32 @@ class D_Express_Validator
 
         return $digits_only;
     }
+    public static function validate_phone_detailed($phone)
+    {
+        if (empty($phone)) {
+            return 'Broj telefona je obavezan za D Express dostavu.';
+        }
 
+        // Formatiraj u API format
+        $api_phone = self::format_phone($phone);
+
+        // Proveri da li počinje sa 0 nakon 381
+        if (preg_match('/^3810/', $api_phone)) {
+            return 'Broj telefona ne sme počinjati sa 0 nakon +381. Primer: +381 60 123 4567';
+        }
+
+        // Proveri osnovni format
+        if (!self::validate_phone($api_phone)) {
+            return 'Neispravan format telefona. Unesite valjan srpski broj: +381 XX XXX XXXX';
+        }
+
+        // Proveri dužinu
+        if (strlen($api_phone) < 10 || strlen($api_phone) > 12) {
+            return 'Broj telefona mora imati između 8 i 10 cifara nakon +381.';
+        }
+
+        return true;
+    }
     /**
      * Validacija naziva (ime, naziv ulice itd.)
      * 

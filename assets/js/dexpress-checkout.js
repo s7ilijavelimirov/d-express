@@ -27,8 +27,29 @@
             this.initStreetField(type);
             this.initCityField(type);
         },
+        cleanCityName: function (cityDisplayText) {
+            if (!cityDisplayText) return '';
 
+            // "21000 Novi Sad (Novi Sad) - 21000" → "Novi Sad"
+            var match = cityDisplayText.match(/^(\d{5})\s+(.+?)\s+\(\1\)\s+-\s+\1$/);
+            if (match) return match[2].trim();
+
+            // "Novi Sad (Vojvodina) - 21000" → "Novi Sad"
+            match = cityDisplayText.match(/^(.+?)\s+\([^)]+\)\s+-\s+\d{5}$/);
+            if (match) return match[1].trim();
+
+            // "21000 Novi Sad - 21000" → "Novi Sad"
+            match = cityDisplayText.match(/^(\d{5})\s+(.+?)\s+-\s+\1$/);
+            if (match) return match[2].trim();
+
+            // "Novi Sad - 21000" → "Novi Sad"
+            match = cityDisplayText.match(/^(.+?)\s+-\s+\d{5}$/);
+            if (match) return match[1].trim();
+
+            return cityDisplayText.trim();
+        },
         // ULTRA BRZA ULICA
+        // ISPRAVLJENA LOGIKA - ZAMENI initStreetField funkciju
         initStreetField: function (type) {
             var self = this;
             var $street = $('#' + type + '_street');
@@ -40,24 +61,27 @@
                 source: function (request, response) {
                     if (!request.term || request.term.length < 1) return response([]);
 
-                    // INSTANT cache check
-                    var results = self.getCachedStreets(request.term);
-                    if (results) {
-                        response(results);
-                        return;
-                    }
-
-                    // Show loader only if no cache
-                    $street.addClass('dexpress-loading');
-
+                    // ISPRAVKA: UVEK prvo proveri da li je grad izabran
                     if (self.selectedTown[type] && self.selectedTown[type].id) {
+                        // Ako je grad izabran, traži SAMO ulice za taj grad
+                        console.log('Tražim ulice za grad:', self.selectedTown[type].name);
                         self.searchStreetsInTown(request.term, self.selectedTown[type].id, response);
                     } else {
+                        // Ako grad nije izabran, traži sve ulice
+                        console.log('Grad nije izabran, tražim sve ulice');
+                        // INSTANT cache check za sve ulice
+                        var results = self.getCachedStreets(request.term);
+                        if (results) {
+                            response(results);
+                            return;
+                        }
+
+                        $street.addClass('dexpress-loading');
                         self.searchAllStreets(request.term, response);
                     }
                 },
                 minLength: 1,
-                delay: 0, // ZERO delay
+                delay: 0,
                 select: function (event, ui) {
                     if (!ui.item) return false;
 
@@ -72,9 +96,12 @@
 
                     self.clearFieldError($street);
 
-                    // INSTANT load towns
-                    if (ui.item.value) {
-                        self.loadTownsForStreet(type, ui.item.value);
+                    // Ako je grad već izabran, ne mijenjaj ga
+                    if (!self.selectedTown[type] || !self.selectedTown[type].id) {
+                        // INSTANT load towns SAMO ako grad nije izabran
+                        if (ui.item.value) {
+                            self.loadTownsForStreet(type, ui.item.value);
+                        }
                     }
 
                     self.updateStandardField(type);
@@ -98,6 +125,7 @@
                 return $li;
             };
 
+            // AŽURIRAJ input handler
             $street.on('input', function () {
                 self.clearFieldError($street);
 
@@ -105,15 +133,18 @@
                     $streetId.val('');
                     self.selectedStreet[type] = null;
 
-                    if (self.townsForStreet) {
-                        self.townsForStreet[type] = null;
-                    }
+                    // ISPRAVKA: Ne briši townsForStreet ako je grad već izabran
+                    if (!self.selectedTown[type] || !self.selectedTown[type].id) {
+                        if (self.townsForStreet) {
+                            self.townsForStreet[type] = null;
+                        }
 
-                    var $city = $('#' + type + '_city');
-                    $city.autocomplete('option', 'source', function (request, response) {
-                        if (!request.term || request.term.length < 1) return response([]);
-                        self.searchAllTowns(request.term, response);
-                    });
+                        var $city = $('#' + type + '_city');
+                        $city.autocomplete('option', 'source', function (request, response) {
+                            if (!request.term || request.term.length < 1) return response([]);
+                            self.searchAllTowns(request.term, response);
+                        });
+                    }
                 } else {
                     $streetId.val('');
                     self.selectedStreet[type] = null;
@@ -162,17 +193,43 @@
                 },
                 minLength: 0,
                 delay: 0, // ZERO delay
+                // AŽURIRAJ select handler u initCityField funkciji - ZAMENI samo select deo:
                 select: function (event, ui) {
                     if (!ui.item) return false;
 
-                    $city.val(ui.item.display_text || ui.item.label || '');
+                    // ČIŠĆENJE NAZIVA GRADA
+                    var cleanCityName = self.cleanCityName(ui.item.display_text || ui.item.label || '');
+
+                    $city.val(cleanCityName);  // ← ČIST NAZIV!
                     $cityId.val(ui.item.town_id || '');
                     $postcode.val(ui.item.postal_code || '');
 
+                    // ISPRAVKA: Definiši varijable
+                    var oldTownId = self.selectedTown[type] ? self.selectedTown[type].id : null;
+                    var newTownId = ui.item.town_id || '';
+
                     self.selectedTown[type] = {
-                        id: ui.item.town_id || '',
-                        name: ui.item.display_text || ui.item.label || ''
+                        id: newTownId,
+                        name: cleanCityName  // ← ČIST NAZIV!
                     };
+
+                    // NOVO: Ako se grad promenio, očisti ulicu
+                    if (oldTownId && oldTownId !== newTownId) {
+                        console.log('Grad promenjen sa', oldTownId, 'na', newTownId, '- čistim ulicu');
+                        var $street = $('#' + type + '_street');
+                        var $streetId = $('#' + type + '_street_id');
+
+                        $street.val('');
+                        $streetId.val('');
+                        self.selectedStreet[type] = null;
+
+                        // Očisti keš za stari grad
+                        Object.keys(self.cache).forEach(key => {
+                            if (key.startsWith('streets_town_' + oldTownId + '_')) {
+                                delete self.cache[key];
+                            }
+                        });
+                    }
 
                     self.updateStandardField(type);
                     return false;
@@ -315,14 +372,14 @@
                     $('.dexpress-city').removeClass('dexpress-loading');
 
                     var formattedData = (data || []).map(town => {
-                        // Drugi deo - u .done callback-u:
                         var displayText = '';
 
-                        // Ako display_name već sadrži zagrade i crticu, koristi ga direktno  
+                        // ISPRAVKA: Proveri da li display_name već sadrži poštanski broj
                         if (town.display_name && (town.display_name.includes('(') || town.display_name.includes('-'))) {
+                            // Već je formatiran, koristi ga direktno
                             displayText = town.display_name;
                         } else {
-                            // Inače formatiraj normalno
+                            // Formatiraj normalno
                             if (town.display_name) {
                                 displayText = town.display_name;
                                 if (town.municipality_name && town.municipality_name !== town.display_name) {
@@ -332,7 +389,8 @@
                                 displayText = town.label || town.value || '';
                             }
 
-                            if (town.postal_code) {
+                            // ISPRAVKA: Dodaj poštanski broj SAMO ako ga već nema
+                            if (town.postal_code && !displayText.includes(town.postal_code)) {
                                 displayText += ' - ' + town.postal_code;
                             }
                         }
@@ -345,7 +403,6 @@
 
                     this.cache[cacheKey] = formattedData;
                     callback(formattedData);
-                    delete this.activeRequests[cacheKey];
                 })
                 .fail((xhr) => {
                     $('.dexpress-city').removeClass('dexpress-loading');
@@ -356,13 +413,19 @@
                 });
         },
 
+        // ISPRAVLJENA FUNKCIJA - ZAMENI searchStreetsInTown
         searchStreetsInTown: function (term, townId, callback) {
             if (!term || !townId) return callback([]);
 
-            var cacheKey = 'streets_' + townId + '_' + term;
+            // ISPRAVKA: Keš PO GRADU I TERMU
+            var cacheKey = 'streets_town_' + townId + '_' + term;
             if (this.cache[cacheKey]) {
+                console.log('Cache hit za grad:', townId, 'term:', term);
                 return callback(this.cache[cacheKey]);
             }
+
+            console.log('API poziv za grad:', townId, 'term:', term);
+            $('.dexpress-street').addClass('dexpress-loading');
 
             $.get(dexpressCheckout.ajaxUrl, {
                 action: 'dexpress_search_streets_for_town',
@@ -374,21 +437,24 @@
                     $('.dexpress-street').removeClass('dexpress-loading');
                     var results = data || [];
 
+                    // UVEK dodaj opciju za custom ulicu
                     results.push({
                         id: 'custom',
-                        label: 'Dodajte novu ulicu',
+                        label: 'Dodajte novu ulicu: "' + term + '"',
                         value: term,
                         is_custom: true
                     });
 
+                    // ISPRAVKA: Sačuvaj u keš PO GRADU
                     this.cache[cacheKey] = results;
                     callback(results);
                 })
                 .fail(() => {
                     $('.dexpress-street').removeClass('dexpress-loading');
+                    // Ako API ne radi, ponudi samo custom opciju
                     callback([{
                         id: 'custom',
-                        label: 'Dodajte novu ulicu',
+                        label: 'Dodajte novu ulicu: "' + term + '"',
                         value: term,
                         is_custom: true
                     }]);
@@ -414,14 +480,12 @@
                 .done((response) => {
                     if (response && response.success && response.data && response.data.towns) {
                         var towns = response.data.towns.map(town => {
-
                             var displayText = '';
 
-                            // Ako display_name već sadrži zagrade i crticu, koristi ga direktno
+                            // ISPRAVKA: Ista logika kao gore
                             if (town.display_name && (town.display_name.includes('(') || town.display_name.includes('-'))) {
                                 displayText = town.display_name;
                             } else {
-                                // Inače formatiraj normalno
                                 if (town.display_name) {
                                     displayText = town.display_name;
                                     if (town.municipality_name && town.municipality_name !== town.display_name) {
@@ -431,7 +495,8 @@
                                     displayText = town.name || '';
                                 }
 
-                                if (town.postal_code) {
+                                // ISPRAVKA: Dodaj poštanski broj SAMO ako ga već nema
+                                if (town.postal_code && !displayText.includes(town.postal_code)) {
                                     displayText += ' - ' + town.postal_code;
                                 }
                             }
@@ -602,33 +667,102 @@
             var $phone = $('#billing_phone');
             if (!$phone.length) return;
 
+            // Postavi početnu vrednost
             if (!$phone.val()) $phone.val('+381 ');
 
+            // Dodaj hint sa jasnim uputstvom
             if (!$phone.next('.dexpress-phone-hint').length) {
-                $('<div class="dexpress-phone-hint">Primer: +381 60 123 4567</div>').insertAfter($phone);
+                $('<div class="dexpress-phone-hint">Primer: +381 60 123 4567 (bez nule nakon prefiksa)</div>').insertAfter($phone);
             }
 
+            // Dodaj error container
+            if (!$phone.siblings('.dexpress-phone-error').length) {
+                $('<div class="dexpress-phone-error" style="display:none; color:#e2401c; font-size:12px; margin-top:5px;"></div>').insertAfter($phone.next('.dexpress-phone-hint'));
+            }
+
+            var self = this;
+
             $phone.on('input', function () {
-                var value = $(this).val().replace(/[^0-9]/g, '');
-                if (!value.startsWith('381')) value = '381' + value;
+                var $this = $(this);
+                var value = $this.val();
 
-                var formatted = DExpressCheckout.formatPhone(value);
-                $(this).val(formatted);
+                // Ukloni sve što nije broj ili +
+                var cleanValue = value.replace(/[^0-9+]/g, '');
 
+                // Osiguraj da počinje sa +381
+                if (!cleanValue.startsWith('+381')) {
+                    if (cleanValue.startsWith('381')) {
+                        cleanValue = '+' + cleanValue;
+                    } else if (cleanValue.startsWith('0')) {
+                        // UKLONI početnu nulu i dodaj +381
+                        cleanValue = '+381' + cleanValue.substring(1);
+                    } else if (cleanValue.length > 0 && !cleanValue.startsWith('+')) {
+                        cleanValue = '+381' + cleanValue;
+                    } else {
+                        cleanValue = '+381';
+                    }
+                }
+
+                // Izvuci brojeve nakon +381
+                var digitsAfter381 = cleanValue.substring(4);
+
+                // GLAVNA VALIDACIJA: Proveri da li počinje sa 0
+                if (digitsAfter381.startsWith('0')) {
+                    self.showPhoneError('Broj telefona ne sme počinjati sa 0 nakon +381');
+                    $this.addClass('dexpress-error woocommerce-invalid');
+                } else {
+                    self.clearPhoneError();
+                    $this.removeClass('dexpress-error woocommerce-invalid');
+                }
+
+                // Formatiraj broj
+                var formatted = self.formatPhoneDisplay(cleanValue);
+                $this.val(formatted);
+
+                // Generiši API format (bez + i razmaka)
+                var apiFormat = cleanValue.replace(/[^0-9]/g, '');
                 $('#dexpress_phone_api').remove();
-                if (value.length >= 10) {
+
+                if (apiFormat.length >= 10 && !digitsAfter381.startsWith('0')) {
                     $('<input type="hidden" id="dexpress_phone_api" name="dexpress_phone_api" />')
-                        .val(value).insertAfter($phone);
+                        .val(apiFormat).insertAfter($phone);
                 }
             });
 
             $phone.on('focus', function () {
-                if ($(this).val() === '+381') {
+                if ($(this).val() === '+381' || $(this).val() === '') {
                     $(this).val('+381 ');
                 }
             });
-        },
 
+            $phone.on('blur', function () {
+                self.validatePhoneComplete($(this));
+            });
+        },
+        showPhoneError: function (message) {
+            var $errorDiv = $('.dexpress-phone-error');
+            $errorDiv.text(message).show();
+        },
+        clearPhoneError: function () {
+            var $errorDiv = $('.dexpress-phone-error');
+            $errorDiv.hide();
+        },
+        formatPhoneDisplay: function (phoneNumber) {
+            // Ukloni sve što nije broj
+            var numbers = phoneNumber.replace(/[^0-9]/g, '');
+
+            if (numbers.length <= 3) return '+381 ';
+
+            var afterPrefix = numbers.substring(3);
+            if (afterPrefix.length <= 2) {
+                return '+381 ' + afterPrefix;
+            } else if (afterPrefix.length <= 5) {
+                return '+381 ' + afterPrefix.substring(0, 2) + ' ' + afterPrefix.substring(2);
+            } else {
+                return '+381 ' + afterPrefix.substring(0, 2) + ' ' +
+                    afterPrefix.substring(2, 5) + ' ' + afterPrefix.substring(5);
+            }
+        },
         formatPhone: function (numbers) {
             if (!numbers || numbers.length <= 3) return '+381 ';
             var local = numbers.substring(3);
@@ -647,7 +781,29 @@
             return $('.shipping_method:checked, .shipping_method:hidden').toArray()
                 .some(el => el.value && el.value.includes('dexpress'));
         },
+        // NOVA: Kompleta validacija telefona
+        validatePhoneComplete: function ($phone) {
+            var value = $phone.val();
+            var apiPhone = $('#dexpress_phone_api').val();
 
+            if (!apiPhone || apiPhone.length < 10) {
+                this.showPhoneError('Broj telefona mora imati najmanje 8 cifara nakon +381');
+                $phone.addClass('dexpress-error woocommerce-invalid');
+                return false;
+            }
+
+            // Proveri regex pattern iz API dokumentacije
+            var pattern = /^(381[1-9][0-9]{7,8}|38167[0-9]{6,8})$/;
+            if (!pattern.test(apiPhone)) {
+                this.showPhoneError('Neispavan format telefona. Primer: +381 60 123 4567');
+                $phone.addClass('dexpress-error woocommerce-invalid');
+                return false;
+            }
+
+            this.clearPhoneError();
+            $phone.removeClass('dexpress-error woocommerce-invalid');
+            return true;
+        },
         updatePhoneRequirement: function () {
             var isDExpress = this.isDExpressSelected();
             var $phoneLabel = $('label[for="billing_phone"]');

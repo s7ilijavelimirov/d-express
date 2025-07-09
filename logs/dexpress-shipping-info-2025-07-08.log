@@ -1,7 +1,0 @@
-{"timestamp":"2025-07-08 14:24:48","context":"shipping","level":"info","message":"[SHIPPING] Započinjem kreiranje pošiljke za narudžbinu #917"}
-{"timestamp":"2025-07-08 14:24:48","context":"shipping","level":"info","message":"[SHIPPING] Koristi se prosleđena lokacija ID: 12 (s7Code NS DOO)"}
-{"timestamp":"2025-07-08 14:24:48","context":"shipping","level":"info","message":"[SHIPPING] Koristi prosleđeni package kod: TT0000000049"}
-{"timestamp":"2025-07-08 14:24:48","context":"shipping","level":"info","message":"[SHIPPING] Podaci pripremljeni, pozivam D Express API..."}
-{"timestamp":"2025-07-08 14:24:48","context":"shipping","level":"info","message":"[SHIPPING] API uspešno odgovorio: TEST"}
-{"timestamp":"2025-07-08 14:24:48","context":"shipping","level":"info","message":"[SHIPPING] Pošiljka sačuvana u bazu sa ID: 42"}
-{"timestamp":"2025-07-08 14:24:50","context":"shipping","level":"info","message":"[SHIPPING] Pošiljka uspešno kreirana! ID: 42, Tracking: TT0000000049, API odgovor: TEST"}

@@ -34,7 +34,26 @@
             this.bindEvents();
             this.setupShippingMethodHandler();
         },
+        addDispenserToForm: function (dispenser) {
+            // Ukloni postojeće skriveno polje
+            $('input[name="dexpress_chosen_dispenser"]').remove();
 
+            // Dodaj novo skriveno polje sa podacima o paketomatu
+            var hiddenField = $('<input>', {
+                type: 'hidden',
+                name: 'dexpress_chosen_dispenser',
+                value: JSON.stringify({
+                    id: dispenser.id,
+                    name: dispenser.name,
+                    address: dispenser.address,
+                    town: dispenser.town,
+                    town_id: dispenser.town_id,
+                    postal_code: dispenser.postal_code
+                })
+            });
+
+            $('form.woocommerce-checkout').append(hiddenField);
+        },
         bindEvents: function () {
             var self = this;
 
@@ -1352,6 +1371,9 @@
                 postal_code: dispenser.postal_code
             };
 
+            // DODAJ OVO - dodaj u formu pre slanja AJAX-a
+            this.addDispenserToForm(chosenDispenser);
+
             $.ajax({
                 url: dexpressCheckout.ajaxUrl,
                 type: 'POST',
@@ -1362,11 +1384,10 @@
                 },
                 success: function (response) {
                     if (response.success) {
-                        // Ažuriraj poruku da je uspešno sačuvano
+                        // Success handling...
                         $('.dexpress-success-message span').text('Uspešno sačuvano!');
                         $('.dexpress-progress-fill').css('width', '100%');
 
-                        // Zatvori modal nakon kratke pauze
                         setTimeout(function () {
                             this.hideSuccessAnimation();
 
@@ -1380,7 +1401,7 @@
                             }.bind(this), 300);
                         }.bind(this), 1000);
                     } else {
-                        // Prikaži grešku u animaciji
+                        // Error handling...
                         $('.dexpress-success-message span').text('Greška! Pokušajte ponovo.');
                         $('.dexpress-success-content h3').text('Greška!').css('color', '#dc3545');
                         $('.checkmark').addClass('error');
@@ -1391,7 +1412,7 @@
                     }
                 }.bind(this),
                 error: function (xhr, status, error) {
-                    // Prikaži grešku u animaciji
+                    // Error handling...
                     $('.dexpress-success-message span').text('Greška pri komunikaciji!');
                     $('.dexpress-success-content h3').text('Greška!').css('color', '#dc3545');
                     $('.checkmark').addClass('error');

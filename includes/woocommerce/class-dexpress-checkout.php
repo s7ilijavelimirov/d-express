@@ -776,8 +776,9 @@ class D_Express_Checkout
     }
 
     /**
-     * AJAX: Pretraga ulica za određeni grad (ZADRŽANO)
+     * AJAX: Pretraga ulica za određeni grad 
      */
+
     public function ajax_search_streets_for_town()
     {
         check_ajax_referer('dexpress-frontend-nonce', 'nonce');
@@ -788,29 +789,43 @@ class D_Express_Checkout
 
         if (!$town_id) {
             wp_send_json([]);
+            return;
         }
 
+        // ISPRAVKA: Kraći keš sa town_id u ključu
         $cache_key = "dexpress_streets_town_{$town_id}_" . md5($search);
         $cached_streets = get_transient($cache_key);
 
         if ($cached_streets !== false) {
+            dexpress_log("Cache hit za grad {$town_id}, term: {$search}", 'debug');
             wp_send_json($cached_streets);
+            return;
         }
 
+        dexpress_log("API poziv za grad {$town_id}, term: {$search}", 'debug');
+
+        // POBOLJŠAN SQL sa boljim sortiranjem
         $streets = $wpdb->get_results($wpdb->prepare(
             "SELECT DISTINCT s.name, s.id
          FROM {$wpdb->prefix}dexpress_streets s
          WHERE s.TId = %d 
            AND s.name LIKE %s
+           AND (s.deleted IS NULL OR s.deleted = 0)
          ORDER BY 
            CASE WHEN s.name LIKE %s THEN 1 ELSE 2 END,
            LENGTH(s.name),
            s.name ASC 
-         LIMIT 100",
+         LIMIT 50",
             $town_id,
             '%' . $wpdb->esc_like($search) . '%',
             $wpdb->esc_like($search) . '%'
         ));
+
+        if ($wpdb->last_error) {
+            dexpress_log("SQL greška za grad {$town_id}: " . $wpdb->last_error, 'error');
+            wp_send_json([]);
+            return;
+        }
 
         $results = array_map(function ($street) {
             return [
@@ -820,7 +835,10 @@ class D_Express_Checkout
             ];
         }, $streets);
 
-        set_transient($cache_key, $results, HOUR_IN_SECONDS);
+        // ISPRAVKA: Kraći keš - 15 minuta umesto sat vremena
+        set_transient($cache_key, $results, 15 * MINUTE_IN_SECONDS);
+
+        dexpress_log("Vraćam " . count($results) . " ulica za grad {$town_id}", 'debug');
         wp_send_json($results);
     }
 
@@ -855,6 +873,7 @@ class D_Express_Checkout
                 }
             }
 
+            // ISPRAVKA: Formiraj address_1 i city za WooCommerce format
             if (!empty($_POST["{$type}_street"]) && !empty($_POST["{$type}_number"])) {
                 $street = sanitize_text_field($_POST["{$type}_street"]);
                 $number = sanitize_text_field($_POST["{$type}_number"]);
@@ -866,6 +885,7 @@ class D_Express_Checkout
             }
         }
 
+        // Telefon handling - isti kao pre
         if (isset($_POST['dexpress_phone_api'])) {
             $api_phone = sanitize_text_field($_POST['dexpress_phone_api']);
             update_post_meta($order_id, '_billing_phone_api_format', $api_phone);
@@ -882,7 +902,6 @@ class D_Express_Checkout
             }
         }
     }
-
     /**
      * Format display phone (ZADRŽANO)
      */
@@ -897,7 +916,6 @@ class D_Express_Checkout
             substr($api_phone, 5, 3) . ' ' .
             substr($api_phone, 8);
     }
-
     /**
      * AJAX: Pretraga gradova sa naseljima (ZADRŽANO)
      */
@@ -948,6 +966,7 @@ class D_Express_Checkout
         $results = array_map(function ($town) {
             $primary_name = !empty($town->display_name) ? $town->display_name : $town->name;
 
+            // ISPRAVKA: SAMO SIROVI PODACI - JavaScript će formatirati!
             return [
                 'town_id'           => $town->id,
                 'label'             => $primary_name,
