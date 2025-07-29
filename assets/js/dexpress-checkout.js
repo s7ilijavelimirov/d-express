@@ -666,12 +666,12 @@
             var $phone = $('#billing_phone');
             if (!$phone.length) return;
 
-            // Postavi početnu vrednost
-            if (!$phone.val()) $phone.val('+381 ');
+            // Postavi početnu vrednost BEZ razmaka
+            if (!$phone.val()) $phone.val('+381');
 
-            // Dodaj hint sa jasnim uputstvom
+            // Dodaj hint
             if (!$phone.next('.dexpress-phone-hint').length) {
-                $('<div class="dexpress-phone-hint">Primer: +381 60 123 4567 (bez nule nakon prefiksa)</div>').insertAfter($phone);
+                $('<div class="dexpress-phone-hint">Primer: +38160123456 (bez razmaka)</div>').insertAfter($phone);
             }
 
             // Dodaj error container
@@ -693,7 +693,6 @@
                     if (cleanValue.startsWith('381')) {
                         cleanValue = '+' + cleanValue;
                     } else if (cleanValue.startsWith('0')) {
-                        // UKLONI početnu nulu i dodaj +381
                         cleanValue = '+381' + cleanValue.substring(1);
                     } else if (cleanValue.length > 0 && !cleanValue.startsWith('+')) {
                         cleanValue = '+381' + cleanValue;
@@ -705,7 +704,7 @@
                 // Izvuci brojeve nakon +381
                 var digitsAfter381 = cleanValue.substring(4);
 
-                // GLAVNA VALIDACIJA: Proveri da li počinje sa 0
+                // Validacija
                 if (digitsAfter381.startsWith('0')) {
                     self.showPhoneError('Broj telefona ne sme počinjati sa 0 nakon +381');
                     $this.addClass('dexpress-error woocommerce-invalid');
@@ -714,11 +713,10 @@
                     $this.removeClass('dexpress-error woocommerce-invalid');
                 }
 
-                // Formatiraj broj
-                var formatted = self.formatPhoneDisplay(cleanValue);
-                $this.val(formatted);
+                // Postavi vrednost BEZ razmaka
+                $this.val(cleanValue);
 
-                // Generiši API format (bez + i razmaka)
+                // Generiši API format
                 var apiFormat = cleanValue.replace(/[^0-9]/g, '');
                 $('#dexpress_phone_api').remove();
 
@@ -729,13 +727,9 @@
             });
 
             $phone.on('focus', function () {
-                if ($(this).val() === '+381' || $(this).val() === '') {
-                    $(this).val('+381 ');
+                if ($(this).val() === '' || $(this).val() === '+381') {
+                    $(this).val('+381');
                 }
-            });
-
-            $phone.on('blur', function () {
-                self.validatePhoneComplete($(this));
             });
         },
         showPhoneError: function (message) {
@@ -750,17 +744,71 @@
             // Ukloni sve što nije broj
             var numbers = phoneNumber.replace(/[^0-9]/g, '');
 
-            if (numbers.length <= 3) return '+381 ';
+            if (numbers.length <= 3) return '+381';
 
-            var afterPrefix = numbers.substring(3);
-            if (afterPrefix.length <= 2) {
-                return '+381 ' + afterPrefix;
-            } else if (afterPrefix.length <= 5) {
-                return '+381 ' + afterPrefix.substring(0, 2) + ' ' + afterPrefix.substring(2);
-            } else {
-                return '+381 ' + afterPrefix.substring(0, 2) + ' ' +
-                    afterPrefix.substring(2, 5) + ' ' + afterPrefix.substring(5);
+            // Vrati SAMO sa + ali BEZ razmaka
+            return '+' + numbers;
+        },
+        setupPhoneValidation: function () {
+            var self = this;
+            var $phone = $('#billing_phone');
+
+            if (!$phone.length) return;
+
+            // Dodaj error container samo jednom
+            if (!$('.dexpress-phone-error').length) {
+                $phone.after('<div class="dexpress-phone-error" style="color: red; font-size: 12px; display: none;"></div>');
             }
+
+            // Jednostavan input handler - samo na blur
+            $phone.on('blur', function () {
+                var $this = $(this);
+                var value = $this.val();
+
+                if (!value || value === '+381') {
+                    $this.val('+381');
+                    return;
+                }
+
+                // Očisti format
+                var cleanValue = value.replace(/[^0-9]/g, '');
+
+                // Dodaj 381 ako nema
+                if (cleanValue.length === 0) {
+                    cleanValue = '381';
+                } else if (cleanValue.charAt(0) === '0') {
+                    cleanValue = '381' + cleanValue.substring(1);
+                } else if (cleanValue.substring(0, 3) !== '381') {
+                    cleanValue = '381' + cleanValue;
+                }
+
+                // Proveri da li počinje sa 0 nakon 381
+                var digitsAfter381 = cleanValue.substring(3);
+                if (digitsAfter381.startsWith('0')) {
+                    self.showPhoneError('Broj telefona ne sme počinjati sa 0 nakon +381');
+                    $this.addClass('dexpress-error');
+                } else {
+                    self.clearPhoneError();
+                    $this.removeClass('dexpress-error');
+                }
+
+                // Postavi vrednost BEZ razmaka
+                $this.val('+' + cleanValue);
+
+                // Postavi API format
+                $('#dexpress_phone_api').remove();
+                if (cleanValue.length >= 10 && !digitsAfter381.startsWith('0')) {
+                    $('<input type="hidden" id="dexpress_phone_api" name="dexpress_phone_api" />')
+                        .val(cleanValue).insertAfter($phone);
+                }
+            });
+
+            // Samo focus event
+            $phone.on('focus', function () {
+                if ($(this).val() === '' || $(this).val() === '+381') {
+                    $(this).val('+381');
+                }
+            });
         },
         formatPhone: function (numbers) {
             if (!numbers || numbers.length <= 3) return '+381 ';

@@ -65,7 +65,7 @@ class D_Express_WooCommerce
      */
     private function includes()
     {
-        // Helpers i utility funkcije
+        // Helpers i utility funkcije - uvek učitaj
         require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/dexpress-woo-helpers.php';
 
         // API klasa
@@ -74,6 +74,7 @@ class D_Express_WooCommerce
         // Klase za bazu podataka
         require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/db/class-dexpress-db.php';
 
+        // Servisne klase
         require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/services/class-dexpress-sender-locations.php';
 
         // CRON
@@ -82,17 +83,35 @@ class D_Express_WooCommerce
         // Validator
         require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/class-dexpress-validator.php';
 
+        // Webhook handler
+        require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/class-dexpress-webhook-handler.php';
+
+        // Conditional loading - samo ako je WooCommerce aktivan
+        add_action('woocommerce_loaded', array($this, 'load_woocommerce_dependent_files'));
+    }
+    public function load_woocommerce_dependent_files()
+    {
+        // Proveri da li je WooCommerce stvarno aktivan
+        if (!class_exists('WooCommerce')) {
+            return;
+        }
+
         // Timeline
         require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/admin/class-dexpress-order-timeline.php';
 
-        // Admin klase
+        // Admin klase - samo ako je admin
         if (is_admin()) {
             require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/admin/class-dexpress-admin.php';
             require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/admin/class-dexpress-admin-ajax.php';
             require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/admin/class-dexpress-order-metabox.php';
-            include_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/admin/class-dexpress-shipments-list.php';
+            require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/admin/class-dexpress-shipments-list.php';
             require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/admin/class-dexpress-reports.php';
-            require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/admin/class-dexpress-dashboard-widget.php';
+            require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/admin/class-dexpress-diagnostics.php';
+
+            // Dashboard widget - samo ako je WooCommerce aktivan
+            if (function_exists('wc_get_order')) {
+                require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/admin/class-dexpress-dashboard-widget.php';
+            }
         }
 
         // Servisne klase
@@ -101,33 +120,26 @@ class D_Express_WooCommerce
         // WooCommerce integracija klase
         require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/woocommerce/class-dexpress-shipping-method.php';
         require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/woocommerce/class-dexpress-order-handler.php';
+        require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/woocommerce/class-dexpress-checkout.php';
+        require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/woocommerce/class-dexpress-dispenser-shipping-method.php';
 
         // Frontend klase
         require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/frontend/class-dexpress-tracking.php';
 
+        // API klase
         require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/api/class-dexpress-label-generator.php';
-        // Webhook handler
-        require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/class-dexpress-webhook-handler.php';
-
-        // Checkout klase
-        require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/woocommerce/class-dexpress-checkout.php';
-
-        // U d-express-woocommerce-integration.php dodati ovu liniju u includes funkciji:
-        require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/woocommerce/class-dexpress-dispenser-shipping-method.php';
-
-        require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/admin/class-dexpress-diagnostics.php';
     }
-
     /**
      * Inicijalizacija hook-ova
      */
     private function init_hooks()
     {
-        // Aktivacija plugin-a
+        // Plugin activation/deactivation hooks
         register_activation_hook(__FILE__, array($this, 'activate'));
-
-        // Deaktivacija plugin-a
         register_deactivation_hook(__FILE__, array($this, 'deactivate'));
+
+        // Hook za deaktivaciju WooCommerce-a
+        add_action('deactivated_plugin', array($this, 'on_woocommerce_deactivated'), 10, 2);
 
         // Dodavanje REST API ruta za webhook - pomereno pre plugins_loaded
         add_action('rest_api_init', array($this, 'register_rest_routes'));
@@ -138,15 +150,46 @@ class D_Express_WooCommerce
         add_action('dexpress_process_notification', array($this, 'process_notification'));
 
         // Inicijalizacija nakon učitavanja svih plugin-a
-        add_action('init', array($this, 'init'), 10);
+        add_action('plugins_loaded', array($this, 'init'), 20);
 
         // Dodaj hook za simulaciju
         add_action('init', array($this, 'auto_simulate_test_statuses'));
 
         // Registrujemo česte provere statusa
         add_action('init', array($this, 'register_frequent_status_checks'));
-    }
 
+        // ✅ NOVO: Heartbeat support za CRON monitoring
+        add_action('admin_enqueue_scripts', array($this, 'enqueue_cron_heartbeat_script'));
+    }
+    public function enqueue_cron_heartbeat_script($hook)
+    {
+        // Učitaj samo na dexpress stranicama
+        if (strpos($hook, 'dexpress') === false) return;
+
+?>
+        <script type="text/javascript">
+            jQuery(document).ready(function($) {
+                // Heartbeat check za CRON status
+                $(document).on('heartbeat-send', function(e, data) {
+                    if (window.location.href.indexOf('dexpress') !== -1) {
+                        data.dexpress_cron_check = true;
+                    }
+                });
+
+                $(document).on('heartbeat-received', function(e, data) {
+                    if (data.dexpress_cron_status) {
+                        console.log('🔄 AUTO-CRON Status:', data.dexpress_cron_status);
+
+                        // Prikaži upozorenje ako CRON kasni
+                        if (data.dexpress_cron_status.hours_since > 25) {
+                            console.warn('⚠️ CRON KAŠNJENJE: ' + data.dexpress_cron_status.hours_since + 'h');
+                        }
+                    }
+                });
+            });
+        </script>
+<?php
+    }
     /**
      * Registracija češćih provera statusa
      */
@@ -168,7 +211,33 @@ class D_Express_WooCommerce
 
         add_action('dexpress_check_pending_statuses', array($this, 'check_pending_statuses'));
     }
+    public function on_woocommerce_deactivated($plugin, $network_deactivating)
+    {
+        // Proveri da li je deaktiviran WooCommerce
+        if (strpos($plugin, 'woocommerce.php') !== false) {
+            // Gracefully handle WooCommerce deactivation
+            $this->cleanup_on_woocommerce_deactivation();
+        }
+    }
 
+    /**
+     * 5. DODAJ ovu metodu u klasu:
+     */
+    private function cleanup_on_woocommerce_deactivation()
+    {
+        // Ukloni scheduled cron jobs
+        if (class_exists('D_Express_Cron_Manager')) {
+            D_Express_Cron_Manager::clear_all_cron_jobs();
+        }
+
+        // Flush rewrite rules
+        flush_rewrite_rules();
+
+        // Log deactivation
+        if (function_exists('dexpress_log')) {
+            dexpress_log('WooCommerce deaktiviran - D Express plugin se privremeno suspenduje', 'info');
+        }
+    }
     /**
      * Provera statusa pošiljki koje su u obradi
      */
@@ -259,11 +328,16 @@ class D_Express_WooCommerce
      */
     public function auto_simulate_test_statuses()
     {
+        if (!class_exists('WooCommerce')) {
+            return;
+        }
         // Proveravamo da li je test režim aktivan
         if (!dexpress_is_test_mode()) {
             return;
         }
-
+        if (!class_exists('D_Express_Order_Timeline')) {
+            return;
+        }
         global $wpdb;
         //dexpress_log('Pokrenuta automatska simulacija statusa pošiljki', 'info');
 
@@ -293,26 +367,27 @@ class D_Express_WooCommerce
             deactivate_plugins(plugin_basename(__FILE__));
             wp_die(__('D Express WooCommerce Integration zahteva WooCommerce plugin. Molimo instalirajte i aktivirajte WooCommerce.', 'd-express-woo'));
         }
+
+        // Postojeći activation kod...
         if (is_admin()) {
             require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/admin/class-dexpress-admin.php';
         }
-        // Kreiranje potrebnih tabela u bazi
+
         require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/db/class-dexpress-db-installer.php';
         $installer = new D_Express_DB_Installer();
         $installer->install();
+
         $db = new D_Express_DB();
         $db->add_shipment_index();
-
         D_Express_DB::update_multiple_shipments_schema();
-
         D_Express_DB::update_package_code_schema();
 
-        // Postavljanje verzije schema
         update_option('dexpress_schema_version', '1.2.0');
-        // Postavljanje potrebnih opcija
         $this->set_default_options();
 
-        // Flush rewrite rules za REST API endpoint
+        if (class_exists('D_Express_Cron_Manager')) {
+            D_Express_Cron_Manager::register_cron_endpoint();
+        }
         flush_rewrite_rules();
     }
     /**
@@ -343,9 +418,11 @@ class D_Express_WooCommerce
      */
     public function deactivate()
     {
+        if (class_exists('D_Express_Cron_Manager')) {
+            D_Express_Cron_Manager::clear_all_cron_jobs();
+        }
 
-        D_Express_Cron_Manager::clear_all_cron_jobs();
-        // Flush rewrite rules
+        // ✅ DODAJ:
         flush_rewrite_rules();
     }
 
@@ -378,7 +455,10 @@ class D_Express_WooCommerce
      */
     public function init_after_woocommerce()
     {
-        // Sada je bezbedno koristiti WooCommerce funkcije
+        // Proveri da li je WooCommerce stvarno aktivan
+        if (!class_exists('WooCommerce') || !function_exists('wc_get_order')) {
+            return;
+        }
 
         // Provera verzije WooCommerce-a
         if (version_compare(WC()->version, '9.0', '<')) {
@@ -386,39 +466,60 @@ class D_Express_WooCommerce
             return;
         }
 
-        // Inicijalizacija klasa koje koriste WooCommerce
-        $label_generator = new D_Express_Label_Generator();
+        try {
+            // Inicijalizacija klasa koje koriste WooCommerce
+            if (class_exists('D_Express_Label_Generator')) {
+                $label_generator = new D_Express_Label_Generator();
+            }
 
-        // Inicijalizacija checkout klase
-        $checkout = new D_Express_Checkout();
-        $checkout->init();
+            // Inicijalizacija checkout klase
+            if (class_exists('D_Express_Checkout')) {
+                $checkout = new D_Express_Checkout();
+                $checkout->init();
+            }
 
-        // Inicijalizacija admin klasa
-        if (is_admin()) {
-            $admin = new D_Express_Admin();
+            // Inicijalizacija admin klasa
+            if (is_admin()) {
+                if (class_exists('D_Express_Admin')) {
+                    $admin = new D_Express_Admin();
+                }
 
-            // ✅ DODAJ OVU LINIJU ZA AJAX HANDLER
-            $admin_ajax = new D_Express_Admin_Ajax();
-            add_action('wp_ajax_dexpress_delete_shipment', array($admin_ajax, 'ajax_delete_shipment'));
+                if (class_exists('D_Express_Admin_Ajax')) {
+                    $admin_ajax = new D_Express_Admin_Ajax();
+                    add_action('wp_ajax_dexpress_delete_shipment', array($admin_ajax, 'ajax_delete_shipment'));
+                }
+            }
+
+            // Inicijalizacija frontend klasa
+            if (class_exists('D_Express_Tracking')) {
+                $tracking = new D_Express_Tracking();
+                $tracking->init();
+            }
+
+            if (class_exists('D_Express_Order_Handler')) {
+                $order_handler = new D_Express_Order_Handler();
+                $order_handler->init();
+            }
+
+            // Inicijalizacija timeline-a
+            if (class_exists('D_Express_Order_Timeline')) {
+                $timeline = new D_Express_Order_Timeline();
+                $timeline->init();
+            }
+        } catch (Exception $e) {
+            if (function_exists('dexpress_log')) {
+                dexpress_log('Greška pri inicijalizaciji D Express plugin-a: ' . $e->getMessage(), 'error');
+            }
         }
-
-        // Inicijalizacija frontend klasa
-        $tracking = new D_Express_Tracking();
-        $tracking->init();
-
-        $order_handler = new D_Express_Order_Handler();
-        $order_handler->init();
-
-        // Inicijalizacija timeline-a
-        $timeline = new D_Express_Order_Timeline();
-        $timeline->init();
     }
-
     private function init_cron_jobs()
     {
         D_Express_Cron_Manager::init_cron_jobs();
     }
-
+    private function ensure_woocommerce_active()
+    {
+        return class_exists('WooCommerce') && function_exists('wc_get_order');
+    }
     /**
      * Postavlja podrazumevane opcije plugin-a
      */

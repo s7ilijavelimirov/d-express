@@ -8,14 +8,34 @@ defined('ABSPATH') || exit;
 
 class D_Express_Dashboard_Widget
 {
-
-    public function init()
+    /**
+     * Konstruktor
+     */
+    public function __construct()
     {
+        // Registruj widget tek kada je WooCommerce spreman
         add_action('wp_dashboard_setup', array($this, 'add_dashboard_widget'));
     }
 
+    /**
+     * Inicijalizacija widgeta
+     */
+    public function init()
+    {
+        // Kompatibilnost sa postojećim kodom
+        add_action('wp_dashboard_setup', array($this, 'add_dashboard_widget'));
+    }
+
+    /**
+     * Dodaj dashboard widget sa WooCommerce proverom
+     */
     public function add_dashboard_widget()
     {
+        // Proveri da li je WooCommerce aktivan pre dodavanja widgeta
+        if (!$this->is_woocommerce_active()) {
+            return;
+        }
+
         wp_add_dashboard_widget(
             'dexpress_dashboard_widget',
             __('D Express Status Pošiljki', 'd-express-woo'),
@@ -23,7 +43,47 @@ class D_Express_Dashboard_Widget
         );
     }
 
+    /**
+     * Provera da li je WooCommerce aktivan
+     */
+    private function is_woocommerce_active()
+    {
+        return class_exists('WooCommerce') && function_exists('wc_get_order');
+    }
+
+    /**
+     * Callback za dashboard widget - sa WooCommerce proverom
+     */
     public function dashboard_widget_callback()
+    {
+        // Dupla provera pre pristupa WooCommerce funkcijama
+        if (!$this->is_woocommerce_active()) {
+            echo '<div class="notice notice-warning inline">';
+            echo '<p>' . __('D Express widget zahteva aktivan WooCommerce plugin.', 'd-express-woo') . '</p>';
+            echo '</div>';
+            return;
+        }
+
+        try {
+            // Sada je bezbedno koristiti WooCommerce funkcije
+            $this->render_widget_content();
+
+        } catch (Exception $e) {
+            echo '<div class="notice notice-error inline">';
+            echo '<p>' . __('Greška pri učitavanju D Express statistika.', 'd-express-woo') . '</p>';
+            echo '</div>';
+
+            // Log grešku
+            if (function_exists('dexpress_log')) {
+                dexpress_log('Dashboard widget greška: ' . $e->getMessage(), 'error');
+            }
+        }
+    }
+
+    /**
+     * Renderuj sadržaj widgeta
+     */
+    private function render_widget_content()
     {
         global $wpdb;
 
@@ -60,27 +120,48 @@ class D_Express_Dashboard_Widget
         echo '</div>';
 
         // Lista najnovijih pošiljki
+        $this->render_recent_shipments();
+
+        echo '<p><a href="' . admin_url('admin.php?page=dexpress-shipments') . '" class="button">' . __('Prikaži sve pošiljke', 'd-express-woo') . '</a></p>';
+
+        // CSS za stilizovanje widgeta
+        $this->render_widget_styles();
+    }
+
+    /**
+     * Renderuj najnovije pošiljke
+     */
+    private function render_recent_shipments()
+    {
+        global $wpdb;
+
         $recent_shipments = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}dexpress_shipments ORDER BY created_at DESC LIMIT 5");
 
         if ($recent_shipments) {
             echo '<h3>' . __('Najnovije pošiljke', 'd-express-woo') . '</h3>';
             echo '<ul class="dexpress-recent-shipments">';
             foreach ($recent_shipments as $shipment) {
+                // Bezbedna provera da li narudžbina postoji
                 $order = wc_get_order($shipment->order_id);
                 $order_text = $order ? '#' . $order->get_order_number() : '#' . $shipment->order_id;
 
                 echo '<li>';
-                echo '<strong>' . $shipment->tracking_number . '</strong> ';
-                echo '(' . $order_text . ') - ';
-                echo dexpress_get_status_name($shipment->status_code);
+                echo '<strong>' . esc_html($shipment->tracking_number) . '</strong> ';
+                echo '(' . esc_html($order_text) . ') - ';
+                echo esc_html(dexpress_get_status_name($shipment->status_code));
                 echo '</li>';
             }
             echo '</ul>';
+        } else {
+            echo '<p>' . __('Nema najnovijih pošiljki.', 'd-express-woo') . '</p>';
         }
+    }
 
-        echo '<p><a href="' . admin_url('admin.php?page=dexpress-shipments') . '" class="button">' . __('Prikaži sve pošiljke', 'd-express-woo') . '</a></p>';
-
-        // Dodajte CSS za stilizovanje widgeta
+    /**
+     * Renderuj CSS stilove
+     */
+    private function render_widget_styles()
+    {
         echo '<style>
             .dexpress-dashboard-stats {
                 display: flex;
@@ -112,12 +193,26 @@ class D_Express_Dashboard_Widget
             .dexpress-recent-shipments li:last-child {
                 border-bottom: none;
             }
+            .notice.inline {
+                margin: 5px 0 15px;
+                padding: 8px 12px;
+            }
         </style>';
     }
 }
 
-// Inicijalizacija widgeta
-add_action('init', function () {
-    $widget = new D_Express_Dashboard_Widget();
-    $widget->init();
+// Inicijalizacija widgeta - SAMO AKO JE WOOCOMMERCE AKTIVAN
+add_action('woocommerce_loaded', function () {
+    if (class_exists('WooCommerce') && function_exists('wc_get_order')) {
+        $widget = new D_Express_Dashboard_Widget();
+        $widget->init();
+    }
 });
+
+// Fallback za slučaj da woocommerce_loaded hook nije pozvan
+add_action('init', function () {
+    if (class_exists('WooCommerce') && function_exists('wc_get_order')) {
+        $widget = new D_Express_Dashboard_Widget();
+        $widget->init();
+    }
+}, 25); // Visok prioritet da se pokrene nakon WooCommerce

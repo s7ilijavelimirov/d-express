@@ -657,7 +657,41 @@ class D_Express_Label_Generator
         $fallback_content = get_option('dexpress_default_content', 'Proizvodi');
         return !empty($fallback_content) ? $fallback_content : 'Proizvodi';
     }
+    /**
+     * NOVA FUNKCIJA: Formatiraj adresu sa brojem za nalepnicu
+     */
+    private function format_address_with_number($order, $address_type)
+    {
+        $order_id = $order->get_id();
 
+        // Pokušaj da dobiješ D Express podatke iz order meta
+        $street = get_post_meta($order_id, "_{$address_type}_street", true);
+        $number = get_post_meta($order_id, "_{$address_type}_number", true);
+
+        // Debug log
+        error_log("Label Generator - Address format debug:");
+        error_log("Order ID: " . $order_id);
+        error_log("Address type: " . $address_type);
+        error_log("Street meta: " . $street);
+        error_log("Number meta: " . $number);
+
+        // Ako imamo D Express podatke, formatiraj "ulica broj"
+        if (!empty($street) && !empty($number)) {
+            $formatted_address = $street . ' ' . $number;
+            error_log("Formatted address: " . $formatted_address);
+            return $formatted_address;
+        }
+
+        // Fallback na standardnu WooCommerce adresu
+        if ($address_type === 'shipping') {
+            $fallback = $order->get_shipping_address_1();
+        } else {
+            $fallback = $order->get_billing_address_1();
+        }
+
+        error_log("Using fallback address: " . $fallback);
+        return $fallback;
+    }
     /**
      * Pripremanje podataka o narudžbini za nalepnicu - AŽURIRANO
      * 
@@ -710,6 +744,27 @@ class D_Express_Label_Generator
         // Odredi tip adrese (billing ili shipping)
         $address_type = $order->has_shipping_address() ? 'shipping' : 'billing';
 
+        // ISPRAVKA: Direktno formatiranje adrese (ukloni dupli poziv)
+        $street = get_post_meta($order->get_id(), "_{$address_type}_street", true);
+        $number = get_post_meta($order->get_id(), "_{$address_type}_number", true);
+
+        // Debug log za proveru
+        error_log("=== LABEL DEBUG ===");
+        error_log("Order ID: " . $order->get_id());
+        error_log("Address type: " . $address_type);
+        error_log("Street meta: " . $street);
+        error_log("Number meta: " . $number);
+
+        // Formatiraj adresu sa D Express podacima
+        if (!empty($street) && !empty($number)) {
+            $shipping_address = $street . ' ' . $number;
+        } else {
+            // Fallback na standardnu WooCommerce adresu
+            $shipping_address = $address_type === 'shipping'
+                ? $order->get_shipping_address_1()
+                : $order->get_billing_address_1();
+        }
+
         // Prvo pokušaj da dobiješ napomenu iz odgovarajućeg tipa adrese
         $address_desc = get_post_meta($order->get_id(), "_{$address_type}_address_desc", true);
 
@@ -724,7 +779,7 @@ class D_Express_Label_Generator
             'sender_address' => $sender_address,
             'sender_city' => $sender_city,
             'shipping_name' => $order->get_shipping_first_name() . ' ' . $order->get_shipping_last_name(),
-            'shipping_address' => $order->get_shipping_address_1(),
+            'shipping_address' => $shipping_address,
             'shipping_address_desc' => $address_desc,
             'shipping_city' => $order->get_shipping_city(),
             'shipping_postcode' => $order->get_shipping_postcode(),

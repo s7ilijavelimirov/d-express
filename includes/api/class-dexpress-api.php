@@ -89,15 +89,17 @@ class D_Express_API
 
         // Logovanje zahteva u test modu
         if ($this->test_mode) {
-            dexpress_log('API Zahtev: ' . $url);
-            dexpress_log('Metod: ' . $method);
+            dexpress_raw_log("API Zahtev: {$url}", 'info', 'api');
+            dexpress_raw_log("Metod: {$method}", 'info', 'api');
 
             if (!empty($data)) {
                 $formatted_json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-                dexpress_log("Podaci:\n" . $formatted_json);
+                dexpress_raw_log("Podaci za API:\n{$formatted_json}", 'info', 'api');
             } else {
-                dexpress_log("Podaci: nema");
+                dexpress_raw_log("Podaci: nema", 'info', 'api');
             }
+
+            dexpress_raw_log("--- SLANJE ZAHTEVA ---", 'info', 'api');
         }
 
 
@@ -115,7 +117,20 @@ class D_Express_API
 
         // Logovanje odgovora u test modu
         if ($this->test_mode) {
-            dexpress_log('API Odgovor (kod ' . $response_code . ')');
+            dexpress_raw_log("API Odgovor kod: {$response_code}", 'info', 'api');
+
+            if (!empty($body)) {
+                // Pokušaj formatirati JSON odgovor
+                $decoded_body = json_decode($body, true);
+                if (json_last_error() === JSON_ERROR_NONE) {
+                    $formatted_response = json_encode($decoded_body, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                    dexpress_raw_log("API Odgovor:\n{$formatted_response}", 'info', 'api');
+                } else {
+                    dexpress_raw_log("API Odgovor (text): {$body}", 'info', 'api');
+                }
+            }
+
+            dexpress_raw_log("--- ZAVRŠEN ZAHTEV ---", 'info', 'api');
         }
 
         if ($response_code < 200 || $response_code >= 600) {

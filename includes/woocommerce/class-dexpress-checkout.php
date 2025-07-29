@@ -10,14 +10,13 @@ class D_Express_Checkout
         $this->init_dispensers();
 
         // Zamena standardnih polja sa D Express poljima
-        add_filter('woocommerce_checkout_fields', [$this, 'modify_checkout_fields'], 1000);
+        add_filter('woocommerce_checkout_fields', [$this, 'modify_checkout_fields'], 50);
 
         // Validacija checkout polja
         add_action('woocommerce_checkout_process', [$this, 'validate_checkout_fields']);
 
         // Čuvanje podataka u narudžbini
-        add_action('woocommerce_checkout_update_order_meta', [$this, 'save_checkout_fields'], 999);
-        add_action('woocommerce_checkout_update_order_meta', [$this, 'force_save_number'], 1000);
+        add_action('woocommerce_checkout_update_order_meta', [$this, 'save_checkout_fields'], 15);
         // AJAX handleri za pretragu i dobijanje podataka (ZADRŽANO)
         add_action('wp_ajax_dexpress_search_streets', [$this, 'ajax_search_streets']);
         add_action('wp_ajax_nopriv_dexpress_search_streets', [$this, 'ajax_search_streets']);
@@ -34,66 +33,13 @@ class D_Express_Checkout
         add_action('wp_ajax_dexpress_search_all_towns', [$this, 'ajax_search_all_towns']);
         add_action('wp_ajax_nopriv_dexpress_search_all_towns', [$this, 'ajax_search_all_towns']);
 
+        add_action('woocommerce_admin_order_data_after_billing_address', [$this, 'display_address_desc_in_billing'], 10, 1);
+        add_action('woocommerce_admin_order_data_after_shipping_address', [$this, 'display_address_desc_in_shipping'], 10, 1);
+
+        add_filter('woocommerce_order_formatted_billing_address', [$this, 'format_billing_address'], 10, 2);
+        add_filter('woocommerce_order_formatted_shipping_address', [$this, 'format_shipping_address'], 10, 2);
         // Enqueue scripts
         add_action('wp_enqueue_scripts', [$this, 'enqueue_checkout_scripts']);
-    }
-    public function force_save_number($order_id)
-    {
-        dexpress_log("=== FORCE SAVE NUMBER za order {$order_id} ===", 'debug');
-
-        $address_types = ['billing', 'shipping'];
-        foreach ($address_types as $type) {
-            $number_field = "{$type}_number";
-
-            if (isset($_POST[$number_field])) {
-                $number_value = trim($_POST[$number_field]);
-                $meta_key = "_{$number_field}";
-
-                // Proveri šta je trenutno sačuvano
-                $current_value = get_post_meta($order_id, $meta_key, true);
-                dexpress_log("Trenutno sačuvano {$meta_key}: '{$current_value}'", 'debug');
-                dexpress_log("Trebalo bi da bude: '{$number_value}'", 'debug');
-
-                // Ako se razlikuje, FORSIRA čuvanje
-                if ($current_value !== $number_value) {
-                    dexpress_log("RAZLIKUJE SE! Forsiram čuvanje...", 'debug');
-
-                    // Obrišii postojeći meta
-                    delete_post_meta($order_id, $meta_key);
-
-                    // Sačuvaj novi
-                    update_post_meta($order_id, $meta_key, $number_value);
-
-                    // Proveri da li je sačuvano
-                    $new_value = get_post_meta($order_id, $meta_key, true);
-                    dexpress_log("Nakon force save: '{$new_value}'", 'debug');
-
-                    // TAKOĐE ažuriraj address_1 polje
-                    if (!empty($_POST["{$type}_street"])) {
-                        $street = sanitize_text_field($_POST["{$type}_street"]);
-                        $address1 = $street . ' ' . $number_value;
-
-                        delete_post_meta($order_id, "_{$type}_address_1");
-                        update_post_meta($order_id, "_{$type}_address_1", $address1);
-
-                        dexpress_log("Ažuriram address_1: '{$address1}'", 'debug');
-                    }
-                } else {
-                    dexpress_log("Vrednost je OK, ne treba forsirati", 'debug');
-                }
-            }
-        }
-
-        dexpress_log("=== END FORCE SAVE NUMBER ===", 'debug');
-    }
-    public function debug_woocommerce_hooks()
-    {
-        // Listing svih hook-ova koji se izvršavaju
-        add_action('all', function ($hook) {
-            if (strpos($hook, 'checkout') !== false || strpos($hook, 'order') !== false) {
-                dexpress_log("Hook: {$hook}", 'debug');
-            }
-        });
     }
     /**
      * NOVA: Inicijalizacija optimizovane dispenser funkcionalnosti
@@ -123,7 +69,40 @@ class D_Express_Checkout
         add_action('wp_ajax_dexpress_search_dispensers', [$this, 'ajax_search_dispensers']);
         add_action('wp_ajax_nopriv_dexpress_search_dispensers', [$this, 'ajax_search_dispensers']);
     }
+    public function format_billing_address($address, $order)
+    {
+        $order_id = $order->get_id();
 
+        // Dobij D Express podatke
+        $street = get_post_meta($order_id, '_billing_street', true);
+        $number = get_post_meta($order_id, '_billing_number', true);
+
+        // Ako imamo D Express podatke, formatiraj address_1
+        if (!empty($street) && !empty($number)) {
+            $address['address_1'] = $street . ' ' . $number;
+        }
+
+        return $address;
+    }
+
+    /**
+     * Formatiranje shipping adrese sa kućnim brojem
+     */
+    public function format_shipping_address($address, $order)
+    {
+        $order_id = $order->get_id();
+
+        // Dobij D Express podatke
+        $street = get_post_meta($order_id, '_shipping_street', true);
+        $number = get_post_meta($order_id, '_shipping_number', true);
+
+        // Ako imamo D Express podatke, formatiraj address_1
+        if (!empty($street) && !empty($number)) {
+            $address['address_1'] = $street . ' ' . $number;
+        }
+
+        return $address;
+    }
     /**
      * NOVO: AJAX za dobijanje gradova koji imaju paketomata
      */
@@ -917,13 +896,10 @@ class D_Express_Checkout
 
                     // SPECIJALNO RUKOVANJE ZA KUĆNI BROJ
                     if ($key === 'number') {
-                        // NE KORISTI sanitize_text_field za broj - samo osnovnu validaciju
                         $value = trim($value);
 
-                        // Validacija pomoću naše funkcije
                         if (!D_Express_Validator::validate_address_number($value)) {
                             dexpress_log("GREŠKA: Neispravan format kućnog broja '{$value}' za narudžbinu {$order_id}", 'error');
-                            // Nastavi sa čuvanjem - možda je greška u validaciji
                         }
 
                         dexpress_log("Čuvam {$type}_number: '{$value}'", 'debug');
@@ -949,14 +925,16 @@ class D_Express_Checkout
                 }
             }
 
-            // ISPRAVKA: Formiraj address_1 za WooCommerce format
-            if (!empty($_POST["{$type}_street"]) && !empty($_POST["{$type}_number"])) {
-                $street = sanitize_text_field($_POST["{$type}_street"]);
-                $number = trim($_POST["{$type}_number"]); // NE SANITIZE broj!
-                $updated_values["_{$type}_address_1"] = $street . ' ' . $number;
-
-                dexpress_log("Formiram address_1: '{$street} {$number}'", 'debug');
-            }
+            // UKLONI OVO - ne formiramo address_1 ovde
+            /*
+        if (!empty($_POST["{$type}_street"]) && !empty($_POST["{$type}_number"])) {
+            $street = sanitize_text_field($_POST["{$type}_street"]);
+            $number = trim($_POST["{$type}_number"]);
+            $address_1 = $street . ' ' . $number;
+            $updated_values["_{$type}_address_1"] = $address_1;
+            dexpress_log("Formiram address_1 za WooCommerce prikaz: '{$address_1}'", 'debug');
+        }
+        */
 
             // SAČUVAJ SVE VREDNOSTI
             foreach ($updated_values as $meta_key => $meta_value) {
@@ -965,36 +943,55 @@ class D_Express_Checkout
             }
         }
 
-        // TELEFON - isto kao pre
+        // TELEFON - ostaje isto
         if (isset($_POST['dexpress_phone_api'])) {
             $api_phone = sanitize_text_field($_POST['dexpress_phone_api']);
             update_post_meta($order_id, '_billing_phone_api_format', $api_phone);
-
-            $display_phone = $this->format_display_phone($api_phone);
-            update_post_meta($order_id, '_billing_phone', $display_phone);
+            update_post_meta($order_id, '_billing_phone', $api_phone);
+            dexpress_log("Sačuvao telefon API format: '{$api_phone}'", 'debug');
         } elseif (isset($_POST['billing_phone'])) {
             $phone = sanitize_text_field($_POST['billing_phone']);
-            update_post_meta($order_id, '_billing_phone', $phone);
 
-            if (strpos($phone, '+381') === 0) {
-                $api_phone = substr($phone, 1);
-                update_post_meta($order_id, '_billing_phone_api_format', $api_phone);
+            $api_phone = preg_replace('/[^0-9]/', '', $phone);
+            if (strlen($api_phone) > 0 && $api_phone[0] === '0') {
+                $api_phone = substr($api_phone, 1);
             }
+            if (substr($api_phone, 0, 3) !== '381') {
+                $api_phone = '381' . $api_phone;
+            }
+
+            update_post_meta($order_id, '_billing_phone_api_format', $api_phone);
+            update_post_meta($order_id, '_billing_phone', $api_phone);
+            dexpress_log("Konvertovan telefon u API format: '{$api_phone}'", 'debug');
         }
     }
-    /**
-     * Format display phone (ZADRŽANO)
-     */
-    private function format_display_phone($api_phone)
+    public function display_address_desc_in_billing($order)
     {
-        if (strlen($api_phone) < 10) {
-            return '+' . $api_phone;
+        $order_id = $order->get_id();
+        $address_desc = get_post_meta($order_id, '_billing_address_desc', true);
+
+        if (!empty($address_desc)) {
+            echo '<div class="dexpress-address-desc-display" style="margin-top: 10px; padding: 8px; background: #f0f8ff; border-left: 3px solid #007cba; border-radius: 3px;">';
+            echo '<p style="margin: 0;"><strong>Dodatne informacije o adresi:</strong> <span style="color: #007cba; font-weight: bold;">' . esc_html($address_desc) . '</span></p>';
+            echo '</div>';
+        }
+    }
+
+    public function display_address_desc_in_shipping($order)
+    {
+        $order_id = $order->get_id();
+
+        if (!$order->has_shipping_address()) {
+            return;
         }
 
-        return '+' . substr($api_phone, 0, 3) . ' ' .
-            substr($api_phone, 3, 2) . ' ' .
-            substr($api_phone, 5, 3) . ' ' .
-            substr($api_phone, 8);
+        $address_desc = get_post_meta($order_id, '_shipping_address_desc', true);
+
+        if (!empty($address_desc)) {
+            echo '<div class="dexpress-address-desc-display" style="margin-top: 10px; padding: 8px; background: #f0f8ff; border-left: 3px solid #007cba; border-radius: 3px;">';
+            echo '<p style="margin: 0;"><strong>Dodatne informacije o adresi:</strong> <span style="color: #007cba; font-weight: bold;">' . esc_html($address_desc) . '</span></p>';
+            echo '</div>';
+        }
     }
     /**
      * AJAX: Pretraga gradova sa naseljima (ZADRŽANO)
@@ -1204,6 +1201,7 @@ class D_Express_Checkout
         set_transient($cache_key, $towns_data, 2 * HOUR_IN_SECONDS);
         wp_send_json_success(['towns' => $towns_data]);
     }
+
 
     /**
      * Mapiranje checkout podataka u API zahtev (ZADRŽANO)

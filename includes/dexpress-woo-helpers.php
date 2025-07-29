@@ -263,12 +263,37 @@ function dexpress_log_error($message, $context = array())
     );
 }
 /**
+ * Raw logovanje bez JSON enkodovanja - zadržava nove redove
+ * 
+ * @param string $message Poruka za logovanje
+ * @param string $type Tip loga (info, error, debug)
+ * @param string $context Kontekst (api, checkout, etc.)
+ */
+function dexpress_raw_log($message, $type = 'info', $context = 'api')
+{
+    // Proveri da li je logovanje uključeno
+    if (get_option('dexpress_enable_logging', 'no') !== 'yes') {
+        return;
+    }
+
+    $log_dir = DEXPRESS_WOO_PLUGIN_DIR . 'logs/';
+    if (!file_exists($log_dir)) {
+        wp_mkdir_p($log_dir);
+    }
+
+    $log_file = $log_dir . "dexpress-{$context}-{$type}-" . date('Y-m-d') . '.log';
+
+    // Formatiranje sa timestamp-om ali bez JSON enkodovanja
+    $timestamp = date('Y-m-d H:i:s');
+    $formatted_message = "[{$timestamp}] [{$type}] {$message}" . PHP_EOL;
+
+    file_put_contents($log_file, $formatted_message, FILE_APPEND);
+}
+/**
  * Vraća opcije za dropdown gradova
  *
  * @return array Opcije za dropdown
  */
-// U fajlu includes/dexpress-woo-helpers.php
-// Zameni funkciju dexpress_get_towns_options() sa ovom:
 
 function dexpress_get_towns_options()
 {

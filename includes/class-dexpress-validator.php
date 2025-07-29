@@ -245,12 +245,36 @@ class D_Express_Validator
         if ($is_dexpress) {
             $phone_validation = true;
 
+            // Jednostavna validacija - samo proveri da li postoji i ima osnovnu dužinu
             if (!empty($_POST['dexpress_phone_api'])) {
                 $api_phone = sanitize_text_field($_POST['dexpress_phone_api']);
-                $phone_validation = self::validate_phone_detailed($api_phone);
+
+                // Brza validacija - samo dužina
+                if (strlen($api_phone) < 10 || strlen($api_phone) > 12) {
+                    $phone_validation = 'Broj telefona mora imati između 8 i 10 cifara nakon +381.';
+                } elseif (preg_match('/^3810/', $api_phone)) {
+                    $phone_validation = 'Broj telefona ne sme počinjati sa 0 nakon +381.';
+                }
             } elseif (!empty($_POST['billing_phone'])) {
                 $display_phone = sanitize_text_field($_POST['billing_phone']);
-                $phone_validation = self::validate_phone_detailed($display_phone);
+                $api_phone = preg_replace('/[^0-9]/', '', $display_phone);
+
+                // Ukloni nulu na početku
+                if (strlen($api_phone) > 0 && $api_phone[0] === '0') {
+                    $api_phone = substr($api_phone, 1);
+                }
+
+                // Dodaj 381 ako nema
+                if (substr($api_phone, 0, 3) !== '381') {
+                    $api_phone = '381' . $api_phone;
+                }
+
+                // Brza validacija
+                if (strlen($api_phone) < 10 || strlen($api_phone) > 12) {
+                    $phone_validation = 'Broj telefona mora imati između 8 i 10 cifara nakon +381.';
+                } elseif (preg_match('/^3810/', $api_phone)) {
+                    $phone_validation = 'Broj telefona ne sme počinjati sa 0 nakon +381.';
+                }
             } else {
                 $phone_validation = 'Broj telefona je obavezan za D Express dostavu.';
             }
@@ -749,21 +773,14 @@ class D_Express_Validator
         // Ukloni sve što nije broj
         $digits_only = preg_replace('/[^0-9]/', '', $phone);
 
-        // Ako počinje sa +, već je obrađeno gore
-        if (substr($phone, 0, 1) === '+') {
-            if (strpos($digits_only, '381') === 0) {
-                return $digits_only;
-            }
-        }
-
-        // KRITIČNO: Ukloni početnu nulu ako postoji
+        // Ukloni početnu nulu ako postoji
         if (strlen($digits_only) > 0 && $digits_only[0] === '0') {
             $digits_only = substr($digits_only, 1);
         }
 
         // Dodaj prefiks 381 ako ga nema
-        if (strpos($digits_only, '381') !== 0) {
-            return '381' . $digits_only;
+        if (substr($digits_only, 0, 3) !== '381') {
+            $digits_only = '381' . $digits_only;
         }
 
         return $digits_only;
@@ -777,19 +794,14 @@ class D_Express_Validator
         // Formatiraj u API format
         $api_phone = self::format_phone($phone);
 
-        // Proveri da li počinje sa 0 nakon 381
-        if (preg_match('/^3810/', $api_phone)) {
-            return 'Broj telefona ne sme počinjati sa 0 nakon +381. Primer: +381 60 123 4567';
-        }
-
-        // Proveri osnovni format
-        if (!self::validate_phone($api_phone)) {
-            return 'Neispravan format telefona. Unesite valjan srpski broj: +381 XX XXX XXXX';
-        }
-
-        // Proveri dužinu
+        // Brza validacija - samo dužina i format
         if (strlen($api_phone) < 10 || strlen($api_phone) > 12) {
             return 'Broj telefona mora imati između 8 i 10 cifara nakon +381.';
+        }
+
+        // Proveri da li počinje sa 0 nakon 381
+        if (preg_match('/^3810/', $api_phone)) {
+            return 'Broj telefona ne sme počinjati sa 0 nakon +381.';
         }
 
         return true;
