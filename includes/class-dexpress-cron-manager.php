@@ -1,7 +1,8 @@
 <?php
 
 /**
- * PRAVI AUTOMATSKI CRON SISTEM - FORSIRA POKRETANJE U 03:00
+ * POTPUNO AUTONOMAN CRON SISTEM - FORSIRA POKRETANJE U 03:00
+ * Verzija 2.0 - Bez zavisnosti od admin login-a
  */
 
 class D_Express_Cron_Manager
@@ -9,11 +10,11 @@ class D_Express_Cron_Manager
     private static $cron_secret = null;
 
     /**
-     * GLAVNA inicijalizacija sa PRAVIM automatskim sistemom
+     * GLAVNA inicijalizacija sa POTPUNO autonomnim sistemom
      */
     public static function init_cron_jobs()
     {
-        // 1. WordPress CRON (fallback)
+        // 1. WordPress CRON (osnovni fallback)
         if (!wp_next_scheduled('dexpress_unified_update')) {
             wp_schedule_event(
                 strtotime('tomorrow 3:00 am'),
@@ -26,170 +27,205 @@ class D_Express_Cron_Manager
         // 2. Server CRON endpoint (za cPanel)
         self::setup_server_cron_endpoint();
 
-        // 3. ✅ PRAVI AUTO-TRIGGER SISTEM (FORSIRA POKRETANJE!)
-        self::setup_force_trigger_system();
+        // 3. ✅ AUTONOMAN SISTEM (glavna fora - radi bez admin-a)
+        self::setup_autonomous_system();
 
-        // 4. Čišćenje starih CRON-ova
+        // 4. BACKUP sistemi (garancija)
+        self::setup_backup_systems();
+
+        // 5. Čišćenje starih CRON-ova
         self::cleanup_old_crons();
     }
 
     /**
-     * ✅ SETUP za FORSIRANJE pokretanja
+     * ✅ AUTONOMAN SISTEM - ne zavisi od admin login-a
      */
-    private static function setup_force_trigger_system()
+    private static function setup_autonomous_system()
     {
-        // KLJUČNO: Proverava SVAKI SAT da li treba pokretanje
-        add_action('wp_loaded', [__CLASS__, 'force_check_and_trigger'], 1);
-
-        // BACKUP: Heartbeat sistem (kad admin uđe)
-        add_filter('heartbeat_received', [__CLASS__, 'heartbeat_force_trigger'], 10, 2);
-
-        // ULTRA BACKUP: Self-ping sistem (osigurava wp_loaded)
-        add_action('wp_loaded', [__CLASS__, 'ensure_hourly_ping'], 1);
+        // KLJUČNO: Kada god BILO KO poseti sajt, proveri da li treba CRON
+        add_action('wp_loaded', [__CLASS__, 'autonomous_check'], 1);
+        
+        // Self-ping sistem koji garantuje pokretanje
+        add_action('init', [__CLASS__, 'setup_self_ping_system']);
     }
 
     /**
-     * ✅ GLAVNA LOGIKA - FORSIRA POKRETANJE
+     * ✅ GLAVNA AUTONOMNA LOGIKA
      */
-    public static function force_check_and_trigger()
+    public static function autonomous_check()
     {
-        // Proveri da li je omogućeno
+        // Proveri da li je uključeno
         if (get_option('dexpress_enable_auto_updates', 'yes') !== 'yes') {
             return;
         }
 
         $last_update = get_option('dexpress_last_unified_update', 0);
-        $last_check = get_option('dexpress_last_force_check', 0);
+        $last_check = get_option('dexpress_last_auto_check', 0);
         $current_time = time();
         $current_hour = (int) current_time('H');
 
-        // Proveri maksimalno jednom po satu
+        // Proveri maksimalno jednom po satu da ne spamuje
         if (($current_time - $last_check) < HOUR_IN_SECONDS) {
             return;
         }
 
-        update_option('dexpress_last_force_check', $current_time);
-
-        // Izračunaj vreme od poslednjeg ažuriranja
+        update_option('dexpress_last_auto_check', $current_time);
         $hours_since_update = ($current_time - $last_update) / HOUR_IN_SECONDS;
 
-        // ✅ FORSIRANJE LOGIKA:
-        $should_force = false;
+        // ✅ AUTONOMNA LOGIKA - kada pokrenuti:
+        $should_run = false;
         $reason = '';
 
-        // 1. IDEALNO: Između 3-9 ujutru i prošlo 20+ sati
+        // 1. IDEALNO VREME: 3-9 ujutru + prošlo 20+ sati
         if ($current_hour >= 3 && $current_hour <= 9 && $hours_since_update >= 20) {
-            $should_force = true;
-            $reason = "jutarnji termin (idealno vreme)";
+            $should_run = true;
+            $reason = "autonomno - jutarnji termin";
         }
-        // 2. FORSIRANJE: Prošlo je 24+ sati - MORA da se pokrene!
-        elseif ($hours_since_update >= 24) {
-            $should_force = true;
-            $reason = "forsiranje - prošlo {$hours_since_update}h";
+        // 2. KRITIČNO: Prošlo 25+ sati - MORA se pokrenuti bilo kad
+        elseif ($hours_since_update >= 25) {
+            $should_run = true;
+            $reason = "autonomno - kritično kašnjenje {$hours_since_update}h";
         }
 
-        if ($should_force) {
-            dexpress_log("🚀 FORCE-TRIGGER: Pokretanje - {$reason} u {$current_hour}h", 'info');
-            self::execute_forced_cron();
+        if ($should_run) {
+            dexpress_log("🚀 AUTONOMNO: Pokretanje - {$reason} u {$current_hour}h", 'info');
+            self::execute_autonomous_cron();
         }
     }
 
     /**
-     * ✅ IZVRŠAVA FORSIRANO pokretanje
+     * ✅ AUTONOMNO pokretanje CRON-a
      */
-    private static function execute_forced_cron()
+    private static function execute_autonomous_cron()
     {
-        $secret = self::get_cron_secret();
-        $cron_url = home_url('/dexpress-cron/?key=' . $secret);
-
-        // POKUŠAJ 1: HTTP poziv ka sebi (non-blocking)
-        $response = wp_remote_post($cron_url, [
-            'timeout' => 5,
-            'blocking' => false, // Ne čeka odgovor
-            'sslverify' => false,
-            'user-agent' => 'DexpressForceTrigger/1.0',
-            'headers' => [
-                'X-Forwarded-For' => '127.0.0.1'
-            ]
-        ]);
-
-        if (is_wp_error($response)) {
-            dexpress_log('FORCE-TRIGGER: HTTP poziv neuspešan - ' . $response->get_error_message(), 'warning');
-
-            // POKUŠAJ 2: Direktno pokretanje u PHP-u
-            dexpress_log('FORCE-TRIGGER: Pokretanje direktno u PHP', 'info');
-            self::run_daily_updates();
-        } else {
-            dexpress_log('FORCE-TRIGGER: HTTP poziv uspešan ka ' . $cron_url, 'info');
-        }
-
-        update_option('dexpress_last_force_trigger', time());
+        // DIREKTNO pokretanje - bez HTTP poziva koji može da ne prođe
+        dexpress_log('AUTONOMNO: Direktno pokretanje CRON-a', 'info');
+        self::run_daily_updates();
+        
+        update_option('dexpress_last_autonomous_trigger', time());
     }
 
     /**
-     * ✅ HEARTBEAT backup (kad admin uđe na sajt)
+     * ✅ SELF-PING SISTEM - garantuje da će se pokrenuti
      */
-    public static function heartbeat_force_trigger($response, $data)
+    public static function setup_self_ping_system()
     {
-        if (!isset($data['dexpress_cron_check'])) {
-            return $response;
+        // Zakaži self-ping-ove u jutarnjim satima
+        $current_hour = (int) current_time('H');
+        
+        // Ako je između 2-10 ujutru, zakaži ping za sledeći sat
+        if ($current_hour >= 2 && $current_hour <= 10) {
+            if (!wp_next_scheduled('dexpress_self_ping')) {
+                wp_schedule_single_event(
+                    time() + HOUR_IN_SECONDS,
+                    'dexpress_self_ping'
+                );
+            }
         }
+        
+        add_action('dexpress_self_ping', [__CLASS__, 'execute_self_ping']);
+    }
 
+    /**
+     * ✅ IZVRŠAVA self ping
+     */
+    public static function execute_self_ping()
+    {
+        dexpress_log('SELF-PING: Autonomna provera u ' . current_time('H:i'), 'debug');
+        
+        // Pozovi autonomnu proveru
+        self::autonomous_check();
+        
+        // Zakaži sledeći ping za sat vremena (samo u jutarnjim satima)
+        $current_hour = (int) current_time('H');
+        if ($current_hour >= 2 && $current_hour <= 10) {
+            wp_schedule_single_event(
+                time() + HOUR_IN_SECONDS,
+                'dexpress_self_ping'
+            );
+        }
+    }
+
+    /**
+     * ✅ BACKUP SISTEMI - ako sve ostalo ne radi
+     */
+    private static function setup_backup_systems()
+    {
+        // Backup 1: 3:05 AM
+        if (!wp_next_scheduled('dexpress_backup_trigger_1')) {
+            wp_schedule_event(
+                strtotime('tomorrow 3:05 AM'),
+                'daily',
+                'dexpress_backup_trigger_1'
+            );
+        }
+        add_action('dexpress_backup_trigger_1', [__CLASS__, 'backup_trigger_1']);
+
+        // Backup 2: 3:30 AM  
+        if (!wp_next_scheduled('dexpress_backup_trigger_2')) {
+            wp_schedule_event(
+                strtotime('tomorrow 3:30 AM'),
+                'daily',
+                'dexpress_backup_trigger_2'
+            );
+        }
+        add_action('dexpress_backup_trigger_2', [__CLASS__, 'backup_trigger_2']);
+
+        // Backup 3: 4:00 AM (konačni)
+        if (!wp_next_scheduled('dexpress_backup_trigger_3')) {
+            wp_schedule_event(
+                strtotime('tomorrow 4:00 AM'),
+                'daily',
+                'dexpress_backup_trigger_3'
+            );
+        }
+        add_action('dexpress_backup_trigger_3', [__CLASS__, 'backup_trigger_3']);
+    }
+
+    /**
+     * Backup trigger 1 - 3:05
+     */
+    public static function backup_trigger_1()
+    {
         $last_update = get_option('dexpress_last_unified_update', 0);
         $hours_since = (time() - $last_update) / HOUR_IN_SECONDS;
-
-        // Ako admin vidi da CRON kasni 25+ sati, FORSIRAJ!
-        if ($hours_since >= 25 && get_option('dexpress_enable_auto_updates', 'yes') === 'yes') {
-            dexpress_log('HEARTBEAT-FORCE: Admin pokretanje zbog ekstremnog kašnjenja', 'warning');
-            self::execute_forced_cron();
-        }
-
-        $response['dexpress_cron_status'] = [
-            'last_update' => $last_update,
-            'hours_since' => round($hours_since, 1),
-            'auto_enabled' => get_option('dexpress_enable_auto_updates', 'yes'),
-            'force_enabled' => true
-        ];
-
-        return $response;
-    }
-
-    /**
-     * ✅ SELF-PING sistem (osigurava da wp_loaded radi)
-     */
-    public static function ensure_hourly_ping()
-    {
-        $last_ping = get_option('dexpress_last_hourly_ping', 0);
-
-        // Svaki sat pošalji sebi ping da osigura wp_loaded
-        if ((time() - $last_ping) > HOUR_IN_SECONDS) {
-
-            // Zakaži background ping
-            wp_schedule_single_event(time() + 300, 'dexpress_hourly_ping'); // 5min delay
-            add_action('dexpress_hourly_ping', [__CLASS__, 'execute_hourly_ping']);
-
-            update_option('dexpress_last_hourly_ping', time());
+        
+        if ($hours_since >= 2) {
+            dexpress_log('BACKUP-1: Pokretanje jer prošlo ' . round($hours_since, 1) . 'h', 'info');
+            self::run_daily_updates();
         }
     }
 
     /**
-     * ✅ IZVRŠAVA hourly ping
+     * Backup trigger 2 - 3:30  
      */
-    public static function execute_hourly_ping()
+    public static function backup_trigger_2()
     {
-        // Tihi ping ka home page-u da pokrene wp_loaded
-        $response = wp_remote_get(home_url('/?dexpress_ping=' . time()), [
-            'timeout' => 10,
-            'blocking' => false,
-            'sslverify' => false,
-            'user-agent' => 'DexpressHourlyPing/1.0'
-        ]);
-
-        dexpress_log('HOURLY-PING: Poslat ping ka ' . home_url(), 'debug');
+        $last_update = get_option('dexpress_last_unified_update', 0);
+        $hours_since = (time() - $last_update) / HOUR_IN_SECONDS;
+        
+        if ($hours_since >= 3) {
+            dexpress_log('BACKUP-2: Kritično pokretanje jer prošlo ' . round($hours_since, 1) . 'h', 'warning');
+            self::run_daily_updates();
+        }
     }
 
     /**
-     * Server CRON endpoint
+     * Backup trigger 3 - 4:00 (MORA da radi)
+     */
+    public static function backup_trigger_3()
+    {
+        $last_update = get_option('dexpress_last_unified_update', 0);
+        $hours_since = (time() - $last_update) / HOUR_IN_SECONDS;
+        
+        if ($hours_since >= 4) {
+            dexpress_log('BACKUP-3: FINALNI backup - FORSIRANJE pokretanja', 'error');
+            self::run_daily_updates();
+        }
+    }
+
+    /**
+     * Server CRON endpoint setup
      */
     private static function setup_server_cron_endpoint()
     {
@@ -215,7 +251,7 @@ class D_Express_Cron_Manager
     {
         if (!get_query_var('dexpress_cron')) return;
 
-        // Proveri checkbox
+        // Checkbox check
         if (get_option('dexpress_enable_auto_updates', 'yes') !== 'yes') {
             status_header(200);
             echo json_encode([
@@ -236,7 +272,7 @@ class D_Express_Cron_Manager
         }
 
         // Pokreni CRON
-        dexpress_log('ENDPOINT CRON: Pokrenuto u ' . current_time('H:i:s'), 'info');
+        dexpress_log('SERVER-CRON: Pokrenuto u ' . current_time('H:i:s'), 'info');
         self::run_daily_updates();
 
         status_header(200);
@@ -244,7 +280,7 @@ class D_Express_Cron_Manager
         echo json_encode([
             'status' => 'success',
             'time' => current_time('mysql'),
-            'method' => 'endpoint_trigger'
+            'method' => 'server_endpoint'
         ]);
         exit;
     }
@@ -275,119 +311,25 @@ class D_Express_Cron_Manager
 
         $completed_tasks = [];
 
-        // 📦 PAKETOMATI - SVAKI DAN u 03:00
+        // Update paketomata
         if (self::update_dispensers_safely()) {
             $completed_tasks[] = 'Paketomati ✅';
         }
 
-        // 🛣️ ULICE - NEDELJOM u 03:00  
-        if ($today == 0) {
-            if (self::update_streets_safely()) {
-                $completed_tasks[] = 'Ulice ✅ (nedeljno)';
-            }
-        }
-
-        // 🏙️ MESTA/OPŠTINE - 1. U MESECU u 03:00
-        if ($day_of_month == 1) {
-            if (self::update_locations_safely()) {
-                $completed_tasks[] = 'Mesta/opštine ✅ (mesečno)';
-            }
-        }
-
-        // 📊 STATUSI - NEDELJOM u 03:00 (ne menjaju se često)
-        if ($today == 0) {
-            self::update_basic_indexes();
-            $completed_tasks[] = 'Statusi ✅ (nedeljno)';
-        }
+        // Update ostali šifarnici (dodaj po potrebi)
+        // if (self::update_towns_safely()) {
+        //     $completed_tasks[] = 'Gradovi ✅';
+        // }
 
         update_option('dexpress_last_unified_update', time());
 
-        // FINALNI LOG
         $tasks_text = empty($completed_tasks) ? 'Nema zadataka za danas' : implode(', ', $completed_tasks);
         dexpress_log("CRON: 🎯 ZAVRŠENO u " . current_time('H:i:s') . " - {$tasks_text}", 'info');
     }
 
-    private static function get_cron_secret()
-    {
-        if (self::$cron_secret) return self::$cron_secret;
-
-        $secret = get_option('dexpress_cron_secret');
-        if (!$secret) {
-            $secret = wp_generate_password(32, false);
-            update_option('dexpress_cron_secret', $secret);
-        }
-
-        self::$cron_secret = $secret;
-        return $secret;
-    }
-
     /**
-     * Admin notice (opcionalno)
+     * Ažuriranje paketomata
      */
-    public static function show_cron_setup_instructions()
-    {
-        // Onemogući notice - sve radi automatski
-        return;
-    }
-
-    /**
-     * Info za optimizaciju (za admin tab)
-     */
-    public static function get_cron_optimization_info()
-    {
-        if (get_option('dexpress_cron_setup_dismissed', false)) {
-            return null;
-        }
-
-        $secret = self::get_cron_secret();
-        $site_url = home_url();
-
-        return [
-            'secret' => $secret,
-            'site_url' => $site_url,
-            'command' => "/usr/bin/curl -s '{$site_url}/dexpress-cron/?key={$secret}' > /dev/null 2>&1",
-            'cron_time' => '0 3 * * *'
-        ];
-    }
-
-    public static function dismiss_cron_notice()
-    {
-        if (!wp_verify_nonce($_POST['_wpnonce'], 'dexpress_cron')) wp_die('Invalid nonce');
-        if (!current_user_can('manage_options')) wp_die('No permission');
-
-        update_option('dexpress_cron_setup_dismissed', true);
-        wp_send_json_success(['message' => 'CRON optimizacija dismissed']);
-    }
-
-    public static function get_cron_status()
-    {
-        $next_run = wp_next_scheduled('dexpress_unified_update');
-        $last_run = get_option('dexpress_last_unified_update', 0);
-        $last_force_check = get_option('dexpress_last_force_check', 0);
-        $last_force_trigger = get_option('dexpress_last_force_trigger', 0);
-        $secret = self::get_cron_secret();
-
-        return [
-            'next_run' => $next_run,
-            'next_run_formatted' => $next_run ? date('d.m.Y H:i:s', $next_run) : 'N/A',
-            'last_run' => $last_run,
-            'last_run_formatted' => $last_run ? date('d.m.Y H:i:s', $last_run) : 'Nikad',
-            'is_active' => (bool) $next_run,
-            'auto_enabled' => get_option('dexpress_enable_auto_updates', 'yes') === 'yes',
-            'force_enabled' => true,
-            'hours_since_update' => $last_run ? round((time() - $last_run) / HOUR_IN_SECONDS, 1) : null,
-            'last_force_check' => $last_force_check,
-            'last_force_trigger' => $last_force_trigger,
-            'server_cron_url' => home_url('/dexpress-cron/?key=' . $secret),
-            'method' => 'force_auto_cron',
-            'last_dispensers' => get_option('dexpress_last_dispensers_update', 0),
-            'last_streets' => get_option('dexpress_last_streets_update', 0),
-            'last_locations' => get_option('dexpress_last_locations_update', 0)
-        ];
-    }
-
-    // ========== POSTOJEĆE UPDATE METODE ==========
-
     private static function update_dispensers_safely()
     {
         try {
@@ -428,157 +370,142 @@ class D_Express_Cron_Manager
                         'longitude' => isset($dispenser['Longitude']) ? (float)$dispenser['Longitude'] : null,
                         'pay_by_cash' => isset($dispenser['PayByCash']) ? (int)$dispenser['PayByCash'] : 0,
                         'pay_by_card' => isset($dispenser['PayByCard']) ? (int)$dispenser['PayByCard'] : 0,
-                        'last_updated' => current_time('mysql')
+                        'is_active' => isset($dispenser['IsActive']) ? (int)$dispenser['IsActive'] : 1,
+                        'updated_at' => current_time('mysql')
                     ];
 
-                    $format = ['%d', '%s', '%s', '%s', '%d', '%s', '%s', '%f', '%f', '%d', '%d', '%s'];
-
-                    if ($wpdb->replace($table, $data, $format)) {
+                    $result = $wpdb->replace($table, $data);
+                    if ($result !== false) {
                         $total_updated++;
                     }
                 }
-                usleep(100000); // 0.1s pauza
             }
 
+            dexpress_log("CRON: Ažurirano {$total_updated} paketomata", 'info');
             update_option('dexpress_last_dispensers_update', time());
-            dexpress_log("CRON: Ažurirano $total_updated paketomata", 'info');
             return true;
+
         } catch (Exception $e) {
-            dexpress_log('CRON: Exception kod paketomata: ' . $e->getMessage(), 'error');
+            dexpress_log('CRON: Greška pri ažuriranju paketomata: ' . $e->getMessage(), 'error');
             return false;
         }
     }
 
-    private static function update_streets_safely()
+    /**
+     * Get CRON secret
+     */
+    private static function get_cron_secret()
     {
-        try {
-            dexpress_log('CRON: 🛣️ Nedeljno ažuriranje ulica...', 'info');
+        if (self::$cron_secret) return self::$cron_secret;
 
-            $api = D_Express_API::get_instance();
-            $streets = $api->get_streets();
-
-            if (is_wp_error($streets) || !is_array($streets)) {
-                dexpress_log('CRON: Greška kod ulica', 'error');
-                return false;
-            }
-
-            $api->update_streets_index($streets);
-            update_option('dexpress_last_streets_update', time());
-            dexpress_log('CRON: Ulice ažurirane', 'info');
-            return true;
-        } catch (Exception $e) {
-            dexpress_log('CRON: Exception kod ulica: ' . $e->getMessage(), 'error');
-            return false;
+        $secret = get_option('dexpress_cron_secret');
+        if (!$secret) {
+            $secret = wp_generate_password(32, false);
+            update_option('dexpress_cron_secret', $secret);
         }
+
+        self::$cron_secret = $secret;
+        return $secret;
     }
 
-    private static function update_locations_safely()
+    /**
+     * Get CRON status za admin
+     */
+    public static function get_cron_status()
     {
-        try {
-            dexpress_log('CRON: 🏙️ Mesečno ažuriranje lokacija...', 'info');
+        $next_run = wp_next_scheduled('dexpress_unified_update');
+        $last_run = get_option('dexpress_last_unified_update', 0);
+        $last_auto_check = get_option('dexpress_last_auto_check', 0);
+        $last_autonomous = get_option('dexpress_last_autonomous_trigger', 0);
+        $secret = self::get_cron_secret();
 
-            $api = D_Express_API::get_instance();
-
-            // Opštine
-            $municipalities = $api->get_municipalities();
-            if (!is_wp_error($municipalities) && is_array($municipalities)) {
-                $api->update_municipalities_index($municipalities);
-            }
-
-            // Gradovi
-            $towns = $api->get_towns();
-            if (!is_wp_error($towns) && is_array($towns)) {
-                $api->update_towns_index($towns);
-            }
-
-            update_option('dexpress_last_locations_update', time());
-            dexpress_log('CRON: Lokacije ažurirane', 'info');
-            return true;
-        } catch (Exception $e) {
-            dexpress_log('CRON: Exception kod lokacija: ' . $e->getMessage(), 'error');
-            return false;
-        }
+        return [
+            'next_run' => $next_run,
+            'next_run_formatted' => $next_run ? date('d.m.Y H:i:s', $next_run) : 'N/A',
+            'last_run' => $last_run,
+            'last_run_formatted' => $last_run ? date('d.m.Y H:i:s', $last_run) : 'Nikad',
+            'is_active' => (bool) $next_run,
+            'auto_enabled' => get_option('dexpress_enable_auto_updates', 'yes') === 'yes',
+            'autonomous_enabled' => true,
+            'hours_since_update' => $last_run ? round((time() - $last_run) / HOUR_IN_SECONDS, 1) : null,
+            'last_auto_check' => $last_auto_check,
+            'last_autonomous_trigger' => $last_autonomous,
+            'server_cron_url' => home_url('/dexpress-cron/?key=' . $secret),
+            'method' => 'autonomous_system',
+            'backup_systems' => [
+                'backup_1' => wp_next_scheduled('dexpress_backup_trigger_1'),
+                'backup_2' => wp_next_scheduled('dexpress_backup_trigger_2'),
+                'backup_3' => wp_next_scheduled('dexpress_backup_trigger_3')
+            ]
+        ];
     }
 
-    private static function update_basic_indexes()
+    /**
+     * Info za optimizaciju (za admin)
+     */
+    public static function get_cron_optimization_info()
     {
-        try {
-            dexpress_log('CRON: 📊 Ažuriranje statusa (nedeljno)...', 'info');
+        $secret = self::get_cron_secret();
+        $site_url = home_url();
 
-            $api = D_Express_API::get_instance();
-
-            // SAMO STATUSI - nedeljom (ne menjaju se često)
-            $statuses = $api->get_statuses();
-            if (!is_wp_error($statuses) && is_array($statuses)) {
-                $api->update_statuses_index($statuses);
-                dexpress_log('CRON: Statusi ažurirani', 'info');
-            }
-
-            // CENTRI UKLONJENI - nisu potrebni
-
-        } catch (Exception $e) {
-            dexpress_log('CRON: Exception kod statusa: ' . $e->getMessage(), 'error');
-        }
+        return [
+            'secret' => $secret,
+            'site_url' => $site_url,
+            'server_command' => "/usr/bin/curl -s '{$site_url}/dexpress-cron/?key={$secret}' > /dev/null 2>&1",
+            'cron_time' => '0 3 * * *',
+            'external_url' => $site_url . '/dexpress-cron/?key=' . $secret,
+            'status' => 'autonomous_ready'
+        ];
     }
 
-    private static function cleanup_old_crons()
-    {
-        wp_clear_scheduled_hook('dexpress_daily_update_indexes');
-        wp_clear_scheduled_hook('dexpress_daily_update_dispensers');
-        wp_clear_scheduled_hook('dexpress_weekly_update_streets');
-        wp_clear_scheduled_hook('dexpress_monthly_update_locations');
-        wp_clear_scheduled_hook('dexpress_check_pending_statuses');
-        wp_clear_scheduled_hook('dexpress_check_active_shipments');
-    }
-
+    /**
+     * Clear svi CRON job-ovi
+     */
     public static function clear_all_cron_jobs()
     {
+        // Glavne
         wp_clear_scheduled_hook('dexpress_unified_update');
+        
+        // Backup sistemi
+        wp_clear_scheduled_hook('dexpress_backup_trigger_1');
+        wp_clear_scheduled_hook('dexpress_backup_trigger_2');
+        wp_clear_scheduled_hook('dexpress_backup_trigger_3');
+        
+        // Self-ping
+        wp_clear_scheduled_hook('dexpress_self_ping');
+    }
+
+    /**
+     * Cleanup starih CRON-ova
+     */
+    private static function cleanup_old_crons()
+    {
+        // Ukloni stare hook-ove iz prethodnih verzija
+        wp_clear_scheduled_hook('dexpress_force_check');
         wp_clear_scheduled_hook('dexpress_hourly_ping');
-        self::cleanup_old_crons();
-        dexpress_log('CRON: Svi CRON zadaci obrisani', 'info');
+        wp_clear_scheduled_hook('dexpress_hourly_check');
     }
 
-    public static function manual_update_all()
+    /**
+     * Manual CRON test (za admin)
+     */
+    public static function manual_test()
     {
-        dexpress_log('MANUAL: Pokretanje svih ažuriranja', 'info');
-
-        $api = D_Express_API::get_instance();
-        if (!$api->has_credentials()) {
-            return new WP_Error('no_credentials', 'API kredencijali nisu podešeni');
-        }
-
-        $result = $api->update_all_indexes();
-
-        if ($result) {
-            update_option('dexpress_last_manual_update', time());
-            dexpress_log('MANUAL: Ažuriranje uspešno završeno', 'info');
-            return true;
-        } else {
-            dexpress_log('MANUAL: Greška pri ažuriranju', 'error');
-            return new WP_Error('update_failed', 'Greška pri ažuriranju');
-        }
+        dexpress_log('MANUAL-TEST: Admin pokretanje CRON-a', 'info');
+        self::run_daily_updates();
     }
 
-    public static function initial_load_all()
+    /**
+     * Reset CRON sistema
+     */
+    public static function reset_cron_system()
     {
-        dexpress_log('INITIAL: Učitavanje svih šifarnika', 'info');
-
-        $api = D_Express_API::get_instance();
-        if (!$api->has_credentials()) {
-            dexpress_log('INITIAL: Nema API kredencijala', 'warning');
-            return false;
-        }
-
-        $result = $api->update_all_indexes();
-
-        if ($result) {
-            update_option('dexpress_initial_load_done', time());
-            dexpress_log('INITIAL: Učitavanje završeno uspešno', 'info');
-            return true;
-        } else {
-            dexpress_log('INITIAL: Greška pri učitavanju', 'error');
-            return false;
-        }
+        // Obriši sve postojeće
+        self::clear_all_cron_jobs();
+        
+        // Reinicijalizuj
+        self::init_cron_jobs();
+        
+        dexpress_log('CRON-RESET: Sistem resetovan i reinicijalizovan', 'info');
     }
 }

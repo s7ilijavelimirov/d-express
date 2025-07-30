@@ -80,6 +80,9 @@ class D_Express_WooCommerce
         // CRON
         require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/class-dexpress-cron-manager.php';
 
+        // EXTERNAL CRON
+        require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/class-dexpress-external-cron.php';
+
         // Validator
         require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/class-dexpress-validator.php';
 
@@ -157,38 +160,6 @@ class D_Express_WooCommerce
 
         // Registrujemo česte provere statusa
         add_action('init', array($this, 'register_frequent_status_checks'));
-
-        // ✅ NOVO: Heartbeat support za CRON monitoring
-        add_action('admin_enqueue_scripts', array($this, 'enqueue_cron_heartbeat_script'));
-    }
-    public function enqueue_cron_heartbeat_script($hook)
-    {
-        // Učitaj samo na dexpress stranicama
-        if (strpos($hook, 'dexpress') === false) return;
-
-?>
-        <script type="text/javascript">
-            jQuery(document).ready(function($) {
-                // Heartbeat check za CRON status
-                $(document).on('heartbeat-send', function(e, data) {
-                    if (window.location.href.indexOf('dexpress') !== -1) {
-                        data.dexpress_cron_check = true;
-                    }
-                });
-
-                $(document).on('heartbeat-received', function(e, data) {
-                    if (data.dexpress_cron_status) {
-                        console.log('🔄 AUTO-CRON Status:', data.dexpress_cron_status);
-
-                        // Prikaži upozorenje ako CRON kasni
-                        if (data.dexpress_cron_status.hours_since > 25) {
-                            console.warn('⚠️ CRON KAŠNJENJE: ' + data.dexpress_cron_status.hours_since + 'h');
-                        }
-                    }
-                });
-            });
-        </script>
-<?php
     }
     /**
      * Registracija češćih provera statusa
@@ -422,7 +393,11 @@ class D_Express_WooCommerce
             D_Express_Cron_Manager::clear_all_cron_jobs();
         }
 
-        // ✅ DODAJ:
+        // ✅ DODAJ ovu liniju:
+        if (class_exists('D_Express_External_Cron_Service')) {
+            D_Express_External_Cron_Service::cleanup();
+        }
+
         flush_rewrite_rules();
     }
 
@@ -447,7 +422,8 @@ class D_Express_WooCommerce
         }
 
         // Inicijalizacija CRON zadataka (ne zavisi od WooCommerce)
-        $this->init_cron_jobs();
+        $this->init_autonomous_cron_jobs();
+        $this->init_external_cron_service();
     }
 
     /**
@@ -512,9 +488,14 @@ class D_Express_WooCommerce
             }
         }
     }
-    private function init_cron_jobs()
+    private function init_autonomous_cron_jobs()
     {
         D_Express_Cron_Manager::init_cron_jobs();
+    }
+    private function init_external_cron_service()
+    {
+        D_Express_External_Cron_Service::init();
+        D_Express_External_Cron_Service::init_ajax();
     }
     private function ensure_woocommerce_active()
     {

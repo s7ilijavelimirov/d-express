@@ -1126,37 +1126,40 @@ class D_Express_Admin
                         <!-- Poslednja ažuriranja po tipovima -->
                         <div class="dexpress-last-updates" style="margin-top: 30px;">
                             <h3>Poslednja ažuriranja po tipovima</h3>
-                            <table class="widefat">
-                                <thead>
-                                    <tr>
-                                        <th>Tip podataka</th>
-                                        <th>Kada se ažurira</th>
-                                        <th>Poslednje ažuriranje</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td><strong>Paketi (paketomati)</strong></td>
-                                        <td>Svaki dan u 03:00</td>
-                                        <td><?php echo $this->format_last_update_time('dexpress_last_dispensers_update'); ?></td>
-                                    </tr>
-                                    <tr>
-                                        <td>Ulice</td>
-                                        <td>Nedeljom u 03:00</td>
-                                        <td><?php echo $this->format_last_update_time('dexpress_last_streets_update'); ?></td>
-                                    </tr>
-                                    <tr>
-                                        <td>Mesta i opštine</td>
-                                        <td>1. u mesecu u 03:00</td>
-                                        <td><?php echo $this->format_last_update_time('dexpress_last_locations_update'); ?></td>
-                                    </tr>
-                                    <tr>
-                                        <td>Osnovni šifarnici</td>
-                                        <td>Svaki dan u 03:00</td>
-                                        <td><?php echo $this->format_last_update_time('dexpress_last_unified_update'); ?></td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                            <div style="background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 5px; padding: 20px; margin-bottom: 20px;">
+                                <h4 style="margin-top: 0; color: #28a745;">🚀 AUTONOMAN SISTEM - Radi potpuno automatski!</h4>
+
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 15px 0;">
+                                    <div>
+                                        <strong>📊 Status:</strong>
+                                        <span style="color: #28a745; font-weight: bold;">✅ AKTIVAN</span><br>
+
+                                        <strong>🕒 Poslednje pokretanje:</strong><br>
+                                        <?php echo esc_html($cron_status['last_run_formatted']); ?>
+
+                                        <?php if ($cron_status['hours_since_update']): ?>
+                                            <br><small style="color: #666;">(pre <?php echo round($cron_status['hours_since_update'], 1); ?> sati)</small>
+                                        <?php endif; ?>
+                                    </div>
+
+                                    <div>
+                                        <strong>⚡ Kako radi:</strong><br>
+                                        <span style="color: #666; font-size: 14px;">
+                                            • Forsira pokretanje kad god neko poseti sajt<br>
+                                            • Idealno vreme: 3-9 ujutru<br>
+                                            • Backup sistemi: 3:05, 3:30, 4:00 AM<br>
+                                            • <strong>Ne zavisi od admin login-a!</strong>
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <?php if ($cron_status['hours_since_update'] && $cron_status['hours_since_update'] > 25): ?>
+                                    <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px; padding: 10px; margin-top: 15px;">
+                                        <strong style="color: #856404;">⚠️ UPOZORENJE:</strong>
+                                        <span style="color: #856404;">CRON kasni <?php echo round($cron_status['hours_since_update'], 1); ?> sati. Razmisli o external CRON servisu.</span>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
                         </div>
 
                         <!-- Podešavanja -->
@@ -1186,129 +1189,51 @@ class D_Express_Admin
                                 </tr>
                             </table>
                         </div>
-
                         <!-- Info o tome kako sistem radi -->
-                        <div class="dexpress-cron-info" style="margin-top: 30px; padding: 15px; background: #f0f8ff; border-left: 4px solid #0073aa;">
-                            <h4>🚀 Kako funkcioniše POTPUNO AUTOMATSKI sistem:</h4>
-                            <ul>
-                                <li><strong>📦 Paketomati:</strong> Svaki dan u 03:00 (najvažnije podatke)</li>
-                                <li><strong>🛣️ Ulice:</strong> Nedeljom u 03:00 (menjaju se retko)</li>
-                                <li><strong>🏙️ Mesta/opštine:</strong> 1. u mesecu u 03:00 (skoro se ne menjaju)</li>
-                                <li><strong>📊 Statusi:</strong> Nedeljom u 03:00 (retko se menjaju)</li>
-                                <li><strong>⚡ Status pošiljki:</strong> Svakih 5 minuta (najbitnije!)</li>
-                            </ul>
-                            <p><em>✅ Sistem <strong>FORSIRA</strong> pokretanje - radi bez obzira na posete sajta!</em></p>
+                        <div class="dexpress-cron-info" style="margin-top: 30px; padding: 20px; background: linear-gradient(135deg, #0073aa 0%, #005177 100%); color: white; border-radius: 8px;">
+                            <h4 style="color: white; margin-top: 0;">🎯 RASPORED AUTOMATSKOG AŽURIRANJA:</h4>
 
-                            <div style="background: rgba(40, 167, 69, 0.1); padding: 10px; border-radius: 4px; margin-top: 15px;">
-                                <strong>🛡️ BEZBEDNOST:</strong> Sistem samo ČITA podatke i ažurira lokalne tabele. Ne kreira pošiljke, ne briše podatke, ne šalje email-ove.
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 15px 0;">
+                                <div>
+                                    <h5 style="color: #e1f5fe; margin-top: 0;">📅 SVAKI DAN u 03:00:</h5>
+                                    <ul style="margin: 0; color: #f0f8ff; list-style: none; padding: 0;">
+                                        <li>✅ <strong>Paketomati</strong> (~300 lokacija)</li>
+                                    </ul>
+                                </div>
+
+                                <div>
+                                    <h5 style="color: #e1f5fe; margin-top: 0;">📅 NEDELJOM u 03:00:</h5>
+                                    <ul style="margin: 0; color: #f0f8ff; list-style: none; padding: 0;">
+                                        <li>✅ <strong>Statusi</strong> (~30 kodova)</li>
+                                        <li>✅ <strong>Ulice</strong> (~50,000 zapisa)</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 15px 0;">
+                                <div>
+                                    <h5 style="color: #e1f5fe; margin-top: 0;">📅 1. U MESECU u 03:00:</h5>
+                                    <ul style="margin: 0; color: #f0f8ff; list-style: none; padding: 0;">
+                                        <li>✅ <strong>Opštine</strong> (~200 zapisa)</li>
+                                        <li>✅ <strong>Gradovi</strong> (~6,000 zapisa)</li>
+                                    </ul>
+                                </div>
+
+                                <div>
+                                    <h5 style="color: #e1f5fe; margin-top: 0;">⚡ SVAKIH 5 MINUTA:</h5>
+                                    <ul style="margin: 0; color: #f0f8ff; list-style: none; padding: 0;">
+                                        <li>🚚 <strong>Status pošiljki</strong> (aktivne pošiljke)</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div style="background: rgba(40, 167, 69, 0.3); padding: 15px; border-radius: 4px; margin-top: 20px; border: 1px solid rgba(40, 167, 69, 0.5);">
+                                <strong style="color: #e8f5e8;">🛡️ POTPUNA AUTONOMIJA:</strong>
+                                <span style="color: #f0f8ff;">Sistem <strong>FORSIRA</strong> pokretanje - radi bez obzira na posete sajta! Čak i ako nema poseta u 3 ujutru, backup sistemi će se pokrenuti.</span>
                             </div>
                         </div>
                     </div>
-                    <?php
-                    $cron_optimization = D_Express_Cron_Manager::get_cron_optimization_info();
-                    if ($cron_optimization):
-                    ?>
-                        <!-- Optimizacija performansi (OPCIONALNO) -->
-                        <div class="dexpress-cron-optimization" style="margin-top: 30px; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);">
-                            <h4 style="color: white; margin-top: 0;">⚡ BONUS optimizacija (opcionalno)</h4>
 
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 15px 0;">
-                                <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 6px;">
-                                    <h5 style="color: #fff; margin-top: 0;">📋 Trenutno stanje:</h5>
-                                    <ul style="margin: 0; color: #f0f0f0;">
-                                        <li>✅ <strong>AUTO-FORSIRANJE:</strong> Radi potpuno automatski</li>
-                                        <li>✅ <strong>TROSTRUKA SIGURNOST:</strong> 3 backup sistema</li>
-                                        <li>⚠️ <strong>Ipak zavisi:</strong> Od hosting performansi</li>
-                                    </ul>
-                                </div>
-                                <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 6px;">
-                                    <h5 style="color: #fff; margin-top: 0;">🚀 Sa server CRON-om:</h5>
-                                    <ul style="margin: 0; color: #f0f0f0;">
-                                        <li>🎯 <strong>100% TAČNO:</strong> Uvek u 03:00:00</li>
-                                        <li>🔒 <strong>NEZAVISAN:</strong> Od hosting ograničenja</li>
-                                        <li>⚡ <strong>PRODUCTION READY:</strong> Za velike sajtove</li>
-                                    </ul>
-                                </div>
-                            </div>
-
-                            <div style="background: rgba(255,255,255,0.95); color: #333; padding: 20px; border-radius: 6px; margin: 15px 0;">
-                                <h5 style="margin-top: 0; color: #333;">📋 Dodaj u cPanel → CRON Jobs (ako želiš 100% pouzdanost):</h5>
-
-                                <div style="display: grid; grid-template-columns: 100px 1fr; gap: 10px; align-items: center; margin-bottom: 15px;">
-                                    <strong>Vreme:</strong>
-                                    <code style="background: #f8f9fa; padding: 8px; border-radius: 4px; font-size: 14px; border: 1px solid #dee2e6;"><?php echo esc_html($cron_optimization['cron_time']); ?></code>
-                                </div>
-
-                                <div style="display: grid; grid-template-columns: 100px 1fr; gap: 10px; align-items: center;">
-                                    <strong>Komanda:</strong>
-                                    <div style="position: relative;">
-                                        <input type="text" readonly
-                                            value="<?php echo esc_attr($cron_optimization['command']); ?>"
-                                            style="width: 100%; padding: 8px; font-family: 'Courier New', monospace; font-size: 12px; border: 1px solid #dee2e6; border-radius: 4px; background: #f8f9fa;"
-                                            onclick="this.select(); navigator.clipboard.writeText(this.value).then(() => showCopySuccess())"
-                                            title="Klikni da kopijaš komandu">
-                                        <small style="color: #666; font-style: italic;">👆 Klikni da kopijaš komandu</small>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div style="text-align: center; margin-top: 20px;">
-                                <button type="button" class="button" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; margin-right: 10px;" onclick="dexpressDismissCronOptimization('setup')">
-                                    ✅ Podesio sam server CRON
-                                </button>
-                                <button type="button" class="button" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 10px 20px; border-radius: 5px;" onclick="dexpressDismissCronOptimization('skip')">
-                                    ❌ Ne treba mi (radi i ovako)
-                                </button>
-                            </div>
-
-                            <p style="text-align: center; margin: 15px 0 0 0; font-size: 13px; color: rgba(255,255,255,0.8);">
-                                <em>💡 Plugin radi odlično i bez ovog. Ovo je samo BONUS za maksimalnu pouzdanost.</em>
-                            </p>
-
-                            <div id="copy-success" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #28a745; color: white; padding: 10px 20px; border-radius: 5px; z-index: 9999;">
-                                ✅ Komanda kopirana!
-                            </div>
-                        </div>
-
-                        <script>
-                            function showCopySuccess() {
-                                const successMsg = document.getElementById('copy-success');
-                                successMsg.style.display = 'block';
-                                setTimeout(() => {
-                                    successMsg.style.display = 'none';
-                                }, 2000);
-                            }
-
-                            function dexpressDismissCronOptimization(action) {
-                                fetch(ajaxurl, {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/x-www-form-urlencoded'
-                                    },
-                                    body: 'action=dexpress_dismiss_cron_notice&_wpnonce=<?php echo wp_create_nonce("dexpress_cron"); ?>&dismiss_action=' + action
-                                }).then(response => response.json()).then(data => {
-                                    if (data.success) {
-                                        document.querySelector('.dexpress-cron-optimization').style.display = 'none';
-
-                                        const message = action === 'setup' ?
-                                            '🚀 Odlično! Server CRON podešen za maksimalnu pouzdanost.' :
-                                            '✅ AUTO-FORSIRANJE će nastaviti da radi savršeno!';
-
-                                        const notice = document.createElement('div');
-                                        notice.style.cssText = 'background: #d4edda; color: #155724; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #28a745;';
-                                        notice.innerHTML = '<strong>' + message + '</strong>';
-
-                                        const cronTab = document.getElementById('tab-cron');
-                                        cronTab.insertBefore(notice, cronTab.firstChild);
-                                    }
-                                }).catch(err => {
-                                    console.error('Greška:', err);
-                                    alert('Došlo je do greške. Molimo pokušajte ponovo.');
-                                });
-                            }
-                        </script>
-
-                    <?php endif; ?>
                     <!-- Clean Uninstall podešavanja -->
                     <div id="tab-uninstall" class="dexpress-tab <?php echo $active_tab === 'uninstall' ? 'active' : ''; ?>">
                         <h2><?php _e('Clean Uninstall Podešavanja', 'd-express-woo'); ?></h2>
@@ -1827,7 +1752,14 @@ class D_Express_Admin
             wp_die(__('Nemate dozvolu za pristup ovoj stranici.', 'd-express-woo'));
         }
 
-        $result = D_Express_Cron_Manager::manual_update_all();
+      
+        try {
+            D_Express_Cron_Manager::manual_test();
+            $result = true;
+        } catch (Exception $e) {
+            dexpress_log('Manual update greška: ' . $e->getMessage(), 'error');
+            $result = false;
+        }
 
         $active_tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'api';
 
