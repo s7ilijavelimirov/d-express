@@ -44,7 +44,7 @@ class D_Express_Cron_Manager
     {
         // KLJUČNO: Kada god BILO KO poseti sajt, proveri da li treba CRON
         add_action('wp_loaded', [__CLASS__, 'autonomous_check'], 1);
-        
+
         // Self-ping sistem koji garantuje pokretanje
         add_action('init', [__CLASS__, 'setup_self_ping_system']);
     }
@@ -101,7 +101,7 @@ class D_Express_Cron_Manager
         // DIREKTNO pokretanje - bez HTTP poziva koji može da ne prođe
         dexpress_log('AUTONOMNO: Direktno pokretanje CRON-a', 'info');
         self::run_daily_updates();
-        
+
         update_option('dexpress_last_autonomous_trigger', time());
     }
 
@@ -112,7 +112,7 @@ class D_Express_Cron_Manager
     {
         // Zakaži self-ping-ove u jutarnjim satima
         $current_hour = (int) current_time('H');
-        
+
         // Ako je između 2-10 ujutru, zakaži ping za sledeći sat
         if ($current_hour >= 2 && $current_hour <= 10) {
             if (!wp_next_scheduled('dexpress_self_ping')) {
@@ -122,7 +122,7 @@ class D_Express_Cron_Manager
                 );
             }
         }
-        
+
         add_action('dexpress_self_ping', [__CLASS__, 'execute_self_ping']);
     }
 
@@ -132,10 +132,10 @@ class D_Express_Cron_Manager
     public static function execute_self_ping()
     {
         dexpress_log('SELF-PING: Autonomna provera u ' . current_time('H:i'), 'debug');
-        
+
         // Pozovi autonomnu proveru
         self::autonomous_check();
-        
+
         // Zakaži sledeći ping za sat vremena (samo u jutarnjim satima)
         $current_hour = (int) current_time('H');
         if ($current_hour >= 2 && $current_hour <= 10) {
@@ -189,7 +189,7 @@ class D_Express_Cron_Manager
     {
         $last_update = get_option('dexpress_last_unified_update', 0);
         $hours_since = (time() - $last_update) / HOUR_IN_SECONDS;
-        
+
         if ($hours_since >= 2) {
             dexpress_log('BACKUP-1: Pokretanje jer prošlo ' . round($hours_since, 1) . 'h', 'info');
             self::run_daily_updates();
@@ -203,7 +203,7 @@ class D_Express_Cron_Manager
     {
         $last_update = get_option('dexpress_last_unified_update', 0);
         $hours_since = (time() - $last_update) / HOUR_IN_SECONDS;
-        
+
         if ($hours_since >= 3) {
             dexpress_log('BACKUP-2: Kritično pokretanje jer prošlo ' . round($hours_since, 1) . 'h', 'warning');
             self::run_daily_updates();
@@ -217,7 +217,7 @@ class D_Express_Cron_Manager
     {
         $last_update = get_option('dexpress_last_unified_update', 0);
         $hours_since = (time() - $last_update) / HOUR_IN_SECONDS;
-        
+
         if ($hours_since >= 4) {
             dexpress_log('BACKUP-3: FINALNI backup - FORSIRANJE pokretanja', 'error');
             self::run_daily_updates();
@@ -370,8 +370,7 @@ class D_Express_Cron_Manager
                         'longitude' => isset($dispenser['Longitude']) ? (float)$dispenser['Longitude'] : null,
                         'pay_by_cash' => isset($dispenser['PayByCash']) ? (int)$dispenser['PayByCash'] : 0,
                         'pay_by_card' => isset($dispenser['PayByCard']) ? (int)$dispenser['PayByCard'] : 0,
-                        'is_active' => isset($dispenser['IsActive']) ? (int)$dispenser['IsActive'] : 1,
-                        'updated_at' => current_time('mysql')
+                        'last_updated' => current_time('mysql')
                     ];
 
                     $result = $wpdb->replace($table, $data);
@@ -384,7 +383,6 @@ class D_Express_Cron_Manager
             dexpress_log("CRON: Ažurirano {$total_updated} paketomata", 'info');
             update_option('dexpress_last_dispensers_update', time());
             return true;
-
         } catch (Exception $e) {
             dexpress_log('CRON: Greška pri ažuriranju paketomata: ' . $e->getMessage(), 'error');
             return false;
@@ -465,12 +463,12 @@ class D_Express_Cron_Manager
     {
         // Glavne
         wp_clear_scheduled_hook('dexpress_unified_update');
-        
+
         // Backup sistemi
         wp_clear_scheduled_hook('dexpress_backup_trigger_1');
         wp_clear_scheduled_hook('dexpress_backup_trigger_2');
         wp_clear_scheduled_hook('dexpress_backup_trigger_3');
-        
+
         // Self-ping
         wp_clear_scheduled_hook('dexpress_self_ping');
     }
@@ -502,10 +500,10 @@ class D_Express_Cron_Manager
     {
         // Obriši sve postojeće
         self::clear_all_cron_jobs();
-        
+
         // Reinicijalizuj
         self::init_cron_jobs();
-        
+
         dexpress_log('CRON-RESET: Sistem resetovan i reinicijalizovan', 'info');
     }
 }

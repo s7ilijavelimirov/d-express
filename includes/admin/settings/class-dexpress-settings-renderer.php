@@ -980,7 +980,7 @@ class D_Express_Settings_Renderer
         echo '</tr>';
 
         // Batch size
-        $batch_size = get_option('dexpress_batch_size', '100');
+        $batch_size = get_option('dexpress_batch_size', '400');
         echo '<tr>';
         echo '<th scope="row"><label for="dexpress_batch_size">' . __('Veličina batch-a', 'd-express-woo') . '</label></th>';
         echo '<td>';
@@ -994,26 +994,27 @@ class D_Express_Settings_Renderer
     }
 
     /**
-     * CRON info
+     * CRON info - WordPress default style
      */
     private function render_cron_info()
     {
-        echo '<div class="dexpress-cron-info" style="margin-top: 30px; padding: 20px; background: linear-gradient(135deg, #0073aa 0%, #005177 100%); color: white; border-radius: 8px;">';
-        echo '<h4 style="color: white; margin-top: 0;">🎯 RASPORED AUTOMATSKOG AŽURIRANJA:</h4>';
-        echo '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 15px 0;">';
-        echo '<div>';
-        echo '<h5 style="color: #e1f5fe; margin-top: 0;">📅 SVAKI DAN u 03:00:</h5>';
-        echo '<ul style="margin: 0; color: #f0f8ff; list-style: none; padding: 0;">';
-        echo '<li>✅ <strong>Paketomati</strong> (~300 lokacija)</li>';
-        echo '</ul>';
+        echo '<h3>' . __('Podešavanja CRON zadataka', 'd-express-woo') . '</h3>';
+
+        // Samo jedna sekcija - bez external CRON-a
+        echo '<div class="postbox" style="margin: 20px 0;">';
+        echo '<div class="postbox-header"><h2 class="hndle">' . __('Automatsko ažuriranje', 'd-express-woo') . '</h2></div>';
+        echo '<div class="inside">';
+
+        echo '<h4>' . __('Svaki dan u 03:00', 'd-express-woo') . '</h4>';
+        echo '<ul><li><strong>Paketomati</strong> (~300 lokacija)</li></ul>';
+
+        echo '<h4>' . __('Nedeljom u 03:00', 'd-express-woo') . '</h4>';
+        echo '<ul><li><strong>Statusi</strong> (~30 kodova)</li><li><strong>Ulice</strong> (~50,000 zapisa)</li></ul>';
+
+        echo '<div class="notice notice-info inline" style="margin-top: 15px;">';
+        echo '<p><strong>' . __('Napomena:', 'd-express-woo') . '</strong> ' . __('Automatsko ažuriranje se vrši putem centralnog servera svaki dan u 03:00.', 'd-express-woo') . '</p>';
         echo '</div>';
-        echo '<div>';
-        echo '<h5 style="color: #e1f5fe; margin-top: 0;">📅 NEDELJOM u 03:00:</h5>';
-        echo '<ul style="margin: 0; color: #f0f8ff; list-style: none; padding: 0;">';
-        echo '<li>✅ <strong>Statusi</strong> (~30 kodova)</li>';
-        echo '<li>✅ <strong>Ulice</strong> (~50,000 zapisa)</li>';
-        echo '</ul>';
-        echo '</div>';
+
         echo '</div>';
         echo '</div>';
     }

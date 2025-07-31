@@ -760,7 +760,7 @@ class D_Express_API
                     'pay_by_card' => isset($dispenser['PayByCard']) ? (int)$dispenser['PayByCard'] : 0,
                     'last_updated' => current_time('mysql')
                 ),
-                array('%d', '%s', '%s', '%s', '%d', '%s', '%s', '%f', '%f', '%d', '%d', '%s')
+                array('%d', '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%s', '%d', '%d', '%s')
             );
         }
     }
