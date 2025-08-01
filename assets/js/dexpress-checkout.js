@@ -192,43 +192,36 @@
                     self.searchAllTowns(request.term, response);
                 },
                 minLength: 0,
-                delay: 0, // ZERO delay
-                // AŽURIRAJ select handler u initCityField funkciji - ZAMENI samo select deo:
+                delay: 0,
                 select: function (event, ui) {
                     if (!ui.item) return false;
 
                     // ČIŠĆENJE NAZIVA GRADA
                     var cleanCityName = self.cleanCityName(ui.item.display_text || ui.item.label || '');
 
-                    $city.val(cleanCityName);  // ← ČIST NAZIV!
+                    $city.val(cleanCityName);
                     $cityId.val(ui.item.town_id || '');
                     $postcode.val(ui.item.postal_code || '');
 
-                    // ISPRAVKA: Definiši varijable
+                    // OZNAČI DA JE VALIDNO IZABRAN
+                    $city.data('validSelection', true);
+                    self.clearFieldError($city);
+
                     var oldTownId = self.selectedTown[type] ? self.selectedTown[type].id : null;
                     var newTownId = ui.item.town_id || '';
 
                     self.selectedTown[type] = {
                         id: newTownId,
-                        name: cleanCityName  // ← ČIST NAZIV!
+                        name: cleanCityName
                     };
 
-                    // NOVO: Ako se grad promenio, očisti ulicu
+                    // Ako se grad promenio, očisti ulicu
                     if (oldTownId && oldTownId !== newTownId) {
-                        console.log('Grad promenjen sa', oldTownId, 'na', newTownId, '- čistim ulicu');
                         var $street = $('#' + type + '_street');
                         var $streetId = $('#' + type + '_street_id');
-
                         $street.val('');
                         $streetId.val('');
                         self.selectedStreet[type] = null;
-
-                        // Očisti keš za stari grad
-                        Object.keys(self.cache).forEach(key => {
-                            if (key.startsWith('streets_town_' + oldTownId + '_')) {
-                                delete self.cache[key];
-                            }
-                        });
                     }
 
                     self.updateStandardField(type);
@@ -236,6 +229,12 @@
                 },
                 open: function () {
                     $city.removeClass('dexpress-loading');
+                },
+                close: function () {
+                    // VALIDACIJA NAKON ZATVARANJA DROPDOWN-a
+                    setTimeout(function () {
+                        self.validateCitySelection(type);
+                    }, 100);
                 }
             }).autocomplete("instance")._renderItem = function (ul, item) {
                 var $li = $("<li>").appendTo(ul);
@@ -244,12 +243,37 @@
                 return $li;
             };
 
+            // KLJUČNO: Na svaki input - označi da NIJE validno izabran
             $city.on('input', function () {
-                if (!$(this).val()) {
+                var currentVal = $(this).val();
+                var cityId = $cityId.val();
+
+                // Ako je polje prazno
+                if (!currentVal) {
+                    $cityId.val('');
+                    $postcode.val('');
+                    self.selectedTown[type] = null;
+                    $(this).data('validSelection', false);
+                    self.clearFieldError($(this));
+                    return;
+                }
+
+                // Ako korisnik kuca BILO ŠTA - označi kao nevalidno
+                $(this).data('validSelection', false);
+
+                // Ako ima cityId ali se text promenio - očisti cityId  
+                if (cityId) {
                     $cityId.val('');
                     $postcode.val('');
                     self.selectedTown[type] = null;
                 }
+            });
+
+            // VALIDACIJA NA BLUR
+            $city.on('blur', function () {
+                setTimeout(function () {
+                    self.validateCitySelection(type);
+                }, 200);
             });
 
             $city.on('focus', function () {
@@ -257,12 +281,34 @@
                     $(this).autocomplete('search', '');
                     $(this).autocomplete('widget').show();
                 } else if (self.selectedStreet[type]) {
-                    // Ako nema gradova ali imamo ulicu, učitaj ih ponovo
                     self.loadTownsForStreet(type, self.selectedStreet[type]);
                 }
             });
         },
+        // NOVA VALIDACIJA FUNKCIJA - dodaj je u DExpressCheckout objekat
+        validateCitySelection: function (type) {
+            var $city = $('#' + type + '_city');
+            var $cityId = $('#' + type + '_city_id');
+            var cityValue = $city.val().trim();
+            var cityIdValue = $cityId.val();
+            var validSelection = $city.data('validSelection');
 
+            // Ako je polje prazno, OK je
+            if (!cityValue) {
+                this.clearFieldError($city);
+                return true;
+            }
+
+            // Ako ima vrednost ali NIJE validno izabrano iz padajućeg
+            if (cityValue && (!cityIdValue || !validSelection)) {
+                this.showFieldError($city, 'Molimo izaberite grad iz padajuće liste. Ne možete uneti proizvoljan naziv.');
+                return false;
+            }
+
+            // Sve je OK
+            this.clearFieldError($city);
+            return true;
+        },
         // ULTRA BRZI CACHE SYSTEM
         getCachedStreets: function (term) {
             // Direct cache hit
@@ -876,6 +922,7 @@
             var pattern = /^((bb|BB|b\.b\.|B\.B\.)(\/[-a-zžćčđšA-ZĐŠĆŽČ_0-9]+)*|(\d(-\d){0,1}[a-zžćčđšA-ZĐŠĆŽČ_0-9]{0,2})+(\/[-a-zžćčđšA-ZĐŠĆŽČ_0-9]+)*)$/;
             return pattern.test(number) && number.length <= 10;
         },
+        // AŽURIRAJ initValidation funkciju - dodaj ovu proveru
         initValidation: function () {
             var self = this;
 
@@ -885,7 +932,13 @@
                 var type = $('#ship-to-different-address-checkbox').is(':checked') ? 'shipping' : 'billing';
                 var isValid = true;
 
+                // POSTOJEĆE VALIDACIJE...
                 if (!self.validateStreetSelection(type)) {
+                    isValid = false;
+                }
+
+                // NOVA: KRITIČNA VALIDACIJA GRADA
+                if (!self.validateCitySelection(type)) {
                     isValid = false;
                 }
 
@@ -903,21 +956,23 @@
                     }
                 });
 
-                // POBOLJŠANA VALIDACIJA KUĆNOG BROJA
+                // DODATNA PROVERA: Grad mora imati city_id
+                var $cityId = $('#' + type + '_city_id');
+                if ($('#' + type + '_city').val() && !$cityId.val()) {
+                    self.showError($('#' + type + '_city'), 'Morate izabrati grad iz padajuće liste');
+                    isValid = false;
+                }
+
+                // POSTOJEĆE VALIDACIJE ZA KUĆNI BROJ...
                 var $number = $('#' + type + '_number');
                 var numberValue = $number.val();
 
                 if (numberValue) {
-                    // Ukloni greške sa prethodnih validacija
                     self.clearFieldError($number);
-
-                    // Proveri da li ima razmake - to je greška
                     if (numberValue.includes(' ')) {
                         self.showError($number, 'Kućni broj ne sme sadržati razmake');
                         isValid = false;
-                    }
-                    // Proveri da li je u ispravnom formatu prema API dokumentaciji
-                    else if (!self.validateNumberFormat(numberValue)) {
+                    } else if (!self.validateNumberFormat(numberValue)) {
                         self.showError($number, 'Neispravan format kućnog broja. Podržani formati: bb, 10, 15a, 23/4, 44b/2');
                         isValid = false;
                     }
