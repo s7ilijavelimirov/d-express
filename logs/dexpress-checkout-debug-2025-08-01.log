@@ -1,0 +1,137 @@
+{"timestamp":"2025-08-01 07:14:32","context":"checkout","level":"debug","message":"API poziv za grad 802824, term: ni"}
+{"timestamp":"2025-08-01 07:14:32","context":"checkout","level":"debug","message":"API poziv za grad 802824, term: n"}
+{"timestamp":"2025-08-01 07:14:32","context":"checkout","level":"debug","message":"Vraćam 50 ulica za grad 802824"}
+{"timestamp":"2025-08-01 07:14:32","context":"checkout","level":"debug","message":"Vraćam 50 ulica za grad 802824"}
+{"timestamp":"2025-08-01 07:14:32","context":"checkout","level":"debug","message":"API poziv za grad 802824, term: nik"}
+{"timestamp":"2025-08-01 07:14:32","context":"checkout","level":"debug","message":"Vraćam 22 ulica za grad 802824"}
+{"timestamp":"2025-08-01 07:14:32","context":"checkout","level":"debug","message":"API poziv za grad 802824, term: niko"}
+{"timestamp":"2025-08-01 07:14:32","context":"checkout","level":"debug","message":"Vraćam 16 ulica za grad 802824"}
+{"timestamp":"2025-08-01 07:14:33","context":"checkout","level":"debug","message":"API poziv za grad 802824, term: nikol"}
+{"timestamp":"2025-08-01 07:14:33","context":"checkout","level":"debug","message":"Vraćam 14 ulica za grad 802824"}
+{"timestamp":"2025-08-01 07:14:33","context":"checkout","level":"debug","message":"API poziv za grad 802824, term: nikole"}
+{"timestamp":"2025-08-01 07:14:33","context":"checkout","level":"debug","message":"Vraćam 9 ulica za grad 802824"}
+{"timestamp":"2025-08-01 07:14:35","context":"checkout","level":"debug","message":"Cache hit za grad 802824, term: nikole"}
+{"timestamp":"2025-08-01 07:14:35","context":"checkout","level":"debug","message":"API poziv za grad 802824, term: nikole f"}
+{"timestamp":"2025-08-01 07:14:35","context":"checkout","level":"debug","message":"Vraćam 0 ulica za grad 802824"}
+{"timestamp":"2025-08-01 07:14:35","context":"checkout","level":"debug","message":"API poziv za grad 802824, term: nikole fr"}
+{"timestamp":"2025-08-01 07:14:35","context":"checkout","level":"debug","message":"Vraćam 0 ulica za grad 802824"}
+{"timestamp":"2025-08-01 07:14:56","context":"checkout","level":"debug","message":"API poziv za grad 802824, term: ga"}
+{"timestamp":"2025-08-01 07:14:56","context":"checkout","level":"debug","message":"Vraćam 27 ulica za grad 802824"}
+{"timestamp":"2025-08-01 07:14:56","context":"checkout","level":"debug","message":"API poziv za grad 802824, term: gag"}
+{"timestamp":"2025-08-01 07:14:56","context":"checkout","level":"debug","message":"Vraćam 1 ulica za grad 802824"}
+{"timestamp":"2025-08-01 07:14:56","context":"checkout","level":"debug","message":"API poziv za grad 802824, term: gaga"}
+{"timestamp":"2025-08-01 07:14:56","context":"checkout","level":"debug","message":"Vraćam 1 ulica za grad 802824"}
+{"timestamp":"2025-08-01 07:14:57","context":"checkout","level":"debug","message":"API poziv za grad 802824, term: g"}
+{"timestamp":"2025-08-01 07:14:57","context":"checkout","level":"debug","message":"Vraćam 50 ulica za grad 802824"}
+{"timestamp":"2025-08-01 07:14:57","context":"checkout","level":"debug","message":"API poziv za grad 802824, term: gagar"}
+{"timestamp":"2025-08-01 07:14:57","context":"checkout","level":"debug","message":"Vraćam 1 ulica za grad 802824"}
+{"timestamp":"2025-08-01 07:27:11","context":"checkout","level":"debug","message":"Cache hit za grad 802824, term: n"}
+{"timestamp":"2025-08-01 07:27:11","context":"checkout","level":"debug","message":"Cache hit za grad 802824, term: ni"}
+{"timestamp":"2025-08-01 07:27:11","context":"checkout","level":"debug","message":"Cache hit za grad 802824, term: nik"}
+{"timestamp":"2025-08-01 07:27:11","context":"checkout","level":"debug","message":"Cache hit za grad 802824, term: nikol"}
+{"timestamp":"2025-08-01 07:27:11","context":"checkout","level":"debug","message":"Cache hit za grad 802824, term: niko"}
+{"timestamp":"2025-08-01 07:27:13","context":"checkout","level":"debug","message":"Cache hit za grad 802824, term: nikole"}
+{"timestamp":"2025-08-01 07:27:19","context":"checkout","level":"debug","message":"API poziv za grad 802824, term: G"}
+{"timestamp":"2025-08-01 07:27:19","context":"checkout","level":"debug","message":"Vraćam 50 ulica za grad 802824"}
+{"timestamp":"2025-08-01 07:27:19","context":"checkout","level":"debug","message":"API poziv za grad 802824, term: Ga"}
+{"timestamp":"2025-08-01 07:27:19","context":"checkout","level":"debug","message":"Vraćam 27 ulica za grad 802824"}
+{"timestamp":"2025-08-01 07:27:19","context":"checkout","level":"debug","message":"API poziv za grad 802824, term: Gag"}
+{"timestamp":"2025-08-01 07:27:19","context":"checkout","level":"debug","message":"Vraćam 1 ulica za grad 802824"}
+{"timestamp":"2025-08-01 07:27:19","context":"checkout","level":"debug","message":"API poziv za grad 802824, term: Gagar"}
+{"timestamp":"2025-08-01 07:27:19","context":"checkout","level":"debug","message":"Vraćam 1 ulica za grad 802824"}
+{"timestamp":"2025-08-01 07:27:19","context":"checkout","level":"debug","message":"API poziv za grad 802824, term: Gaga"}
+{"timestamp":"2025-08-01 07:27:20","context":"checkout","level":"debug","message":"Vraćam 1 ulica za grad 802824"}
+{"timestamp":"2025-08-01 07:27:20","context":"checkout","level":"debug","message":"API poziv za grad 802824, term: Gagari"}
+{"timestamp":"2025-08-01 07:27:20","context":"checkout","level":"debug","message":"Vraćam 1 ulica za grad 802824"}
+{"timestamp":"2025-08-01 07:28:39","context":"checkout","level":"debug","message":"API poziv za grad 802824, term: sv"}
+{"timestamp":"2025-08-01 07:28:39","context":"checkout","level":"debug","message":"Vraćam 16 ulica za grad 802824"}
+{"timestamp":"2025-08-01 07:28:39","context":"checkout","level":"debug","message":"API poziv za grad 802824, term: sve"}
+{"timestamp":"2025-08-01 07:28:39","context":"checkout","level":"debug","message":"Vraćam 15 ulica za grad 802824"}
+{"timestamp":"2025-08-01 07:28:39","context":"checkout","level":"debug","message":"API poziv za grad 802824, term: s"}
+{"timestamp":"2025-08-01 07:28:39","context":"checkout","level":"debug","message":"Vraćam 50 ulica za grad 802824"}
+{"timestamp":"2025-08-01 07:28:39","context":"checkout","level":"debug","message":"API poziv za grad 802824, term: svet"}
+{"timestamp":"2025-08-01 07:28:39","context":"checkout","level":"debug","message":"Vraćam 15 ulica za grad 802824"}
+{"timestamp":"2025-08-01 07:28:39","context":"checkout","level":"debug","message":"API poziv za grad 802824, term: svetos"}
+{"timestamp":"2025-08-01 07:28:39","context":"checkout","level":"debug","message":"Vraćam 1 ulica za grad 802824"}
+{"timestamp":"2025-08-01 07:28:39","context":"checkout","level":"debug","message":"API poziv za grad 802824, term: sveto"}
+{"timestamp":"2025-08-01 07:28:39","context":"checkout","level":"debug","message":"Vraćam 12 ulica za grad 802824"}
+{"timestamp":"2025-08-01 07:28:40","context":"checkout","level":"debug","message":"API poziv za grad 802824, term: svetosa"}
+{"timestamp":"2025-08-01 07:28:40","context":"checkout","level":"debug","message":"Vraćam 1 ulica za grad 802824"}
+{"timestamp":"2025-08-01 07:28:54","context":"checkout","level":"debug","message":"API poziv za grad 802824, term: Ni"}
+{"timestamp":"2025-08-01 07:28:54","context":"checkout","level":"debug","message":"Vraćam 50 ulica za grad 802824"}
+{"timestamp":"2025-08-01 07:28:55","context":"checkout","level":"debug","message":"API poziv za grad 802824, term: Nik"}
+{"timestamp":"2025-08-01 07:28:55","context":"checkout","level":"debug","message":"API poziv za grad 802824, term: Niko"}
+{"timestamp":"2025-08-01 07:28:55","context":"checkout","level":"debug","message":"Vraćam 22 ulica za grad 802824"}
+{"timestamp":"2025-08-01 07:28:55","context":"checkout","level":"debug","message":"Vraćam 16 ulica za grad 802824"}
+{"timestamp":"2025-08-01 07:28:55","context":"checkout","level":"debug","message":"API poziv za grad 802824, term: Nikol"}
+{"timestamp":"2025-08-01 07:28:55","context":"checkout","level":"debug","message":"Vraćam 14 ulica za grad 802824"}
+{"timestamp":"2025-08-01 07:28:55","context":"checkout","level":"debug","message":"API poziv za grad 802824, term: Nikole"}
+{"timestamp":"2025-08-01 07:28:55","context":"checkout","level":"debug","message":"Vraćam 9 ulica za grad 802824"}
+{"timestamp":"2025-08-01 07:28:55","context":"checkout","level":"debug","message":"API poziv za grad 802824, term: N"}
+{"timestamp":"2025-08-01 07:28:55","context":"checkout","level":"debug","message":"Vraćam 50 ulica za grad 802824"}
+{"timestamp":"2025-08-01 07:28:56","context":"checkout","level":"debug","message":"Cache hit za grad 802824, term: Nikole"}
+{"timestamp":"2025-08-01 07:28:56","context":"checkout","level":"debug","message":"API poziv za grad 802824, term: Nikole f"}
+{"timestamp":"2025-08-01 07:28:56","context":"checkout","level":"debug","message":"API poziv za grad 802824, term: Nikole fr"}
+{"timestamp":"2025-08-01 07:28:56","context":"checkout","level":"debug","message":"Vraćam 0 ulica za grad 802824"}
+{"timestamp":"2025-08-01 07:28:56","context":"checkout","level":"debug","message":"Vraćam 0 ulica za grad 802824"}
+{"timestamp":"2025-08-01 07:28:57","context":"checkout","level":"debug","message":"API poziv za grad 802824, term: Nikole fra"}
+{"timestamp":"2025-08-01 07:28:57","context":"checkout","level":"debug","message":"Vraćam 0 ulica za grad 802824"}
+{"timestamp":"2025-08-01 07:48:34","context":"checkout","level":"debug","message":"API poziv za grad 802824, term: g"}
+{"timestamp":"2025-08-01 07:48:34","context":"checkout","level":"debug","message":"Vraćam 50 ulica za grad 802824"}
+{"timestamp":"2025-08-01 07:48:34","context":"checkout","level":"debug","message":"API poziv za grad 802824, term: ga"}
+{"timestamp":"2025-08-01 07:48:34","context":"checkout","level":"debug","message":"Vraćam 27 ulica za grad 802824"}
+{"timestamp":"2025-08-01 07:48:34","context":"checkout","level":"debug","message":"API poziv za grad 802824, term: gag"}
+{"timestamp":"2025-08-01 07:48:34","context":"checkout","level":"debug","message":"Vraćam 1 ulica za grad 802824"}
+{"timestamp":"2025-08-01 07:48:34","context":"checkout","level":"debug","message":"API poziv za grad 802824, term: gaga"}
+{"timestamp":"2025-08-01 07:48:34","context":"checkout","level":"debug","message":"Vraćam 1 ulica za grad 802824"}
+{"timestamp":"2025-08-01 07:49:12","context":"checkout","level":"debug","message":"API poziv za grad 802158, term: gag"}
+{"timestamp":"2025-08-01 07:49:12","context":"checkout","level":"debug","message":"Vraćam 0 ulica za grad 802158"}
+{"timestamp":"2025-08-01 07:49:12","context":"checkout","level":"debug","message":"API poziv za grad 802158, term: gaga"}
+{"timestamp":"2025-08-01 07:49:12","context":"checkout","level":"debug","message":"Vraćam 0 ulica za grad 802158"}
+{"timestamp":"2025-08-01 07:49:13","context":"checkout","level":"debug","message":"API poziv za grad 802158, term: g"}
+{"timestamp":"2025-08-01 07:49:13","context":"checkout","level":"debug","message":"Vraćam 25 ulica za grad 802158"}
+{"timestamp":"2025-08-01 07:49:13","context":"checkout","level":"debug","message":"API poziv za grad 802158, term: ga"}
+{"timestamp":"2025-08-01 07:49:13","context":"checkout","level":"debug","message":"Vraćam 6 ulica za grad 802158"}
+{"timestamp":"2025-08-01 07:49:16","context":"checkout","level":"debug","message":"API poziv za grad 802158, term: s"}
+{"timestamp":"2025-08-01 07:49:16","context":"checkout","level":"debug","message":"API poziv za grad 802158, term: sv"}
+{"timestamp":"2025-08-01 07:49:16","context":"checkout","level":"debug","message":"Vraćam 2 ulica za grad 802158"}
+{"timestamp":"2025-08-01 07:49:16","context":"checkout","level":"debug","message":"Vraćam 50 ulica za grad 802158"}
+{"timestamp":"2025-08-01 07:49:16","context":"checkout","level":"debug","message":"API poziv za grad 802158, term: sve"}
+{"timestamp":"2025-08-01 07:49:16","context":"checkout","level":"debug","message":"Vraćam 2 ulica za grad 802158"}
+{"timestamp":"2025-08-01 07:49:16","context":"checkout","level":"debug","message":"API poziv za grad 802158, term: svet"}
+{"timestamp":"2025-08-01 07:49:16","context":"checkout","level":"debug","message":"Vraćam 2 ulica za grad 802158"}
+{"timestamp":"2025-08-01 07:49:16","context":"checkout","level":"debug","message":"API poziv za grad 802158, term: sveto"}
+{"timestamp":"2025-08-01 07:49:16","context":"checkout","level":"debug","message":"Vraćam 2 ulica za grad 802158"}
+{"timestamp":"2025-08-01 07:49:21","context":"checkout","level":"debug","message":"API poziv za grad 802158, term: do"}
+{"timestamp":"2025-08-01 07:49:21","context":"checkout","level":"debug","message":"API poziv za grad 802158, term: d"}
+{"timestamp":"2025-08-01 07:49:21","context":"checkout","level":"debug","message":"Vraćam 9 ulica za grad 802158"}
+{"timestamp":"2025-08-01 07:49:21","context":"checkout","level":"debug","message":"Vraćam 50 ulica za grad 802158"}
+{"timestamp":"2025-08-01 07:49:21","context":"checkout","level":"debug","message":"API poziv za grad 802158, term: don"}
+{"timestamp":"2025-08-01 07:49:21","context":"checkout","level":"debug","message":"Vraćam 1 ulica za grad 802158"}
+{"timestamp":"2025-08-01 07:49:21","context":"checkout","level":"debug","message":"API poziv za grad 802158, term: donj"}
+{"timestamp":"2025-08-01 07:49:21","context":"checkout","level":"debug","message":"Vraćam 1 ulica za grad 802158"}
+{"timestamp":"2025-08-01 07:49:21","context":"checkout","level":"debug","message":"API poziv za grad 802158, term: donja"}
+{"timestamp":"2025-08-01 07:49:21","context":"checkout","level":"debug","message":"Vraćam 1 ulica za grad 802158"}
+{"timestamp":"2025-08-01 07:56:32","context":"checkout","level":"debug","message":"API poziv za grad 802824, term: ni"}
+{"timestamp":"2025-08-01 07:56:32","context":"checkout","level":"debug","message":"API poziv za grad 802824, term: n"}
+{"timestamp":"2025-08-01 07:56:32","context":"checkout","level":"debug","message":"Vraćam 50 ulica za grad 802824"}
+{"timestamp":"2025-08-01 07:56:32","context":"checkout","level":"debug","message":"Vraćam 50 ulica za grad 802824"}
+{"timestamp":"2025-08-01 07:56:32","context":"checkout","level":"debug","message":"API poziv za grad 802824, term: nik"}
+{"timestamp":"2025-08-01 07:56:32","context":"checkout","level":"debug","message":"Vraćam 22 ulica za grad 802824"}
+{"timestamp":"2025-08-01 07:56:32","context":"checkout","level":"debug","message":"API poziv za grad 802824, term: niko"}
+{"timestamp":"2025-08-01 07:56:32","context":"checkout","level":"debug","message":"Vraćam 16 ulica za grad 802824"}
+{"timestamp":"2025-08-01 07:56:33","context":"checkout","level":"debug","message":"API poziv za grad 802824, term: nikol"}
+{"timestamp":"2025-08-01 07:56:33","context":"checkout","level":"debug","message":"Vraćam 14 ulica za grad 802824"}
+{"timestamp":"2025-08-01 07:56:33","context":"checkout","level":"debug","message":"API poziv za grad 802824, term: nikole"}
+{"timestamp":"2025-08-01 07:56:33","context":"checkout","level":"debug","message":"Vraćam 9 ulica za grad 802824"}
+{"timestamp":"2025-08-01 07:56:34","context":"checkout","level":"debug","message":"Cache hit za grad 802824, term: nikole"}
+{"timestamp":"2025-08-01 07:56:34","context":"checkout","level":"debug","message":"API poziv za grad 802824, term: nikole f"}
+{"timestamp":"2025-08-01 07:56:34","context":"checkout","level":"debug","message":"Vraćam 0 ulica za grad 802824"}
+{"timestamp":"2025-08-01 07:56:34","context":"checkout","level":"debug","message":"API poziv za grad 802824, term: nikole fra"}
+{"timestamp":"2025-08-01 07:56:34","context":"checkout","level":"debug","message":"Vraćam 0 ulica za grad 802824"}
+{"timestamp":"2025-08-01 07:56:34","context":"checkout","level":"debug","message":"API poziv za grad 802824, term: nikole fr"}
+{"timestamp":"2025-08-01 07:56:34","context":"checkout","level":"debug","message":"Vraćam 0 ulica za grad 802824"}
+{"timestamp":"2025-08-01 07:58:53","context":"checkout","level":"debug","message":"API poziv za grad 802158, term: Cara Dušanaaa"}
+{"timestamp":"2025-08-01 07:58:53","context":"checkout","level":"debug","message":"Vraćam 0 ulica za grad 802158"}
+{"timestamp":"2025-08-01 07:58:54","context":"checkout","level":"debug","message":"API poziv za grad 802158, term: Cara Dušanaa"}
+{"timestamp":"2025-08-01 07:58:54","context":"checkout","level":"debug","message":"Vraćam 0 ulica za grad 802158"}
