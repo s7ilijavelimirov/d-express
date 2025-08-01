@@ -578,7 +578,12 @@
                 }, 3000);
             }
         },
+        hideLoading: function ($field) {
+            $field.removeClass('dexpress-loading dexpress-loading-streets dexpress-loading-cities');
 
+            // Remove loading text if exists
+            $field.parent().find('.dexpress-loading-text').remove();
+        },
         /**
          * Validate city field
          */
