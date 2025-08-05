@@ -694,7 +694,7 @@ class D_Express_Settings_Renderer
     /**
      * Shipment type polje
      */
-   private function render_shipment_type_field()
+    private function render_shipment_type_field()
     {
         $shipment_type = get_option('dexpress_shipment_type', '2'); // Default na redovna
 
@@ -719,7 +719,7 @@ class D_Express_Settings_Renderer
     /**
      * Payment by polje
      */
-   private function render_payment_by_field()
+    private function render_payment_by_field()
     {
         $payment_by = get_option('dexpress_payment_by', '0'); // Default na nalogodavac
 
@@ -761,7 +761,7 @@ class D_Express_Settings_Renderer
         }
 
         echo '</select>';
-        echo '<p class="description">' . __('Definiše način plaćanja troškova dostave.', 'd-express-woo') . '</p>';
+        echo '<p class="description">' . __('Kod virmana D-express fakturiše, kod gotovine primalac plaća kuriru.', 'd-express-woo') . '</p>';
         echo '</td>';
         echo '</tr>';
     }
@@ -786,7 +786,7 @@ class D_Express_Settings_Renderer
         }
 
         echo '</select>';
-        echo '<p class="description">' . __('Kontroliše povraćaj potpisanih dokumenata.', 'd-express-woo') . '</p>';
+        echo '<p class="description">' . __('Povraćaj znači da kurir čeka da primalac potpiše i odmah vraća dokumente.', 'd-express-woo') . '</p>';
         echo '</td>';
         echo '</tr>';
     }

@@ -517,6 +517,11 @@ class D_Express_WooCommerce
             'dexpress_auto_create_shipment' => 'no',
             'dexpress_auto_create_on_status' => 'processing',
             'dexpress_webhook_secret' => wp_generate_password(32, false),
+            // AŽURIRANE DEFAULT VREDNOSTI:
+            'dexpress_payment_by' => '0',        // 0 = Nalogodavac (umesto Pošiljalac)
+            'dexpress_shipment_type' => '2',     // 2 = Redovna isporuka (jedina opcija)
+            'dexpress_payment_type' => '2',      // 2 = Faktura (default)
+            'dexpress_return_doc' => '0',        // 0 = Bez povraćaja (default)
         );
 
         foreach ($default_options as $option_name => $default_value) {

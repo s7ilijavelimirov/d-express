@@ -734,7 +734,18 @@ class D_Express_Admin_Ajax
         if ($total_weight < 100) {
             $total_weight = 100;
         }
-
+        // VALIDACIJA: Proveri da split paket ne prelazi 34kg
+        if ($total_weight > 34000) { // 34kg = 34000g
+            return new WP_Error(
+                'split_package_weight_limit',
+                sprintf(
+                    __('Paket %d/%d je previše težak (%s kg). Maksimalno je dozvoljeno 34kg po paketu. Molimo prerasporedite artikle.', 'd-express-woo'),
+                    $split_index,
+                    $total_splits,
+                    number_format($total_weight / 1000, 1, ',', '.')
+                )
+            );
+        }
         // Modifikuj podatke
         $shipment_data['Mass'] = round($total_weight);
         $shipment_data['Value'] = round($split_value * 100); // u parima

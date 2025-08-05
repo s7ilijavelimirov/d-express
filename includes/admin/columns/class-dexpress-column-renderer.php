@@ -23,29 +23,34 @@ class D_Express_Column_Renderer
      */
     public function render_tracking_column($order_id)
     {
-        global $wpdb;
+        error_log('DEXPRESS: render_tracking_column pozvan za order: ' . $order_id);
 
-        // Dobijamo podatke o pošiljci iz baze
-        $shipment = $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM {$wpdb->prefix}dexpress_shipments WHERE order_id = %d",
-            $order_id
-        ));
+        // Osiguraj da je order_id integer
+        $order_id = is_object($order_id) ? $order_id->get_id() : intval($order_id);
 
-        if ($shipment) {
-            // Prikazujemo tracking broj i status ako postoji
-            echo '<a href="https://www.dexpress.rs/rs/pracenje-posiljaka/' . esc_attr($shipment->tracking_number) . '" 
-            target="_blank" class="dexpress-tracking-number">' .
-                esc_html($shipment->tracking_number) . '</a>';
+        if ($order_id <= 0) {
+            echo '<span style="color: #999;">-</span>';
+            return;
+        }
 
-            if (!empty($shipment->status_code)) {
-                $status_class = dexpress_get_status_css_class($shipment->status_code);
-                $status_name = dexpress_get_status_name($shipment->status_code);
+        // Dobij pošiljke
+        $db = new D_Express_DB();
+        $shipments = $db->get_shipments_by_order_id($order_id);
 
-                echo '<br><span class="dexpress-status-badge ' . $status_class . '">' .
-                    esc_html($status_name) . '</span>';
+        if (!empty($shipments)) {
+            foreach ($shipments as $shipment) {
+                echo '<div style="margin-bottom: 5px;">';
+                if ($shipment->is_test) {
+                    echo '<span style="color: #666;">' . esc_html($shipment->tracking_number) . ' (Test)</span>';
+                } else {
+                    echo '<a href="https://www.dexpress.rs/rs/pracenje-posiljaka/' . esc_attr($shipment->tracking_number) . '" target="_blank">';
+                    echo esc_html($shipment->tracking_number);
+                    echo '</a>';
+                }
+                echo '</div>';
             }
         } else {
-            echo '<span class="dexpress-no-shipment">-</span>';
+            echo '<span style="color: #999;">-</span>';
         }
     }
 
@@ -81,7 +86,7 @@ class D_Express_Column_Renderer
     public function render_shipment_status_column($order_id)
     {
         global $wpdb;
-        
+
         $shipment = $wpdb->get_row($wpdb->prepare(
             "SELECT * FROM {$wpdb->prefix}dexpress_shipments WHERE order_id = %d",
             $order_id

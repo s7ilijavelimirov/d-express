@@ -94,6 +94,9 @@ class D_Express_Order_Metabox
     }
     private function get_order_shipments($order_id)
     {
+        // Osiguraj da je order_id integer
+        $order_id = is_object($order_id) ? $order_id->get_id() : intval($order_id);
+
         $db = new D_Express_DB();
         return $db->get_shipments_by_order_id($order_id);
     }
@@ -102,8 +105,14 @@ class D_Express_Order_Metabox
      */
     private function render_metabox_content($order, $has_dexpress, $is_dispenser, $shipment, $locations, $selected_location_id)
     {
+        // NOVO: Izračunaj težinu
+        $calculated_weight = $this->calculate_initial_weight($order);
+        $custom_weight = get_post_meta($order->get_id(), '_dexpress_custom_weight', true);
+        $display_weight = !empty($custom_weight) ? floatval($custom_weight) : $calculated_weight;
+
         // Proveri da li postoje već kreirane pošiljke (ažurirano za multiple)
-        $shipments = $this->get_order_shipments($order->get_id());
+        $order_id = is_object($order) ? $order->get_id() : intval($order);
+        $shipments = $this->get_order_shipments($order_id);
         $shipment_splits = get_post_meta($order->get_id(), '_dexpress_shipment_splits', true) ?: [];
 
 ?>
@@ -201,7 +210,46 @@ class D_Express_Order_Metabox
                         </button>
                     </div>
                 <?php endif; ?>
+                <!-- NOVA WEIGHT SEKCIJA -->
+                <div class="dexpress-weight-section" style="margin-bottom: 15px; padding: 10px; border: 1px solid #ddd; background: #f9f9f9;">
+                    <h5 style="margin-top: 0;"><?php _e('Težina paketa', 'd-express-woo'); ?></h5>
 
+                    <div style="margin-bottom: 10px;">
+                        <label style="font-weight: bold;">
+                            <?php _e('Izračunata težina (iz proizvoda):', 'd-express-woo'); ?>
+                        </label>
+                        <span style="margin-left: 10px; color: #666;">
+                            <?php echo number_format($calculated_weight, 2, ',', '.') . ' kg'; ?>
+                        </span>
+                        <?php if ($calculated_weight <= 0.1): ?>
+                            <span style="color: #d63638; margin-left: 10px;"><?php _e('(Proizvodi nemaju definisanu težinu)', 'd-express-woo'); ?></span>
+                        <?php endif; ?>
+                    </div>
+
+                    <div>
+                        <label for="dexpress_package_weight" style="font-weight: bold;">
+                            <?php _e('Stvarna težina paketa (kg):', 'd-express-woo'); ?>
+                        </label>
+                        <input type="number"
+                            id="dexpress_package_weight"
+                            name="dexpress_package_weight"
+                            value="<?php echo esc_attr($display_weight); ?>"
+                            step="0.01"
+                            min="0.1"
+                            max="34"
+                            style="width: 100px; margin-left: 10px;"
+                            required />
+                        <span style="color: #666; margin-left: 5px;">kg</span>
+
+                        <button type="button" id="dexpress_use_calculated" class="button" style="margin-left: 10px;">
+                            <?php _e('Koristi izračunatu', 'd-express-woo'); ?>
+                        </button>
+                    </div>
+
+                    <p style="margin: 5px 0 0 0; font-size: 12px; color: #666;">
+                        <?php _e('Unesite stvarnu težinu paketa koji šaljete (maksimalno 34kg po paketu)', 'd-express-woo'); ?>
+                    </p>
+                </div>
                 <!-- Postojeći kod za kreiranje pojedinačne pošiljke -->
                 <div id="dexpress-single-shipment">
                     <?php if (!empty($locations)): ?>
@@ -254,6 +302,7 @@ class D_Express_Order_Metabox
                             action: 'dexpress_create_shipment',
                             order_id: orderId,
                             sender_location_id: locationId,
+                            package_weight: $('#dexpress_package_weight').val(),
                             nonce: '<?php echo wp_create_nonce('dexpress_admin_nonce'); ?>'
                         },
                         success: function(response) {
@@ -418,7 +467,32 @@ class D_Express_Order_Metabox
                         updateItemAvailability(); // Ažuriraj dostupnost nakon uklanjanja
                     }
                 });
+                // NOVO: Weight handling JavaScript
+                $('#dexpress_use_calculated').click(function() {
+                    $('#dexpress_package_weight').val(<?php echo $calculated_weight; ?>);
+                });
 
+                // Validacija težine
+                $('#dexpress_package_weight').on('input', function() {
+                    var weight = parseFloat($(this).val());
+                    var $button = $('.dexpress-create-shipment-btn');
+
+                    if (weight > 34) {
+                        $(this).css('border-color', '#d63638');
+                        $button.prop('disabled', true);
+                        $('.dexpress-weight-error').remove();
+                        $(this).after('<div class="dexpress-weight-error" style="color: #d63638; font-size: 12px; margin-top: 3px;">Maksimalna težina po paketu je 34kg</div>');
+                    } else if (weight < 0.1) {
+                        $(this).css('border-color', '#d63638');
+                        $button.prop('disabled', true);
+                        $('.dexpress-weight-error').remove();
+                        $(this).after('<div class="dexpress-weight-error" style="color: #d63638; font-size: 12px; margin-top: 3px;">Minimalna težina je 0.1kg</div>');
+                    } else {
+                        $(this).css('border-color', '');
+                        $button.prop('disabled', false);
+                        $('.dexpress-weight-error').remove();
+                    }
+                });
                 // JS za brisanje pošiljke
                 $('.dexpress-delete-shipment').on('click', function(e) {
                     e.preventDefault();
@@ -662,7 +736,23 @@ class D_Express_Order_Metabox
             $order_id
         ));
     }
+    private function calculate_initial_weight($order)
+    {
+        $weight_kg = 0;
 
+        foreach ($order->get_items() as $item) {
+            if (!($item instanceof WC_Order_Item_Product)) {
+                continue;
+            }
+
+            $product = $item->get_product();
+            if ($product && $product->has_weight()) {
+                $weight_kg += floatval($product->get_weight()) * $item->get_quantity();
+            }
+        }
+
+        return max(0.1, $weight_kg); // Minimum 0.1kg
+    }
     /**
      * Učitavanje assets-a za metabox
      */

@@ -1102,6 +1102,17 @@ class D_Express_API
         );
         dexpress_log("[WEIGHT DEBUG] Težina nakon formatiranja za API: {$shipment_data['Mass']} grama", 'debug');
 
+        // VALIDACIJA: Proveri da paket ne prelazi 34kg
+        if ($weight_grams > 34000) { // 34kg = 34000g
+            return new WP_Error(
+                'package_weight_limit',
+                sprintf(
+                    __('Paket ne može biti teži od 34kg. Trenutna težina: %s kg. Molimo podelite narudžbinu u više paketa.', 'd-express-woo'),
+                    number_format($weight_grams / 1000, 1, ',', '.')
+                )
+            );
+        }
+
         $shipment_data['PackageList'] = array(
             array(
                 'Code' => $package_code,

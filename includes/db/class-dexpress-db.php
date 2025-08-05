@@ -7,7 +7,6 @@
  */
 
 defined('ABSPATH') || exit;
-
 class D_Express_DB
 {
     /**
@@ -210,6 +209,22 @@ class D_Express_DB
      */
     public function get_shipment_by_order_id($order_id)
     {
+      
+        // ISPRAVKA: Osiguraj da je order_id integer
+        if (is_object($order_id)) {
+            if (method_exists($order_id, 'get_id')) {
+                $order_id = $order_id->get_id();
+            } else {
+                return null;
+            }
+        }
+
+        $order_id = intval($order_id);
+
+        if ($order_id <= 0) {
+            return null;
+        }
+
         // Jedinstveni cache ključ
         $cache_key = 'dexpress_shipment_' . $order_id;
 
@@ -461,6 +476,21 @@ class D_Express_DB
     {
         global $wpdb;
 
+        // ISPRAVKA: Osiguraj da je order_id integer
+        if (is_object($order_id)) {
+            if (method_exists($order_id, 'get_id')) {
+                $order_id = $order_id->get_id();
+            } else {
+                return array(); // Nevaljan objekat
+            }
+        }
+
+        $order_id = intval($order_id);
+
+        if ($order_id <= 0) {
+            return array();
+        }
+
         $cache_key = 'dexpress_shipments_' . $order_id;
         $cached = wp_cache_get($cache_key);
 
@@ -470,10 +500,10 @@ class D_Express_DB
 
         $shipments = $wpdb->get_results($wpdb->prepare(
             "SELECT s.*, sl.name as location_name 
-         FROM {$wpdb->prefix}dexpress_shipments s
-         LEFT JOIN {$wpdb->prefix}dexpress_sender_locations sl ON s.sender_location_id = sl.id
-         WHERE s.order_id = %d 
-         ORDER BY s.split_index ASC, s.created_at ASC",
+     FROM {$wpdb->prefix}dexpress_shipments s
+     LEFT JOIN {$wpdb->prefix}dexpress_sender_locations sl ON s.sender_location_id = sl.id
+     WHERE s.order_id = %d 
+     ORDER BY s.split_index ASC, s.created_at ASC",
             $order_id
         ));
 
@@ -504,14 +534,25 @@ class D_Express_DB
     {
         global $wpdb;
 
+        // ISPRAVKA: Osiguraj da je order_id integer
+        if (is_object($order_id)) {
+            if (method_exists($order_id, 'get_id')) {
+                $order_id = $order_id->get_id();
+            } else {
+                return null;
+            }
+        }
+
+        $order_id = intval($order_id);
+
         $result = $wpdb->get_row($wpdb->prepare(
             "SELECT 
-            COUNT(*) as total_shipments,
-            MAX(total_splits) as expected_splits,
-            MIN(created_at) as first_created,
-            MAX(created_at) as last_created
-         FROM {$wpdb->prefix}dexpress_shipments 
-         WHERE order_id = %d",
+        COUNT(*) as total_shipments,
+        MAX(total_splits) as expected_splits,
+        MIN(created_at) as first_created,
+        MAX(created_at) as last_created
+     FROM {$wpdb->prefix}dexpress_shipments 
+     WHERE order_id = %d",
             $order_id
         ));
 
@@ -523,6 +564,17 @@ class D_Express_DB
     public function has_multiple_shipments($order_id)
     {
         global $wpdb;
+
+        // ISPRAVKA: Osiguraj da je order_id integer
+        if (is_object($order_id)) {
+            if (method_exists($order_id, 'get_id')) {
+                $order_id = $order_id->get_id();
+            } else {
+                return false;
+            }
+        }
+
+        $order_id = intval($order_id);
 
         $count = $wpdb->get_var($wpdb->prepare(
             "SELECT COUNT(*) FROM {$wpdb->prefix}dexpress_shipments WHERE order_id = %d",
