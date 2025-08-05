@@ -429,10 +429,10 @@ function dexpress_get_status_icon($status_code)
  * @param string $code Kod opcije
  * @return string Tekst opcije
  */
-function dexpress_get_payment_by_text($code)
+function dexpress_get_payment_by_text($payment_by = '0')
 {
     $options = dexpress_get_payment_by_options();
-    return isset($options[$code]) ? $options[$code] : __('Pošiljalac', 'd-express-woo');
+    return isset($options[$payment_by]) ? $options[$payment_by] : __('Nalogodavac', 'd-express-woo');
 }
 
 /**
@@ -441,10 +441,10 @@ function dexpress_get_payment_by_text($code)
  * @param string $code Kod opcije
  * @return string Tekst opcije
  */
-function dexpress_get_payment_type_text($code)
+function dexpress_get_payment_type_text($payment_type = '2')
 {
     $options = dexpress_get_payment_type_options();
-    return isset($options[$code]) ? $options[$code] : __('Faktura', 'd-express-woo');
+    return isset($options[$payment_type]) ? $options[$payment_type] : __('Faktura', 'd-express-woo');
 }
 
 /**
@@ -453,10 +453,10 @@ function dexpress_get_payment_type_text($code)
  * @param string $code Kod opcije
  * @return string Tekst opcije
  */
-function dexpress_get_return_doc_text($code)
+function dexpress_get_return_doc_text($return_doc = '0')
 {
     $options = dexpress_get_return_doc_options();
-    return isset($options[$code]) ? $options[$code] : __('Bez povraćaja', 'd-express-woo');
+    return isset($options[$return_doc]) ? $options[$return_doc] : __('Bez povraćaja', 'd-express-woo');
 }
 /**
  * Vraća informacije o gradu prema ID-u
@@ -564,7 +564,6 @@ function dexpress_get_order_status_options()
 function dexpress_get_shipment_types()
 {
     return array(
-        1 => __('Hitna isporuka (za danas)', 'd-express-woo'),
         2 => __('Redovna isporuka', 'd-express-woo')
     );
 }
@@ -577,9 +576,8 @@ function dexpress_get_shipment_types()
 function dexpress_get_payment_by_options()
 {
     return array(
-        0 => __('Pošiljalac', 'd-express-woo'),
+        0 => __('Nalogodavac', 'd-express-woo'),
         1 => __('Primalac', 'd-express-woo'),
-        2 => __('Treća strana', 'd-express-woo'),
     );
 }
 
@@ -605,7 +603,7 @@ function dexpress_get_return_doc_options()
 {
     return array(
         0 => __('Bez povraćaja', 'd-express-woo'),
-        1 => __('Povratak dokumenata', 'd-express-woo'),
+        1 => __('Povraćaj dokumenata', 'd-express-woo'), // Kurir čeka da primalac potpiše i odmah vraća
         3 => __('Dokaz o isporuci', 'd-express-woo'),
     );
 }

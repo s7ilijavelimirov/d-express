@@ -86,11 +86,11 @@
 
 /* Dropdown koji se prilagođava temi */
 .ui-autocomplete {
-    max-height: 200px;
+    max-height: 350px;
     overflow-y: auto;
     background: var(--wc-background-color, #ffffff);
     border: 1px solid var(--wc-border-color, #ddd);
-    border-radius: 4px;
+    /* border-radius: 4px; */
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     z-index: 9999;
     font-family: inherit;
@@ -98,13 +98,16 @@
 }
 
 .ui-autocomplete .ui-menu-item {
-    padding: 0.5em 0.75em;
+    padding: 1px;
     cursor: pointer;
     border-bottom: 1px solid var(--wc-border-color, #eee);
     font-size: inherit;
-    line-height: 1.4;
+    line-height: 2.2;
 }
-
+/* .ui-autocomplete .ui-menu-item:hover{
+    border:none !important;
+    outline: none !important;
+} */
 .ui-autocomplete .ui-menu-item:last-child {
     border-bottom: none;
 }
@@ -112,19 +115,19 @@
 .ui-autocomplete .ui-menu-item:hover,
 .ui-autocomplete .ui-menu-item.ui-state-focus,
 .ui-autocomplete .ui-menu-item.ui-state-active {
-    background-color: var(--wc-primary-color, #0073aa);
-    color: var(--wc-primary-text-color, #ffffff);
+    background-color: var(--wc-primary-color, #aa0039) !important;
+    color: var(--wc-primary-text-color, #9c7f7f) !important;
 }
 
 /* Custom street option (dodaj novu ulicu) */
 .ui-autocomplete .ui-menu-item.custom-street-option {
-    background-color: var(--wc-warning-background, #fff3cd);
-    color: var(--wc-warning-text, #856404);
+    background-color: var(--wc-warning-background, #af9439) !important;
+    color: var(--wc-warning-text, #856404) !important;
     font-weight: 500;
 }
 
 .ui-autocomplete .ui-menu-item.custom-street-option:hover {
-    background-color: var(--wc-warning-hover, #ffeaa7);
+    background-color: var(--wc-warning-hover, #ffeaa7) !important;
 }
 
 /* ========== ERROR HANDLING ========== */
@@ -367,7 +370,7 @@
 
     /* Veći touch targeti na mobilnom */
     .ui-autocomplete .ui-menu-item {
-        padding: 0.75em;
+      
         font-size: 16px;
         /* Sprečava zoom na iOS */
     }
@@ -407,7 +410,7 @@
 
     .ui-autocomplete .ui-menu-item:hover,
     .ui-autocomplete .ui-menu-item:focus {
-        outline: 2px solid currentColor;
+        outline: 2px solid currentColor; 
     }
 }
 

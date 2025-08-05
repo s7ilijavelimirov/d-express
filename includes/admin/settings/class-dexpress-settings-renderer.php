@@ -694,9 +694,9 @@ class D_Express_Settings_Renderer
     /**
      * Shipment type polje
      */
-    private function render_shipment_type_field()
+   private function render_shipment_type_field()
     {
-        $shipment_type = get_option('dexpress_shipment_type', '2');
+        $shipment_type = get_option('dexpress_shipment_type', '2'); // Default na redovna
 
         echo '<tr>';
         echo '<th scope="row"><label for="dexpress_shipment_type">' . __('Tip pošiljke', 'd-express-woo') . '</label></th>';
@@ -711,7 +711,7 @@ class D_Express_Settings_Renderer
         }
 
         echo '</select>';
-        echo '<p class="description">' . __('Izaberite tip pošiljke.', 'd-express-woo') . '</p>';
+        echo '<p class="description">' . __('Pošiljka uvek ima status "Redovna isporuka".', 'd-express-woo') . '</p>';
         echo '</td>';
         echo '</tr>';
     }
@@ -719,9 +719,9 @@ class D_Express_Settings_Renderer
     /**
      * Payment by polje
      */
-    private function render_payment_by_field()
+   private function render_payment_by_field()
     {
-        $payment_by = get_option('dexpress_payment_by', '0');
+        $payment_by = get_option('dexpress_payment_by', '0'); // Default na nalogodavac
 
         echo '<tr>';
         echo '<th scope="row"><label for="dexpress_payment_by">' . __('Ko plaća dostavu', 'd-express-woo') . '</label></th>';
@@ -736,7 +736,7 @@ class D_Express_Settings_Renderer
         }
 
         echo '</select>';
-        echo '<p class="description">' . __('Određuje ko plaća troškove dostave.', 'd-express-woo') . '</p>';
+        echo '<p class="description">' . __('Nalogodavac (pošiljalac) ili Primalac može da plati dostavu.', 'd-express-woo') . '</p>';
         echo '</td>';
         echo '</tr>';
     }
