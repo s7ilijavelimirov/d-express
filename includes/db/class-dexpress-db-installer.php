@@ -177,12 +177,20 @@ class D_Express_DB_Installer
             id bigint(20) NOT NULL AUTO_INCREMENT,
             shipment_id bigint(20) NOT NULL,
             package_code varchar(50) NOT NULL,
+            package_reference_id varchar(100) DEFAULT NULL,
+            package_index int(11) DEFAULT NULL,
+            total_packages int(11) DEFAULT NULL,
             mass int(11) DEFAULT NULL,
+            dim_x int(11) DEFAULT NULL,
+            dim_y int(11) DEFAULT NULL,
+            dim_z int(11) DEFAULT NULL,
+            v_mass int(11) DEFAULT NULL,
             dimensions varchar(100) DEFAULT NULL,
             created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY  (id),
             KEY shipment_id (shipment_id),
-            KEY package_code (package_code)
+            KEY package_code (package_code),
+            KEY package_reference_id (package_reference_id)
         ) $charset_collate;";
 
         // 3. Tabela za statuse pošiljki

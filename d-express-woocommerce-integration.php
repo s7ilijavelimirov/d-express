@@ -77,11 +77,11 @@ class D_Express_WooCommerce
         // Servisne klase
         require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/services/class-dexpress-sender-locations.php';
 
-        // CRON
-        require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/class-dexpress-cron-manager.php';
+        // // CRON
+        // require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/class-dexpress-cron-manager.php';
 
-        // EXTERNAL CRON
-        require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/class-dexpress-external-cron.php';
+        // // EXTERNAL CRON
+        // require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/class-dexpress-external-cron.php';
 
         // Validator
         require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/class-dexpress-validator.php';
@@ -150,7 +150,7 @@ class D_Express_WooCommerce
         add_action('admin_init', array($this, 'check_and_update_schema'));
 
         // Dodavanje webhook obrade za cron - pomereno pre plugins_loaded
-        add_action('dexpress_process_notification', array($this, 'process_notification'));
+        //add_action('dexpress_process_notification', array($this, 'process_notification'));
 
         // Inicijalizacija nakon učitavanja svih plugin-a
         add_action('plugins_loaded', array($this, 'init'), 20);
@@ -158,30 +158,34 @@ class D_Express_WooCommerce
         // Dodaj hook za simulaciju
         add_action('init', array($this, 'auto_simulate_test_statuses'));
 
+
+
         // Registrujemo česte provere statusa
-        add_action('init', array($this, 'register_frequent_status_checks'));
+        //add_action('init', array($this, 'register_frequent_status_checks'));
     }
     /**
      * Registracija češćih provera statusa
      */
-    public function register_frequent_status_checks()
-    {
-        // Dodajemo prilagođeni interval za češće provere
-        add_filter('cron_schedules', function ($schedules) {
-            $schedules['five_minutes'] = array(
-                'interval' => 300,
-                'display'  => __('Svakih 5 minuta', 'd-express-woo')
-            );
-            return $schedules;
-        });
+    // public function register_frequent_status_checks()
+    // {
+    //     // SAMO registruj schedule, ne pokusavaj da schedulе event
+    //     add_filter('cron_schedules', function ($schedules) {
+    //         $schedules['five_minutes'] = array(
+    //             'interval' => 300,
+    //             'display'  => __('Svakih 5 minuta', 'd-express-woo')
+    //         );
+    //         return $schedules;
+    //     });
 
-        // Registrujemo češće provere
-        if (!wp_next_scheduled('dexpress_check_pending_statuses')) {
-            wp_schedule_event(time(), 'five_minutes', 'dexpress_check_pending_statuses');
-        }
+    //     // ZAKOMENTARIŠI SCHEDULING DEO:
+    //     /*
+    // if (!wp_next_scheduled('dexpress_check_pending_statuses')) {
+    //     wp_schedule_event(time(), 'five_minutes', 'dexpress_check_pending_statuses');
+    // }
+    // */
 
-        add_action('dexpress_check_pending_statuses', array($this, 'check_pending_statuses'));
-    }
+    //     add_action('dexpress_check_pending_statuses', array($this, 'check_pending_statuses'));
+    // }
     public function on_woocommerce_deactivated($plugin, $network_deactivating)
     {
         // Proveri da li je deaktiviran WooCommerce
@@ -355,10 +359,12 @@ class D_Express_WooCommerce
 
         update_option('dexpress_schema_version', '1.2.0');
         $this->set_default_options();
-
-        if (class_exists('D_Express_Cron_Manager')) {
-            D_Express_Cron_Manager::register_cron_endpoint();
-        }
+        // OČISTI postojeće cron jobs
+        wp_clear_scheduled_hook('dexpress_check_pending_statuses');
+        wp_clear_scheduled_hook('dexpress_daily_update_indexes');
+        // if (class_exists('D_Express_Cron_Manager')) {
+        //     D_Express_Cron_Manager::register_cron_endpoint();
+        // }
         flush_rewrite_rules();
     }
     /**
@@ -367,14 +373,15 @@ class D_Express_WooCommerce
     public function check_and_update_schema()
     {
         $schema_version = get_option('dexpress_schema_version', '1.0.0');
-        $current_version = '1.2.0'; // Promeni na 1.2.0
+        $current_version = '1.2.1'; // ← Promeni na 1.2.1
 
         if (version_compare($schema_version, $current_version, '<')) {
             if (class_exists('D_Express_DB')) {
                 // Dodaj sve schema update-ove
                 D_Express_DB::update_shipments_table_schema();
                 D_Express_DB::update_multiple_shipments_schema();
-                D_Express_DB::update_package_code_schema(); // DODAJ OVO
+                D_Express_DB::update_package_code_schema();
+                D_Express_DB::update_packages_schema_v2(); // ← Ovo će se pokrenuti
 
                 update_option('dexpress_schema_version', $current_version);
 
@@ -392,7 +399,8 @@ class D_Express_WooCommerce
         if (class_exists('D_Express_Cron_Manager')) {
             D_Express_Cron_Manager::clear_all_cron_jobs();
         }
-
+        wp_clear_scheduled_hook('dexpress_check_pending_statuses');
+        wp_clear_scheduled_hook('dexpress_daily_update_indexes');
         // ✅ DODAJ ovu liniju:
         if (class_exists('D_Express_External_Cron_Service')) {
             D_Express_External_Cron_Service::cleanup();
@@ -422,8 +430,8 @@ class D_Express_WooCommerce
         }
 
         // Inicijalizacija CRON zadataka (ne zavisi od WooCommerce)
-        $this->init_autonomous_cron_jobs();
-        $this->init_external_cron_service();
+        //$this->init_autonomous_cron_jobs();
+        //$this->init_external_cron_service();
     }
 
     /**
@@ -488,15 +496,15 @@ class D_Express_WooCommerce
             }
         }
     }
-    private function init_autonomous_cron_jobs()
-    {
-        D_Express_Cron_Manager::init_cron_jobs();
-    }
-    private function init_external_cron_service()
-    {
-        D_Express_External_Cron_Service::init();
-        D_Express_External_Cron_Service::init_ajax();
-    }
+    // private function init_autonomous_cron_jobs()
+    // {
+    //     D_Express_Cron_Manager::init_cron_jobs();
+    // }
+    // private function init_external_cron_service()
+    // {
+    //     D_Express_External_Cron_Service::init();
+    //     D_Express_External_Cron_Service::init_ajax();
+    // }
     private function ensure_woocommerce_active()
     {
         return class_exists('WooCommerce') && function_exists('wc_get_order');

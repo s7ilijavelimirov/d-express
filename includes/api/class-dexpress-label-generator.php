@@ -412,10 +412,10 @@ class D_Express_Label_Generator
         $address_desc = get_post_meta($order->get_id(), "_{$address_type}_address_desc", true);
 
         // Tracking broj
+
         $tracking_number = !empty($shipment->tracking_number)
             ? $shipment->tracking_number
             : 'TT' . str_pad(rand(1, 999999), 10, '0', STR_PAD_LEFT);
-
         // Format otkupnine
         $cod_amount = '';
         if ($order_data['payment_method'] === 'cod') {
@@ -435,8 +435,6 @@ class D_Express_Label_Generator
         // Generiši sadržaj pošiljke
         $shipment_content = $this->generate_shipment_content_for_split($order, $shipment);
 
-        // Broj paketa iz shipment-a
-        $total_packages = $this->get_package_count($shipment);
 
 ?>
         <div class="label-container">
@@ -444,7 +442,25 @@ class D_Express_Label_Generator
             <div class="header">
                 D Express doo, Zage Malivuk 1, Beograd
                 <div class="package-info">
-                    <?php echo esc_html($package_index); ?>/<?php echo esc_html($total_packages); ?>
+                    <?php
+                    // Dobij package podatke iz baze
+                    global $wpdb;
+                    $packages = $wpdb->get_results($wpdb->prepare(
+                        "SELECT package_index, total_packages FROM {$wpdb->prefix}dexpress_packages WHERE shipment_id = %d ORDER BY package_index ASC",
+                        $shipment->id
+                    ));
+
+                    if (!empty($packages) && $packages[0]->total_packages > 0) {
+                        echo esc_html($packages[0]->package_index ?: $package_index) . '/' . esc_html($packages[0]->total_packages);
+                    } else {
+                        // Fallback na shipment podatke
+                        if (!empty($shipment->split_index) && !empty($shipment->total_splits)) {
+                            echo esc_html($shipment->split_index) . '/' . esc_html($shipment->total_splits);
+                        } else {
+                            echo '1/1';
+                        }
+                    }
+                    ?>
                 </div>
             </div>
 

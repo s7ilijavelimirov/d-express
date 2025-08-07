@@ -72,6 +72,9 @@ class D_Express_Admin_Actions
     /**
      * Ažuriranje šifarnika
      */
+    /**
+     * Ažuriranje šifarnika
+     */
     public function update_indexes()
     {
         if (!current_user_can('manage_woocommerce')) {
@@ -79,8 +82,11 @@ class D_Express_Admin_Actions
         }
 
         try {
-            D_Express_Cron_Manager::manual_test();
-            $result = true;
+            // PROMENI OVO - direktno pozovi API umesto cron manager
+            $api = new D_Express_API();
+            $result = $api->update_all_indexes();
+
+            dexpress_log('Manual šifarnik ažuriranje: ' . ($result ? 'uspešno' : 'neuspešno'), 'info');
         } catch (Exception $e) {
             dexpress_log('Manual update greška: ' . $e->getMessage(), 'error');
             $result = false;

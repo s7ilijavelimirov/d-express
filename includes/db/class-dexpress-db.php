@@ -113,7 +113,14 @@ class D_Express_DB
             array(
                 '%d', // shipment_id
                 '%s', // package_code
+                '%s', // package_reference_id
+                '%d', // package_index
+                '%d', // total_packages
                 '%d', // mass
+                '%d', // dim_x
+                '%d', // dim_y
+                '%d', // dim_z
+                '%d', // v_mass
                 '%s', // dimensions
                 '%s', // created_at
             )
@@ -209,7 +216,7 @@ class D_Express_DB
      */
     public function get_shipment_by_order_id($order_id)
     {
-      
+
         // ISPRAVKA: Osiguraj da je order_id integer
         if (is_object($order_id)) {
             if (method_exists($order_id, 'get_id')) {
@@ -662,6 +669,39 @@ class D_Express_DB
                 $wpdb->query("ALTER TABLE {$table_name} ADD INDEX idx_package_code (package_code)");
             } else {
                 error_log('DExpress: Greška pri dodavanju package_code kolone: ' . $wpdb->last_error);
+            }
+        }
+    }
+    public static function update_packages_schema_v2()
+    {
+        global $wpdb;
+
+        $packages_table = $wpdb->prefix . 'dexpress_packages';
+
+        $columns_to_add = array(
+            'package_reference_id' => "ADD COLUMN package_reference_id VARCHAR(100) NULL DEFAULT NULL AFTER package_code",
+            'package_index' => "ADD COLUMN package_index INT(11) NULL DEFAULT NULL AFTER package_reference_id",
+            'total_packages' => "ADD COLUMN total_packages INT(11) NULL DEFAULT NULL AFTER package_index",
+            'dim_x' => "ADD COLUMN dim_x INT(11) NULL DEFAULT NULL AFTER dimensions",
+            'dim_y' => "ADD COLUMN dim_y INT(11) NULL DEFAULT NULL AFTER dim_x",
+            'dim_z' => "ADD COLUMN dim_z INT(11) NULL DEFAULT NULL AFTER dim_y",
+            'v_mass' => "ADD COLUMN v_mass INT(11) NULL DEFAULT NULL AFTER mass"
+        );
+
+        foreach ($columns_to_add as $column => $sql) {
+            $column_exists = $wpdb->get_results($wpdb->prepare(
+                "SHOW COLUMNS FROM {$packages_table} LIKE %s",
+                $column
+            ));
+
+            if (empty($column_exists)) {
+                $result = $wpdb->query("ALTER TABLE {$packages_table} {$sql}");
+
+                if ($result !== false) {
+                    error_log("DExpress: Dodana {$column} kolona u packages tabelu");
+                } else {
+                    error_log("DExpress: Greška pri dodavanju {$column} kolone: " . $wpdb->last_error);
+                }
             }
         }
     }

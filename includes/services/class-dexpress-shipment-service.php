@@ -162,7 +162,6 @@ class D_Express_Shipment_Service
                 'split_index' => null,
                 'total_splits' => null,
                 'parent_order_id' => null,
-                // ISPRAVKA: Koristi standardni status umesto TEST_CREATED
                 'status_code' => dexpress_is_test_mode() ? '0' : null,
                 'status_description' => dexpress_is_test_mode() ? 'Čeka na preuzimanje' : null,
                 'created_at' => current_time('mysql'),
@@ -185,21 +184,27 @@ class D_Express_Shipment_Service
 
             // Čuvanje paketa
             if (isset($shipment_data['PackageList']) && is_array($shipment_data['PackageList'])) {
+                $package_index = 1;
+                $total_packages = count($shipment_data['PackageList']);
+
                 foreach ($shipment_data['PackageList'] as $package) {
                     $mass = isset($package['Mass']) ? $package['Mass'] : $shipment_data['Mass'];
 
                     $package_data = array(
                         'shipment_id' => $insert_id,
                         'package_code' => $package['Code'],
+                        'package_reference_id' => $shipment_data['ReferenceID'] . '-P1',
+                        'package_index' => $package_index,
+                        'total_packages' => $total_packages,
                         'mass' => $mass,
                         'created_at' => current_time('mysql')
                     );
 
                     $package_id = $this->db->add_package($package_data);
                     dexpress_log('[SHIPPING] Paket sačuvan sa ID: ' . $package_id, 'debug');
+                    $package_index++;
                 }
             }
-
             // Dodavanje note u narudžbinu
             $note = sprintf(
                 'D Express pošiljka kreirana. Tracking: %s, Lokacija: %s%s',

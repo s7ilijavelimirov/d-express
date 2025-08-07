@@ -23,7 +23,7 @@ class D_Express_Column_Renderer
      */
     public function render_tracking_column($order_id)
     {
-        error_log('DEXPRESS: render_tracking_column pozvan za order: ' . $order_id);
+       
 
         // Osiguraj da je order_id integer
         $order_id = is_object($order_id) ? $order_id->get_id() : intval($order_id);

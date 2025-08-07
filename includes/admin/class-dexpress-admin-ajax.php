@@ -654,6 +654,9 @@ class D_Express_Admin_Ajax
             $package_data = array(
                 'shipment_id' => $insert_id,
                 'package_code' => $package_code,
+                'package_reference_id' => $package_code . '-' . $split_index,
+                'package_index' => $split_index,
+                'total_packages' => $total_splits,
                 'mass' => $shipment_data['Mass'],
                 'created_at' => current_time('mysql')
             );
