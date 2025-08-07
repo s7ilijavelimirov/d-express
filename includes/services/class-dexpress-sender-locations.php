@@ -32,11 +32,11 @@ class D_Express_Sender_Locations
         $table_name = $wpdb->prefix . 'dexpress_sender_locations';
         $towns_table = $wpdb->prefix . 'dexpress_towns';
 
-        $sql = "SELECT l.*, t.name as town_name 
-                FROM {$table_name} l 
-                LEFT JOIN {$towns_table} t ON l.town_id = t.id 
-                WHERE l.is_active = 1 
-                ORDER BY l.is_default DESC, l.name ASC";
+        $sql = "SELECT l.*, t.display_name as town_name, t.postal_code as town_postal_code
+        FROM {$table_name} l 
+        LEFT JOIN {$towns_table} t ON l.town_id = t.id 
+        WHERE l.is_active = 1 
+        ORDER BY l.is_default DESC, l.name ASC";
 
         $results = $wpdb->get_results($sql);
 
@@ -59,10 +59,10 @@ class D_Express_Sender_Locations
         $towns_table = $wpdb->prefix . 'dexpress_towns';
 
         $sql = $wpdb->prepare(
-            "SELECT l.*, t.name as town_name 
-             FROM {$table_name} l 
-             LEFT JOIN {$towns_table} t ON l.town_id = t.id 
-             WHERE l.id = %d AND l.is_active = 1",
+            "SELECT l.*, t.display_name as town_name, t.postal_code as town_postal_code
+     FROM {$table_name} l 
+     LEFT JOIN {$towns_table} t ON l.town_id = t.id 
+     WHERE l.id = %d AND l.is_active = 1",
             $location_id
         );
 
@@ -320,11 +320,11 @@ class D_Express_Sender_Locations
         $table_name = $wpdb->prefix . 'dexpress_sender_locations';
         $towns_table = $wpdb->prefix . 'dexpress_towns';
 
-        $sql = "SELECT l.*, t.name as town_name 
-                FROM {$table_name} l 
-                LEFT JOIN {$towns_table} t ON l.town_id = t.id 
-                WHERE l.is_default = 1 AND l.is_active = 1 
-                LIMIT 1";
+        $sql = "SELECT l.*, t.display_name as town_name, t.postal_code as town_postal_code
+        FROM {$table_name} l 
+        LEFT JOIN {$towns_table} t ON l.town_id = t.id 
+        WHERE l.is_default = 1 AND l.is_active = 1 
+        LIMIT 1";
 
         $result = $wpdb->get_row($sql);
 
