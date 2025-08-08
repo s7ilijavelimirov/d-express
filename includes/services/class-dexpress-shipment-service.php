@@ -192,11 +192,16 @@ class D_Express_Shipment_Service
 
                     $package_data = array(
                         'shipment_id' => $insert_id,
-                        'package_code' => $package['Code'],
-                        'package_reference_id' => $shipment_data['ReferenceID'] . '-P1',
-                        'package_index' => $package_index,
-                        'total_packages' => $total_packages,
+                        'package_code' => $package['Code'],                   // TT0000000074
+                        'package_reference_id' => null,                       // NULL - API kaže opciono
+                        'package_index' => $package_index,                    // 1
+                        'total_packages' => $total_packages,                  // 1
                         'mass' => $mass,
+                        'v_mass' => null,
+                        'dimensions' => null,
+                        'dim_x' => null,
+                        'dim_y' => null,
+                        'dim_z' => null,
                         'created_at' => current_time('mysql')
                     );
 

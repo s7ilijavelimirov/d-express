@@ -107,6 +107,23 @@ class D_Express_DB
     {
         global $wpdb;
 
+        // Default vrednosti
+        $defaults = array(
+            'package_reference_id' => null,
+            'package_index' => 1,
+            'total_packages' => 1,
+            'mass' => 0,
+            'v_mass' => null,
+            'dimensions' => null,
+            'dim_x' => null,
+            'dim_y' => null,
+            'dim_z' => null,
+            'created_at' => current_time('mysql')
+        );
+
+        $package_data = array_merge($defaults, $package_data);
+
+        // ISPRAVLJENI format koji odgovara redosledu kolona iz DB strukture
         $result = $wpdb->insert(
             $wpdb->prefix . 'dexpress_packages',
             $package_data,
@@ -117,16 +134,21 @@ class D_Express_DB
                 '%d', // package_index
                 '%d', // total_packages
                 '%d', // mass
+                '%d', // v_mass
+                '%s', // dimensions
                 '%d', // dim_x
                 '%d', // dim_y
                 '%d', // dim_z
-                '%d', // v_mass
-                '%s', // dimensions
-                '%s', // created_at
+                '%s'  // created_at
             )
         );
 
-        return $result ? $wpdb->insert_id : false;
+        if ($result === false) {
+            dexpress_log('[DB] Greška pri čuvanju paketa: ' . $wpdb->last_error, 'error');
+            return false;
+        }
+
+        return $wpdb->insert_id;
     }
 
     /**

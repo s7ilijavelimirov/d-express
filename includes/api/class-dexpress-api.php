@@ -813,6 +813,51 @@ class D_Express_API
         return $account_number; // Vrati original ako ne možemo formatirati
     }
     /**
+     * Izračunava BuyOut na osnovu metode plaćanja i besplatne dostave
+     * 
+     * @param WC_Order $order
+     * @return int BuyOut iznos u para
+     */
+    private function calculate_buyout_amount($order)
+    {
+        // Cena proizvoda u para (bez dostave)
+        $items_value_para = $this->calculate_items_value($order);
+
+        // Ko plaća dostavu određuje BuyOut logiku
+        $payment_by = intval(get_option('dexpress_payment_by', 0));
+
+        // Cena dostave
+        $shipping_cost = 0;
+        foreach ($order->get_shipping_methods() as $method) {
+            $shipping_cost = floatval($method->get_total());
+            break;
+        }
+
+        $shipping_para = dexpress_convert_price_to_para($shipping_cost);
+
+        switch ($payment_by) {
+            case 0: // Sender (TI plaćaš transport)
+                // Kupac plaća samo proizvode + dostavu (ako nije besplatna)
+                if ($shipping_cost > 0) {
+                    return $items_value_para + $shipping_para; // Proizvodi + dostava
+                } else {
+                    return $items_value_para; // Samo proizvodi (besplatna dostava)
+                }
+
+            case 1: // Pickup location plaća transport  
+                // Isto kao Sender
+                return $items_value_para + ($shipping_cost > 0 ? $shipping_para : 0);
+
+            case 2: // Recipient (KUPAC plaća i proizvode i transport)
+                // Kupac plaća SVE - proizvode + dostavu uvek
+                return $items_value_para + $shipping_para;
+
+            default:
+                // Fallback na Sender logiku
+                return $items_value_para + ($shipping_cost > 0 ? $shipping_para : 0);
+        }
+    }
+    /**
      * Priprema podatke pošiljke iz WooCommerce narudžbine
      */
     public function prepare_shipment_data_from_order($order, $sender_location_id = null, $package_code = null)
@@ -934,63 +979,46 @@ class D_Express_API
             dexpress_log("[COD DEBUG] Formatiran račun: {$buyout_account}", 'debug');
         }
 
-        // Ako je pouzeće i imamo račun, koristimo otkupninu
+        // Izračunaj BuyOut na osnovu metode plaćanja
         if ($is_cod) {
-            // Opšta provera maksimuma za otkupninu prema API dokumentaciji (10.000.000 RSD / 1.000.000.000 para)
-            $max_buyout_api = 1000000000; // 10.000.000 RSD u para
-            // Poseban limit za paketomate (200.000 RSD / 20.000.000 para)
-            $max_buyout_dispenser = 20000000; // 200.000 RSD u para
+            $buyout_amount = $this->calculate_buyout_amount($order);
 
-            $total_para = dexpress_convert_price_to_para($order->get_total());
-
-            // Provera limita otkupnine (zavisno od tipa dostave)
-            $max_buyout = $is_dispenser ? $max_buyout_dispenser : $max_buyout_api;
-
-            if ($total_para > $max_buyout) {
+            // Validacija limita otkupnine
+            $max_buyout = $is_dispenser ? 20000000 : 1000000000;
+            if ($buyout_amount > $max_buyout) {
                 $max_rsd = $max_buyout / 100;
                 return new WP_Error(
                     'buyout_limit_exceeded',
                     sprintf(
-                        __('Vrednost otkupnine ne može biti veća od %s RSD za D Express dostavu.', 'd-express-woo'),
+                        __('Vrednost otkupnine ne može biti veća od %s RSD.', 'd-express-woo'),
                         number_format($max_rsd, 2, ',', '.')
                     )
                 );
             }
 
-            if (!empty($buyout_account) && D_Express_Validator::validate_bank_account($buyout_account)) {
-                // Validni bankovni račun iz LOKACIJE, možemo koristiti otkupninu
-                $buyout_amount = $total_para;
-                dexpress_log("Using BuyOut: {$buyout_amount}, Account from location '{$location->name}': {$buyout_account}", 'debug');
-            } else {
-                // NOVA logika za bolje upozorenje
-                $location_has_account = !empty($location->bank_account);
-                $global_account = get_option('dexpress_buyout_account', '');
+            // Validacija bankovnog računa za otkupninu
+            if ($buyout_amount > 0) {
+                if (empty($buyout_account)) {
+                    $buyout_account = get_option('dexpress_buyout_account', '');
+                }
 
-                if (!$location_has_account && !empty($global_account)) {
-                    // Fallback na globalni račun
-                    $buyout_account = $this->format_bank_account($global_account);
-                    if (D_Express_Validator::validate_bank_account($buyout_account)) {
-                        $buyout_amount = $total_para;
-                        dexpress_log("WARNING: Lokacija '{$location->name}' nema račun, koristi se globalni: {$buyout_account}", 'warning');
-                    }
-                } else {
-                    // Nema nijednog validnog računa
-                    dexpress_log("WARNING: COD payment, no valid bank account for location '{$location->name}' or globally", 'warning');
+                if (empty($buyout_account)) {
+                    return new WP_Error(
+                        'missing_buyout_account',
+                        __('Nema definisanog bankovnog računa za otkupninu. Dodajte ga u podešavanjima.', 'd-express-woo')
+                    );
+                }
 
-                    // Ako je obavezno imati račun
-                    if (get_option('dexpress_require_buyout_account', 'no') === 'yes') {
-                        return new WP_Error(
-                            'missing_buyout_account',
-                            sprintf(
-                                __('Lokacija "%s" nema bankovni račun za otkupninu. Dodajte ga u podešavanjima lokacije ili u globalnim podešavanjima.', 'd-express-woo'),
-                                $location->name
-                            )
-                        );
-                    }
-
-                    $buyout_amount = 0; // Bez otkupnine
+                $buyout_account = $this->format_bank_account($buyout_account);
+                if (!D_Express_Validator::validate_bank_account($buyout_account)) {
+                    return new WP_Error(
+                        'invalid_buyout_account',
+                        __('Neispravno formatiran bankovni račun.', 'd-express-woo')
+                    );
                 }
             }
+        } else {
+            $buyout_amount = 0;
         }
 
         // Validacija adrese primaoca
@@ -1052,7 +1080,7 @@ class D_Express_API
             'CClientID' => $this->client_id,
 
             // Podaci o klijentu (pošiljaocu) - iz default lokacije
-            'CName' => $location->name,
+            'CName' => $location->contact_name,
             'CAddress' => $location->address,
             'CAddressNum' => $location->address_num,
             'CTownID' => intval($location->town_id),
@@ -1119,7 +1147,21 @@ class D_Express_API
                 'Mass' => $weight_grams
             )
         );
+        // Finalna validacija BuyOut vs API limiti
+        if ($buyout_amount > 1000000000) {
+            return new WP_Error(
+                'api_buyout_limit',
+                __('BuyOut ne može biti veći od 10.000.000 RSD prema API dokumentaciji.', 'd-express-woo')
+            );
+        }
 
+        // Validacija Value polja
+        if ($shipment_data['Value'] > 1000000000) {
+            return new WP_Error(
+                'api_value_limit',
+                __('Value ne može biti veći od 10.000.000 RSD prema API dokumentaciji.', 'd-express-woo')
+            );
+        }
         // Loguj generisani kod
         dexpress_log("[PACKAGE CODE] Generisan kod: {$package_code} za order #{$order_id}", 'info');
 

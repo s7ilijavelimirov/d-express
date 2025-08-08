@@ -929,7 +929,7 @@ class D_Express_Settings_Renderer
      */
     private function render_cron_status()
     {
-        $cron_status = D_Express_Cron_Manager::get_cron_status();
+        //$cron_status = D_Express_Cron_Manager::get_cron_status();
 
         echo '<div class="dexpress-cron-status">';
         echo '<h3>Status automatskog ažuriranja</h3>';
@@ -946,9 +946,9 @@ class D_Express_Settings_Renderer
         echo '<tbody>';
         echo '<tr>';
         echo '<td><strong>Glavni CRON zadatak</strong></td>';
-        echo '<td><span class="status-' . ($cron_status['is_active'] ? 'active' : 'inactive') . '">' . ($cron_status['is_active'] ? 'Aktivan' : 'Neaktivan') . '</span></td>';
-        echo '<td>' . esc_html($cron_status['next_run_formatted']) . '</td>';
-        echo '<td>' . esc_html($cron_status['last_run_formatted']) . '</td>';
+        // echo '<td><span class="status-' . ($cron_status['is_active'] ? 'active' : 'inactive') . '">' . ($cron_status['is_active'] ? 'Aktivan' : 'Neaktivan') . '</span></td>';
+        // echo '<td>' . esc_html($cron_status['next_run_formatted']) . '</td>';
+        // echo '<td>' . esc_html($cron_status['last_run_formatted']) . '</td>';
         echo '</tr>';
         echo '</tbody>';
         echo '</table>';
