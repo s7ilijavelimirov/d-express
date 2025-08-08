@@ -484,12 +484,6 @@ function dexpress_generate_reference($order_id)
 {
     return 'ORDER-' . $order_id . '-' . time();
 }
-
-/**
- * Generisanje koda paketa
- *
- * @return string Kod paketa
- */
 /**
  * Generisanje koda paketa
  *

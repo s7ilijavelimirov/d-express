@@ -128,12 +128,53 @@ class D_Express_Label_Generator
                 font-weight: bold;
                 font-size: 1.6rem;
             }
-            
+            /* Osnovni stil za sve kvržice */
+            .corner {
+            position: absolute;
+            width: 20px;   /* veličina kvržice */
+            height: 20px;
+            }
+
+            /* Gornji levi */
+            .corner.top-left {
+            top: 0;
+            left: 0;
+            border-top: 3px solid black;
+            border-left: 3px solid black;
+            }
+
+            /* Gornji desni */
+            .corner.top-right {
+            top: 0;
+            right: 0;
+            border-top: 3px solid black;
+            border-right: 3px solid black;
+            }
+
+            /* Donji levi */
+            .corner.bottom-left {
+            bottom: 0;
+            left: 0;
+            border-bottom: 3px solid black;
+            border-left: 3px solid black;
+            }
+
+            /* Donji desni */
+            .corner.bottom-right {
+            bottom: 0;
+            right: 0;
+            border-bottom: 3px solid black;
+            border-right: 3px solid black;
+            }
             .barcode-container {
+                position: relative;
                 text-align: center;
                 padding-top:8px;
+                border-radius: 4px;
+                width:auto;
             }
-            
+           
+
             .tracking-number {
                 font-size: 12px;
                 font-weight: bold;
@@ -482,12 +523,16 @@ class D_Express_Label_Generator
 
             <!-- Barcode sekcija -->
             <div class="barcode-container">
+                <div class="corner top-left"></div>
+                <div class="corner top-right"></div>
+                <div class="corner bottom-left"></div>
+                <div class="corner bottom-right"></div>
                 <svg class="barcode-<?php echo esc_attr($tracking_number); ?>"></svg>
                 <script>
                     JsBarcode(".barcode-<?php echo esc_js($tracking_number); ?>", "<?php echo esc_js($tracking_number); ?>", {
                         format: "CODE128",
-                        width: 3.3,
-                        height: 80,
+                        width: 3.5,
+                        height: 90,
                         displayValue: true,
                         margin: 1,
                         fontSize: 26
