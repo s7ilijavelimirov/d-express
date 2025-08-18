@@ -438,26 +438,13 @@ class D_Express_Label_Generator
     {
         global $wpdb;
 
-        // NOVO: Dobij sve pakete za shipment
-        $packages = $wpdb->get_results($wpdb->prepare(
-            "SELECT * FROM {$wpdb->prefix}dexpress_packages WHERE shipment_id = %d ORDER BY package_index ASC",
+        // Jednostavno: broji pakete u packages tabeli
+        $count = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$wpdb->prefix}dexpress_packages WHERE shipment_id = %d",
             $shipment->id
         ));
 
-        if (!empty($packages)) {
-            return count($packages);
-        }
-
-        // FALLBACK: Proveri shipment_data ako je JSON
-        if (!empty($shipment->shipment_data)) {
-            $shipment_data = json_decode($shipment->shipment_data, true);
-            if (is_array($shipment_data) && isset($shipment_data['PackageList'])) {
-                return count($shipment_data['PackageList']);
-            }
-        }
-
-        // POSLEDNJI FALLBACK: Default 1 paket
-        return 1;
+        return $count ? intval($count) : 1; // Fallback na 1
     }
 
     /**
@@ -513,7 +500,6 @@ class D_Express_Label_Generator
                     $package_display = '1/1'; // Default
 
                     if (!empty($packages)) {
-                        // Pronađi trenutni paket na osnovu package_index parametra
                         $current_package = null;
                         foreach ($packages as $pkg) {
                             if ($pkg->package_index == $package_index) {
@@ -525,16 +511,10 @@ class D_Express_Label_Generator
                         if ($current_package) {
                             $package_display = $current_package->package_index . '/' . $current_package->total_packages;
                         } else {
-                            // Fallback ako ne pronađemo specifičan paket
                             $package_display = $package_index . '/' . count($packages);
                         }
                     } else {
-                        // Fallback na shipment podatke
-                        if (!empty($shipment->split_index) && !empty($shipment->total_splits)) {
-                            $package_display = $shipment->split_index . '/' . $shipment->total_splits;
-                        } else {
-                            $package_display = $package_index . '/' . $package_count;
-                        }
+                        $package_display = '1/1'; // Default
                     }
 
                     echo esc_html($package_display);
