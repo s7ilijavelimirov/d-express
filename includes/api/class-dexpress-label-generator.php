@@ -393,22 +393,41 @@ class D_Express_Label_Generator
         $content = '';
         $shipment_index = 1;
 
-        // Generisanje nalepnica
         foreach ($shipments as $shipment) {
             $order = wc_get_order($shipment->order_id);
 
             if ($order) {
-                ob_start();
-                $this->generate_compact_label($shipment, $order, $shipment_index, $total_shipments);
-                $content .= ob_get_clean();
-                $shipment_index++;
+                // Dobij pakete za ovaj shipment
+                global $wpdb;
+                $packages = $wpdb->get_results($wpdb->prepare(
+                    "SELECT * FROM {$wpdb->prefix}dexpress_packages WHERE shipment_id = %d ORDER BY package_index ASC",
+                    $shipment->id
+                ));
+
+                if (!empty($packages)) {
+                    // Generiši nalepnicu za svaki paket
+                    foreach ($packages as $package) {
+                        ob_start();
+                        $this->generate_compact_label($shipment, $order, $package->package_index, count($packages));
+                        $content .= ob_get_clean();
+                    }
+                } else {
+                    // Fallback
+                    $package_count = $this->get_package_count($shipment);
+                    for ($i = 1; $i <= $package_count; $i++) {
+                        ob_start();
+                        $this->generate_compact_label($shipment, $order, $i, $package_count);
+                        $content .= ob_get_clean();
+                    }
+                }
 
                 // Označimo kao odštampanu
                 update_post_meta($order->get_id(), '_dexpress_label_printed', 'yes');
                 update_post_meta($order->get_id(), '_dexpress_label_printed_date', current_time('mysql'));
             }
         }
-        echo $this->generate_html_wrapper($content, 'D Express nalepnice za štampanje', $total_shipments);
+        $total_labels = substr_count($content, 'class="label-container"');
+        echo $this->generate_html_wrapper($content, 'D Express nalepnice za štampanje', $total_labels);
         exit;
     }
 
@@ -419,21 +438,21 @@ class D_Express_Label_Generator
     {
         global $wpdb;
 
-        // PRVO: Proveri da li postoje paketi u packages tabeli
-        $package_count_from_db = $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM {$wpdb->prefix}dexpress_packages WHERE shipment_id = %d",
+        // NOVO: Dobij sve pakete za shipment
+        $packages = $wpdb->get_results($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}dexpress_packages WHERE shipment_id = %d ORDER BY package_index ASC",
             $shipment->id
         ));
 
-        if ($package_count_from_db && intval($package_count_from_db) > 0) {
-            return intval($package_count_from_db);
+        if (!empty($packages)) {
+            return count($packages);
         }
 
-        // FALLBACK: Proveri package_list kolonu u shipments tabeli
-        if (!empty($shipment->package_list)) {
-            $package_list = maybe_unserialize($shipment->package_list);
-            if (is_array($package_list)) {
-                return count($package_list);
+        // FALLBACK: Proveri shipment_data ako je JSON
+        if (!empty($shipment->shipment_data)) {
+            $shipment_data = json_decode($shipment->shipment_data, true);
+            if (is_array($shipment_data) && isset($shipment_data['PackageList'])) {
+                return count($shipment_data['PackageList']);
             }
         }
 
@@ -484,23 +503,41 @@ class D_Express_Label_Generator
                 D Express doo, Zage Malivuk 1, Beograd
                 <div class="package-info">
                     <?php
-                    // Dobij package podatke iz baze
+                    // ✅ ISPRAVKA: Dobij package podatke - PRAVILNO
                     global $wpdb;
                     $packages = $wpdb->get_results($wpdb->prepare(
-                        "SELECT package_index, total_packages FROM {$wpdb->prefix}dexpress_packages WHERE shipment_id = %d ORDER BY package_index ASC",
+                        "SELECT * FROM {$wpdb->prefix}dexpress_packages WHERE shipment_id = %d ORDER BY package_index ASC",
                         $shipment->id
                     ));
 
-                    if (!empty($packages) && $packages[0]->total_packages > 0) {
-                        echo esc_html($packages[0]->package_index ?: $package_index) . '/' . esc_html($packages[0]->total_packages);
+                    $package_display = '1/1'; // Default
+
+                    if (!empty($packages)) {
+                        // Pronađi trenutni paket na osnovu package_index parametra
+                        $current_package = null;
+                        foreach ($packages as $pkg) {
+                            if ($pkg->package_index == $package_index) {
+                                $current_package = $pkg;
+                                break;
+                            }
+                        }
+
+                        if ($current_package) {
+                            $package_display = $current_package->package_index . '/' . $current_package->total_packages;
+                        } else {
+                            // Fallback ako ne pronađemo specifičan paket
+                            $package_display = $package_index . '/' . count($packages);
+                        }
                     } else {
                         // Fallback na shipment podatke
                         if (!empty($shipment->split_index) && !empty($shipment->total_splits)) {
-                            echo esc_html($shipment->split_index) . '/' . esc_html($shipment->total_splits);
+                            $package_display = $shipment->split_index . '/' . $shipment->total_splits;
                         } else {
-                            echo '1/1';
+                            $package_display = $package_index . '/' . $package_count;
                         }
                     }
+
+                    echo esc_html($package_display);
                     ?>
                 </div>
             </div>
@@ -868,14 +905,29 @@ class D_Express_Label_Generator
             wp_die(__('Narudžbina nije pronađena.', 'd-express-woo'));
         }
 
-        $package_count = $this->get_package_count($shipment);
+        global $wpdb;
+        $packages = $wpdb->get_results($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}dexpress_packages WHERE shipment_id = %d ORDER BY package_index ASC",
+            $shipment->id
+        ));
+
         $content = '';
 
-        // Generiši nalepnice za svaki paket
-        for ($i = 1; $i <= $package_count; $i++) {
-            ob_start();
-            $this->generate_compact_label($shipment, $order, $i, $package_count);
-            $content .= ob_get_clean();
+        if (!empty($packages)) {
+            // ✅ ISPRAVKA: Generiši nalepnicu za svaki STVARNI paket
+            foreach ($packages as $package) {
+                ob_start();
+                $this->generate_compact_label($shipment, $order, $package->package_index, count($packages));
+                $content .= ob_get_clean();
+            }
+        } else {
+            // Fallback ako nema paketa u bazi
+            $package_count = $this->get_package_count($shipment);
+            for ($i = 1; $i <= $package_count; $i++) {
+                ob_start();
+                $this->generate_compact_label($shipment, $order, $i, $package_count);
+                $content .= ob_get_clean();
+            }
         }
 
         echo $this->generate_html_wrapper($content, 'D Express - Nalepnica');

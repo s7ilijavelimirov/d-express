@@ -306,6 +306,31 @@ class D_Express_API
     public function add_shipment($shipment_data)
     {
         try {
+            if (!isset($shipment_data['PackageList']) || empty($shipment_data['PackageList'])) {
+                return new WP_Error('missing_package_list', 'PackageList je obavezan za kreiranje pošiljke.');
+            }
+
+            // ✅ DODAJ VALIDACIJU SVAKOG PAKETA:
+            foreach ($shipment_data['PackageList'] as $index => $package) {
+                if (empty($package['Code'])) {
+                    return new WP_Error('missing_package_code', "Package Code je obavezan za paket #{$index}.");
+                }
+
+                // Validacija Code format: ^[A-Z]{2}[0-9]{10}$
+                if (!preg_match('/^[A-Z]{2}[0-9]{10}$/', $package['Code'])) {
+                    return new WP_Error('invalid_package_code', "Neispravan format Package Code: {$package['Code']}. Format: AA0000000000");
+                }
+
+                // Validacija Mass opsega: 0-34000g
+                if (isset($package['Mass'])) {
+                    $mass = intval($package['Mass']);
+                    if ($mass < 0 || $mass > 34000) {
+                        return new WP_Error('invalid_package_mass', "Package Mass mora biti između 0-34000g. Paket {$package['Code']}: {$mass}g");
+                    }
+                }
+            }
+
+            dexpress_log("[API VALIDATION] PackageList struktura validna. Paketi: " . count($shipment_data['PackageList']), 'info');
             if (isset($shipment_data['DispenserID'])) {
                 dexpress_log("[PAKETOMAT DEBUG] Kreiranje pošiljke za paketomat ID: " . $shipment_data['DispenserID'], 'info');
                 dexpress_log("[PAKETOMAT DEBUG] Kompletan zahtev: " . print_r($shipment_data, true), 'info');
@@ -1143,7 +1168,12 @@ class D_Express_API
         $shipment_data['PackageList'] = array(
             array(
                 'Code' => $package_code,
-                'Mass' => $weight_grams
+                'Mass' => $weight_grams,
+                'DimX' => null,
+                'DimY' => null,
+                'DimZ' => null,
+                'VMass' => null,
+                'ReferenceID' => null
             )
         );
         // Finalna validacija BuyOut vs API limiti

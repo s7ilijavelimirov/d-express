@@ -194,7 +194,20 @@ class D_Express_Order_Timeline
             $shipment->tracking_number,
             $shipment->reference_id
         ));
+        // Dobij package informacije za ovaj shipment
+        $packages = $wpdb->get_results($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}dexpress_packages WHERE shipment_id = %d ORDER BY package_index ASC",
+            $shipment->id
+        ));
 
+        $package_count = count($packages);
+        $package_info = '';
+
+        if ($package_count > 1) {
+            $package_info = sprintf(__('%d paketa', 'd-express-woo'), $package_count);
+        } else {
+            $package_info = __('1 paket', 'd-express-woo');
+        }
         // Predefinisani statusi
         $predefined_statuses = $this->get_predefined_statuses();
 

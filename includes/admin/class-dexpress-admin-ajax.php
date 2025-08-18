@@ -491,7 +491,7 @@ class D_Express_Admin_Ajax
         }
 
         try {
-            // NOVA LOGIKA: Grupiši split-ove po lokaciji
+            // Grupiši split-ove po lokaciji - OVO JE DOBRO
             $grouped_by_location = array();
             foreach ($shipment_splits as $index => $split_data) {
                 $location_id = intval($split_data['location_id']);
@@ -508,15 +508,11 @@ class D_Express_Admin_Ajax
                 }
             }
 
-            if (empty($grouped_by_location)) {
-                wp_send_json_error(array('message' => 'Nema validnih pošiljki za kreiranje.'));
-            }
-
             $created_shipments = array();
             $errors = array();
             $api = new D_Express_API();
 
-            // Procesiraj svaku lokaciju
+            // ✅ ISPRAVKA: Procesiraj svaku lokaciju sa JEDNIM API pozivom
             foreach ($grouped_by_location as $location_id => $location_splits) {
 
                 // Pripremi osnovne shipment podatke
@@ -526,47 +522,49 @@ class D_Express_Admin_Ajax
                     continue;
                 }
 
-                // Generiši kodove za ovu lokaciju
+                // ✅ ISPRAVKA: Generiši kodove za SVE pakete ove lokacije
                 $package_codes = $this->generate_unique_package_codes(count($location_splits));
 
-                // Pripremi PackageList i kalkuliši totale
+                // ✅ ISPRAVKA: Kreiraj PackageList sa svim paketima
                 $package_list = array();
                 $total_mass = 0;
                 $content_parts = array();
                 $combined_items = array();
 
                 foreach ($location_splits as $split_index => $split) {
-                    // Kombinuj sve artikle za ovu lokaciju
                     $combined_items = array_merge($combined_items, $split['items']);
 
-                    // Kalkuliši masu za ovaj split
                     $split_mass = $this->calculate_split_mass($order, $split['items']);
                     $split_content = $this->generate_split_content($order, $split['items']);
 
+                    // ✅ ISPRAVKA: Dodaj SVAKI paket u PackageList
                     $package_list[] = array(
                         'Code' => $package_codes[$split_index],
-                        'Mass' => $split_mass
+                        'Mass' => $split_mass,
+                        'DimX' => null,
+                        'DimY' => null,
+                        'DimZ' => null,
+                        'VMass' => null,
+                        'ReferenceID' => null
                     );
 
                     $total_mass += $split_mass;
                     $content_parts[] = $split_content;
                 }
 
-                // Modifikuj shipment podatke
+                // ✅ ISPRAVKA: Postavi kompletan shipment podatak
                 $shipment_data['PackageList'] = $package_list;
-                $shipment_data['Mass'] = $total_mass;
+                $shipment_data['Mass'] = $total_mass; // ✅ UKUPNA masa svih paketa
                 $shipment_data['Content'] = implode(', ', $content_parts);
 
                 // ReferenceID logika
                 if (count($grouped_by_location) > 1) {
-                    // Multiple locations = dodaj sufiks
                     $shipment_data['ReferenceID'] = $order_id . '-L' . $location_id;
                 } else {
-                    // Single location = samo order ID
                     $shipment_data['ReferenceID'] = (string)$order_id;
                 }
 
-                // Kalkuliši COD za kombinovane artikle
+                // COD logika
                 if ($order->get_payment_method() === 'cod') {
                     $split_cod = $this->calculate_combined_split_cod($order, $combined_items);
                     $shipment_data['BuyOut'] = $split_cod;
@@ -574,25 +572,25 @@ class D_Express_Admin_Ajax
                 }
 
                 dexpress_log(sprintf(
-                    '[GROUPED SHIPMENT] Location: %d, Packages: %d, Mass: %dg, ReferenceID: %s',
+                    '[FIXED SHIPMENT] Location: %d, Packages: %d, Total Mass: %dg, ReferenceID: %s',
                     $location_id,
                     count($package_list),
                     $total_mass,
                     $shipment_data['ReferenceID']
                 ), 'info');
 
-                // JEDAN API POZIV za sve pakete ove lokacije
+                // ✅ KLJUČNO: JEDAN API POZIV za sve pakete ove lokacije
                 $response = $api->add_shipment($shipment_data);
                 if (is_wp_error($response)) {
                     $errors[] = 'Lokacija ' . $location_id . ': ' . $response->get_error_message();
                     continue;
                 }
 
-                // Sačuvaj shipment u bazu
+                // ✅ ISPRAVKA: Sačuvaj shipment record
                 $shipment_record = array(
                     'order_id' => $order->get_id(),
                     'shipment_id' => is_string($response) ? $response : json_encode($response),
-                    'tracking_number' => $package_codes[0], // Prvi kod kao glavni
+                    'tracking_number' => $package_codes[0], // Prvi kod kao glavni tracking
                     'package_code' => $package_codes[0],
                     'reference_id' => $shipment_data['ReferenceID'],
                     'sender_location_id' => $location_id,
@@ -610,8 +608,7 @@ class D_Express_Admin_Ajax
                 $shipment_id = $db->add_shipment($shipment_record);
 
                 if ($shipment_id) {
-                    // DODAJ OVAJ DEO AKO GA NEMA:
-                    // Sačuvaj sve pakete za ovu lokaciju
+                    // ✅ ISPRAVKA: Sačuvaj SVE pakete u packages tabelu
                     foreach ($package_codes as $index => $code) {
                         $package_data = array(
                             'shipment_id' => $shipment_id,
@@ -620,10 +617,13 @@ class D_Express_Admin_Ajax
                             'package_index' => $index + 1,
                             'total_packages' => count($package_codes),
                             'mass' => $package_list[$index]['Mass'],
+                            'dim_x' => isset($package_list[$index]['DimX']) ? $package_list[$index]['DimX'] : null,
+                            'dim_y' => isset($package_list[$index]['DimY']) ? $package_list[$index]['DimY'] : null,
+                            'dim_z' => isset($package_list[$index]['DimZ']) ? $package_list[$index]['DimZ'] : null,
+                            'v_mass' => isset($package_list[$index]['VMass']) ? $package_list[$index]['VMass'] : null,
                             'created_at' => current_time('mysql')
                         );
 
-                        // PROVERI DA LI IMAŠ OVU LINIJU:
                         $db->add_package($package_data);
                     }
 
@@ -632,7 +632,7 @@ class D_Express_Admin_Ajax
                     $location = $sender_locations_service->get_location($location_id);
 
                     $note = sprintf(
-                        'D Express pošiljka kreirana (%d paketa). Location: %s, Tracking: %s',
+                        'D Express pošiljka kreirana (%d paketa). Location: %s, Main Tracking: %s',
                         count($package_codes),
                         $location ? $location->name : 'N/A',
                         $package_codes[0]
@@ -645,7 +645,8 @@ class D_Express_Admin_Ajax
                         'location_id' => $location_id,
                         'packages' => count($package_codes),
                         'reference_id' => $shipment_data['ReferenceID'],
-                        'tracking_numbers' => $package_codes
+                        'tracking_numbers' => $package_codes,
+                        'main_tracking' => $package_codes[0]
                     );
                 }
             }
