@@ -966,8 +966,7 @@ class D_Express_API
 
         // Postavke za otkupninu
         $buyout_amount = 0;
-        $buyout_account = !empty($location->bank_account) ? $location->bank_account : get_option('dexpress_buyout_account', '');
-        dexpress_log("[COD DEBUG] Lokacija: {$location->name}, Bank account: " . ($location->bank_account ?: 'nema'), 'debug');
+        $buyout_account = isset($location->bank_account) && !empty($location->bank_account) ? $location->bank_account : get_option('dexpress_buyout_account', '');
 
         // Prepoznavanje metode plaćanja
         $payment_method = $order->get_payment_method();

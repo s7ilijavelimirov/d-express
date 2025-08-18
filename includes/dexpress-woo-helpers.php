@@ -790,3 +790,4 @@ function dexpress_generate_shipment_content($order)
 
     return $content;
 }
+

@@ -270,7 +270,7 @@ class D_Express_Settings_Handler
         }
 
         $bank_code = substr($digits_only, 0, 3);
-        $valid_bank_codes = ['115', '160', '180', '205', '250', '265', '275', '310', '325', '340', '355', '370', '380', '385'];
+        $valid_bank_codes = ['115', '160', '180', '205', '250', '265', '275', '310', '325', '340', '355', '370', '380', '385', '170'];
 
         if (!in_array($bank_code, $valid_bank_codes)) {
             dexpress_log("Upozorenje: Nepoznat kod banke '{$bank_code}' u računu '{$account_number}'", 'warning');
