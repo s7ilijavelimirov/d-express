@@ -106,27 +106,36 @@ class D_Express_DB
     public function add_package($package_data)
     {
         global $wpdb;
-
-        // Default vrednosti
         $defaults = array(
             'package_reference_id' => null,
             'package_index' => 1,
             'total_packages' => 1,
             'mass' => 0,
-            'v_mass' => null,
-            'dimensions' => null,
             'dim_x' => null,
             'dim_y' => null,
             'dim_z' => null,
+            'v_mass' => null,
+            'dimensions' => null,
             'created_at' => current_time('mysql')
         );
 
         $package_data = array_merge($defaults, $package_data);
-
-        // ISPRAVLJENI format koji odgovara redosledu kolona iz DB strukture
         $result = $wpdb->insert(
             $wpdb->prefix . 'dexpress_packages',
-            $package_data,
+            array(
+                'shipment_id' => $package_data['shipment_id'],
+                'package_code' => $package_data['package_code'],
+                'package_reference_id' => $package_data['package_reference_id'],
+                'package_index' => $package_data['package_index'],
+                'total_packages' => $package_data['total_packages'],
+                'mass' => $package_data['mass'],
+                'dim_x' => $package_data['dim_x'],
+                'dim_y' => $package_data['dim_y'],
+                'dim_z' => $package_data['dim_z'],
+                'v_mass' => $package_data['v_mass'],
+                'dimensions' => $package_data['dimensions'],
+                'created_at' => $package_data['created_at']
+            ),
             array(
                 '%d', // shipment_id
                 '%s', // package_code
@@ -134,11 +143,11 @@ class D_Express_DB
                 '%d', // package_index
                 '%d', // total_packages
                 '%d', // mass
-                '%d', // v_mass
-                '%s', // dimensions
                 '%d', // dim_x
                 '%d', // dim_y
                 '%d', // dim_z
+                '%d', // v_mass
+                '%s', // dimensions
                 '%s'  // created_at
             )
         );
@@ -415,89 +424,7 @@ class D_Express_DB
             array('%d')
         ) !== false;
     }
-    /**
-     * Ažurira schema tabele za sender_location_id kolonu
-     */
-    public static function update_shipments_table_schema()
-    {
-        global $wpdb;
 
-        $table_name = $wpdb->prefix . 'dexpress_shipments';
-
-        // Proveri da li kolona postoji
-        $column_exists = $wpdb->get_results($wpdb->prepare(
-            "SHOW COLUMNS FROM {$table_name} LIKE %s",
-            'sender_location_id'
-        ));
-
-        // Ako ne postoji, dodaj je
-        if (empty($column_exists)) {
-            $sql = "ALTER TABLE {$table_name} ADD COLUMN sender_location_id INT(11) NULL AFTER reference_id";
-
-            $result = $wpdb->query($sql);
-
-            if ($result !== false) {
-                error_log('DExpress: Dodana sender_location_id kolona u shipments tabelu');
-
-                // Dodaj i index za bolje performanse
-                $wpdb->query("ALTER TABLE {$table_name} ADD INDEX idx_sender_location_id (sender_location_id)");
-            } else {
-                error_log('DExpress: Greška pri dodavanju sender_location_id kolone: ' . $wpdb->last_error);
-            }
-        }
-    }
-    public static function update_multiple_shipments_schema()
-    {
-        global $wpdb;
-
-        $table_name = $wpdb->prefix . 'dexpress_shipments';
-
-        // Dodaj kolone za split shipments ako ne postoje
-        $columns_to_add = array(
-            'split_index' => "ADD COLUMN split_index INT(11) NULL DEFAULT NULL AFTER sender_location_id",
-            'total_splits' => "ADD COLUMN total_splits INT(11) NULL DEFAULT NULL AFTER split_index",
-            'parent_order_id' => "ADD COLUMN parent_order_id INT(11) NULL DEFAULT NULL AFTER total_splits"
-        );
-
-        foreach ($columns_to_add as $column => $sql) {
-            // Proveri da li kolona postoji
-            $column_exists = $wpdb->get_results($wpdb->prepare(
-                "SHOW COLUMNS FROM {$table_name} LIKE %s",
-                $column
-            ));
-
-            if (empty($column_exists)) {
-                $result = $wpdb->query("ALTER TABLE {$table_name} {$sql}");
-
-                if ($result !== false) {
-                    error_log("DExpress: Dodana {$column} kolona u shipments tabelu");
-                } else {
-                    error_log("DExpress: Greška pri dodavanju {$column} kolone: " . $wpdb->last_error);
-                }
-            }
-        }
-
-        // Dodaj indekse za bolje performanse
-        $indexes_to_add = array(
-            'idx_parent_order_id' => "ADD INDEX idx_parent_order_id (parent_order_id)",
-            'idx_split_info' => "ADD INDEX idx_split_info (order_id, split_index)"
-        );
-
-        foreach ($indexes_to_add as $index_name => $sql) {
-            // Proveri da li indeks postoji
-            $index_exists = $wpdb->get_results("SHOW INDEX FROM {$table_name} WHERE Key_name = '{$index_name}'");
-
-            if (empty($index_exists)) {
-                $result = $wpdb->query("ALTER TABLE {$table_name} {$sql}");
-
-                if ($result !== false) {
-                    error_log("DExpress: Dodan {$index_name} indeks u shipments tabelu");
-                } else {
-                    error_log("DExpress: Greška pri dodavanju {$index_name} indeksa: " . $wpdb->last_error);
-                }
-            }
-        }
-    }
     /**
      * Dobija sve pošiljke za određenu narudžbinu sa location podacima
      */
@@ -662,69 +589,5 @@ class D_Express_DB
         }
 
         return $result !== false;
-    }
-    /**
-     * Ažurira schema tabele za package_code kolonu
-     */
-    public static function update_package_code_schema()
-    {
-        global $wpdb;
-
-        $table_name = $wpdb->prefix . 'dexpress_shipments';
-
-        // Proveri da li kolona postoji
-        $column_exists = $wpdb->get_results($wpdb->prepare(
-            "SHOW COLUMNS FROM {$table_name} LIKE %s",
-            'package_code'
-        ));
-
-        // Ako ne postoji, dodaj je
-        if (empty($column_exists)) {
-            $sql = "ALTER TABLE {$table_name} ADD COLUMN package_code VARCHAR(50) DEFAULT NULL AFTER tracking_number";
-
-            $result = $wpdb->query($sql);
-
-            if ($result !== false) {
-                error_log('DExpress: Dodana package_code kolona u shipments tabelu');
-
-                // Dodaj i index za bolje performanse
-                $wpdb->query("ALTER TABLE {$table_name} ADD INDEX idx_package_code (package_code)");
-            } else {
-                error_log('DExpress: Greška pri dodavanju package_code kolone: ' . $wpdb->last_error);
-            }
-        }
-    }
-    public static function update_packages_schema_v2()
-    {
-        global $wpdb;
-
-        $packages_table = $wpdb->prefix . 'dexpress_packages';
-
-        $columns_to_add = array(
-            'package_reference_id' => "ADD COLUMN package_reference_id VARCHAR(100) NULL DEFAULT NULL AFTER package_code",
-            'package_index' => "ADD COLUMN package_index INT(11) NULL DEFAULT NULL AFTER package_reference_id",
-            'total_packages' => "ADD COLUMN total_packages INT(11) NULL DEFAULT NULL AFTER package_index",
-            'dim_x' => "ADD COLUMN dim_x INT(11) NULL DEFAULT NULL AFTER dimensions",
-            'dim_y' => "ADD COLUMN dim_y INT(11) NULL DEFAULT NULL AFTER dim_x",
-            'dim_z' => "ADD COLUMN dim_z INT(11) NULL DEFAULT NULL AFTER dim_y",
-            'v_mass' => "ADD COLUMN v_mass INT(11) NULL DEFAULT NULL AFTER mass"
-        );
-
-        foreach ($columns_to_add as $column => $sql) {
-            $column_exists = $wpdb->get_results($wpdb->prepare(
-                "SHOW COLUMNS FROM {$packages_table} LIKE %s",
-                $column
-            ));
-
-            if (empty($column_exists)) {
-                $result = $wpdb->query("ALTER TABLE {$packages_table} {$sql}");
-
-                if ($result !== false) {
-                    error_log("DExpress: Dodana {$column} kolona u packages tabelu");
-                } else {
-                    error_log("DExpress: Greška pri dodavanju {$column} kolone: " . $wpdb->last_error);
-                }
-            }
-        }
     }
 }

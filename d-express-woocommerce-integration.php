@@ -147,8 +147,6 @@ class D_Express_WooCommerce
         // Dodavanje REST API ruta za webhook - pomereno pre plugins_loaded
         add_action('rest_api_init', array($this, 'register_rest_routes'));
 
-        add_action('admin_init', array($this, 'check_and_update_schema'));
-
         // Dodavanje webhook obrade za cron - pomereno pre plugins_loaded
         //add_action('dexpress_process_notification', array($this, 'process_notification'));
 
@@ -157,8 +155,6 @@ class D_Express_WooCommerce
 
         // Dodaj hook za simulaciju
         add_action('init', array($this, 'auto_simulate_test_statuses'));
-
-
 
         // Registrujemo česte provere statusa
         //add_action('init', array($this, 'register_frequent_status_checks'));
@@ -340,7 +336,7 @@ class D_Express_WooCommerce
     {
         if (!class_exists('WooCommerce')) {
             deactivate_plugins(plugin_basename(__FILE__));
-            wp_die(__('D Express WooCommerce Integration zahteva WooCommerce plugin. Molimo instalirajte i aktivirajte WooCommerce.', 'd-express-woo'));
+            wp_die(__('D Express WooCommerce Integration zahteva WooCommerce plugin.', 'd-express-woo'));
         }
 
         // Postojeći activation kod...
@@ -352,44 +348,17 @@ class D_Express_WooCommerce
         $installer = new D_Express_DB_Installer();
         $installer->install();
 
-        $db = new D_Express_DB();
-        $db->add_shipment_index();
-        D_Express_DB::update_multiple_shipments_schema();
-        D_Express_DB::update_package_code_schema();
+        // Schema verzija
+        update_option('dexpress_schema_version', '2.0.0');
 
-        update_option('dexpress_schema_version', '1.2.0');
+        // Default opcije
         $this->set_default_options();
-        // OČISTI postojeće cron jobs
+
+        // Clear cache
         wp_clear_scheduled_hook('dexpress_check_pending_statuses');
         wp_clear_scheduled_hook('dexpress_daily_update_indexes');
-        // if (class_exists('D_Express_Cron_Manager')) {
-        //     D_Express_Cron_Manager::register_cron_endpoint();
-        // }
+
         flush_rewrite_rules();
-    }
-    /**
-     * Provera i ažuriranje database schema
-     */
-    public function check_and_update_schema()
-    {
-        $schema_version = get_option('dexpress_schema_version', '1.0.0');
-        $current_version = '1.2.1'; // ← Promeni na 1.2.1
-
-        if (version_compare($schema_version, $current_version, '<')) {
-            if (class_exists('D_Express_DB')) {
-                // Dodaj sve schema update-ove
-                D_Express_DB::update_shipments_table_schema();
-                D_Express_DB::update_multiple_shipments_schema();
-                D_Express_DB::update_package_code_schema();
-                D_Express_DB::update_packages_schema_v2(); // ← Ovo će se pokrenuti
-
-                update_option('dexpress_schema_version', $current_version);
-
-                if (function_exists('dexpress_log')) {
-                    dexpress_log('Schema ažurirana na verziju ' . $current_version, 'info');
-                }
-            }
-        }
     }
     /**
      * Deaktivacija plugin-a

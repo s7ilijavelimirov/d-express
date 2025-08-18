@@ -16,7 +16,6 @@ class D_Express_DB_Installer
      */
     public function install()
     {
-        D_Express_DB::update_shipments_table_schema();
         $this->create_tables();
 
         $this->migrate_bank_account_removal();
@@ -156,18 +155,27 @@ class D_Express_DB_Installer
             order_id bigint(20) NOT NULL,
             shipment_id varchar(50) NOT NULL,
             tracking_number varchar(50) NOT NULL,
+            package_code varchar(50) DEFAULT NULL,
             reference_id varchar(100) NOT NULL,
+            sender_location_id int(11) DEFAULT NULL,
+            split_index int(11) DEFAULT NULL,
+            total_splits int(11) DEFAULT NULL,
+            parent_order_id bigint(20) DEFAULT NULL,
             status_code varchar(20) DEFAULT NULL,
             status_description varchar(255) DEFAULT NULL,
             created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             shipment_data longtext DEFAULT NULL,
             is_test tinyint(1) NOT NULL DEFAULT 0,
-            PRIMARY KEY  (id),
+            PRIMARY KEY (id),
             KEY order_id (order_id),
             KEY shipment_id (shipment_id),
             KEY tracking_number (tracking_number),
+            KEY package_code (package_code),
             KEY reference_id (reference_id),
+            KEY sender_location_id (sender_location_id),
+            KEY parent_order_id (parent_order_id),
+            KEY split_info (order_id, split_index),
             KEY status_code (status_code),
             KEY created_at (created_at)
         ) $charset_collate;";
@@ -178,19 +186,22 @@ class D_Express_DB_Installer
             shipment_id bigint(20) NOT NULL,
             package_code varchar(50) NOT NULL,
             package_reference_id varchar(100) DEFAULT NULL,
-            package_index int(11) DEFAULT NULL,
-            total_packages int(11) DEFAULT NULL,
-            mass int(11) DEFAULT NULL,
-            dim_x int(11) DEFAULT NULL,
-            dim_y int(11) DEFAULT NULL,
-            dim_z int(11) DEFAULT NULL,
-            v_mass int(11) DEFAULT NULL,
+            package_index int(11) DEFAULT 1,
+            total_packages int(11) DEFAULT 1,
+            mass int(11) DEFAULT NULL COMMENT 'Težina u gramima',
+            dim_x int(11) DEFAULT NULL COMMENT 'Širina u mm',
+            dim_y int(11) DEFAULT NULL COMMENT 'Dužina u mm',
+            dim_z int(11) DEFAULT NULL COMMENT 'Visina u mm',
+            v_mass int(11) DEFAULT NULL COMMENT 'Volumetrijska masa',
             dimensions varchar(100) DEFAULT NULL,
             created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY  (id),
+            updated_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
             KEY shipment_id (shipment_id),
             KEY package_code (package_code),
-            KEY package_reference_id (package_reference_id)
+            KEY package_reference_id (package_reference_id),
+            CONSTRAINT fk_packages_shipment FOREIGN KEY (shipment_id) 
+                REFERENCES {$wpdb->prefix}dexpress_shipments (id) ON DELETE CASCADE
         ) $charset_collate;";
 
         // 3. Tabela za statuse pošiljki
@@ -241,12 +252,14 @@ class D_Express_DB_Installer
             display_name VARCHAR(100) DEFAULT NULL,
             center_id INT(11) DEFAULT NULL,
             municipality_id INT(11) DEFAULT NULL,
-            postal_code INT(11) DEFAULT NULL,
             order_num INT(11) DEFAULT NULL,
-            delivery_days VARCHAR(100) DEFAULT NULL,
-            cut_off_pickup_time VARCHAR(100) DEFAULT NULL,
+            postal_code varchar(20) DEFAULT NULL,  -- IZMENA: varchar umesto int
+            delivery_days VARCHAR(50) DEFAULT NULL,
+            cut_off_pickup_time VARCHAR(50) DEFAULT NULL,
             last_updated DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY (id)
+            PRIMARY KEY (id),
+            KEY center_id (center_id),
+            KEY municipality_id (municipality_id)
         ) $charset_collate;";
 
         // 7. Tabela za šifarnik ulica
@@ -343,15 +356,18 @@ class D_Express_DB_Installer
             KEY town_id (town_id)
         ) $charset_collate;";
 
-        // 12. Tabela za lokacije pošiljaoca (NOVA!)
+        // 12. Tabela za lokacije pošiljaoca
         $tables[] = "CREATE TABLE {$wpdb->prefix}dexpress_sender_locations (
             id int(11) NOT NULL AUTO_INCREMENT,
             name varchar(255) NOT NULL COMMENT 'Naziv lokacije/prodavnice',
             address varchar(255) NOT NULL COMMENT 'Naziv ulice',
             address_num varchar(20) NOT NULL COMMENT 'Kućni broj',
             town_id int(11) NOT NULL COMMENT 'ID grada iz dexpress_towns',
+            town_name varchar(100) DEFAULT NULL COMMENT 'Naziv grada',
+            town_postal_code varchar(20) DEFAULT NULL COMMENT 'Poštanski kod',
             contact_name varchar(255) NOT NULL COMMENT 'Ime kontakt osobe',
             contact_phone varchar(20) NOT NULL COMMENT 'Telefon (+381...)',
+            bank_account varchar(30) DEFAULT NULL COMMENT 'Bankovni račun za otkupninu',
             is_default tinyint(1) DEFAULT 0 COMMENT 'Glavna lokacija',
             is_active tinyint(1) DEFAULT 1 COMMENT 'Aktivna lokacija',
             created_at datetime DEFAULT CURRENT_TIMESTAMP,
