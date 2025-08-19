@@ -100,8 +100,21 @@ class D_Express_Order_Metabox
         // Osiguraj da je order_id integer
         $order_id = is_object($order_id) ? $order_id->get_id() : intval($order_id);
 
-        $db = new D_Express_DB();
-        return $db->get_shipments_by_order_id($order_id);
+        global $wpdb;
+
+        // ✅ IZMENA: Dobij shipments sa package info
+        $shipments = $wpdb->get_results($wpdb->prepare("
+        SELECT s.*, 
+               COUNT(p.id) as package_count,
+               GROUP_CONCAT(p.package_code ORDER BY p.package_index ASC) as package_codes
+        FROM {$wpdb->prefix}dexpress_shipments s
+        LEFT JOIN {$wpdb->prefix}dexpress_packages p ON s.id = p.shipment_id
+        WHERE s.order_id = %d
+        GROUP BY s.id
+        ORDER BY s.created_at ASC
+    ", $order_id));
+
+        return $shipments;
     }
 
     /**
@@ -109,187 +122,219 @@ class D_Express_Order_Metabox
      */
     private function render_metabox_content($order, $has_dexpress, $is_dispenser, $shipment, $locations, $selected_location_id)
     {
-        // Izračunaj težinu
+        // Postojeći kod za računanje težine...
         $calculated_weight = $this->calculate_initial_weight($order);
         $custom_weight = get_post_meta($order->get_id(), '_dexpress_custom_weight', true);
         $display_weight = !empty($custom_weight) ? floatval($custom_weight) : $calculated_weight;
 
-        // Proveri da li postoje već kreirane pošiljke
         $order_id = is_object($order) ? $order->get_id() : intval($order);
-        $shipments = $this->get_order_shipments($order_id);
+        $shipments = $this->get_order_shipments_with_packages($order_id);
         $shipment_splits = get_post_meta($order->get_id(), '_dexpress_shipment_splits', true) ?: [];
 
 ?>
         <div class="dexpress-order-metabox">
             <?php if (!$has_dexpress): ?>
                 <p><?php _e('Ova narudžbina ne koristi D Express dostavu.', 'd-express-woo'); ?></p>
-                <?php return; ?>
-            <?php endif; ?>
+            <?php elseif (!empty($shipments)): ?>
 
-            <?php if (!empty($shipments)): ?>
+                <!-- ✅ PRIKAZ POSTOJEĆIH POŠILJKI -->
                 <div class="dexpress-existing-shipments">
                     <h4><?php _e('Postojeće pošiljke', 'd-express-woo'); ?></h4>
 
-                    <?php foreach ($shipments as $existing_shipment): ?>
+                    <?php foreach ($shipments as $shipment): ?>
+                        <?php
+                        global $wpdb;
+                        $packages = $wpdb->get_results($wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}dexpress_packages WHERE shipment_id = %d ORDER BY package_index ASC",
+                            $shipment->id
+                        ));
+
+                        $package_count = count($packages);
+
+                        if ($package_count === 1) {
+                            $main_title = $packages[0]->package_code;
+                            $subtitle = '';
+                        } else if ($package_count > 1) {
+                            $main_title = sprintf(__('Shipment #%s', 'd-express-woo'), $shipment->id);
+                            $package_codes = array_map(function ($pkg) {
+                                return $pkg->package_code;
+                            }, $packages);
+                            $subtitle = sprintf(__('%d paketa: %s', 'd-express-woo'), $package_count, implode(', ', $package_codes));
+                        } else {
+                            $main_title = $shipment->tracking_number ?: sprintf(__('Shipment #%s', 'd-express-woo'), $shipment->id);
+                            $subtitle = __('Nema paketa u bazi', 'd-express-woo');
+                        }
+
+                        $location_info = '';
+                        if ($shipment->sender_location_id) {
+                            $locations_service = D_Express_Sender_Locations::get_instance();
+                            $location = $locations_service->get_location($shipment->sender_location_id);
+                            if ($location) {
+                                $location_info = ' - ' . $location->name;
+                            }
+                        }
+                        ?>
+
                         <div class="dexpress-shipment-item" style="padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; background: #f9f9f9;">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <div>
-                                    <strong><?php echo esc_html($existing_shipment->tracking_number); ?></strong>
-                                    <?php if ($existing_shipment->total_splits > 1): ?>
-                                        <span style="color: #666; font-size: 12px;">
-                                            (<?php echo esc_html($existing_shipment->split_index); ?>/<?php echo esc_html($existing_shipment->total_splits); ?>)
-                                        </span>
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                <div style="flex: 1;">
+                                    <div>
+                                        <strong><?php echo esc_html($main_title); ?></strong>
+                                        <?php if ($location_info): ?>
+                                            <span style="color: #666; font-size: 12px;"><?php echo esc_html($location_info); ?></span>
+                                        <?php endif; ?>
+                                    </div>
+
+                                    <?php if ($subtitle): ?>
+                                        <div style="margin-top: 3px; font-size: 12px; color: #0073aa;">
+                                            <?php echo esc_html($subtitle); ?>
+                                        </div>
                                     <?php endif; ?>
                                 </div>
-                                <div>
-                                    <?php $this->render_shipment_status($existing_shipment); ?>
+
+                                <div style="text-align: right;">
+                                    <span class="dexpress-status-badge dexpress-status-delivered">
+                                        <?php echo esc_html($shipment->status_description ?: 'U obradi'); ?>
+                                    </span>
                                 </div>
                             </div>
 
-                            <div style="margin-top: 5px; font-size: 12px; color: #666;">
-                                <?php _e('Kreirana:', 'd-express-woo'); ?> <?php echo date_i18n('d.m.Y H:i', strtotime($existing_shipment->created_at)); ?>
+                            <div style="margin-top: 8px; font-size: 12px; color: #666;">
+                                <?php _e('Kreirana:', 'd-express-woo'); ?>
+                                <?php echo esc_html(date_i18n(get_option('date_format') . ' ' . get_option('time_format'), strtotime($shipment->created_at))); ?>
                             </div>
-
-                            <?php if (!$existing_shipment->is_test): ?>
-                                <div style="margin-top: 8px;">
-                                    <?php $this->render_tracking_number($existing_shipment); ?>
-                                </div>
-                            <?php endif; ?>
                         </div>
+
                     <?php endforeach; ?>
 
-                    <!-- LABEL DUGME - samo jedno na dnu -->
+                    <!-- Label dugmad -->
                     <div style="margin-top: 15px; text-align: center;">
-                        <?php if (count($shipments) > 1): ?>
-                            <button type="button" class="button button-primary dexpress-bulk-download-labels"
-                                data-shipment-ids="<?php echo esc_attr(implode(',', wp_list_pluck($shipments, 'id'))); ?>">
-                                <?php _e('Štampaj sve nalepnice', 'd-express-woo'); ?>
-                            </button>
-                        <?php else: ?>
+                        <?php if (count($shipments) === 1): ?>
                             <button type="button" class="button button-primary dexpress-get-single-label"
                                 data-shipment-id="<?php echo esc_attr($shipments[0]->id); ?>">
                                 <?php _e('Štampaj nalepnicu', 'd-express-woo'); ?>
+                            </button>
+                        <?php else: ?>
+                            <?php foreach ($shipments as $index => $ship): ?>
+                                <button type="button" class="button button-secondary dexpress-get-single-label"
+                                    data-shipment-id="<?php echo esc_attr($ship->id); ?>"
+                                    style="margin: 2px;">
+                                    <?php printf(__('Nalepnica %s', 'd-express-woo'), $ship->tracking_number); ?>
+                                </button>
+                            <?php endforeach; ?>
+
+                            <?php $shipment_ids = array_map(function ($s) {
+                                return $s->id;
+                            }, $shipments); ?>
+                            <br><br>
+                            <button type="button" class="button button-primary dexpress-bulk-download-labels"
+                                data-shipment-ids="<?php echo esc_attr(implode(',', $shipment_ids)); ?>">
+                                <?php printf(__('Štampaj sve (%d nalepnica)', 'd-express-woo'), count($shipments)); ?>
                             </button>
                         <?php endif; ?>
                     </div>
                 </div>
                 <hr style="margin: 15px 0;">
-            <?php endif; ?>
 
-            <?php if (empty($shipments)): ?>
-
-                <!-- NOVA SEKCIJA: Prikaz artikala sa težinama -->
+            <?php else: ?>
+                <!-- ✅ KREIRANJE NOVE POŠILJKE - NEDOSTAJUĆI DEO! -->
                 <?php $this->render_order_items_with_weights($order); ?>
 
-                <div id="dexpress-create-section">
-                    <div class="dexpress-shipping-options" style="margin-bottom: 15px;">
-                        <h4><?php _e('Opcije dostave', 'd-express-woo'); ?></h4>
+                <div class="dexpress-create-section" id="dexpress-create-section">
+                    <h4><?php _e('Kreiranje D Express pošiljke', 'd-express-woo'); ?></h4>
 
-                        <!-- Sender Location Selection -->
-                        <?php if (!empty($locations)): ?>
-                            <div style="margin-bottom: 10px;">
-                                <label><strong><?php _e('Lokacija pošaljioca:', 'd-express-woo'); ?></strong></label>
-                                <select name="dexpress_sender_location_id" style="width: 100%; margin-top: 3px;">
-                                    <option value=""><?php _e('Izaberite lokaciju...', 'd-express-woo'); ?></option>
-                                    <?php foreach ($locations as $location): ?>
-                                        <option value="<?php echo esc_attr($location->id); ?>" <?php selected($selected_location_id, $location->id); ?>>
-                                            <?php echo esc_html($location->name . ' - ' . $location->address); ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
-                        <?php endif; ?>
-
-                        <!-- Dispenser Selection za dispenser orders -->
-                        <?php if ($is_dispenser): ?>
-                            <div style="margin-bottom: 10px;">
-                                <label><strong><?php _e('Dispenser ID:', 'd-express-woo'); ?></strong></label>
-                                <input type="number" name="dexpress_dispenser_id"
-                                    placeholder="<?php _e('Unesite ID dispensera', 'd-express-woo'); ?>"
-                                    style="width: 100%; margin-top: 3px;">
-                                <small style="color: #666;">
-                                    <?php _e('Obavezno za ParcelBox dostavu', 'd-express-woo'); ?>
-                                </small>
-                            </div>
-                        <?php endif; ?>
-
-                        <!-- Additional Options -->
-                        <div style="margin-bottom: 10px;">
-                            <label><strong><?php _e('Sadržaj pošiljke:', 'd-express-woo'); ?></strong></label>
-                            <input type="text" name="dexpress_content"
-                                value="<?php echo esc_attr($this->get_default_content($order)); ?>"
-                                style="width: 100%; margin-top: 3px;"
-                                placeholder="<?php _e('Opis sadržaja (igračke, delovi, tekstil...)', 'd-express-woo'); ?>">
-                        </div>
-
-                        <div style="margin-bottom: 10px;">
-                            <label>
-                                <input type="checkbox" name="dexpress_return_doc" value="1">
-                                <?php _e('Povratna dokumenta', 'd-express-woo'); ?>
-                            </label>
-                        </div>
+                    <!-- Lokacija pošiljaoca -->
+                    <div style="margin-bottom: 15px;">
+                        <label for="dexpress_sender_location_id" style="display: block; font-weight: bold; margin-bottom: 5px;">
+                            <?php _e('Lokacija pošiljaoca:', 'd-express-woo'); ?>
+                        </label>
+                        <select name="dexpress_sender_location_id" id="dexpress_sender_location_id" style="width: 100%;" required>
+                            <option value=""><?php _e('Izaberite lokaciju...', 'd-express-woo'); ?></option>
+                            <?php foreach ($locations as $location): ?>
+                                <option value="<?php echo esc_attr($location->id); ?>"
+                                    <?php selected($selected_location_id, $location->id); ?>>
+                                    <?php echo esc_html($location->name . ' - ' . $location->address); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
 
-                    <div class="dexpress-create-actions">
-                        <button type="button" class="button button-primary" id="dexpress-create-single-shipment"
-                            data-order-id="<?php echo esc_attr($order->get_id()); ?>">
+                    <!-- Sadržaj pošiljke -->
+                    <div style="margin-bottom: 15px;">
+                        <label for="dexpress_content" style="display: block; font-weight: bold; margin-bottom: 5px;">
+                            <?php _e('Sadržaj pošiljke:', 'd-express-woo'); ?>
+                        </label>
+                        <input type="text" name="dexpress_content" id="dexpress_content"
+                            value="<?php echo esc_attr($this->get_default_content($order)); ?>"
+                            style="width: 100%;" maxlength="50"
+                            placeholder="<?php _e('Opisati sadržaj pošiljke...', 'd-express-woo'); ?>">
+                    </div>
+
+                    <!-- Povratni dokumenti -->
+                    <div style="margin-bottom: 15px;">
+                        <label>
+                            <input type="checkbox" name="dexpress_return_doc" value="1">
+                            <?php _e('Povratni dokumenti', 'd-express-woo'); ?>
+                        </label>
+                        <p class="description"><?php _e('Kurir čeka da primalac potpiše i odmah vraća dokumente.', 'd-express-woo'); ?></p>
+                    </div>
+
+                    <!-- Paketomat (ako je dispenser dostava) -->
+                    <?php if ($is_dispenser): ?>
+                        <div style="margin-bottom: 15px;">
+                            <label for="dexpress_dispenser_id" style="display: block; font-weight: bold; margin-bottom: 5px;">
+                                <?php _e('Paketomat ID:', 'd-express-woo'); ?>
+                            </label>
+                            <input type="number" name="dexpress_dispenser_id" id="dexpress_dispenser_id"
+                                value="" style="width: 100%;"
+                                placeholder="<?php _e('Unesite ID paketomata...', 'd-express-woo'); ?>">
+                            <p class="description"><?php _e('ID paketomata za dostavu (obavezno za paketomat dostavu).', 'd-express-woo'); ?></p>
+                        </div>
+                    <?php endif; ?>
+
+                    <!-- Dugmad za kreiranje -->
+                    <div style="margin-top: 20px;">
+                        <button type="button" id="dexpress-create-single-shipment"
+                            class="button button-primary"
+                            data-order-id="<?php echo esc_attr($order_id); ?>">
                             <?php _e('Kreiraj pošiljku', 'd-express-woo'); ?>
                         </button>
 
-                        <button type="button" class="button" id="dexpress-toggle-split-mode">
-                            <?php _e('Podeli u više pošiljki', 'd-express-woo'); ?>
+                        <button type="button" id="dexpress-toggle-split-mode"
+                            class="button button-secondary" style="margin-left: 10px;">
+                            <?php _e('Podeli na više pošiljki', 'd-express-woo'); ?>
                         </button>
                     </div>
                 </div>
 
-                <!-- SPLIT SECTION -->
-                <div id="dexpress-split-section" style="display:none; margin-top: 15px;">
-                    <h4><?php _e('Podela u više pošiljki', 'd-express-woo'); ?></h4>
-                    <p style="color: #666; font-size: 13px;">
-                        <?php _e('Možete podeliti narudžbinu u više manjih pošiljki. Svaka pošiljka će imati svoj tracking broj i može ići sa različite lokacije.', 'd-express-woo'); ?>
-                    </p>
+                <!-- Split mode sekcija -->
+                <div class="dexpress-split-section" id="dexpress-split-section" style="display: none;">
+                    <h4><?php _e('Podela na više pošiljki', 'd-express-woo'); ?></h4>
 
-                    <!-- BRZO PODEŠAVANJE -->
-                    <div style="background: #f9f9f9; padding: 15px; border: 1px solid #ddd; margin-bottom: 20px;">
-                        <h5 style="margin-top: 0;"><?php _e('Brzo podešavanje', 'd-express-woo'); ?></h5>
-
-                        <div style="margin-bottom: 10px;">
-                            <label><strong><?php _e('Broj paketa:', 'd-express-woo'); ?></strong></label>
-                            <input type="number" id="dexpress-split-count" value="2" min="2" max="10" style="width: 60px; margin-left: 10px;">
-                            <button type="button" class="button button-primary" id="dexpress-generate-splits" style="margin-left: 10px;">
-                                <?php _e('Generiši pakete', 'd-express-woo'); ?>
-                            </button>
-                        </div>
-
-                        <p style="margin: 0; font-size: 12px; color: #666;">
-                            <?php _e('Unesite broj paketa (2-10) i kliknite "Generiši pakete".', 'd-express-woo'); ?>
-                        </p>
-                    </div>
-
-                    <div id="dexpress-splits-container">
-                        <!-- Dinamički se dodaju split forme preko JavaScript -->
-                    </div>
-
-                    <div id="dexpress-manual-controls" style="margin-top: 15px;">
-                        <button type="button" class="button" id="dexpress-add-split">
-                            <?php _e('Dodaj još jedan paket', 'd-express-woo'); ?>
-                        </button>
-
-                        <button type="button" class="button" id="dexpress-clear-splits" style="margin-left: 10px;">
-                            <?php _e('Obriši sve pakete', 'd-express-woo'); ?>
+                    <div style="margin-bottom: 15px;">
+                        <label for="dexpress-split-count"><?php _e('Broj pošiljki:', 'd-express-woo'); ?></label>
+                        <select id="dexpress-split-count" style="margin-left: 10px;">
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                        </select>
+                        <button type="button" id="dexpress-generate-splits" class="button" style="margin-left: 10px;">
+                            <?php _e('Generiši pakete', 'd-express-woo'); ?>
                         </button>
                     </div>
 
-                    <hr style="margin: 20px 0;">
+                    <div id="dexpress-splits-container"></div>
 
-                    <div id="dexpress-split-actions">
-                        <button type="button" class="button button-primary button-large" id="dexpress-create-all-shipments"
-                            data-order-id="<?php echo esc_attr($order->get_id()); ?>" style="width: 100%;">
+                    <div style="margin-top: 15px;">
+                        <button type="button" id="dexpress-create-all-shipments"
+                            class="button button-primary"
+                            data-order-id="<?php echo esc_attr($order_id); ?>">
                             <?php _e('Kreiraj sve pošiljke', 'd-express-woo'); ?>
                         </button>
 
-                        <button type="button" class="button" id="dexpress-back-to-single" style="margin-top: 10px; width: 100%;">
-                            <?php _e('Nazad na jednu pošiljku', 'd-express-woo'); ?>
+                        <button type="button" id="dexpress-back-to-single" class="button" style="margin-left: 10px;">
+                            <?php _e('Nazad na jednostruku', 'd-express-woo'); ?>
                         </button>
                     </div>
                 </div>
@@ -299,6 +344,7 @@ class D_Express_Order_Metabox
             <div id="dexpress-response" style="margin-top: 15px;"></div>
         </div>
 
+        <!-- JavaScript -->
         <script type="text/javascript">
             jQuery(document).ready(function($) {
 
@@ -677,7 +723,23 @@ class D_Express_Order_Metabox
 
 <?php
     }
+    /**
+     * ✅ NOVA METODA: Dobija shipments sa package informacijama
+     */
+    private function get_order_shipments_with_packages($order_id)
+    {
+        global $wpdb;
 
+        // Dobij sve shipments za ovaj order
+        $shipments = $wpdb->get_results($wpdb->prepare("
+        SELECT s.*
+        FROM {$wpdb->prefix}dexpress_shipments s
+        WHERE s.order_id = %d
+        ORDER BY s.created_at ASC
+    ", $order_id));
+
+        return $shipments;
+    }
     /**
      * Renderovanje statusa pošiljke
      */
@@ -769,10 +831,6 @@ class D_Express_Order_Metabox
         return max(0.1, $weight_kg); // Minimum 0.1kg
     }
     /**
-     * DODAJ OVE FUNKCIJE NA KRAJ KLASE (pre poslednje })
-     */
-
-    /**
      * Renderovanje sekcije sa artiklima i njihovim težinama
      */
     private function render_order_items_with_weights($order)
@@ -859,77 +917,6 @@ class D_Express_Order_Metabox
         echo '</div>';
         echo '</div>';
     }
-
-    /**
-     * Kreiraj pakete za API na osnovu težine
-     */
-    private function create_packages_for_api($order)
-    {
-        $packages = [];
-        $package_counter = 1;
-
-        foreach ($order->get_items() as $item_id => $item) {
-            if (!($item instanceof WC_Order_Item_Product)) {
-                continue;
-            }
-
-            $product = $item->get_product();
-            $quantity = $item->get_quantity();
-
-            // Dobij custom weight za item
-            $custom_item_weight = get_post_meta($order->get_id(), '_dexpress_item_weight_' . $item_id, true);
-            $item_weight_kg = 0;
-
-            if (!empty($custom_item_weight)) {
-                $item_weight_kg = floatval($custom_item_weight);
-            } elseif ($product && $product->has_weight()) {
-                $item_weight_kg = floatval($product->get_weight());
-            } else {
-                $item_weight_kg = 0.5; // Default weight
-            }
-
-            // Za sada napravi jedan paket po item-u
-            for ($i = 0; $i < $quantity; $i++) {
-                $package_weight_grams = $item_weight_kg * 1000; // Convert to grams
-                $package_weight_grams = max(100, $package_weight_grams); // Minimum 100g
-                $package_weight_grams = min(34000, $package_weight_grams); // Maximum 34kg
-
-                $packages[] = [
-                    'Code' => $this->generate_package_code(),
-                    'DimX' => 200, // Default dimenzije u mm
-                    'DimY' => 300,
-                    'DimZ' => 100,
-                    'Mass' => intval($package_weight_grams),
-                    'VMass' => intval($package_weight_grams),
-                    'ReferenceID' => 'PKG-' . $order->get_id() . '-' . $item_id . '-' . $package_counter
-                ];
-
-                $package_counter++;
-            }
-        }
-
-        return $packages;
-    }
-
-    /**
-     * Generiši package kod prema API specifikaciji
-     */
-    private function generate_package_code()
-    {
-        // Format: ^[A-Z]{2}[0-9]{10}$
-        $letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        $code = '';
-
-        // Dodaj 2 slova
-        $code .= $letters[wp_rand(0, 25)];
-        $code .= $letters[wp_rand(0, 25)];
-
-        // Dodaj 10 brojeva
-        $code .= str_pad(wp_rand(0, 9999999999), 10, '0', STR_PAD_LEFT);
-
-        return $code;
-    }
-
     /**
      * Čuvanje weight podataka
      */

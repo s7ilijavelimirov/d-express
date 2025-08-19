@@ -627,6 +627,7 @@
     justify-content: space-between;
     align-items: center;
 }
+
 /* Multiple Shipments Timeline Styles */
 
 .dexpress-multiple-shipments-container {
@@ -731,50 +732,20 @@
 .dexpress-single-shipment-timeline.is-multiple .dexpress-step-marker .dashicons {
     font-size: 14px;
 }
-
-/* Collapsed History */
-.dexpress-status-history.collapsed .dexpress-status-history-items {
-    display: none;
-}
-
-.dexpress-toggle-history {
-    background: none;
-    border: none;
-    color: #0073aa;
-    cursor: pointer;
-    font-size: 13px;
-    padding: 5px 0;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-
-.dexpress-toggle-history:hover {
-    color: #005a87;
-}
-
-.dexpress-toggle-history .dashicons {
-    font-size: 16px;
-    transition: transform 0.2s ease;
-}
-
-.dexpress-status-history:not(.collapsed) .dexpress-toggle-history .dashicons {
-    transform: rotate(180deg);
-}
-
 /* Responsive adjustments */
 @media (max-width: 782px) {
     .dexpress-single-shipment-timeline.is-multiple .dexpress-info-grid {
         grid-template-columns: 1fr;
         gap: 8px;
     }
-    
+
     .dexpress-shipment-header h4 {
         flex-direction: column;
         align-items: flex-start;
         gap: 5px;
     }
 }
+
 /* Osnovni stilovi za metabox */
 #dexpress_timeline_metabox {
     border-radius: 12px;
@@ -965,46 +936,6 @@
     color: #94a3b8;
 }
 
-/* Istorija statusa */
-.dexpress-status-history {
-    background: #f8fafc;
-    border-radius: 10px;
-    padding: 18px;
-    margin-top: 30px;
-}
-
-.dexpress-status-history h4 {
-    margin-top: 0;
-    margin-bottom: 15px;
-    color: #334155;
-    font-size: 16px;
-    font-weight: 600;
-}
-
-.dexpress-status-history-items {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.dexpress-status-history-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-bottom: 12px;
-    border-bottom: 1px solid #e2e8f0;
-}
-
-.dexpress-status-history-item:last-child {
-    border-bottom: none;
-    padding-bottom: 0;
-}
-
-.dexpress-status-history-date {
-    font-size: 13px;
-    color: #64748b;
-}
-
 /* Animacije */
 @keyframes fadeIn {
     from {
@@ -1047,11 +978,6 @@
         margin-bottom: 0;
     }
 
-    .dexpress-status-history-item {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 8px;
-    }
 }
 
 /* Hover efekti */
@@ -1228,4 +1154,125 @@ form#dexpress-location-form {
         border-bottom: none;
         padding-bottom: 5px;
     }
+}
+
+/* Package Details Section */
+.dexpress-packages-details {
+    margin: 15px 0;
+    padding: 12px;
+    background: #f9f9f9;
+    border-radius: 6px;
+    border-left: 4px solid #0073aa;
+}
+
+.dexpress-packages-details h5 {
+    margin: 0 0 10px 0;
+    font-size: 13px;
+    color: #0073aa;
+    font-weight: 600;
+}
+
+.dexpress-packages-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 8px;
+}
+
+.dexpress-package-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    background: #fff;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    font-size: 12px;
+}
+
+.dexpress-package-item .package-code {
+    font-family: monospace;
+    font-weight: bold;
+    color: #0073aa;
+}
+
+.dexpress-package-item .package-mass {
+    color: #666;
+    font-size: 11px;
+}
+
+.dexpress-package-item .package-index {
+    margin-left: auto;
+    background: #e8f4fd;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 10px;
+    color: #0073aa;
+}
+
+/* Responsive adjustments for packages */
+@media (max-width: 782px) {
+    .dexpress-packages-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Metabox Package Details */
+.dexpress-shipment-item .package-details {
+    margin-top: 8px;
+    padding: 8px;
+    background: #f0f8ff;
+    border-radius: 4px;
+}
+
+.dexpress-shipment-item .package-details-title {
+    font-size: 11px;
+    color: #0073aa;
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+.dexpress-shipment-item .packages-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 4px;
+}
+
+.dexpress-shipment-item .package-code-item {
+    font-size: 11px;
+    font-family: monospace;
+    background: white;
+    padding: 2px 6px;
+    border-radius: 2px;
+    border: 1px solid #ddd;
+}
+
+.dexpress-shipment-item .package-code-item .package-weight {
+    color: #666;
+}
+
+/* Button improvements */
+.dexpress-get-single-label,
+.dexpress-bulk-download-labels {
+    padding: 8px 16px !important;
+    font-weight: 600 !important;
+}
+
+/* Responsive */
+@media (max-width: 782px) {
+    .dexpress-shipment-item .packages-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.dexpress-multiple-label-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    justify-content: center;
+    margin-bottom: 10px;
+}
+
+.dexpress-multiple-label-buttons .button {
+    font-size: 11px;
+    padding: 4px 8px;
 }
