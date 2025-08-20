@@ -1,28 +1,38 @@
 <?php
 /**
  * D Express Uninstaller
- * 
- * Klasa za brisanje podataka pri deinstalaciji
  */
 
 defined('ABSPATH') || exit;
 
-class D_Express_Uninstaller {
-    
-    /**
-     * Brisanje svih podataka plugina
-     */
-    public static function uninstall() {
+class D_Express_Uninstaller
+{
+    private static function delete_directory($dir)
+    {
+        if (!is_dir($dir)) return false;
+
+        $files = array_diff(scandir($dir), array('.', '..'));
+        foreach ($files as $file) {
+            $path = $dir . '/' . $file;
+            is_dir($path) ? self::delete_directory($path) : unlink($path);
+        }
+        return rmdir($dir);
+    }
+
+    public static function uninstall()
+    {
         if (get_option('dexpress_clean_uninstall') !== 'yes') {
             return;
         }
 
         global $wpdb;
 
-        // Lista tabela za brisanje
+        // Brisanje tabela
+        $wpdb->query('SET FOREIGN_KEY_CHECKS = 0');
+
         $tables = array(
-            'dexpress_shipments',
             'dexpress_packages',
+            'dexpress_shipments', 
             'dexpress_statuses',
             'dexpress_statuses_index',
             'dexpress_municipalities',
@@ -31,36 +41,47 @@ class D_Express_Uninstaller {
             'dexpress_locations',
             'dexpress_dispensers',
             'dexpress_shops',
-            'dexpress_centres'
+            'dexpress_centres',
+            'dexpress_sender_locations'
         );
 
-        // Brisanje tabela
         foreach ($tables as $table) {
             $wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}{$table}");
         }
 
-        // Lista opcija za brisanje
-        $options = array(
-            'dexpress_api_username',
-            'dexpress_api_password',
-            'dexpress_client_id',
-            'dexpress_code_prefix',
-            'dexpress_code_range_start',
-            'dexpress_code_range_end',
-            'dexpress_test_mode',
-            'dexpress_enable_logging',
-            'dexpress_auto_create_shipment',
-            'dexpress_auto_create_on_status',
-            'dexpress_webhook_secret',
-            'dexpress_clean_uninstall'
+        $wpdb->query('SET FOREIGN_KEY_CHECKS = 1');
+
+        // Briše SVE dexpress_ opcije odjednom
+        $wpdb->query("DELETE FROM {$wpdb->prefix}options WHERE option_name LIKE 'dexpress_%'");
+
+        // Brisanje samo npm/node fajlova (NE git)
+        $plugin_dir = WP_PLUGIN_DIR . '/d-express-woocommerce-integration/';
+        
+        $files_to_delete = array(
+            'package-lock.json',
+            'package.json', 
+            '.DS_Store',
+            'Thumbs.db'
         );
 
-        // Brisanje opcija
-        foreach ($options as $option) {
-            delete_option($option);
+        foreach ($files_to_delete as $file) {
+            $file_path = $plugin_dir . $file;
+            if (file_exists($file_path)) {
+                unlink($file_path);
+            }
         }
 
-        // Čišćenje WP cron-a
+        // Brisanje node_modules foldera
+        $node_modules = $plugin_dir . 'node_modules';
+        if (is_dir($node_modules)) {
+            self::delete_directory($node_modules);
+        }
+
+        // Čišćenje
         wp_clear_scheduled_hook('dexpress_daily_update_indexes');
+        wp_clear_scheduled_hook('dexpress_check_pending_statuses');
+        wp_cache_flush();
+
+        error_log('D Express: Clean uninstall completed');
     }
 }

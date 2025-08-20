@@ -863,12 +863,9 @@ class D_Express_Label_Generator
         // Dobijanje podataka o pošiljci
         global $wpdb;
         $shipment = $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM {$wpdb->prefix}dexpress_shipments WHERE id = %d OR shipment_id = %s OR tracking_number = %s",
-            intval($shipment_id),
-            $shipment_id,
-            $shipment_id
+            "SELECT * FROM {$wpdb->prefix}dexpress_shipments WHERE id = %d",
+            intval($shipment_id)
         ));
-
         if (!$shipment) {
             wp_die(__('Pošiljka nije pronađena.', 'd-express-woo'));
         }

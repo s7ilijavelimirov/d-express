@@ -498,7 +498,7 @@ class D_Express_Admin_Ajax
 
             // ✅ NOVA LOGIKA: Jedan paket po split-u
             foreach ($grouped_by_location as $location_id => $splits_for_location) {
-
+                $total_locations = count($grouped_by_location);
                 $shipment_data = $api->prepare_shipment_data_from_order($order, $location_id);
                 if (is_wp_error($shipment_data)) {
                     $errors[] = 'Lokacija ' . $location_id . ': ' . $shipment_data->get_error_message();
@@ -644,19 +644,20 @@ class D_Express_Admin_Ajax
                 // Sačuvaj shipment u bazi
                 $shipment_record = array(
                     'order_id' => $order->get_id(),
-                    'shipment_id' => is_string($response) ? $response : json_encode($response),
-                    'tracking_number' => $package_list[0]['Code'],
-                    'package_code' => $package_list[0]['Code'],
                     'reference_id' => $shipment_data['ReferenceID'],
                     'sender_location_id' => $location_id,
                     'split_index' => 1,
-                    'total_splits' => count($grouped_by_location),
-                    'parent_order_id' => $order->get_id(),
-                    'status_code' => dexpress_is_test_mode() ? '0' : null,
-                    'status_description' => dexpress_is_test_mode() ? 'Čeka na preuzimanje' : null,
-                    'created_at' => current_time('mysql'),
-                    'updated_at' => current_time('mysql'),
-                    'shipment_data' => json_encode($response),
+                    'total_splits' => $total_locations,
+                    'value_in_para' => $shipment_data['Value'],
+                    'buyout_in_para' => $shipment_data['BuyOut'],
+                    'payment_by' => $shipment_data['PaymentBy'],
+                    'payment_type' => $shipment_data['PaymentType'],
+                    'shipment_type' => $shipment_data['DlTypeID'],
+                    'return_doc' => $shipment_data['ReturnDoc'],
+                    'content' => $shipment_data['Content'],
+                    'total_mass' => $shipment_data['Mass'],
+                    'note' => $shipment_data['Note'],
+                    'api_response' => is_string($response) ? $response : json_encode($response),
                     'is_test' => dexpress_is_test_mode() ? 1 : 0
                 );
 
@@ -668,16 +669,12 @@ class D_Express_Admin_Ajax
                         $package_data = array(
                             'shipment_id' => $shipment_id,
                             'package_code' => $package['Code'],
-                            'package_reference_id' => $package['Code'] . '-' . ($index + 1),
-                            'package_index' => $index + 1,
-                            'total_packages' => count($package_list),
                             'mass' => $package['Mass'],
                             'content' => isset($package['Content']) ? $package['Content'] : null,
                             'dim_x' => isset($package['DimX']) ? $package['DimX'] : null,
                             'dim_y' => isset($package['DimY']) ? $package['DimY'] : null,
                             'dim_z' => isset($package['DimZ']) ? $package['DimZ'] : null,
-                            'v_mass' => isset($package['VMass']) ? $package['VMass'] : null,
-                            'created_at' => current_time('mysql')
+                            'v_mass' => isset($package['VMass']) ? $package['VMass'] : null
                         );
 
                         $db->add_package($package_data);
@@ -802,217 +799,6 @@ class D_Express_Admin_Ajax
     }
 
     /**
-     * Kreiranje optimizovane split pošiljke
-     */
-    private function create_optimized_split_shipment($order, $location_id, $selected_items, $split_index, $total_splits, $package_code)
-    {
-        try {
-            $api = new D_Express_API();
-
-            // Pripremi osnovne podatke
-            $shipment_data = $api->prepare_shipment_data_from_order($order, $location_id);
-
-            if (is_wp_error($shipment_data)) {
-                return $shipment_data;
-            }
-
-            // Modifikuj podatke za split
-            $shipment_data = $this->modify_shipment_data_for_split_optimized(
-                $shipment_data,
-                $order,
-                $selected_items,
-                $split_index,
-                $total_splits,
-                $package_code
-            );
-
-            if (is_wp_error($shipment_data)) {
-                return $shipment_data;
-            }
-
-            // Loguj podatke pre slanja
-            error_log(sprintf(
-                '[DEXPRESS SPLIT %d/%d] Order #%d, Package: %s, Location: %d',
-                $split_index,
-                $total_splits,
-                $order->get_id(),
-                $package_code,
-                $location_id
-            ));
-
-            // Pošalji API zahtev
-            $response = $api->add_shipment($shipment_data);
-
-            if (is_wp_error($response)) {
-                return $response;
-            }
-
-            // API Response Parsing prema dokumentaciji - ISTI KAO U SINGLE SHIPMENT
-            if (is_string($response)) {
-                if ($response === 'TEST' || $response === 'OK') {
-                    // Uspešan API odgovor
-                    $api_response = $response; // "TEST" ili "OK"
-                    $tracking_number = $package_code; // TT0000000026
-
-                    error_log('[SPLIT SHIPPING] API uspešno odgovorio: ' . $api_response);
-                } else {
-                    // Error odgovor
-                    error_log('[SPLIT SHIPPING] API greška: ' . $response);
-                    return new WP_Error('api_error', 'D Express API greška: ' . $response);
-                }
-            } else {
-                // Neočekivan format odgovora
-                error_log('[SPLIT SHIPPING] API neočekivan odgovor: ' . print_r($response, true));
-                return new WP_Error('api_error', 'Neočekivan format odgovora od D Express API-ja');
-            }
-
-            $db = new D_Express_DB();
-            $shipment_record = array(
-                'order_id' => $order->get_id(),
-                'shipment_id' => $api_response,        // "TEST" ili "OK" 
-                'tracking_number' => $tracking_number, // "TT0000000026"
-                'package_code' => $package_code,       // "TT0000000026"
-                'reference_id' => $shipment_data['ReferenceID'],
-                'sender_location_id' => $location_id,
-                'split_index' => $split_index,
-                'total_splits' => $total_splits,
-                'parent_order_id' => $order->get_id(),
-                'status_code' => dexpress_is_test_mode() ? '0' : null,  // ← ISPRAVKA
-                'status_description' => dexpress_is_test_mode() ? 'Čeka na preuzimanje' : null,
-                'created_at' => current_time('mysql'),
-                'updated_at' => current_time('mysql'),
-                'shipment_data' => json_encode($response), // "TEST" ili "OK"
-                'is_test' => dexpress_is_test_mode() ? 1 : 0
-            );
-
-            $insert_id = $db->add_shipment($shipment_record);
-
-            if (!$insert_id) {
-                return new WP_Error('db_error', 'Greška pri upisu pošiljke u bazu.');
-            }
-
-            // Sačuvaj package
-            $package_data = array(
-                'shipment_id' => $insert_id,
-                'package_code' => $package_code,
-                'package_reference_id' => $package_code . '-' . $split_index,
-                'package_index' => $split_index,
-                'total_packages' => $total_splits,
-                'mass' => $shipment_data['Mass'],
-                'created_at' => current_time('mysql')
-            );
-            $db->add_package($package_data);
-
-            // Dodaj note u narudžbinu
-            $sender_locations_service = new D_Express_Sender_Locations();
-            $location = $sender_locations_service->get_location($location_id);
-
-            $note = sprintf(
-                'D Express pošiljka %d/%d kreirana. Tracking: %s, Lokacija: %s',
-                $split_index,
-                $total_splits,
-                $tracking_number,
-                $location ? $location->name : 'N/A'
-            );
-
-            $order->add_order_note($note);
-
-            return array(
-                'shipment_id' => $insert_id,
-                'tracking_number' => $tracking_number,
-                'split_index' => $split_index,
-                'total_splits' => $total_splits,
-                'location_name' => $location ? $location->name : 'N/A',
-                'package_code' => $package_code
-            );
-        } catch (Exception $e) {
-            error_log(sprintf(
-                '[DEXPRESS SPLIT %d/%d EXCEPTION] %s',
-                $split_index,
-                $total_splits,
-                $e->getMessage()
-            ));
-            return new WP_Error('exception', $e->getMessage());
-        }
-    }
-
-    /**
-     * Modifikuje podatke pošiljke za split - OPTIMIZOVANO
-     */
-    private function modify_shipment_data_for_split_optimized($shipment_data, $order, $selected_items, $split_index, $total_splits, $package_code)
-    {
-        // Izračunaj težinu za izabrane artikle
-        $total_weight = 0;
-        $split_value = 0;
-        $content_items = array();
-
-        foreach ($selected_items as $item_id) {
-            $item = $order->get_item($item_id);
-            if (!$item) {
-                continue;
-            }
-
-            $product = $item->get_product();
-            if ($product) {
-                // Težina
-                if ($product->has_weight()) {
-                    $weight_kg = floatval($product->get_weight());
-                    $quantity = $item->get_quantity();
-                    $total_weight += ($weight_kg * $quantity * 1000); // u gramima
-                }
-
-                // Vrednost
-                $split_value += ($item->get_total() + $item->get_total_tax());
-
-                // Sadržaj
-                $content_items[] = $item->get_quantity() . 'x ' . $product->get_name();
-            }
-        }
-
-        // Ako nema težine, koristi podrazumevanu (100g po artiklu)
-        if ($total_weight <= 0) {
-            $total_weight = count($selected_items) * 100; // 100g po artiklu
-        }
-
-        // Minimum težina 100g
-        if ($total_weight < 100) {
-            $total_weight = 100;
-        }
-        // VALIDACIJA: Proveri da split paket ne prelazi 34kg
-        if ($total_weight > 34000) { // 34kg = 34000g
-            return new WP_Error(
-                'split_package_weight_limit',
-                sprintf(
-                    __('Paket %d/%d je previše težak (%s kg). Maksimalno je dozvoljeno 34kg po paketu. Molimo prerasporedite artikle.', 'd-express-woo'),
-                    $split_index,
-                    $total_splits,
-                    number_format($total_weight / 1000, 1, ',', '.')
-                )
-            );
-        }
-        // Modifikuj podatke
-        $shipment_data['Mass'] = round($total_weight);
-        $shipment_data['Value'] = round($split_value * 100); // u parima
-
-        // Jedinstveni reference ID
-        $shipment_data['ReferenceID'] = $order->get_id() . '-' . $split_index;
-
-        // Sadržaj
-        $shipment_data['Content'] = !empty($content_items) ?
-            implode(', ', $content_items) :
-            'Deo narudžbine ' . $split_index;
-
-        // Package lista sa unapred generisanim kodom
-        $shipment_data['PackageList'] = array(
-            array(
-                'Code' => $package_code,
-                'Mass' => round($total_weight)
-            )
-        );
-
-        return $shipment_data;
-    }
-    /**
      * AJAX: Brisanje pošiljke
      */
     public function ajax_delete_shipment()
@@ -1056,7 +842,7 @@ class D_Express_Admin_Ajax
             if ($order) {
                 $order->add_order_note(sprintf(
                     'D Express pošiljka obrisana. Tracking: %s',
-                    $shipment->tracking_number
+                    $shipment->reference_id
                 ));
             }
 

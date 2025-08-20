@@ -190,7 +190,6 @@ class D_Express_Order_Timeline
             "SELECT * FROM {$wpdb->prefix}dexpress_statuses 
         WHERE (shipment_code = %s OR reference_id = %s) 
         ORDER BY status_date ASC",
-            $shipment->tracking_number,
             $shipment->reference_id
         ));
 

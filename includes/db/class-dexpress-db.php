@@ -19,82 +19,62 @@ class D_Express_DB
     {
         global $wpdb;
 
-        // Dodaj default vrednosti za nove kolone ako ne postoje
         $defaults = array(
-            'package_code' => null,
             'split_index' => null,
             'total_splits' => null,
-            'parent_order_id' => null,
             'status_code' => null,
             'status_description' => null,
+            'value_in_para' => 0,
+            'buyout_in_para' => 0,
+            'payment_by' => intval(get_option('dexpress_payment_by', 0)),
+            'payment_type' => intval(get_option('dexpress_payment_type', 2)),
+            'shipment_type' => intval(get_option('dexpress_shipment_type', 2)),
+            'return_doc' => intval(get_option('dexpress_return_doc', 0)),
+            'content' => null,
+            'total_mass' => 0,
+            'note' => null,
+            'api_response' => null,
+            'is_test' => 0,
             'created_at' => current_time('mysql'),
-            'updated_at' => current_time('mysql'),
-            'shipment_data' => null,
-            'is_test' => 0
+            'updated_at' => current_time('mysql')
         );
 
-        // Spoji sa default vrednostima
         $shipment_data = array_merge($defaults, $shipment_data);
 
-        // Definiši redosled kolona prema strukturi tabele
         $ordered_data = array(
             'order_id' => $shipment_data['order_id'],
-            'shipment_id' => $shipment_data['shipment_id'],
-            'tracking_number' => $shipment_data['tracking_number'],
-            'package_code' => $shipment_data['package_code'],
             'reference_id' => $shipment_data['reference_id'],
             'sender_location_id' => $shipment_data['sender_location_id'],
             'split_index' => $shipment_data['split_index'],
             'total_splits' => $shipment_data['total_splits'],
-            'parent_order_id' => $shipment_data['parent_order_id'],
             'status_code' => $shipment_data['status_code'],
             'status_description' => $shipment_data['status_description'],
+            'value_in_para' => $shipment_data['value_in_para'],
+            'buyout_in_para' => $shipment_data['buyout_in_para'],
+            'payment_by' => $shipment_data['payment_by'],
+            'payment_type' => $shipment_data['payment_type'],
+            'shipment_type' => $shipment_data['shipment_type'],
+            'return_doc' => $shipment_data['return_doc'],
+            'content' => $shipment_data['content'],
+            'total_mass' => $shipment_data['total_mass'],
+            'note' => $shipment_data['note'],
+            'api_response' => $shipment_data['api_response'],
+            'is_test' => $shipment_data['is_test'],
             'created_at' => $shipment_data['created_at'],
-            'updated_at' => $shipment_data['updated_at'],
-            'shipment_data' => $shipment_data['shipment_data'],
-            'is_test' => $shipment_data['is_test']
+            'updated_at' => $shipment_data['updated_at']
         );
 
-        // Format specifiers u istom redosledu
-        $format = array(
-            '%d', // order_id
-            '%s', // shipment_id
-            '%s', // tracking_number
-            '%s', // package_code
-            '%s', // reference_id
-            '%d', // sender_location_id
-            '%d', // split_index
-            '%d', // total_splits
-            '%d', // parent_order_id
-            '%s', // status_code
-            '%s', // status_description
-            '%s', // created_at
-            '%s', // updated_at
-            '%s', // shipment_data
-            '%d'  // is_test
-        );
+        $format = array('%d', '%s', '%d', '%d', '%d', '%s', '%s', '%d', '%d', '%d', '%d', '%d', '%d', '%s', '%d', '%s', '%s', '%d', '%s', '%s');
 
-        // Debug log
-        dexpress_log('[DB] Čuvanje pošiljke: ' . print_r($ordered_data, true), 'debug');
-
-        $result = $wpdb->insert(
-            $wpdb->prefix . 'dexpress_shipments',
-            $ordered_data,
-            $format
-        );
+        $result = $wpdb->insert($wpdb->prefix . 'dexpress_shipments', $ordered_data, $format);
 
         if ($result === false) {
-            dexpress_log('[DB] Greška pri čuvanju pošiljke: ' . $wpdb->last_error, 'error');
+            dexpress_log('[DB] Greška: ' . $wpdb->last_error, 'error');
             return false;
         }
 
-        $insert_id = $wpdb->insert_id;
-        dexpress_log('[DB] Pošiljka sačuvana sa ID: ' . $insert_id, 'info');
-
-        // Očisti cache
         $this->clear_shipment_cache($shipment_data['order_id']);
-
-        return $insert_id;
+        return $wpdb->insert_id;
     }
 
     /**
@@ -106,61 +86,38 @@ class D_Express_DB
     public function add_package($package_data)
     {
         global $wpdb;
+
         $defaults = array(
-            'package_reference_id' => null,
-            'package_index' => 1,
-            'total_packages' => 1,
             'mass' => 0,
             'content' => null,
             'dim_x' => null,
             'dim_y' => null,
             'dim_z' => null,
             'v_mass' => null,
-            'dimensions' => null,
-            'created_at' => current_time('mysql')
+            'created_at' => current_time('mysql'),
+            'updated_at' => current_time('mysql')
         );
 
         $package_data = array_merge($defaults, $package_data);
+
         $result = $wpdb->insert(
             $wpdb->prefix . 'dexpress_packages',
             array(
                 'shipment_id' => $package_data['shipment_id'],
                 'package_code' => $package_data['package_code'],
-                'package_reference_id' => $package_data['package_reference_id'],
-                'package_index' => $package_data['package_index'],
-                'total_packages' => $package_data['total_packages'],
                 'mass' => $package_data['mass'],
                 'content' => $package_data['content'],
                 'dim_x' => $package_data['dim_x'],
                 'dim_y' => $package_data['dim_y'],
                 'dim_z' => $package_data['dim_z'],
                 'v_mass' => $package_data['v_mass'],
-                'dimensions' => $package_data['dimensions'],
-                'created_at' => $package_data['created_at']
+                'created_at' => $package_data['created_at'],
+                'updated_at' => $package_data['updated_at']
             ),
-            array(
-                '%d', // shipment_id
-                '%s', // package_code
-                '%s', // package_reference_id
-                '%d', // package_index
-                '%d', // total_packages
-                '%d', // mass
-                '%s', // content
-                '%d', // dim_x
-                '%d', // dim_y
-                '%d', // dim_z
-                '%d', // v_mass
-                '%s', // dimensions
-                '%s'  // created_at
-            )
+            array('%d', '%s', '%d', '%s', '%d', '%d', '%d', '%d', '%s', '%s')
         );
 
-        if ($result === false) {
-            dexpress_log('[DB] Greška pri čuvanju paketa: ' . $wpdb->last_error, 'error');
-            return false;
-        }
-
-        return $wpdb->insert_id;
+        return $result ? $wpdb->insert_id : false;
     }
 
     /**

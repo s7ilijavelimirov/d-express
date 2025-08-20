@@ -16,22 +16,13 @@ class D_Express_DB_Installer
      */
     public function install()
     {
-        $this->create_tables();
 
-        $this->migrate_bank_account_removal();
+        $this->create_tables();
         $this->migrate_sender_data();
 
         // Dodaj indekse za optimizaciju performansi
         global $wpdb;
-
-        // Proveri da li indeksi već postoje
-        $shipments_index_exists = $wpdb->get_results("SHOW INDEX FROM {$wpdb->prefix}dexpress_shipments WHERE Key_name = 'idx_tracking_number'");
         $statuses_index_exists = $wpdb->get_results("SHOW INDEX FROM {$wpdb->prefix}dexpress_statuses WHERE Key_name = 'idx_shipment_code'");
-
-        // Dodaj indekse ako ne postoje
-        if (empty($shipments_index_exists)) {
-            $wpdb->query("CREATE INDEX idx_tracking_number ON {$wpdb->prefix}dexpress_shipments(tracking_number)");
-        }
 
         if (empty($statuses_index_exists)) {
             $wpdb->query("CREATE INDEX idx_shipment_code ON {$wpdb->prefix}dexpress_statuses(shipment_code)");
@@ -72,69 +63,11 @@ class D_Express_DB_Installer
                 'contact_phone' => $sender_contact_phone,
                 'is_default' => 1,
                 'is_active' => 1
-                // UKLONIO: bank_account liniju
             ]);
 
             if (function_exists('dexpress_log')) {
                 dexpress_log('Migrirani podaci pošiljaoca u sender_locations', 'info');
             }
-        }
-    }
-    /**
-     * NOVA METODA - Uklanja bank_account kolonu iz sender_locations
-     */
-    private function migrate_bank_account_removal()
-    {
-        global $wpdb;
-
-        $current_version = get_option('dexpress_db_version', '1.0');
-
-        if (version_compare($current_version, '1.1', '<')) {
-            dexpress_log('Starting database migration 1.1: Removing bank_account from sender_locations', 'info');
-
-            $table_name = $wpdb->prefix . 'dexpress_sender_locations';
-
-            // Proveri da li tabela postoji
-            $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table_name'");
-
-            if ($table_exists) {
-                // Proveri da li kolona postoji
-                $column_exists = $wpdb->get_results($wpdb->prepare(
-                    "SHOW COLUMNS FROM {$table_name} LIKE %s",
-                    'bank_account'
-                ));
-
-                if (!empty($column_exists)) {
-                    // Pre brisanja, migriraj podatke u globalne settings ako je potrebno
-                    $existing_accounts = $wpdb->get_results(
-                        "SELECT DISTINCT bank_account FROM {$table_name} WHERE bank_account IS NOT NULL AND bank_account != ''"
-                    );
-
-                    if (!empty($existing_accounts)) {
-                        // Uzmi prvi pronađeni račun kao globalni (ako globalni ne postoji)
-                        $global_account = get_option('dexpress_buyout_account', '');
-                        if (empty($global_account) && !empty($existing_accounts[0]->bank_account)) {
-                            update_option('dexpress_buyout_account', $existing_accounts[0]->bank_account);
-                            dexpress_log('Migrated bank account to global settings: ' . $existing_accounts[0]->bank_account, 'info');
-                        }
-                    }
-
-                    // Sada ukloni kolonu
-                    $result = $wpdb->query("ALTER TABLE {$table_name} DROP COLUMN bank_account");
-
-                    if ($result !== false) {
-                        dexpress_log('Successfully removed bank_account column from sender_locations', 'info');
-                    } else {
-                        dexpress_log('Error removing bank_account column: ' . $wpdb->last_error, 'error');
-                    }
-                } else {
-                    dexpress_log('bank_account column does not exist in sender_locations', 'debug');
-                }
-            }
-
-            // Ažuriraj verziju baze
-            update_option('dexpress_db_version', '1.1');
-            dexpress_log('Database migration 1.1 completed', 'info');
         }
     }
     /**
@@ -153,33 +86,35 @@ class D_Express_DB_Installer
         $tables[] = "CREATE TABLE {$wpdb->prefix}dexpress_shipments (
             id bigint(20) NOT NULL AUTO_INCREMENT,
             order_id bigint(20) NOT NULL,
-            shipment_id varchar(50) NOT NULL,
-            tracking_number varchar(50) NOT NULL,
-            package_code varchar(50) DEFAULT NULL,
             reference_id varchar(100) NOT NULL,
             sender_location_id int(11) DEFAULT NULL,
+            
             split_index int(11) DEFAULT NULL,
             total_splits int(11) DEFAULT NULL,
-            parent_order_id bigint(20) DEFAULT NULL,
+            
             status_code varchar(20) DEFAULT NULL,
             status_description varchar(255) DEFAULT NULL,
+            
+            value_in_para int(11) DEFAULT 0,
+            buyout_in_para int(11) DEFAULT 0,
+            payment_by tinyint(1) DEFAULT 0,
+            payment_type tinyint(1) DEFAULT 2,
+            shipment_type tinyint(1) DEFAULT 2,
+            return_doc tinyint(1) DEFAULT 0,
+            content varchar(50) DEFAULT NULL,
+            total_mass int(11) DEFAULT 0,
+            note varchar(150) DEFAULT NULL,
+            
+            api_response varchar(20) DEFAULT NULL,
+            is_test tinyint(1) NOT NULL DEFAULT 0,
             created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            shipment_data longtext DEFAULT NULL,
-            is_test tinyint(1) NOT NULL DEFAULT 0,
+            
             PRIMARY KEY (id),
+            UNIQUE KEY reference_id (reference_id),
             KEY order_id (order_id),
-            KEY shipment_id (shipment_id),
-            KEY tracking_number (tracking_number),
-            KEY package_code (package_code),
-            KEY reference_id (reference_id),
-            KEY sender_location_id (sender_location_id),
-            KEY parent_order_id (parent_order_id),
-            KEY split_info (order_id, split_index),
-            KEY status_code (status_code),
-            KEY created_at (created_at)
+            KEY sender_location_id (sender_location_id)
         ) $charset_collate;";
-
         // 2. Tabela za pakete
         $tables[] = "CREATE TABLE {$wpdb->prefix}dexpress_packages (
             id bigint(20) NOT NULL AUTO_INCREMENT,
@@ -187,20 +122,19 @@ class D_Express_DB_Installer
             package_code varchar(50) NOT NULL,
             package_reference_id varchar(100) DEFAULT NULL,
             package_index int(11) DEFAULT 1,
-            total_packages int(11) DEFAULT 1,
-            mass int(11) DEFAULT NULL COMMENT 'Težina u gramima',
-            content varchar(50) DEFAULT NULL COMMENT 'Sadržaj paketa',
-            dim_x int(11) DEFAULT NULL COMMENT 'Širina u mm',
-            dim_y int(11) DEFAULT NULL COMMENT 'Dužina u mm',
-            dim_z int(11) DEFAULT NULL COMMENT 'Visina u mm',
-            v_mass int(11) DEFAULT NULL COMMENT 'Volumetrijska masa',
-            dimensions varchar(100) DEFAULT NULL,
+            total_packages int(11) DEFAULT 1,             
+            mass int(11) DEFAULT NULL,
+            content varchar(50) DEFAULT NULL,
+            dim_x int(11) DEFAULT NULL,
+            dim_y int(11) DEFAULT NULL,
+            dim_z int(11) DEFAULT NULL,
+            v_mass int(11) DEFAULT NULL,
             created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY (id),
+            UNIQUE KEY package_code (package_code),
             KEY shipment_id (shipment_id),
-            KEY package_code (package_code),
-            KEY package_reference_id (package_reference_id)
+            FOREIGN KEY (shipment_id) REFERENCES {$wpdb->prefix}dexpress_shipments(id) ON DELETE CASCADE
         ) $charset_collate;";
 
         // 3. Tabela za statuse pošiljki
@@ -366,7 +300,6 @@ class D_Express_DB_Installer
             town_postal_code varchar(20) DEFAULT NULL COMMENT 'Poštanski kod',
             contact_name varchar(255) NOT NULL COMMENT 'Ime kontakt osobe',
             contact_phone varchar(20) NOT NULL COMMENT 'Telefon (+381...)',
-            bank_account varchar(30) DEFAULT NULL COMMENT 'Bankovni račun za otkupninu',
             is_default tinyint(1) DEFAULT 0 COMMENT 'Glavna lokacija',
             is_active tinyint(1) DEFAULT 1 COMMENT 'Aktivna lokacija',
             created_at datetime DEFAULT CURRENT_TIMESTAMP,

@@ -1,47 +1,25 @@
-{"timestamp":"2025-08-20 11:55:06","context":"api","level":"info","message":"[API DEBUG] Inicijalna vrednost telefona iz WC: +381603995503"}
-{"timestamp":"2025-08-20 11:55:06","context":"api","level":"info","message":"[API DEBUG] Koristi se sačuvani API format telefona: 381603995503"}
-{"timestamp":"2025-08-20 11:55:06","context":"api","level":"info","message":"[PACKAGE CODE] Generisan kod:  za order #1224"}
-{"timestamp":"2025-08-20 11:55:06","context":"api","level":"info","message":"[API DEBUG] Finalni RCPhone za API: 381603995503"}
-{"timestamp":"2025-08-20 11:55:06","context":"api","level":"info","message":"[API VALIDATION] PackageList struktura validna. Paketi: 3"}
-{"timestamp":"2025-08-20 11:55:06","context":"api","level":"info","message":"[PAYMENT] Vrednost dexpress_payment_type iz opcija: 2"}
-{"timestamp":"2025-08-20 11:55:24","context":"api","level":"info","message":"[API DEBUG] Inicijalna vrednost telefona iz WC: +381603995503"}
-{"timestamp":"2025-08-20 11:55:24","context":"api","level":"info","message":"[API DEBUG] Koristi se sačuvani API format telefona: 381603995503"}
-{"timestamp":"2025-08-20 11:55:25","context":"api","level":"info","message":"[PACKAGE CODE] Generisan kod:  za order #1224"}
-{"timestamp":"2025-08-20 11:55:25","context":"api","level":"info","message":"[API DEBUG] Finalni RCPhone za API: 381603995503"}
-{"timestamp":"2025-08-20 11:55:25","context":"api","level":"info","message":"[API VALIDATION] PackageList struktura validna. Paketi: 3"}
-{"timestamp":"2025-08-20 11:55:25","context":"api","level":"info","message":"[PAYMENT] Vrednost dexpress_payment_type iz opcija: 2"}
-{"timestamp":"2025-08-20 11:58:15","context":"api","level":"info","message":"[API DEBUG] Inicijalna vrednost telefona iz WC: +381603995503"}
-{"timestamp":"2025-08-20 11:58:15","context":"api","level":"info","message":"[API DEBUG] Koristi se sačuvani API format telefona: 381603995503"}
-{"timestamp":"2025-08-20 11:58:15","context":"api","level":"info","message":"[PACKAGE CODE] Generisan kod:  za order #1224"}
-{"timestamp":"2025-08-20 11:58:15","context":"api","level":"info","message":"[API DEBUG] Finalni RCPhone za API: 381603995503"}
-{"timestamp":"2025-08-20 11:58:15","context":"api","level":"info","message":"[API VALIDATION] PackageList struktura validna. Paketi: 3"}
-{"timestamp":"2025-08-20 11:58:15","context":"api","level":"info","message":"[PAYMENT] Vrednost dexpress_payment_type iz opcija: 2"}
-{"timestamp":"2025-08-20 12:01:10","context":"api","level":"info","message":"[API DEBUG] Inicijalna vrednost telefona iz WC: +381603995503"}
-{"timestamp":"2025-08-20 12:01:10","context":"api","level":"info","message":"[API DEBUG] Koristi se sačuvani API format telefona: 381603995503"}
-{"timestamp":"2025-08-20 12:01:10","context":"api","level":"info","message":"[PACKAGE CODE] Generisan kod:  za order #1224"}
-{"timestamp":"2025-08-20 12:01:10","context":"api","level":"info","message":"[API DEBUG] Finalni RCPhone za API: 381603995503"}
-{"timestamp":"2025-08-20 12:01:10","context":"api","level":"info","message":"[API VALIDATION] PackageList struktura validna. Paketi: 3"}
-{"timestamp":"2025-08-20 12:01:10","context":"api","level":"info","message":"[PAYMENT] Vrednost dexpress_payment_type iz opcija: 2"}
-{"timestamp":"2025-08-20 12:04:03","context":"api","level":"info","message":"[API DEBUG] Inicijalna vrednost telefona iz WC: +381603995503"}
-{"timestamp":"2025-08-20 12:04:03","context":"api","level":"info","message":"[API DEBUG] Koristi se sačuvani API format telefona: 381603995503"}
-{"timestamp":"2025-08-20 12:04:03","context":"api","level":"info","message":"[PACKAGE CODE] Generisan kod:  za order #1224"}
-{"timestamp":"2025-08-20 12:04:03","context":"api","level":"info","message":"[API DEBUG] Finalni RCPhone za API: 381603995503"}
-{"timestamp":"2025-08-20 12:04:03","context":"api","level":"info","message":"[API VALIDATION] PackageList struktura validna. Paketi: 3"}
-{"timestamp":"2025-08-20 12:04:03","context":"api","level":"info","message":"[PAYMENT] Vrednost dexpress_payment_type iz opcija: 2"}
-[2025-08-20 12:04:03] [info] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/addshipment
-[2025-08-20 12:04:03] [info] Metod: POST
-[2025-08-20 12:04:03] [info] Podaci za API:
+{"timestamp":"2025-08-20 13:42:38","context":"api","level":"info","message":"[API DEBUG] Inicijalna vrednost telefona iz WC: +381603995503"}
+{"timestamp":"2025-08-20 13:42:38","context":"api","level":"info","message":"[API DEBUG] Koristi se sačuvani API format telefona: 381603995503"}
+{"timestamp":"2025-08-20 13:42:38","context":"api","level":"info","message":"[PACKAGE DEBUG] custom_content: \"\", content: \"3x Accessories, Hoodies, Music\""}
+{"timestamp":"2025-08-20 13:42:38","context":"api","level":"info","message":"[PACKAGE DEBUG] package_content: \"3x Accessories, Hoodies, Music\""}
+{"timestamp":"2025-08-20 13:42:38","context":"api","level":"info","message":"[PACKAGE CODE] Generisan kod:  za order #1235"}
+{"timestamp":"2025-08-20 13:42:38","context":"api","level":"info","message":"[API DEBUG] Finalni RCPhone za API: 381603995503"}
+{"timestamp":"2025-08-20 13:42:38","context":"api","level":"info","message":"[API VALIDATION] PackageList struktura validna. Paketi: 2"}
+{"timestamp":"2025-08-20 13:42:38","context":"api","level":"info","message":"[PAYMENT] Vrednost dexpress_payment_type iz opcija: 2"}
+[2025-08-20 13:42:38] [info] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/addshipment
+[2025-08-20 13:42:38] [info] Metod: POST
+[2025-08-20 13:42:38] [info] Podaci za API:
 {
     "CClientID": "UK16967",
     "CName": "Ilija Velemirov",
-    "CAddress": "Bulevar Cara Lazara",
+    "CAddress": "Cara Dusana",
     "CAddressNum": "106",
     "CTownID": 802824,
     "CCName": "Ilija Velemirov",
     "CCPhone": "381603995503",
     "PuClientID": "UK16967",
-    "PuName": "s7Code DOO",
-    "PuAddress": "Bulevar Cara Lazara",
+    "PuName": "S7 Code NS",
+    "PuAddress": "Cara Dusana",
     "PuAddressNum": "106",
     "PuTownID": 802824,
     "PuCName": "Ilija Velemirov",
@@ -55,21 +33,21 @@
     "RCPhone": "381603995503",
     "Note": "",
     "DlTypeID": 2,
-    "PaymentBy": 1,
+    "PaymentBy": 0,
     "PaymentType": 2,
-    "Value": 11500,
-    "Content": "Accessories, TEXAS, HoodiesPINK",
-    "Mass": 7100,
-    "ReferenceID": "1224",
+    "Value": 7800,
+    "Content": "Accessories, Hoodies, Muzika",
+    "Mass": 5200,
+    "ReferenceID": "1235",
     "ReturnDoc": 0,
-    "BuyOut": 11500,
+    "BuyOut": 7800,
     "BuyOutFor": 0,
     "BuyOutAccount": "170-0010364556000-77",
     "SelfDropOff": 0,
     "PackageList": [
         {
-            "Code": "TT0000000039",
-            "Mass": 2000,
+            "Code": "TT0000000001",
+            "Mass": 100,
             "Content": "Accessories",
             "DimX": null,
             "DimY": null,
@@ -78,9 +56,73 @@
             "ReferenceID": null
         },
         {
-            "Code": "TT0000000040",
-            "Mass": 5000,
-            "Content": "TEXAS, HoodiesPINK",
+            "Code": "TT0000000002",
+            "Mass": 5100,
+            "Content": "Hoodies, Muzika",
+            "DimX": null,
+            "DimY": null,
+            "DimZ": null,
+            "VMass": null,
+            "ReferenceID": null
+        }
+    ]
+}
+[2025-08-20 13:42:38] [info] --- SLANJE ZAHTEVA ---
+[2025-08-20 13:42:38] [info] API Odgovor kod: 200
+[2025-08-20 13:42:38] [info] API Odgovor:
+"TEST"
+[2025-08-20 13:42:38] [info] --- ZAVRŠEN ZAHTEV ---
+{"timestamp":"2025-08-20 14:15:40","context":"api","level":"info","message":"[API DEBUG] Inicijalna vrednost telefona iz WC: +381603995503"}
+{"timestamp":"2025-08-20 14:15:40","context":"api","level":"info","message":"[API DEBUG] Koristi se sačuvani API format telefona: 381603995503"}
+{"timestamp":"2025-08-20 14:15:40","context":"api","level":"info","message":"[PACKAGE DEBUG] custom_content: \"\", content: \"3x Accessories, Hoodies, Music\""}
+{"timestamp":"2025-08-20 14:15:40","context":"api","level":"info","message":"[PACKAGE DEBUG] package_content: \"3x Accessories, Hoodies, Music\""}
+{"timestamp":"2025-08-20 14:15:40","context":"api","level":"info","message":"[PACKAGE CODE] Generisan kod:  za order #1235"}
+{"timestamp":"2025-08-20 14:15:40","context":"api","level":"info","message":"[API DEBUG] Finalni RCPhone za API: 381603995503"}
+{"timestamp":"2025-08-20 14:15:40","context":"api","level":"info","message":"[API VALIDATION] PackageList struktura validna. Paketi: 2"}
+{"timestamp":"2025-08-20 14:15:40","context":"api","level":"info","message":"[PAYMENT] Vrednost dexpress_payment_type iz opcija: 2"}
+[2025-08-20 14:15:40] [info] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/addshipment
+[2025-08-20 14:15:40] [info] Metod: POST
+[2025-08-20 14:15:40] [info] Podaci za API:
+{
+    "CClientID": "UK16967",
+    "CName": "Ilija Velemirov",
+    "CAddress": "Cara Dusana",
+    "CAddressNum": "106",
+    "CTownID": 802824,
+    "CCName": "Ilija Velemirov",
+    "CCPhone": "381603995503",
+    "PuClientID": "UK16967",
+    "PuName": "S7 Code NS",
+    "PuAddress": "Cara Dusana",
+    "PuAddressNum": "106",
+    "PuTownID": 802824,
+    "PuCName": "Ilija Velemirov",
+    "PuCPhone": "381603995503",
+    "RName": "Ilija2 Velemirovic2",
+    "RAddress": "Nikole Francuskog",
+    "RAddressNum": "54",
+    "RAddressDesc": "Stan 32",
+    "RTownID": 802158,
+    "RCName": "Ilija2 Velemirovic2",
+    "RCPhone": "381603995503",
+    "Note": "",
+    "DlTypeID": 2,
+    "PaymentBy": 0,
+    "PaymentType": 2,
+    "Value": 7800,
+    "Content": "Accessories, Hoodies, Musics",
+    "Mass": 5200,
+    "ReferenceID": "1235",
+    "ReturnDoc": 0,
+    "BuyOut": 7800,
+    "BuyOutFor": 0,
+    "BuyOutAccount": "170-0010364556000-77",
+    "SelfDropOff": 0,
+    "PackageList": [
+        {
+            "Code": "TT0000000003",
+            "Mass": 100,
+            "Content": "Accessories",
             "DimX": null,
             "DimY": null,
             "DimZ": null,
@@ -88,9 +130,9 @@
             "ReferenceID": null
         },
         {
-            "Code": "TT0000000041",
-            "Mass": 100,
-            "Content": "TEXAS, HoodiesPINK",
+            "Code": "TT0000000004",
+            "Mass": 5100,
+            "Content": "Hoodies, Musics",
             "DimX": null,
             "DimY": null,
             "DimZ": null,
@@ -99,31 +141,33 @@
         }
     ]
 }
-[2025-08-20 12:04:03] [info] --- SLANJE ZAHTEVA ---
-[2025-08-20 12:04:03] [info] API Odgovor kod: 200
-[2025-08-20 12:04:03] [info] API Odgovor:
+[2025-08-20 14:15:40] [info] --- SLANJE ZAHTEVA ---
+[2025-08-20 14:15:40] [info] API Odgovor kod: 200
+[2025-08-20 14:15:40] [info] API Odgovor:
 "TEST"
-[2025-08-20 12:04:03] [info] --- ZAVRŠEN ZAHTEV ---
-{"timestamp":"2025-08-20 12:11:41","context":"api","level":"info","message":"[API DEBUG] Inicijalna vrednost telefona iz WC: +381603995503"}
-{"timestamp":"2025-08-20 12:11:41","context":"api","level":"info","message":"[API DEBUG] Koristi se sačuvani API format telefona: 381603995503"}
-{"timestamp":"2025-08-20 12:11:41","context":"api","level":"info","message":"[PACKAGE CODE] Generisan kod:  za order #1225"}
-{"timestamp":"2025-08-20 12:11:41","context":"api","level":"info","message":"[API DEBUG] Finalni RCPhone za API: 381603995503"}
-{"timestamp":"2025-08-20 12:11:41","context":"api","level":"info","message":"[API VALIDATION] PackageList struktura validna. Paketi: 2"}
-{"timestamp":"2025-08-20 12:11:41","context":"api","level":"info","message":"[PAYMENT] Vrednost dexpress_payment_type iz opcija: 2"}
-[2025-08-20 12:11:41] [info] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/addshipment
-[2025-08-20 12:11:41] [info] Metod: POST
-[2025-08-20 12:11:41] [info] Podaci za API:
+[2025-08-20 14:15:40] [info] --- ZAVRŠEN ZAHTEV ---
+{"timestamp":"2025-08-20 14:25:09","context":"api","level":"info","message":"[API DEBUG] Inicijalna vrednost telefona iz WC: +381603995503"}
+{"timestamp":"2025-08-20 14:25:09","context":"api","level":"info","message":"[API DEBUG] Koristi se sačuvani API format telefona: 381603995503"}
+{"timestamp":"2025-08-20 14:25:09","context":"api","level":"info","message":"[PACKAGE DEBUG] custom_content: \"\", content: \"3x Accessories, Hoodies, Music\""}
+{"timestamp":"2025-08-20 14:25:09","context":"api","level":"info","message":"[PACKAGE DEBUG] package_content: \"3x Accessories, Hoodies, Music\""}
+{"timestamp":"2025-08-20 14:25:09","context":"api","level":"info","message":"[PACKAGE CODE] Generisan kod:  za order #1235"}
+{"timestamp":"2025-08-20 14:25:09","context":"api","level":"info","message":"[API DEBUG] Finalni RCPhone za API: 381603995503"}
+{"timestamp":"2025-08-20 14:25:09","context":"api","level":"info","message":"[API VALIDATION] PackageList struktura validna. Paketi: 2"}
+{"timestamp":"2025-08-20 14:25:09","context":"api","level":"info","message":"[PAYMENT] Vrednost dexpress_payment_type iz opcija: 2"}
+[2025-08-20 14:25:09] [info] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/addshipment
+[2025-08-20 14:25:09] [info] Metod: POST
+[2025-08-20 14:25:09] [info] Podaci za API:
 {
     "CClientID": "UK16967",
     "CName": "Ilija Velemirov",
-    "CAddress": "Bulevar Cara Lazara",
+    "CAddress": "Cara Dusana",
     "CAddressNum": "106",
     "CTownID": 802824,
     "CCName": "Ilija Velemirov",
     "CCPhone": "381603995503",
     "PuClientID": "UK16967",
-    "PuName": "s7Code DOO",
-    "PuAddress": "Bulevar Cara Lazara",
+    "PuName": "S7 Code NS",
+    "PuAddress": "Cara Dusana",
     "PuAddressNum": "106",
     "PuTownID": 802824,
     "PuCName": "Ilija Velemirov",
@@ -137,22 +181,22 @@
     "RCPhone": "381603995503",
     "Note": "",
     "DlTypeID": 2,
-    "PaymentBy": 1,
+    "PaymentBy": 0,
     "PaymentType": 2,
-    "Value": 599,
-    "Content": "TshirtsMAJA, Tshirts, mug",
-    "Mass": 300,
-    "ReferenceID": "1225",
+    "Value": 7800,
+    "Content": "Accessories, Hoodies, Music",
+    "Mass": 5200,
+    "ReferenceID": "1235",
     "ReturnDoc": 0,
-    "BuyOut": 599,
+    "BuyOut": 7800,
     "BuyOutFor": 0,
     "BuyOutAccount": "170-0010364556000-77",
     "SelfDropOff": 0,
     "PackageList": [
         {
-            "Code": "TT0000000042",
+            "Code": "TT0000000005",
             "Mass": 100,
-            "Content": "TshirtsMAJA",
+            "Content": "Accessories",
             "DimX": null,
             "DimY": null,
             "DimZ": null,
@@ -160,9 +204,9 @@
             "ReferenceID": null
         },
         {
-            "Code": "TT0000000043",
-            "Mass": 200,
-            "Content": "Tshirts, mug",
+            "Code": "TT0000000006",
+            "Mass": 5100,
+            "Content": "Hoodies, Music",
             "DimX": null,
             "DimY": null,
             "DimZ": null,
@@ -171,468 +215,8 @@
         }
     ]
 }
-[2025-08-20 12:11:41] [info] --- SLANJE ZAHTEVA ---
-[2025-08-20 12:11:41] [info] API Odgovor kod: 200
-[2025-08-20 12:11:41] [info] API Odgovor:
+[2025-08-20 14:25:09] [info] --- SLANJE ZAHTEVA ---
+[2025-08-20 14:25:09] [info] API Odgovor kod: 200
+[2025-08-20 14:25:09] [info] API Odgovor:
 "TEST"
-[2025-08-20 12:11:41] [info] --- ZAVRŠEN ZAHTEV ---
-{"timestamp":"2025-08-20 12:12:27","context":"api","level":"info","message":"[API DEBUG] Inicijalna vrednost telefona iz WC: +381603995503"}
-{"timestamp":"2025-08-20 12:12:27","context":"api","level":"info","message":"[API DEBUG] Koristi se sačuvani API format telefona: 381603995503"}
-{"timestamp":"2025-08-20 12:12:27","context":"api","level":"info","message":"[PACKAGE CODE] Generisan kod: TT0000000044 za order #1226"}
-{"timestamp":"2025-08-20 12:12:27","context":"api","level":"info","message":"[API DEBUG] Finalni RCPhone za API: 381603995503"}
-{"timestamp":"2025-08-20 12:12:27","context":"api","level":"info","message":"[API VALIDATION] PackageList struktura validna. Paketi: 1"}
-{"timestamp":"2025-08-20 12:12:27","context":"api","level":"info","message":"[PAYMENT] Vrednost dexpress_payment_type iz opcija: 2"}
-[2025-08-20 12:12:27] [info] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/addshipment
-[2025-08-20 12:12:27] [info] Metod: POST
-[2025-08-20 12:12:27] [info] Podaci za API:
-{
-    "CClientID": "UK16967",
-    "CName": "Ilija Velemirov",
-    "CAddress": "Bulevar Cara Lazara",
-    "CAddressNum": "106",
-    "CTownID": 802824,
-    "CCName": "Ilija Velemirov",
-    "CCPhone": "381603995503",
-    "PuClientID": "UK16967",
-    "PuName": "s7Code DOO",
-    "PuAddress": "Bulevar Cara Lazara",
-    "PuAddressNum": "106",
-    "PuTownID": 802824,
-    "PuCName": "Ilija Velemirov",
-    "PuCPhone": "381603995503",
-    "RName": "Ilija2 Velemirovic2",
-    "RAddress": "Nikole Francuskog",
-    "RAddressNum": "54",
-    "RAddressDesc": "Stan 32",
-    "RTownID": 802158,
-    "RCName": "Ilija2 Velemirovic2",
-    "RCPhone": "381603995503",
-    "Note": "",
-    "DlTypeID": 2,
-    "PaymentBy": 1,
-    "PaymentType": 2,
-    "Value": 18000,
-    "Content": "AccessoriesES",
-    "Mass": 200,
-    "ReferenceID": "1226",
-    "ReturnDoc": 0,
-    "BuyOut": 68000,
-    "BuyOutFor": 0,
-    "BuyOutAccount": "170-0010364556000-77",
-    "SelfDropOff": 0,
-    "PackageList": [
-        {
-            "Code": "TT0000000044",
-            "Mass": 200,
-            "Content": "2x Accessories",
-            "DimX": null,
-            "DimY": null,
-            "DimZ": null,
-            "VMass": null,
-            "ReferenceID": null
-        }
-    ]
-}
-[2025-08-20 12:12:27] [info] --- SLANJE ZAHTEVA ---
-[2025-08-20 12:12:27] [info] API Odgovor kod: 200
-[2025-08-20 12:12:27] [info] API Odgovor:
-"TEST"
-[2025-08-20 12:12:27] [info] --- ZAVRŠEN ZAHTEV ---
-{"timestamp":"2025-08-20 12:13:54","context":"api","level":"info","message":"[API DEBUG] Inicijalna vrednost telefona iz WC: +381603995503"}
-{"timestamp":"2025-08-20 12:13:55","context":"api","level":"info","message":"[API DEBUG] Koristi se sačuvani API format telefona: 381603995503"}
-{"timestamp":"2025-08-20 12:13:55","context":"api","level":"info","message":"[PACKAGE CODE] Generisan kod:  za order #1227"}
-{"timestamp":"2025-08-20 12:13:55","context":"api","level":"info","message":"[API DEBUG] Finalni RCPhone za API: 381603995503"}
-{"timestamp":"2025-08-20 12:13:55","context":"api","level":"info","message":"[API VALIDATION] PackageList struktura validna. Paketi: 2"}
-{"timestamp":"2025-08-20 12:13:55","context":"api","level":"info","message":"[PAYMENT] Vrednost dexpress_payment_type iz opcija: 2"}
-[2025-08-20 12:13:55] [info] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/addshipment
-[2025-08-20 12:13:55] [info] Metod: POST
-[2025-08-20 12:13:55] [info] Podaci za API:
-{
-    "CClientID": "UK16967",
-    "CName": "Ilija Velemirov",
-    "CAddress": "Bulevar Cara Lazara",
-    "CAddressNum": "106",
-    "CTownID": 802824,
-    "CCName": "Ilija Velemirov",
-    "CCPhone": "381603995503",
-    "PuClientID": "UK16967",
-    "PuName": "s7Code DOO",
-    "PuAddress": "Bulevar Cara Lazara",
-    "PuAddressNum": "106",
-    "PuTownID": 802824,
-    "PuCName": "Ilija Velemirov",
-    "PuCPhone": "381603995503",
-    "RName": "Ilija2 Velemirovic2",
-    "RAddress": "Nikole Francuskog",
-    "RAddressNum": "54",
-    "RAddressDesc": "Stan 32",
-    "RTownID": 802158,
-    "RCName": "Ilija2 Velemirovic2",
-    "RCPhone": "381603995503",
-    "Note": "",
-    "DlTypeID": 2,
-    "PaymentBy": 1,
-    "PaymentType": 2,
-    "Value": 55000,
-    "Content": "Music-PinkFloyd, Accessories, Hoodiesess",
-    "Mass": 16600,
-    "ReferenceID": "1227",
-    "ReturnDoc": 0,
-    "BuyOut": 55000,
-    "BuyOutFor": 0,
-    "BuyOutAccount": "170-0010364556000-77",
-    "SelfDropOff": 0,
-    "PackageList": [
-        {
-            "Code": "TT0000000045",
-            "Mass": 5000,
-            "Content": "Music-PinkFloyd",
-            "DimX": null,
-            "DimY": null,
-            "DimZ": null,
-            "VMass": null,
-            "ReferenceID": null
-        },
-        {
-            "Code": "TT0000000046",
-            "Mass": 11600,
-            "Content": "Accessories, Hoodiesess",
-            "DimX": null,
-            "DimY": null,
-            "DimZ": null,
-            "VMass": null,
-            "ReferenceID": null
-        }
-    ]
-}
-[2025-08-20 12:13:55] [info] --- SLANJE ZAHTEVA ---
-[2025-08-20 12:13:55] [info] API Odgovor kod: 200
-[2025-08-20 12:13:55] [info] API Odgovor:
-"TEST"
-[2025-08-20 12:13:55] [info] --- ZAVRŠEN ZAHTEV ---
-{"timestamp":"2025-08-20 12:15:49","context":"api","level":"info","message":"[API DEBUG] Inicijalna vrednost telefona iz WC: +381603995503"}
-{"timestamp":"2025-08-20 12:15:49","context":"api","level":"info","message":"[API DEBUG] Koristi se sačuvani API format telefona: 381603995503"}
-{"timestamp":"2025-08-20 12:15:49","context":"api","level":"info","message":"[PACKAGE CODE] Generisan kod:  za order #1228"}
-{"timestamp":"2025-08-20 12:15:49","context":"api","level":"info","message":"[API DEBUG] Finalni RCPhone za API: 381603995503"}
-{"timestamp":"2025-08-20 12:15:49","context":"api","level":"info","message":"[API VALIDATION] PackageList struktura validna. Paketi: 1"}
-{"timestamp":"2025-08-20 12:15:49","context":"api","level":"info","message":"[PAYMENT] Vrednost dexpress_payment_type iz opcija: 2"}
-[2025-08-20 12:15:49] [info] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/addshipment
-[2025-08-20 12:15:49] [info] Metod: POST
-[2025-08-20 12:15:49] [info] Podaci za API:
-{
-    "CClientID": "UK16967",
-    "CName": "Ilija Velemirov",
-    "CAddress": "Bulevar Cara Lazara",
-    "CAddressNum": "106",
-    "CTownID": 802824,
-    "CCName": "Ilija Velemirov",
-    "CCPhone": "381603995503",
-    "PuClientID": "UK16967",
-    "PuName": "s7Code DOO",
-    "PuAddress": "Bulevar Cara Lazara",
-    "PuAddressNum": "106",
-    "PuTownID": 802824,
-    "PuCName": "Ilija Velemirov",
-    "PuCPhone": "381603995503",
-    "RName": "Ilija2 Velemirovic2",
-    "RAddress": "Nikole Francuskog",
-    "RAddressNum": "54",
-    "RAddressDesc": "Stan 32",
-    "RTownID": 802158,
-    "RCName": "Ilija2 Velemirovic2",
-    "RCPhone": "381603995503",
-    "Note": "",
-    "DlTypeID": 2,
-    "PaymentBy": 1,
-    "PaymentType": 2,
-    "Value": 1600,
-    "Content": "Kacket",
-    "Mass": 100,
-    "ReferenceID": "1228-L1",
-    "ReturnDoc": 0,
-    "BuyOut": 1600,
-    "BuyOutFor": 0,
-    "BuyOutAccount": "170-0010364556000-77",
-    "SelfDropOff": 0,
-    "PackageList": [
-        {
-            "Code": "TT0000000047",
-            "Mass": 100,
-            "Content": "Kacket",
-            "DimX": null,
-            "DimY": null,
-            "DimZ": null,
-            "VMass": null,
-            "ReferenceID": null
-        }
-    ]
-}
-[2025-08-20 12:15:49] [info] --- SLANJE ZAHTEVA ---
-[2025-08-20 12:15:49] [info] API Odgovor kod: 200
-[2025-08-20 12:15:49] [info] API Odgovor:
-"TEST"
-[2025-08-20 12:15:49] [info] --- ZAVRŠEN ZAHTEV ---
-{"timestamp":"2025-08-20 12:15:49","context":"api","level":"info","message":"[API DEBUG] Inicijalna vrednost telefona iz WC: +381603995503"}
-{"timestamp":"2025-08-20 12:15:49","context":"api","level":"info","message":"[API DEBUG] Koristi se sačuvani API format telefona: 381603995503"}
-{"timestamp":"2025-08-20 12:15:49","context":"api","level":"info","message":"[PACKAGE CODE] Generisan kod:  za order #1228"}
-{"timestamp":"2025-08-20 12:15:49","context":"api","level":"info","message":"[API DEBUG] Finalni RCPhone za API: 381603995503"}
-{"timestamp":"2025-08-20 12:15:49","context":"api","level":"info","message":"[API VALIDATION] PackageList struktura validna. Paketi: 1"}
-{"timestamp":"2025-08-20 12:15:49","context":"api","level":"info","message":"[PAYMENT] Vrednost dexpress_payment_type iz opcija: 2"}
-[2025-08-20 12:15:49] [info] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/addshipment
-[2025-08-20 12:15:49] [info] Metod: POST
-[2025-08-20 12:15:49] [info] Podaci za API:
-{
-    "CClientID": "UK16967",
-    "CName": "Ilija Velemirov",
-    "CAddress": "Knez Mihajlova",
-    "CAddressNum": "102/1",
-    "CTownID": 802786,
-    "CCName": "Ilija Velemirov",
-    "CCPhone": "381603995501",
-    "PuClientID": "UK16967",
-    "PuName": "s7Code BG DOO",
-    "PuAddress": "Knez Mihajlova",
-    "PuAddressNum": "102/1",
-    "PuTownID": 802786,
-    "PuCName": "Ilija Velemirov",
-    "PuCPhone": "381603995501",
-    "RName": "Ilija2 Velemirovic2",
-    "RAddress": "Nikole Francuskog",
-    "RAddressNum": "54",
-    "RAddressDesc": "Stan 32",
-    "RTownID": 802158,
-    "RCName": "Ilija2 Velemirovic2",
-    "RCPhone": "381603995503",
-    "Note": "",
-    "DlTypeID": 2,
-    "PaymentBy": 1,
-    "PaymentType": 2,
-    "Value": 9000,
-    "Content": "HoodiesKnez",
-    "Mass": 200,
-    "ReferenceID": "1228-L14",
-    "ReturnDoc": 0,
-    "BuyOut": 9000,
-    "BuyOutFor": 0,
-    "BuyOutAccount": "170-0010364556000-77",
-    "SelfDropOff": 0,
-    "PackageList": [
-        {
-            "Code": "TT0000000048",
-            "Mass": 200,
-            "Content": "HoodiesKnez",
-            "DimX": null,
-            "DimY": null,
-            "DimZ": null,
-            "VMass": null,
-            "ReferenceID": null
-        }
-    ]
-}
-[2025-08-20 12:15:49] [info] --- SLANJE ZAHTEVA ---
-[2025-08-20 12:15:49] [info] API Odgovor kod: 200
-[2025-08-20 12:15:49] [info] API Odgovor:
-"TEST"
-[2025-08-20 12:15:49] [info] --- ZAVRŠEN ZAHTEV ---
-{"timestamp":"2025-08-20 12:36:46","context":"api","level":"info","message":"[API DEBUG] Inicijalna vrednost telefona iz WC: +381603995503"}
-{"timestamp":"2025-08-20 12:36:46","context":"api","level":"info","message":"[API DEBUG] Koristi se sačuvani API format telefona: 381603995503"}
-{"timestamp":"2025-08-20 12:36:46","context":"api","level":"info","message":"[PACKAGE DEBUG] custom_content: \"TESTDESCRIPTION\", content: \"TESTDESCRIPTION\""}
-{"timestamp":"2025-08-20 12:36:46","context":"api","level":"info","message":"[PACKAGE DEBUG] package_content: \"TESTDESCRIPTION\""}
-{"timestamp":"2025-08-20 12:36:46","context":"api","level":"info","message":"[PACKAGE CODE] Generisan kod: TT0000000049 za order #1229"}
-{"timestamp":"2025-08-20 12:36:46","context":"api","level":"info","message":"[API DEBUG] Finalni RCPhone za API: 381603995503"}
-{"timestamp":"2025-08-20 12:36:46","context":"api","level":"info","message":"[API VALIDATION] PackageList struktura validna. Paketi: 1"}
-{"timestamp":"2025-08-20 12:36:46","context":"api","level":"info","message":"[PAYMENT] Vrednost dexpress_payment_type iz opcija: 2"}
-[2025-08-20 12:36:46] [info] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/addshipment
-[2025-08-20 12:36:46] [info] Metod: POST
-[2025-08-20 12:36:46] [info] Podaci za API:
-{
-    "CClientID": "UK16967",
-    "CName": "Ilija Velemirov",
-    "CAddress": "Bulevar Cara Lazara",
-    "CAddressNum": "106",
-    "CTownID": 802824,
-    "CCName": "Ilija Velemirov",
-    "CCPhone": "381603995503",
-    "PuClientID": "UK16967",
-    "PuName": "s7Code DOO",
-    "PuAddress": "Bulevar Cara Lazara",
-    "PuAddressNum": "106",
-    "PuTownID": 802824,
-    "PuCName": "Ilija Velemirov",
-    "PuCPhone": "381603995503",
-    "RName": "Ilija2 Velemirovic2",
-    "RAddress": "Nikole Francuskog",
-    "RAddressNum": "54",
-    "RAddressDesc": "Stan 32",
-    "RTownID": 802158,
-    "RCName": "Ilija2 Velemirovic2",
-    "RCPhone": "381603995503",
-    "Note": "",
-    "DlTypeID": 2,
-    "PaymentBy": 1,
-    "PaymentType": 2,
-    "Value": 1800,
-    "Content": "TESTDESCRIPTION",
-    "Mass": 100,
-    "ReferenceID": "1229",
-    "ReturnDoc": 0,
-    "BuyOut": 51800,
-    "BuyOutFor": 0,
-    "BuyOutAccount": "170-0010364556000-77",
-    "SelfDropOff": 0,
-    "PackageList": [
-        {
-            "Code": "TT0000000049",
-            "Mass": 100,
-            "Content": "TESTDESCRIPTION",
-            "DimX": null,
-            "DimY": null,
-            "DimZ": null,
-            "VMass": null,
-            "ReferenceID": null
-        }
-    ]
-}
-[2025-08-20 12:36:46] [info] --- SLANJE ZAHTEVA ---
-[2025-08-20 12:36:46] [info] API Odgovor kod: 200
-[2025-08-20 12:36:46] [info] API Odgovor:
-"TEST"
-[2025-08-20 12:36:46] [info] --- ZAVRŠEN ZAHTEV ---
-{"timestamp":"2025-08-20 12:37:59","context":"api","level":"info","message":"[API DEBUG] Inicijalna vrednost telefona iz WC: +381603995503"}
-{"timestamp":"2025-08-20 12:37:59","context":"api","level":"info","message":"[API DEBUG] Koristi se sačuvani API format telefona: 381603995503"}
-{"timestamp":"2025-08-20 12:37:59","context":"api","level":"info","message":"[PACKAGE DEBUG] custom_content: \"KnjigaSeselja, knjiailije\", content: \"KnjigaSeselja, knjiailije\""}
-{"timestamp":"2025-08-20 12:37:59","context":"api","level":"info","message":"[PACKAGE DEBUG] package_content: \"KnjigaSeselja, knjiailije\""}
-{"timestamp":"2025-08-20 12:37:59","context":"api","level":"info","message":"[PACKAGE CODE] Generisan kod: TT0000000050 za order #1230"}
-{"timestamp":"2025-08-20 12:37:59","context":"api","level":"info","message":"[API DEBUG] Finalni RCPhone za API: 381603995503"}
-{"timestamp":"2025-08-20 12:37:59","context":"api","level":"info","message":"[API VALIDATION] PackageList struktura validna. Paketi: 1"}
-{"timestamp":"2025-08-20 12:37:59","context":"api","level":"info","message":"[PAYMENT] Vrednost dexpress_payment_type iz opcija: 2"}
-[2025-08-20 12:37:59] [info] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/addshipment
-[2025-08-20 12:37:59] [info] Metod: POST
-[2025-08-20 12:37:59] [info] Podaci za API:
-{
-    "CClientID": "UK16967",
-    "CName": "Ilija Velemirov",
-    "CAddress": "Bulevar Cara Lazara",
-    "CAddressNum": "106",
-    "CTownID": 802824,
-    "CCName": "Ilija Velemirov",
-    "CCPhone": "381603995503",
-    "PuClientID": "UK16967",
-    "PuName": "s7Code DOO",
-    "PuAddress": "Bulevar Cara Lazara",
-    "PuAddressNum": "106",
-    "PuTownID": 802824,
-    "PuCName": "Ilija Velemirov",
-    "PuCPhone": "381603995503",
-    "RName": "Ilija2 Velemirovic2",
-    "RAddress": "Nikole Francuskog",
-    "RAddressNum": "54",
-    "RAddressDesc": "Stan 32",
-    "RTownID": 802158,
-    "RCName": "Ilija2 Velemirovic2",
-    "RCPhone": "381603995503",
-    "Note": "",
-    "DlTypeID": 2,
-    "PaymentBy": 1,
-    "PaymentType": 2,
-    "Value": 50800,
-    "Content": "KnjigaSeselja, knjiailije",
-    "Mass": 11600,
-    "ReferenceID": "1230",
-    "ReturnDoc": 0,
-    "BuyOut": 100800,
-    "BuyOutFor": 0,
-    "BuyOutAccount": "170-0010364556000-77",
-    "SelfDropOff": 0,
-    "PackageList": [
-        {
-            "Code": "TT0000000050",
-            "Mass": 11600,
-            "Content": "KnjigaSeselja, knjiailije",
-            "DimX": null,
-            "DimY": null,
-            "DimZ": null,
-            "VMass": null,
-            "ReferenceID": null
-        }
-    ]
-}
-[2025-08-20 12:37:59] [info] --- SLANJE ZAHTEVA ---
-[2025-08-20 12:37:59] [info] API Odgovor kod: 200
-[2025-08-20 12:37:59] [info] API Odgovor:
-"TEST"
-[2025-08-20 12:37:59] [info] --- ZAVRŠEN ZAHTEV ---
-{"timestamp":"2025-08-20 12:40:26","context":"api","level":"info","message":"[API DEBUG] Inicijalna vrednost telefona iz WC: +381603995503"}
-{"timestamp":"2025-08-20 12:40:26","context":"api","level":"info","message":"[API DEBUG] Koristi se sačuvani API format telefona: 381603995503"}
-{"timestamp":"2025-08-20 12:40:26","context":"api","level":"info","message":"[PACKAGE DEBUG] custom_content: \"\", content: \"2x Accessories, Hoodies\""}
-{"timestamp":"2025-08-20 12:40:26","context":"api","level":"info","message":"[PACKAGE DEBUG] package_content: \"2x Accessories, Hoodies\""}
-{"timestamp":"2025-08-20 12:40:26","context":"api","level":"info","message":"[PACKAGE CODE] Generisan kod:  za order #1231"}
-{"timestamp":"2025-08-20 12:40:26","context":"api","level":"info","message":"[API DEBUG] Finalni RCPhone za API: 381603995503"}
-{"timestamp":"2025-08-20 12:40:26","context":"api","level":"info","message":"[API VALIDATION] PackageList struktura validna. Paketi: 2"}
-{"timestamp":"2025-08-20 12:40:26","context":"api","level":"info","message":"[PAYMENT] Vrednost dexpress_payment_type iz opcija: 2"}
-[2025-08-20 12:40:26] [info] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/addshipment
-[2025-08-20 12:40:26] [info] Metod: POST
-[2025-08-20 12:40:26] [info] Podaci za API:
-{
-    "CClientID": "UK16967",
-    "CName": "Ilija Velemirov",
-    "CAddress": "Bulevar Cara Lazara",
-    "CAddressNum": "106",
-    "CTownID": 802824,
-    "CCName": "Ilija Velemirov",
-    "CCPhone": "381603995503",
-    "PuClientID": "UK16967",
-    "PuName": "s7Code DOO",
-    "PuAddress": "Bulevar Cara Lazara",
-    "PuAddressNum": "106",
-    "PuTownID": 802824,
-    "PuCName": "Ilija Velemirov",
-    "PuCPhone": "381603995503",
-    "RName": "Ilija2 Velemirovic2",
-    "RAddress": "Nikole Francuskog",
-    "RAddressNum": "54",
-    "RAddressDesc": "Stan 32",
-    "RTownID": 802158,
-    "RCName": "Ilija2 Velemirovic2",
-    "RCPhone": "381603995503",
-    "Note": "",
-    "DlTypeID": 2,
-    "PaymentBy": 1,
-    "PaymentType": 2,
-    "Value": 53500,
-    "Content": "Naocare, Accessories, Knjiga",
-    "Mass": 23100,
-    "ReferenceID": "1231",
-    "ReturnDoc": 0,
-    "BuyOut": 53500,
-    "BuyOutFor": 0,
-    "BuyOutAccount": "170-0010364556000-77",
-    "SelfDropOff": 0,
-    "PackageList": [
-        {
-            "Code": "TT0000000051",
-            "Mass": 11500,
-            "Content": "Naocare",
-            "DimX": null,
-            "DimY": null,
-            "DimZ": null,
-            "VMass": null,
-            "ReferenceID": null
-        },
-        {
-            "Code": "TT0000000052",
-            "Mass": 11600,
-            "Content": "Accessories, Knjiga",
-            "DimX": null,
-            "DimY": null,
-            "DimZ": null,
-            "VMass": null,
-            "ReferenceID": null
-        }
-    ]
-}
-[2025-08-20 12:40:26] [info] --- SLANJE ZAHTEVA ---
-[2025-08-20 12:40:28] [info] API Odgovor kod: 200
-[2025-08-20 12:40:28] [info] API Odgovor:
-"TEST"
-[2025-08-20 12:40:28] [info] --- ZAVRŠEN ZAHTEV ---
+[2025-08-20 14:25:09] [info] --- ZAVRŠEN ZAHTEV ---
