@@ -47,6 +47,8 @@ class D_Express_Admin_Ajax
         add_action('wp_ajax_dexpress_get_label', array($this, 'ajax_get_label'));
 
         add_action('wp_ajax_dexpress_delete_shipment', array($this, 'ajax_delete_shipment'));
+
+        add_action('wp_ajax_dexpress_generate_split_content', array($this, 'ajax_generate_split_content'));
     }
 
     /**
@@ -704,6 +706,26 @@ class D_Express_Admin_Ajax
         } catch (Exception $e) {
             wp_send_json_error(array('message' => 'Greška: ' . $e->getMessage()));
         }
+    }
+
+    public function ajax_generate_split_content()
+    {
+        check_ajax_referer('dexpress_admin_nonce', 'nonce');
+
+        $order_id = intval($_POST['order_id']);
+        $selected_items = $_POST['selected_items'];
+
+        $order = wc_get_order($order_id);
+        if (!$order) {
+            wp_send_json_error(['message' => 'Narudžbina nije pronađena']);
+            return;
+        }
+
+        $content_type = get_option('dexpress_content_type', 'category');
+        $metabox = new D_Express_Order_Metabox();
+        $content = $metabox->generate_content_by_type($order, $content_type, $selected_items);
+
+        wp_send_json_success(['content' => $content]);
     }
     /**
      * Kalkuliše COD za kombinovane artikle
