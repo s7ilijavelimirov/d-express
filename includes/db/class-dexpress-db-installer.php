@@ -189,6 +189,7 @@ class D_Express_DB_Installer
             package_index int(11) DEFAULT 1,
             total_packages int(11) DEFAULT 1,
             mass int(11) DEFAULT NULL COMMENT 'Težina u gramima',
+            content varchar(50) DEFAULT NULL COMMENT 'Sadržaj paketa',
             dim_x int(11) DEFAULT NULL COMMENT 'Širina u mm',
             dim_y int(11) DEFAULT NULL COMMENT 'Dužina u mm',
             dim_z int(11) DEFAULT NULL COMMENT 'Visina u mm',
@@ -199,9 +200,7 @@ class D_Express_DB_Installer
             PRIMARY KEY (id),
             KEY shipment_id (shipment_id),
             KEY package_code (package_code),
-            KEY package_reference_id (package_reference_id),
-            CONSTRAINT fk_packages_shipment FOREIGN KEY (shipment_id) 
-                REFERENCES {$wpdb->prefix}dexpress_shipments (id) ON DELETE CASCADE
+            KEY package_reference_id (package_reference_id)
         ) $charset_collate;";
 
         // 3. Tabela za statuse pošiljki

@@ -574,16 +574,27 @@ class D_Express_Label_Generator
 
                     <div class="detail-row">
                         <span class="detail-label">Sadržaj:</span>
-                        <?php echo esc_html($shipment_content); ?>
+                        <?php
+                        if ($package && !empty($package->content)) {
+                            $package_content = $package->content;
+                        } else {
+                            // Fallback na shipment content
+                            $package_content = $this->generate_shipment_content_for_split($order, $shipment);
+                        }
+                        echo esc_html($package_content);
+                        ?>
                     </div>
                     <div class="detail-row">
                         <span class="detail-label">Masa:</span>
                         <?php
-                        $shipment_weight = $this->calculate_shipment_weight($order, $shipment);
-                        if ($shipment_weight == (int)$shipment_weight) {
-                            echo esc_html(number_format($shipment_weight, 0, ',', '.') . ' kg');
+                        // ✅ Koristi masu konkretnog paketa umesto ukupne pošiljke
+                        if ($package && isset($package->mass)) {
+                            $package_weight_kg = $package->mass / 1000; // Iz grama u kg
+                            echo esc_html(number_format($package_weight_kg, ($package_weight_kg == (int)$package_weight_kg) ? 0 : 1, ',', '.') . ' kg');
                         } else {
-                            echo esc_html(number_format($shipment_weight, 1, ',', '.') . ' kg');
+                            // Fallback za stare pošiljke
+                            $shipment_weight = $this->calculate_shipment_weight($order, $shipment);
+                            echo esc_html(number_format($shipment_weight, ($shipment_weight == (int)$shipment_weight) ? 0 : 1, ',', '.') . ' kg');
                         }
                         ?>
                     </div>

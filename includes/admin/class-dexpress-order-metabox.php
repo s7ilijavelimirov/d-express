@@ -84,7 +84,15 @@ class D_Express_Order_Metabox
         // Renderuj sadržaj
         $this->render_metabox_content($order, $shipments, $locations, $selected_location_id, $is_dispenser);
     }
-
+    /**
+     * Generiše content za split shipment (fallback za label generator)
+     */
+    public function generate_shipment_content_for_split($order, $shipment)
+    {
+        // Fallback content generisanje kada nema package-specific content
+        $content_type = $this->get_content_type_setting();
+        return $this->generate_content_by_type($order, $content_type);
+    }
     /**
      * Renderovanje glavnog sadržaja metabox-a
      */
@@ -97,59 +105,58 @@ class D_Express_Order_Metabox
             <?php if (!empty($shipments)): ?>
                 <!-- Postojeće pošiljke -->
                 <?php $this->render_existing_shipments($shipments); ?>
-                <hr style="margin: 15px 0;">
+            <?php else: ?>
+
+                <!-- Kreiranje nove pošiljke -->
+                <div class="dexpress-create-section" id="dexpress-create-section">
+                    <h4><?php _e('Kreiranje D Express pošiljke', 'd-express-woo'); ?></h4>
+
+                    <!-- Artikli sa težinама -->
+                    <?php $this->render_order_items($order); ?>
+
+                    <!-- Forma za kreiranje -->
+                    <?php $this->render_shipment_form($order, $locations, $selected_location_id, $is_dispenser); ?>
+
+                    <!-- Dugmad -->
+                    <div style="margin-top: 20px;">
+                        <button type="button" id="dexpress-create-single-shipment"
+                            class="button button-primary" data-order-id="<?php echo esc_attr($order_id); ?>">
+                            <?php _e('Kreiraj jedan paket', 'd-express-woo'); ?>
+                        </button>
+
+                        <button type="button" id="dexpress-toggle-split-mode"
+                            class="button button-secondary" style="margin-left: 10px;">
+                            <?php _e('Podeli na više paketa', 'd-express-woo'); ?>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Sekcija za podelu na više paketa -->
+                <div class="dexpress-split-section" id="dexpress-split-section" style="display: none;">
+                    <h4><?php _e('Podela na više paketa', 'd-express-woo'); ?></h4>
+
+                    <div style="margin-bottom: 15px;">
+                        <label for="dexpress-split-count"><?php _e('Broj paketa:', 'd-express-woo'); ?></label>
+                        <input type="number" id="dexpress-split-count" min="2" max="20" value="2" style="width: 60px; margin-left: 10px;">
+                        <button type="button" id="dexpress-generate-splits" class="button" style="margin-left: 10px;">
+                            <?php _e('Generiši pakete', 'd-express-woo'); ?>
+                        </button>
+                    </div>
+
+                    <div id="dexpress-splits-container"></div>
+
+                    <div style="margin-top: 15px;">
+                        <button type="button" id="dexpress-create-all-shipments"
+                            class="button button-primary" data-order-id="<?php echo esc_attr($order_id); ?>">
+                            <?php _e('Kreiraj sve pakete', 'd-express-woo'); ?>
+                        </button>
+
+                        <button type="button" id="dexpress-back-to-single" class="button" style="margin-left: 10px;">
+                            <?php _e('Nazad', 'd-express-woo'); ?>
+                        </button>
+                    </div>
+                </div>
             <?php endif; ?>
-
-            <!-- Kreiranje nove pošiljke -->
-            <div class="dexpress-create-section" id="dexpress-create-section">
-                <h4><?php _e('Kreiranje D Express pošiljke', 'd-express-woo'); ?></h4>
-
-                <!-- Artikli sa težinама -->
-                <?php $this->render_order_items($order); ?>
-
-                <!-- Forma za kreiranje -->
-                <?php $this->render_shipment_form($order, $locations, $selected_location_id, $is_dispenser); ?>
-
-                <!-- Dugmad -->
-                <div style="margin-top: 20px;">
-                    <button type="button" id="dexpress-create-single-shipment"
-                        class="button button-primary" data-order-id="<?php echo esc_attr($order_id); ?>">
-                        <?php _e('Kreiraj jedan paket', 'd-express-woo'); ?>
-                    </button>
-
-                    <button type="button" id="dexpress-toggle-split-mode"
-                        class="button button-secondary" style="margin-left: 10px;">
-                        <?php _e('Podeli na više paketa', 'd-express-woo'); ?>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Sekcija za podelu na više paketa -->
-            <div class="dexpress-split-section" id="dexpress-split-section" style="display: none;">
-                <h4><?php _e('Podela na više paketa', 'd-express-woo'); ?></h4>
-
-                <div style="margin-bottom: 15px;">
-                    <label for="dexpress-split-count"><?php _e('Broj paketa:', 'd-express-woo'); ?></label>
-                    <input type="number" id="dexpress-split-count" min="2" max="20" value="2" style="width: 60px; margin-left: 10px;">
-                    <button type="button" id="dexpress-generate-splits" class="button" style="margin-left: 10px;">
-                        <?php _e('Generiši pakete', 'd-express-woo'); ?>
-                    </button>
-                </div>
-
-                <div id="dexpress-splits-container"></div>
-
-                <div style="margin-top: 15px;">
-                    <button type="button" id="dexpress-create-all-shipments"
-                        class="button button-primary" data-order-id="<?php echo esc_attr($order_id); ?>">
-                        <?php _e('Kreiraj sve pakete', 'd-express-woo'); ?>
-                    </button>
-
-                    <button type="button" id="dexpress-back-to-single" class="button" style="margin-left: 10px;">
-                        <?php _e('Nazad', 'd-express-woo'); ?>
-                    </button>
-                </div>
-            </div>
-
             <div id="dexpress-response" style="margin-top: 15px;"></div>
         </div>
 
@@ -412,6 +419,7 @@ class D_Express_Order_Metabox
     {
         $categories = [];
         foreach ($order->get_items() as $item_id => $item) {
+            // ✅ KLJUČNO: Filtriraj po selected_items
             if ($selected_items && !in_array($item_id, $selected_items)) continue;
 
             $product = $item->get_product();
@@ -717,6 +725,7 @@ class D_Express_Order_Metabox
                     $('.dexpress-split-form').each(function(index) {
                         var splitIndex = index + 1;
                         var locationId = $(this).find('select[name="split_locations[]"]').val();
+                        var customContent = $(this).find('.split-content-input').val();
                         var selectedItems = [];
 
                         $(this).find('input[name="split_items_' + splitIndex + '[]"]:checked').each(function() {
@@ -726,7 +735,8 @@ class D_Express_Order_Metabox
                         if (locationId && selectedItems.length > 0) {
                             splits.push({
                                 location_id: locationId,
-                                items: selectedItems
+                                items: selectedItems,
+                                custom_content: customContent 
                             });
                         }
                     });

@@ -883,9 +883,50 @@ class D_Express_API
         }
     }
     /**
+     * Izračunavanje težine narudžbine sa custom težinама iz metabox-a
+     */
+    public function calculate_order_weight_with_custom($order)
+    {
+        $order_id = $order->get_id();
+        $weight_kg = 0;
+
+        foreach ($order->get_items() as $item_id => $item) {
+            if (!($item instanceof WC_Order_Item_Product)) {
+                continue;
+            }
+
+            $product = $item->get_product();
+            $quantity = $item->get_quantity();
+
+            // ✅ GLAVNA IZMENA: Prvo pokušaj custom weight iz metabox-a
+            $custom_weight = get_post_meta($order_id, '_dexpress_item_weight_' . $item_id, true);
+
+            if ($custom_weight && $custom_weight > 0) {
+                $item_weight_kg = floatval($custom_weight);
+            } else if ($product && $product->has_weight()) {
+                $item_weight_kg = floatval($product->get_weight());
+            } else {
+                $item_weight_kg = 0.1; // Default 100g
+            }
+
+            $total_item_weight = $item_weight_kg * $quantity;
+            $weight_kg += $total_item_weight;
+
+            dexpress_log("[WEIGHT DEBUG] Item {$item_id}: custom={$custom_weight}kg, product=" .
+                ($product->has_weight() ? $product->get_weight() : 'none') .
+                "kg, quantity={$quantity}, total={$total_item_weight}kg", 'debug');
+        }
+
+        $weight_kg = max(0.1, $weight_kg); // Minimum 100g
+        $grams = intval($weight_kg * 1000);
+
+        dexpress_log("[WEIGHT DEBUG] Finalna težina: {$weight_kg}kg = {$grams}g", 'debug');
+        return $grams;
+    }
+    /**
      * Priprema podatke pošiljke iz WooCommerce narudžbine
      */
-    public function prepare_shipment_data_from_order($order, $sender_location_id = null, $package_code = null)
+    public function prepare_shipment_data_from_order($order, $sender_location_id = null, $package_code = null, $custom_content = null)
     {
         if (!$order instanceof WC_Order) {
             return new WP_Error('invalid_order', __('Nevažeća narudžbina', 'd-express-woo'));
@@ -1061,8 +1102,8 @@ class D_Express_API
             return new WP_Error('invalid_town', __('Neispravan grad. Molimo izaberite grad iz liste.', 'd-express-woo'));
         }
 
-        $content = dexpress_generate_shipment_content($order);
-
+        $content = !empty($custom_content) ? $custom_content : dexpress_generate_shipment_content($order);
+        dexpress_log('[PACKAGE DEBUG] custom_content: "' . $custom_content . '", content: "' . $content . '"', 'info');
         // Kreiranje reference
         $reference_id = apply_filters('dexpress_shipment_reference_id', $order->get_order_number());
         if (!D_Express_Validator::validate_reference($reference_id)) {
@@ -1071,7 +1112,7 @@ class D_Express_API
         }
 
         // Izračunaj težinu za porudžbinu
-        $weight_grams = $this->calculate_order_weight($order);
+        $weight_grams = $this->calculate_order_weight_with_custom($order);
         dexpress_log("[WEIGHT DEBUG] Težina iz calculate_order_weight: {$weight_grams} grama", 'debug');
         // Provera maksimalne težine (10.000 kg / 10.000.000 g)
         $max_weight = 10000000; // 10.000 kg
@@ -1137,7 +1178,7 @@ class D_Express_API
 
             // Vrednost i masa
             'Value' => $this->calculate_items_value($order),
-            'Content' => dexpress_generate_shipment_content($order),
+            'Content' => $content,
             'Mass' => $weight_grams,
 
             // Reference i opcije
@@ -1164,11 +1205,13 @@ class D_Express_API
                 )
             );
         }
-
+        $package_content = !empty($custom_content) ? $custom_content : $content;
+        dexpress_log('[PACKAGE DEBUG] package_content: "' . $package_content . '"', 'info');
         $shipment_data['PackageList'] = array(
             array(
                 'Code' => $package_code,
                 'Mass' => $weight_grams,
+                'Content' => $package_content,
                 'DimX' => null,
                 'DimY' => null,
                 'DimZ' => null,

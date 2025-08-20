@@ -111,6 +111,7 @@ class D_Express_DB
             'package_index' => 1,
             'total_packages' => 1,
             'mass' => 0,
+            'content' => null,
             'dim_x' => null,
             'dim_y' => null,
             'dim_z' => null,
@@ -129,6 +130,7 @@ class D_Express_DB
                 'package_index' => $package_data['package_index'],
                 'total_packages' => $package_data['total_packages'],
                 'mass' => $package_data['mass'],
+                'content' => $package_data['content'],
                 'dim_x' => $package_data['dim_x'],
                 'dim_y' => $package_data['dim_y'],
                 'dim_z' => $package_data['dim_z'],
@@ -143,6 +145,7 @@ class D_Express_DB
                 '%d', // package_index
                 '%d', // total_packages
                 '%d', // mass
+                '%s', // content
                 '%d', // dim_x
                 '%d', // dim_y
                 '%d', // dim_z

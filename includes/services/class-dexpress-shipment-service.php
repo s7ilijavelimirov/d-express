@@ -45,7 +45,7 @@ class D_Express_Shipment_Service
      * @param string $package_code Unapred generisan package kod
      * @return array|WP_Error Array sa podacima o kreiranoj pošiljci ili WP_Error
      */
-    public function create_shipment($order, $sender_location_id = null, $package_code = null)
+    public function create_shipment($order, $sender_location_id = null, $package_code = null, $custom_content = null)
     {
         try {
             $order_id = $order->get_id();
@@ -115,8 +115,11 @@ class D_Express_Shipment_Service
 
             // Priprema podataka za API sa unapred generisanim package kodom
             dexpress_log('[SHIPPING] Priprema podataka za API...', 'debug');
-            $shipment_data = $this->api->prepare_shipment_data_from_order($order, $sender_location_id, $package_code);
-
+            $shipment_data = $this->api->prepare_shipment_data_from_order($order, $sender_location_id, $package_code, $custom_content);
+            if (!empty($custom_content)) {
+                $shipment_data['Content'] = $custom_content;
+                dexpress_log('[SHIPPING] Custom content override: ' . $custom_content, 'debug');
+            }
             if (is_wp_error($shipment_data)) {
                 dexpress_log('[SHIPPING] Greška pri pripremi podataka: ' . $shipment_data->get_error_message(), 'error');
                 return $shipment_data;
@@ -197,9 +200,10 @@ class D_Express_Shipment_Service
                         'package_index' => $package_index,
                         'total_packages' => $total_packages,
                         'mass' => $mass,
+                        'content' => isset($package['Content']) ? $package['Content'] : $custom_content,
                         'dim_x' => isset($package['DimX']) ? intval($package['DimX']) : null,
-                        'dim_y' => isset($package['DimY']) ? intval($package['DimY']) : null, 
-                        'dim_z' => isset($package['DimZ']) ? intval($package['DimZ']) : null, 
+                        'dim_y' => isset($package['DimY']) ? intval($package['DimY']) : null,
+                        'dim_z' => isset($package['DimZ']) ? intval($package['DimZ']) : null,
                         'v_mass' => isset($package['VMass']) ? intval($package['VMass']) : null,
                         'dimensions' => null,
                         'created_at' => current_time('mysql')
