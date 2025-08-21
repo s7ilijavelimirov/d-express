@@ -291,70 +291,97 @@ class D_Express_Admin_Ajax
      */
     public function ajax_create_shipment()
     {
-        // Provera nonce-a
-        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field($_POST['nonce']), 'dexpress_admin_nonce')) {
-            wp_send_json_error(array('message' => __('Sigurnosna provera nije uspela.', 'd-express-woo')));
+        // Nonce i permisija provera
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'dexpress_admin_nonce')) {
+            wp_send_json_error(array('message' => 'Sigurnosna provera nije uspela.'));
+            return;
         }
 
-        // Provera dozvola
         if (!current_user_can('manage_woocommerce')) {
-            wp_send_json_error(array('message' => __('Nemate dozvolu za ovu akciju.', 'd-express-woo')));
+            wp_send_json_error(array('message' => 'Nemate dozvolu za ovu akciju.'));
+            return;
         }
 
         $order_id = intval($_POST['order_id']);
         $sender_location_id = intval($_POST['sender_location_id']);
-
         $custom_content = isset($_POST['content']) ? sanitize_text_field($_POST['content']) : '';
 
-        if (!$order_id) {
-            wp_send_json_error(array('message' => __('ID narudžbine je obavezan.', 'd-express-woo')));
-        }
-
-        if (!$sender_location_id) {
-            wp_send_json_error(array('message' => __('Morate izabrati lokaciju pošaljioce.', 'd-express-woo')));
-        }
-
-        // Dobijanje narudžbine
-        $order = wc_get_order($order_id);
-        if (!$order) {
-            wp_send_json_error(array('message' => __('Narudžbina nije pronađena.', 'd-express-woo')));
-        }
-
-        // Generiši kod pre poziva servisne klase
-        try {
-            $package_code = dexpress_generate_package_code();
-        } catch (Exception $e) {
-            wp_send_json_error(array('message' => 'Greška pri generisanju koda: ' . $e->getMessage()));
+        if (!$order_id || !$sender_location_id) {
+            wp_send_json_error(array('message' => 'Nedostaju obavezni podaci.'));
             return;
         }
-        $shipment_service = new D_Express_Shipment_Service();
-        $result = $shipment_service->create_shipment($order, $sender_location_id, $package_code, $custom_content);
 
-        if (is_wp_error($result)) {
-            dexpress_log('[AJAX] Greška pri kreiranju: ' . $result->get_error_message(), 'error');
-            wp_send_json_error(array('message' => $result->get_error_message()));
-        } else {
-            dexpress_log('[AJAX] Uspešno kreirana pošiljka: ' . print_r($result, true), 'info');
+        $order = wc_get_order($order_id);
+        if (!$order) {
+            wp_send_json_error(array('message' => 'Narudžbina nije pronađena.'));
+            return;
+        }
 
-            // Formatiranje odgovora
-            $response_message = sprintf(
-                __('Pošiljka je uspešno kreirana. Tracking: %s, Lokacija: %s', 'd-express-woo'),
-                $result['tracking_number'],
-                $result['location_name']
+        try {
+            $api = new D_Express_API();
+            $db = new D_Express_DB();
+
+            // Pripremi shipment podatke
+            $shipment_data = $api->prepare_shipment_data_from_order($order, $sender_location_id, null, $custom_content);
+            if (is_wp_error($shipment_data)) {
+                wp_send_json_error(array('message' => $shipment_data->get_error_message()));
+                return;
+            }
+
+            // API poziv
+            $response = $api->add_shipment($shipment_data);
+            if (is_wp_error($response)) {
+                wp_send_json_error(array('message' => $response->get_error_message()));
+                return;
+            }
+
+            // Sačuvaj shipment
+            $shipment_record = array(
+                'order_id' => $order_id,
+                'reference_id' => $shipment_data['ReferenceID'],
+                'sender_location_id' => $sender_location_id,
+                'split_index' => 1,
+                'total_splits' => 1,
+                'value_in_para' => $shipment_data['Value'],
+                'buyout_in_para' => $shipment_data['BuyOut'],
+                'payment_by' => $shipment_data['PaymentBy'],
+                'payment_type' => $shipment_data['PaymentType'],
+                'shipment_type' => $shipment_data['DlTypeID'],
+                'return_doc' => $shipment_data['ReturnDoc'],
+                'content' => $shipment_data['Content'],
+                'total_mass' => $shipment_data['Mass'],
+                'note' => $shipment_data['Note'],
+                'api_response' => is_string($response) ? $response : json_encode($response),
+                'is_test' => dexpress_is_test_mode() ? 1 : 0
             );
 
-            if ($result['is_test']) {
-                $response_message .= ' [TEST REŽIM]';
+            $shipment_id = $db->add_shipment($shipment_record);
+
+            if ($shipment_id && isset($shipment_data['PackageList'])) {
+                $total_packages = count($shipment_data['PackageList']);
+                $package_index = 1;
+
+                foreach ($shipment_data['PackageList'] as $package) {
+                    $package_data = array(
+                        'shipment_id' => $shipment_id,
+                        'package_code' => $package['Code'],
+                        'package_index' => $package_index,
+                        'total_packages' => $total_packages,
+                        'mass' => $package['Mass'],
+                        'content' => $package['Content']
+                    );
+
+                    $db->add_package($package_data);
+                    $package_index++;
+                }
             }
 
             wp_send_json_success(array(
-                'message' => $response_message,
-                'shipment_id' => $result['shipment_id'],
-                'tracking_number' => $result['tracking_number'],
-                'package_code' => $result['shipment_code'],
-                'location_name' => $result['location_name'],
-                'is_test' => $result['is_test']
+                'message' => 'Pošiljka uspešno kreirana',
+                'shipment_id' => $shipment_id
             ));
+        } catch (Exception $e) {
+            wp_send_json_error(array('message' => 'Greška: ' . $e->getMessage()));
         }
     }
 
@@ -420,26 +447,7 @@ class D_Express_Admin_Ajax
         // Implementirati kada dođemo do API refaktora
         wp_send_json_error('Not implemented yet');
     }
-    /**
-     * Kalkuliše masu za odabrane artikle
-     */
-    private function calculate_split_mass($order, $selected_items)
-    {
-        $total_mass = 0;
 
-        foreach ($order->get_items() as $item_id => $item) {
-            if (in_array($item_id, $selected_items)) {
-                $product = $item->get_product();
-                if ($product && $product->has_weight()) {
-                    $weight_kg = floatval($product->get_weight());
-                    $weight_grams = $weight_kg * 1000; // Konvertuj u grame
-                    $total_mass += $weight_grams * $item->get_quantity();
-                }
-            }
-        }
-
-        return $total_mass > 0 ? intval($total_mass) : 500; // Min 500g
-    }
 
     public function ajax_create_multiple_shipments()
     {
@@ -665,10 +673,15 @@ class D_Express_Admin_Ajax
 
                 if ($shipment_id) {
                     // Sačuvaj SVE pakete u packages tabelu
+                    $total_packages = count($package_list); // DODAJ OVU LINIJU
+                    $package_index = 1; // DODAJ OVU LINIJU
+
                     foreach ($package_list as $index => $package) {
                         $package_data = array(
                             'shipment_id' => $shipment_id,
                             'package_code' => $package['Code'],
+                            'package_index' => $package_index,
+                            'total_packages' => $total_packages,
                             'mass' => $package['Mass'],
                             'content' => isset($package['Content']) ? $package['Content'] : null,
                             'dim_x' => isset($package['DimX']) ? $package['DimX'] : null,
@@ -678,6 +691,7 @@ class D_Express_Admin_Ajax
                         );
 
                         $db->add_package($package_data);
+                        $package_index++;
                     }
 
                     // Dodaj note u narudžbinu

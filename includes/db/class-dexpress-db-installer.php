@@ -140,7 +140,6 @@ class D_Express_DB_Installer
         // 3. Tabela za statuse pošiljki
         $tables[] = "CREATE TABLE {$wpdb->prefix}dexpress_statuses (
             id bigint(20) NOT NULL AUTO_INCREMENT,
-            shipment_id varchar(50) DEFAULT NULL,
             notification_id varchar(100) NOT NULL,
             reference_id varchar(100) DEFAULT NULL,
             shipment_code varchar(50) DEFAULT NULL,
@@ -151,7 +150,6 @@ class D_Express_DB_Installer
             created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY  (id),
             UNIQUE KEY notification_id (notification_id),
-            KEY shipment_id (shipment_id),
             KEY reference_id (reference_id),
             KEY status_id (status_id),
             KEY status_date (status_date)

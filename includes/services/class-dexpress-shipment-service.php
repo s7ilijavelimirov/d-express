@@ -30,13 +30,7 @@ class D_Express_Shipment_Service
         $this->db = new D_Express_DB();
         add_action('dexpress_after_shipment_created', array($this, 'send_tracking_email'), 10, 2);
     }
-    /**
-     * Kreiranje D Express pošiljke
-     * 
-     * @param WC_Order $order WooCommerce narudžbina
-     * @param int $sender_location_id ID lokacije pošaljioce (opciono)
-     * @return int|WP_Error ID pošiljke ili WP_Error
-     */
+
     /**
      * Kreiranje D Express pošiljke - FINALNA VERZIJA
      * 
@@ -189,8 +183,9 @@ class D_Express_Shipment_Service
             if (isset($shipment_data['PackageList']) && is_array($shipment_data['PackageList'])) {
                 $package_index = 1;
                 $total_packages = count($shipment_data['PackageList']);
-
+                dexpress_log('[DEBUG] Ukupno paketa: ' . $total_packages, 'debug');
                 foreach ($shipment_data['PackageList'] as $package) {
+                    dexpress_log('[DEBUG] Pre upisivanja - package_index: ' . $package_index . ', total_packages: ' . $total_packages, 'debug');
                     $mass = isset($package['Mass']) ? $package['Mass'] : $shipment_data['Mass'];
 
                     $package_data = array(
@@ -210,7 +205,7 @@ class D_Express_Shipment_Service
                     );
 
                     $package_id = $this->db->add_package($package_data);
-                    dexpress_log('[SHIPPING] Paket sačuvan sa ID: ' . $package_id, 'debug');
+                    dexpress_log('[DEBUG] Posle upisivanja - paket ID: ' . $package_id, 'debug');
                     $package_index++;
                 }
             }

@@ -542,14 +542,24 @@ class D_Express_Order_Timeline
     {
         global $wpdb;
 
-        // Dodaj status u tabelu statusa
+        // Kreiraj webhook podatke u API formatu
+        $webhook_data = array(
+            'cc' => get_option('dexpress_webhook_secret', 'test_secret'),
+            'nID' => 'SIM_' . time() . '_' . rand(1000, 9999),
+            'code' => $this->get_tracking_identifier($shipment),
+            'rID' => $shipment->reference_id,
+            'sID' => $status_id,
+            'dt' => date('YmdHis', strtotime($status_date))
+        );
+
+        // Dodaj status u tabelu statusa sa API strukuturom
         $status_data = array(
-            'notification_id' => 'SIM' . time() . rand(1000, 9999),
-            'shipment_code' => $this->get_tracking_identifier($shipment), // ISPRAVKA: koristi tracking_number
-            'reference_id' => $shipment->reference_id,
-            'status_id' => $status_id,
+            'notification_id' => $webhook_data['nID'],
+            'shipment_code' => $webhook_data['code'],
+            'reference_id' => $webhook_data['rID'],
+            'status_id' => $webhook_data['sID'],
             'status_date' => $status_date,
-            'raw_data' => json_encode(['simulated' => true]),
+            'raw_data' => json_encode($webhook_data),
             'is_processed' => 1,
             'created_at' => current_time('mysql')
         );
@@ -571,7 +581,7 @@ class D_Express_Order_Timeline
         $order = wc_get_order($shipment->order_id);
         if ($order) {
             $order->add_order_note(sprintf(
-                __('D Express status ažuriran1: %s (simulirano)', 'd-express-woo'),
+                __('D Express status ažuriran: %s (simulirano)', 'd-express-woo'),
                 dexpress_get_status_name($status_id)
             ));
         }

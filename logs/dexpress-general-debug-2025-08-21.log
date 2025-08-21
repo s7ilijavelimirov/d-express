@@ -1,0 +1,6 @@
+{"timestamp":"2025-08-21 08:42:06","context":"general","level":"debug","message":"Checkout order processed: 1244"}
+{"timestamp":"2025-08-21 08:42:06","context":"general","level":"debug","message":"Has D Express shipping: Yes"}
+{"timestamp":"2025-08-21 08:42:06","context":"general","level":"debug","message":"Order processed - manual shipment creation required: 1244"}
+{"timestamp":"2025-08-21 08:50:30","context":"general","level":"debug","message":"Checkout order processed: 1245"}
+{"timestamp":"2025-08-21 08:50:30","context":"general","level":"debug","message":"Has D Express shipping: Yes"}
+{"timestamp":"2025-08-21 08:50:30","context":"general","level":"debug","message":"Order processed - manual shipment creation required: 1245"}

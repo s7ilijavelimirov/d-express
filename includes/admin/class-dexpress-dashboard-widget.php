@@ -119,8 +119,8 @@ class D_Express_Dashboard_Widget
         echo '<div class="dexpress-stat"><span class="dexpress-stat-count">' . $failed . '</span> ' . __('Neisporučeno', 'd-express-woo') . '</div>';
         echo '</div>';
 
-        // Lista najnovijih pošiljki
-        $this->render_recent_shipments();
+        // // Lista najnovijih pošiljki
+        // $this->render_recent_shipments();
 
         echo '<p><a href="' . admin_url('admin.php?page=dexpress-shipments') . '" class="button">' . __('Prikaži sve pošiljke', 'd-express-woo') . '</a></p>';
 

@@ -23,8 +23,6 @@ class D_Express_Column_Renderer
      */
     public function render_tracking_column($order_id)
     {
-       
-
         // Osiguraj da je order_id integer
         $order_id = is_object($order_id) ? $order_id->get_id() : intval($order_id);
 
@@ -33,22 +31,49 @@ class D_Express_Column_Renderer
             return;
         }
 
-        // Dobij pošiljke
-        $db = new D_Express_DB();
-        $shipments = $db->get_shipments_by_order_id($order_id);
+        // Dobij info o pošiljkama i paketima
+        global $wpdb;
+
+        $shipments = $wpdb->get_results($wpdb->prepare(
+            "SELECT s.*, sl.name as location_name,
+                COUNT(p.id) as package_count,
+                GROUP_CONCAT(p.package_code SEPARATOR ', ') as tracking_codes
+         FROM {$wpdb->prefix}dexpress_shipments s 
+         LEFT JOIN {$wpdb->prefix}dexpress_packages p ON s.id = p.shipment_id 
+         LEFT JOIN {$wpdb->prefix}dexpress_sender_locations sl ON s.sender_location_id = sl.id
+         WHERE s.order_id = %d 
+         GROUP BY s.id
+         ORDER BY s.created_at ASC",
+            $order_id
+        ));
 
         if (!empty($shipments)) {
-            foreach ($shipments as $shipment) {
-                echo '<div style="margin-bottom: 5px;">';
-                if ($shipment->is_test) {
-                    echo '<span style="color: #666;">' . esc_html($shipment->tracking_number) . ' (Test)</span>';
-                } else {
-                    echo '<a href="https://www.dexpress.rs/rs/pracenje-posiljaka/' . esc_attr($shipment->tracking_number) . '" target="_blank">';
-                    echo esc_html($shipment->tracking_number);
-                    echo '</a>';
-                }
-                echo '</div>';
+            $total_shipments = count($shipments);
+            $total_packages = array_sum(array_column($shipments, 'package_count'));
+
+            echo '<div style="font-size: 12px; line-height: 1.4; padding: 4px;">';
+
+            // Pošiljke
+            echo '<div><strong>Pošiljke:</strong> ' . $total_shipments . '</div>';
+
+            // Paketi
+            echo '<div><strong>Paketi:</strong> ' . $total_packages . '</div>';
+
+            // Lokacija
+            $locations = array_unique(array_filter(array_column($shipments, 'location_name')));
+            if (!empty($locations)) {
+                echo '<div><strong>Lokacija:</strong> ' . implode(', ', $locations) . '</div>';
             }
+
+            // Test status
+            // Status produkcije/test
+            if ($shipments[0]->is_test) {
+                echo '<div><strong>Režim:</strong> <span style="background: #fff3cd; color: #856404; font-size: 10px; padding: 2px 6px; border-radius: 3px; font-weight: 500;">TEST</span></div>';
+            } else {
+                echo '<div><strong>Režim:</strong> <span style="background: #d4edda; color: #155724; font-size: 10px; padding: 2px 6px; border-radius: 3px; font-weight: 500;">PRODUKCIJA</span></div>';
+            }
+
+            echo '</div>';
         } else {
             echo '<span style="color: #999;">-</span>';
         }

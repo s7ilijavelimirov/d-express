@@ -1,6 +1,4 @@
-{"timestamp":"2025-08-21 07:09:10","context":"general","level":"info","message":"[CONTENT] Original: \"Naocare\" -> Sanitized: \"Naocare\""}
-{"timestamp":"2025-08-21 07:09:10","context":"general","level":"info","message":"[FIXED] Lokacija 1: 1 paketa, masa 2000g, ref 1236-L1"}
-{"timestamp":"2025-08-21 07:09:10","context":"general","level":"info","message":"[CONTENT] Original: \"PinkFloyd, Accessories\" -> Sanitized: \"PinkFloyd, Accessories\""}
-{"timestamp":"2025-08-21 07:09:10","context":"general","level":"info","message":"[FIXED] Lokacija 2: 1 paketa, masa 5100g, ref 1236-L2"}
-{"timestamp":"2025-08-21 07:10:09","context":"general","level":"info","message":"[CONTENT] Original: \"Accessories, Accessories, Uncategorized\" -> Sanitized: \"Accessories, Accessories, Uncategorized\""}
-{"timestamp":"2025-08-21 07:10:09","context":"general","level":"info","message":"[FIXED] Lokacija 1: 2 paketa, masa 13600g, ref 1237"}
+{"timestamp":"2025-08-21 08:46:55","context":"general","level":"info","message":"[CONTENT] Original: \"Accessories, Music\" -> Sanitized: \"Accessories, Music\""}
+{"timestamp":"2025-08-21 08:46:55","context":"general","level":"info","message":"[FIXED] Lokacija 1: 2 paketa, masa 7000g, ref 1244"}
+{"timestamp":"2025-08-21 08:50:48","context":"general","level":"info","message":"[CONTENT] Original: \"Music, Accessories\" -> Sanitized: \"Music, Accessories\""}
+{"timestamp":"2025-08-21 08:50:48","context":"general","level":"info","message":"[FIXED] Lokacija 1: 2 paketa, masa 7000g, ref 1245"}
