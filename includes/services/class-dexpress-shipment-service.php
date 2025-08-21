@@ -148,22 +148,23 @@ class D_Express_Shipment_Service
                 return new WP_Error('api_error', 'Neočekivan format odgovora od D Express API-ja');
             }
 
-            // Priprema zapisa za bazu
+
             $shipment_record = array(
                 'order_id' => $order_id,
-                'shipment_id' => $api_response,        // "TEST" ili "OK"
-                'tracking_number' => $tracking_number, // "TT0000000026"
-                'package_code' => $package_code,       // "TT0000000026"
                 'reference_id' => $shipment_data['ReferenceID'],
                 'sender_location_id' => $sender_location_id,
-                'split_index' => null,
-                'total_splits' => null,
-                'parent_order_id' => null,
-                'status_code' => dexpress_is_test_mode() ? '0' : null,
-                'status_description' => dexpress_is_test_mode() ? 'Čeka na preuzimanje' : null,
-                'created_at' => current_time('mysql'),
-                'updated_at' => current_time('mysql'),
-                'shipment_data' => json_encode($response),
+                'split_index' => 1,
+                'total_splits' => 1,
+                'value_in_para' => $shipment_data['Value'],
+                'buyout_in_para' => $shipment_data['BuyOut'],
+                'payment_by' => $shipment_data['PaymentBy'],
+                'payment_type' => $shipment_data['PaymentType'],
+                'shipment_type' => $shipment_data['DlTypeID'],
+                'return_doc' => $shipment_data['ReturnDoc'],
+                'content' => $shipment_data['Content'],
+                'total_mass' => $shipment_data['Mass'],
+                'note' => isset($shipment_data['Note']) ? $shipment_data['Note'] : '',
+                'api_response' => is_string($response) ? $response : json_encode($response),
                 'is_test' => dexpress_is_test_mode() ? 1 : 0
             );
 

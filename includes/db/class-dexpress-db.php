@@ -88,6 +88,9 @@ class D_Express_DB
         global $wpdb;
 
         $defaults = array(
+            'package_reference_id' => null,
+            'package_index' => 1,
+            'total_packages' => 1,
             'mass' => 0,
             'content' => null,
             'dim_x' => null,
@@ -105,6 +108,9 @@ class D_Express_DB
             array(
                 'shipment_id' => $package_data['shipment_id'],
                 'package_code' => $package_data['package_code'],
+                'package_reference_id' => $package_data['package_reference_id'],
+                'package_index' => $package_data['package_index'],
+                'total_packages' => $package_data['total_packages'],
                 'mass' => $package_data['mass'],
                 'content' => $package_data['content'],
                 'dim_x' => $package_data['dim_x'],
@@ -114,7 +120,7 @@ class D_Express_DB
                 'created_at' => $package_data['created_at'],
                 'updated_at' => $package_data['updated_at']
             ),
-            array('%d', '%s', '%d', '%s', '%d', '%d', '%d', '%d', '%s', '%s')
+            array('%d', '%s', '%s', '%d', '%d', '%d', '%s', '%d', '%d', '%d', '%d', '%s', '%s')
         );
 
         return $result ? $wpdb->insert_id : false;
@@ -319,24 +325,19 @@ class D_Express_DB
     }
 
     /**
-     * Dobijanje statusa za pošiljku
-     *
-     * @param string $shipment_id D Express ID pošiljke
-     * @return array Lista statusa
+     * Pronađi shipment na osnovu package_code
      */
-    public function get_statuses_for_shipment($shipment_code, $reference_id)
+    public function find_shipment_by_package_code($package_code)
     {
         global $wpdb;
 
-        return $wpdb->get_results($wpdb->prepare(
-            "SELECT * FROM {$wpdb->prefix}dexpress_statuses 
-        WHERE shipment_code = %s OR reference_id = %s 
-        ORDER BY status_date DESC",
-            $shipment_code,
-            $reference_id
+        return $wpdb->get_row($wpdb->prepare(
+            "SELECT s.* FROM {$wpdb->prefix}dexpress_shipments s 
+         INNER JOIN {$wpdb->prefix}dexpress_packages p ON s.id = p.shipment_id 
+         WHERE p.package_code = %s",
+            $package_code
         ));
     }
-
     /**
      * Dodaje novi status u bazu
      *

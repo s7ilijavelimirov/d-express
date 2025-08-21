@@ -299,20 +299,13 @@ class D_Express_WooCommerce
      */
     public function auto_simulate_test_statuses()
     {
-        if (!class_exists('WooCommerce')) {
+        if (!class_exists('WooCommerce') || !dexpress_is_test_mode()) {
             return;
         }
-        // Proveravamo da li je test režim aktivan
-        if (!dexpress_is_test_mode()) {
-            return;
-        }
-        if (!class_exists('D_Express_Order_Timeline')) {
-            return;
-        }
-        global $wpdb;
-        //dexpress_log('Pokrenuta automatska simulacija statusa pošiljki', 'info');
 
-        // Dohvatamo pošiljke iz test režima koje su nedavno kreirane
+        global $wpdb;
+
+        // Dohvati test pošiljke kreirane u poslednjih 7 dana
         $test_shipments = $wpdb->get_results(
             "SELECT * FROM {$wpdb->prefix}dexpress_shipments 
         WHERE is_test = 1 
@@ -326,6 +319,7 @@ class D_Express_WooCommerce
 
         $timeline = new D_Express_Order_Timeline();
         foreach ($test_shipments as $shipment) {
+            // Pozovi simulaciju za svaku pošiljku
             $timeline->simulate_test_mode_statuses($shipment->id);
         }
     }
@@ -635,16 +629,13 @@ class D_Express_WooCommerce
         }
 
         // Dohvatanje pošiljke na osnovu reference_id ili shipment_code
-        $shipment = $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM {$wpdb->prefix}dexpress_shipments 
-    WHERE reference_id = %s 
-       OR shipment_id = %s 
-       OR tracking_number = %s
-    ORDER BY created_at DESC LIMIT 1",
-            $notification->reference_id,
-            $notification->shipment_code,
-            $notification->shipment_code
-        ));
+        // NOVI KOD - dodaj ovo:
+        $db = new D_Express_DB();
+        $shipment = $db->find_shipment_by_package_code($notification->shipment_code);
+
+        if (!$shipment) {
+            $shipment = $db->get_shipment_by_reference($notification->reference_id);
+        }
 
         if (!$shipment) {
             dexpress_log('Nije pronađena pošiljka za notifikaciju ID: ' . $notification_id, 'warning');
