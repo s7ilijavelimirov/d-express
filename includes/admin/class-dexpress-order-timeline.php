@@ -538,11 +538,19 @@ class D_Express_Order_Timeline
     /**
      * Dodavanje simuliranog statusa u bazu
      */
+    /**
+     * Dodavanje simuliranog statusa u bazu - ažurirano za package tracking
+     */
     private function add_simulated_status($shipment, $status_id, $status_date)
     {
         global $wpdb;
 
-        // Kreiraj webhook podatke u API formatu
+        // Dobij prvi paket za shipment
+        $package = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}dexpress_packages WHERE shipment_id = %d LIMIT 1",
+            $shipment->id
+        ));
+
         $webhook_data = array(
             'cc' => get_option('dexpress_webhook_secret', 'test_secret'),
             'nID' => 'SIM_' . time() . '_' . rand(1000, 9999),
@@ -552,11 +560,11 @@ class D_Express_Order_Timeline
             'dt' => date('YmdHis', strtotime($status_date))
         );
 
-        // Dodaj status u tabelu statusa sa API strukuturom
+        // Status podaci sa package_id
         $status_data = array(
             'notification_id' => $webhook_data['nID'],
             'shipment_code' => $webhook_data['code'],
-            'reference_id' => $webhook_data['rID'],
+            'package_id' => $package ? $package->id : null,
             'status_id' => $webhook_data['sID'],
             'status_date' => $status_date,
             'raw_data' => json_encode($webhook_data),
@@ -564,9 +572,19 @@ class D_Express_Order_Timeline
             'created_at' => current_time('mysql')
         );
 
-        $wpdb->insert($wpdb->prefix . 'dexpress_statuses', $status_data);
+        $wpdb->insert(
+            $wpdb->prefix . 'dexpress_statuses',
+            $status_data,
+            ['%s', '%s', '%d', '%s', '%s', '%s', '%d', '%s']
+        );
 
-        // Ažuriraj glavnu tabelu pošiljki
+        // Ažuriraj package status ako postoji
+        if ($package) {
+            $db = new D_Express_DB();
+            $db->update_package_status($package->id, $status_id, dexpress_get_status_name($status_id));
+        }
+
+        // Ažuriraj shipment status
         $wpdb->update(
             $wpdb->prefix . 'dexpress_shipments',
             array(
@@ -580,10 +598,11 @@ class D_Express_Order_Timeline
         // Dodaj napomenu u narudžbinu
         $order = wc_get_order($shipment->order_id);
         if ($order) {
-            $order->add_order_note(sprintf(
-                __('D Express status ažuriran: %s (simulirano)', 'd-express-woo'),
-                dexpress_get_status_name($status_id)
-            ));
+            $note = sprintf('D Express status ažuriran: %s (simulirano)', dexpress_get_status_name($status_id));
+            if ($package) {
+                $note .= sprintf(' - Paket: %s', $package->package_code);
+            }
+            $order->add_order_note($note);
         }
 
         dexpress_log('[SIMULATION] Dodat status ' . $status_id . ' za pošiljku ' . $this->get_tracking_identifier($shipment), 'debug');

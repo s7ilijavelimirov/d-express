@@ -97,6 +97,9 @@ class D_Express_DB
             'dim_y' => null,
             'dim_z' => null,
             'v_mass' => null,
+            'current_status_id' => null,
+            'current_status_name' => null,
+            'status_updated_at' => null,
             'created_at' => current_time('mysql'),
             'updated_at' => current_time('mysql')
         );
@@ -117,10 +120,13 @@ class D_Express_DB
                 'dim_y' => $package_data['dim_y'],
                 'dim_z' => $package_data['dim_z'],
                 'v_mass' => $package_data['v_mass'],
+                'current_status_id' => $package_data['current_status_id'],
+                'current_status_name' => $package_data['current_status_name'],
+                'status_updated_at' => $package_data['status_updated_at'],
                 'created_at' => $package_data['created_at'],
                 'updated_at' => $package_data['updated_at']
             ),
-            array('%d', '%s', '%s', '%d', '%d', '%d', '%s', '%d', '%d', '%d', '%d', '%s', '%s')
+            array('%d', '%s', '%s', '%d', '%d', '%d', '%s', '%d', '%d', '%d', '%d', '%s', '%s', '%s', '%s', '%s')
         );
 
         return $result ? $wpdb->insert_id : false;
@@ -145,15 +151,15 @@ class D_Express_DB
                 'status_description' => $status_description,
                 'updated_at' => current_time('mysql')
             ),
-            array('shipment_id' => $shipment_id),
+            array('id' => $shipment_id), // PROMENI OVO
             array('%s', '%s', '%s'),
-            array('%s')
+            array('%d') // PROMENI OVO
         ) !== false;
 
         if ($result) {
-            // Dobij order_id iz shipment_id
+            // Dobij order_id iz ID-a
             $order_id = $wpdb->get_var($wpdb->prepare(
-                "SELECT order_id FROM {$wpdb->prefix}dexpress_shipments WHERE shipment_id = %s",
+                "SELECT order_id FROM {$wpdb->prefix}dexpress_shipments WHERE id = %d", // PROMENI OVO
                 $shipment_id
             ));
             if ($order_id) {
@@ -277,22 +283,6 @@ class D_Express_DB
         }
     }
     /**
-     * Dobijanje pošiljke prema tracking broju
-     *
-     * @param string $tracking_number Broj za praćenje
-     * @return object|null Podaci o pošiljci
-     */
-    public function get_shipment_by_tracking($tracking_number)
-    {
-        global $wpdb;
-
-        return $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM {$wpdb->prefix}dexpress_shipments WHERE tracking_number = %s",
-            $tracking_number
-        ));
-    }
-
-    /**
      * Dobijanje pošiljke prema D Express ID-u
      *
      * @param string $shipment_id D Express ID pošiljke
@@ -353,8 +343,8 @@ class D_Express_DB
             $status_data,
             array(
                 '%s', // notification_id
-                '%s', // reference_id
                 '%s', // shipment_code
+                '%d', // package_id
                 '%s', // status_id
                 '%s', // status_date
                 '%s', // raw_data
@@ -365,7 +355,6 @@ class D_Express_DB
 
         return $result ? $wpdb->insert_id : false;
     }
-
     /**
      * Označava status kao obrađen
      *
@@ -549,5 +538,54 @@ class D_Express_DB
         }
 
         return $result !== false;
+    }
+    /**
+     * PACKAGE TRACKING METODE
+     */
+    public function get_package_by_code($package_code)
+    {
+        global $wpdb;
+        return $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}dexpress_packages WHERE package_code = %s",
+            $package_code
+        ));
+    }
+
+    public function get_shipment_by_package_code($package_code)
+    {
+        global $wpdb;
+        return $wpdb->get_row($wpdb->prepare(
+            "SELECT s.* FROM {$wpdb->prefix}dexpress_shipments s 
+         INNER JOIN {$wpdb->prefix}dexpress_packages p ON s.id = p.shipment_id 
+         WHERE p.package_code = %s",
+            $package_code
+        ));
+    }
+
+    public function update_package_status($package_id, $status_id, $status_name = '')
+    {
+        global $wpdb;
+        return $wpdb->update(
+            $wpdb->prefix . 'dexpress_packages',
+            array(
+                'current_status_id' => $status_id,
+                'current_status_name' => $status_name,
+                'status_updated_at' => current_time('mysql'),
+                'updated_at' => current_time('mysql')
+            ),
+            array('id' => $package_id),
+            array('%s', '%s', '%s', '%s'),
+            array('%d')
+        ) !== false;
+    }
+    public function get_package_statuses($package_id)
+    {
+        global $wpdb;
+        return $wpdb->get_results($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}dexpress_statuses 
+         WHERE package_id = %d 
+         ORDER BY status_date ASC, created_at ASC",
+            $package_id
+        ));
     }
 }

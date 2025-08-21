@@ -929,11 +929,12 @@ class D_Express_Settings_Renderer
      */
     private function render_cron_status()
     {
-        //$cron_status = D_Express_Cron_Manager::get_cron_status();
+        $cron_status = D_Express_Cron_Manager::get_cron_status();
 
         echo '<div class="dexpress-cron-status">';
         echo '<h3>Status automatskog ažuriranja</h3>';
 
+        // Glavni status
         echo '<table class="widefat">';
         echo '<thead>';
         echo '<tr>';
@@ -946,18 +947,73 @@ class D_Express_Settings_Renderer
         echo '<tbody>';
         echo '<tr>';
         echo '<td><strong>Glavni CRON zadatak</strong></td>';
-        // echo '<td><span class="status-' . ($cron_status['is_active'] ? 'active' : 'inactive') . '">' . ($cron_status['is_active'] ? 'Aktivan' : 'Neaktivan') . '</span></td>';
-        // echo '<td>' . esc_html($cron_status['next_run_formatted']) . '</td>';
-        // echo '<td>' . esc_html($cron_status['last_run_formatted']) . '</td>';
+        echo '<td><span class="status-' . ($cron_status['is_active'] ? 'active' : 'inactive') . '">' . ($cron_status['is_active'] ? 'Aktivan' : 'Neaktivan') . '</span></td>';
+        echo '<td>' . esc_html($cron_status['next_run_formatted']) . '</td>';
+        echo '<td>' . esc_html($cron_status['last_run_formatted']) . '</td>';
         echo '</tr>';
         echo '</tbody>';
         echo '</table>';
+
+        // Detaljni status po tipovima
+        if (isset($cron_status['detailed_status'])) {
+            echo '<h4 style="margin-top: 25px;">Detaljan status po tipovima</h4>';
+            echo '<table class="widefat">';
+            echo '<thead>';
+            echo '<tr>';
+            echo '<th>Tip</th>';
+            echo '<th>Frekvencija</th>';
+            echo '<th>Poslednje ažuriranje</th>';
+            echo '<th>Starost</th>';
+            echo '</tr>';
+            echo '</thead>';
+            echo '<tbody>';
+
+            foreach ($cron_status['detailed_status'] as $type => $info) {
+                echo '<tr>';
+                echo '<td><strong>' . ucfirst($type) . '</strong></td>';
+                echo '<td>' . esc_html($info['frequency']) . '</td>';
+                echo '<td>' . esc_html($info['last_update_formatted']) . '</td>';
+
+                // Status boja na osnovu starosti
+                $status_class = 'status-active';
+                $status_text = 'OK';
+
+                if ($info['days_since'] === null) {
+                    $status_class = 'status-inactive';
+                    $status_text = 'Nikad';
+                } elseif ($type == 'dispensers' && $info['days_since'] > 2) {
+                    $status_class = 'status-warning';
+                    $status_text = $info['days_since'] . ' dana';
+                } elseif ($type == 'streets' && $info['days_since'] > 10) {
+                    $status_class = 'status-warning';
+                    $status_text = $info['days_since'] . ' dana';
+                } elseif (($type == 'towns' || $type == 'municipalities') && $info['days_since'] > 35) {
+                    $status_class = 'status-warning';
+                    $status_text = $info['days_since'] . ' dana';
+                } else {
+                    $status_text = $info['days_since'] . ' dana';
+                }
+
+                echo '<td><span class="' . $status_class . '">' . $status_text . '</span></td>';
+                echo '</tr>';
+            }
+
+            echo '</tbody>';
+            echo '</table>';
+        }
 
         echo '<div style="margin-top: 15px;">';
         echo '<a href="' . esc_url(wp_nonce_url(admin_url('admin-post.php?action=dexpress_test_cron'), 'dexpress_cron_test')) . '" class="button button-secondary">Test CRON zadatka</a> ';
         echo '<a href="' . esc_url(wp_nonce_url(admin_url('admin-post.php?action=dexpress_reset_cron'), 'dexpress_cron_reset')) . '" class="button button-secondary" onclick="return confirm(\'Da li ste sigurni da želite da resetujete CRON?\')">Reset CRON sistema</a>';
         echo '</div>';
         echo '</div>';
+
+        // CSS za status boje
+        echo '<style>
+    .status-active { color: #00a32a; font-weight: bold; }
+    .status-inactive { color: #646970; }
+    .status-warning { color: #dba617; font-weight: bold; }
+    </style>';
     }
 
     /**
@@ -998,21 +1054,29 @@ class D_Express_Settings_Renderer
      */
     private function render_cron_info()
     {
-        echo '<h3>' . __('Podešavanja CRON zadataka', 'd-express-woo') . '</h3>';
+        echo '<h3>' . __('Raspored automatskog ažuriranja', 'd-express-woo') . '</h3>';
 
-        // Samo jedna sekcija - bez external CRON-a
         echo '<div class="postbox" style="margin: 20px 0;">';
-        echo '<div class="postbox-header"><h2 class="hndle">' . __('Automatsko ažuriranje', 'd-express-woo') . '</h2></div>';
+        echo '<div class="postbox-header"><h2 class="hndle">' . __('Prema D Express preporukama', 'd-express-woo') . '</h2></div>';
         echo '<div class="inside">';
 
         echo '<h4>' . __('Svaki dan u 03:00', 'd-express-woo') . '</h4>';
         echo '<ul><li><strong>Paketomati</strong> (~300 lokacija)</li></ul>';
 
-        echo '<h4>' . __('Nedeljom u 03:00', 'd-express-woo') . '</h4>';
-        echo '<ul><li><strong>Statusi</strong> (~30 kodova)</li><li><strong>Ulice</strong> (~50,000 zapisa)</li></ul>';
+        echo '<h4>' . __('Nedeljno (nedelja u 03:00)', 'd-express-woo') . '</h4>';
+        echo '<ul>';
+        echo '<li><strong>Statusi</strong> (~30 kodova)</li>';
+        echo '<li><strong>Ulice</strong> (~50,000 zapisa)</li>';
+        echo '</ul>';
+
+        echo '<h4>' . __('Mesečno (1. u mesecu u 03:00)', 'd-express-woo') . '</h4>';
+        echo '<ul>';
+        echo '<li><strong>Gradovi</strong> (~1,500 mesta)</li>';
+        echo '<li><strong>Opštine</strong> (~150 opština)</li>';
+        echo '</ul>';
 
         echo '<div class="notice notice-info inline" style="margin-top: 15px;">';
-        echo '<p><strong>' . __('Napomena:', 'd-express-woo') . '</strong> ' . __('Automatsko ažuriranje se vrši putem centralnog servera svaki dan u 03:00.', 'd-express-woo') . '</p>';
+        echo '<p><strong>' . __('Napomena:', 'd-express-woo') . '</strong> ' . __('Ova frekvencija je optimizovana prema D Express preporukama za najbolje performanse.', 'd-express-woo') . '</p>';
         echo '</div>';
 
         echo '</div>';

@@ -129,30 +129,34 @@ class D_Express_DB_Installer
             dim_y int(11) DEFAULT NULL,
             dim_z int(11) DEFAULT NULL,
             v_mass int(11) DEFAULT NULL,
+            current_status_id varchar(20) DEFAULT NULL,
+            current_status_name varchar(100) DEFAULT NULL,
+            status_updated_at datetime DEFAULT NULL,
             created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            PRIMARY KEY (id),
+           PRIMARY KEY (id),
             UNIQUE KEY package_code (package_code),
             KEY shipment_id (shipment_id),
+            KEY current_status_id (current_status_id),
             FOREIGN KEY (shipment_id) REFERENCES {$wpdb->prefix}dexpress_shipments(id) ON DELETE CASCADE
         ) $charset_collate;";
 
         // 3. Tabela za statuse pošiljki
-        $tables[] = "CREATE TABLE {$wpdb->prefix}dexpress_statuses (
+       $tables[] = "CREATE TABLE {$wpdb->prefix}dexpress_statuses (
             id bigint(20) NOT NULL AUTO_INCREMENT,
             notification_id varchar(100) NOT NULL,
-            reference_id varchar(100) DEFAULT NULL,
-            shipment_code varchar(50) DEFAULT NULL,
+            shipment_code varchar(50) NOT NULL,
+            package_id bigint(20) DEFAULT NULL,
             status_id varchar(20) DEFAULT NULL,
             status_date datetime DEFAULT NULL,
             raw_data longtext DEFAULT NULL,
             is_processed tinyint(1) NOT NULL DEFAULT 0,
             created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY  (id),
+            PRIMARY KEY (id),
             UNIQUE KEY notification_id (notification_id),
-            KEY reference_id (reference_id),
-            KEY status_id (status_id),
-            KEY status_date (status_date)
+            KEY shipment_code (shipment_code),
+            KEY package_id (package_id),
+            KEY status_id (status_id)
         ) $charset_collate;";
 
         // 4. Tabela za šifarnik statusa pošiljki

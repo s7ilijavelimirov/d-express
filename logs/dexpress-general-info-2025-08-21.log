@@ -1,0 +1,5 @@
+{"timestamp":"2025-08-21 10:22:27","context":"general","level":"info","message":"Manual CRON test pokrenuo admin user"}
+{"timestamp":"2025-08-21 10:22:27","context":"general","level":"info","message":"MANUAL-TEST: Admin pokretanje CRON-a"}
+{"timestamp":"2025-08-21 10:22:27","context":"general","level":"info","message":"CRON: Pokretanje u 12:22:27 (dan u nedelji: 4, dan u mesecu: 21)"}
+{"timestamp":"2025-08-21 10:22:27","context":"general","level":"info","message":"CRON: Ažurirano 250 paketomata"}
+{"timestamp":"2025-08-21 10:22:27","context":"general","level":"info","message":"CRON: Završeno - Paketomati"}

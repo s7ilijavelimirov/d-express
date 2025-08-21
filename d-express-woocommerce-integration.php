@@ -78,10 +78,7 @@ class D_Express_WooCommerce
         require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/services/class-dexpress-sender-locations.php';
 
         // // CRON
-        // require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/class-dexpress-cron-manager.php';
-
-        // // EXTERNAL CRON
-        // require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/class-dexpress-external-cron.php';
+        require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/class-dexpress-cron-manager.php';
 
         // Validator
         require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/class-dexpress-validator.php';
@@ -148,7 +145,7 @@ class D_Express_WooCommerce
         add_action('rest_api_init', array($this, 'register_rest_routes'));
 
         // Dodavanje webhook obrade za cron - pomereno pre plugins_loaded
-        //add_action('dexpress_process_notification', array($this, 'process_notification'));
+        add_action('dexpress_process_notification', array($this, 'process_notification'));
 
         // Inicijalizacija nakon učitavanja svih plugin-a
         add_action('plugins_loaded', array($this, 'init'), 20);
@@ -364,10 +361,6 @@ class D_Express_WooCommerce
         }
         wp_clear_scheduled_hook('dexpress_check_pending_statuses');
         wp_clear_scheduled_hook('dexpress_daily_update_indexes');
-        // ✅ DODAJ ovu liniju:
-        if (class_exists('D_Express_External_Cron_Service')) {
-            D_Express_External_Cron_Service::cleanup();
-        }
 
         flush_rewrite_rules();
     }
@@ -391,10 +384,7 @@ class D_Express_WooCommerce
         } else {
             add_action('woocommerce_loaded', array($this, 'init_after_woocommerce'));
         }
-
-        // Inicijalizacija CRON zadataka (ne zavisi od WooCommerce)
-        //$this->init_autonomous_cron_jobs();
-        //$this->init_external_cron_service();
+        D_Express_Cron_Manager::init_cron_jobs();
     }
 
     /**
@@ -459,15 +449,6 @@ class D_Express_WooCommerce
             }
         }
     }
-    // private function init_autonomous_cron_jobs()
-    // {
-    //     D_Express_Cron_Manager::init_cron_jobs();
-    // }
-    // private function init_external_cron_service()
-    // {
-    //     D_Express_External_Cron_Service::init();
-    //     D_Express_External_Cron_Service::init_ajax();
-    // }
     private function ensure_woocommerce_active()
     {
         return class_exists('WooCommerce') && function_exists('wc_get_order');
@@ -607,81 +588,17 @@ class D_Express_WooCommerce
             '</p></div>';
     }
     /**
-     * Obrada webhook notifikacije (poziva se iz cron-a)
+     * Obrada notifikacije - AŽURIRANO za package tracking
      * 
-     * @param int $notification_id ID notifikacije u bazi
+     * @param int $notification_id ID notifikacije
+     */
+    /**
+     * Obrada notifikacije - delegira webhook handler-u
      */
     public function process_notification($notification_id)
     {
-        global $wpdb;
-
-        dexpress_log('Započeta obrada notifikacije ID: ' . $notification_id, 'debug');
-
-        // Dohvatanje podataka o notifikaciji
-        $notification = $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM {$wpdb->prefix}dexpress_statuses WHERE id = %d AND is_processed = 0",
-            $notification_id
-        ));
-
-        if (!$notification) {
-            dexpress_log('Notifikacija ID: ' . $notification_id . ' nije pronađena ili je već obrađena', 'warning');
-            return;
-        }
-
-        // Dohvatanje pošiljke na osnovu reference_id ili shipment_code
-        // NOVI KOD - dodaj ovo:
-        $db = new D_Express_DB();
-        $shipment = $db->find_shipment_by_package_code($notification->shipment_code);
-
-        if (!$shipment) {
-            $shipment = $db->get_shipment_by_reference($notification->reference_id);
-        }
-
-        if (!$shipment) {
-            dexpress_log('Nije pronađena pošiljka za notifikaciju ID: ' . $notification_id, 'warning');
-            // Označi kao obrađenu iako nije pronađena pošiljka
-            $wpdb->update(
-                $wpdb->prefix . 'dexpress_statuses',
-                array('is_processed' => 1),
-                array('id' => $notification_id)
-            );
-            return;
-        }
-
-        // Ažuriranje statusa pošiljke
-        $wpdb->update(
-            $wpdb->prefix . 'dexpress_shipments',
-            array(
-                'status_code' => $notification->status_id,
-                'status_description' => dexpress_get_status_name($notification->status_id),
-                'updated_at' => current_time('mysql')
-            ),
-            array('id' => $shipment->id)
-        );
-
-        // Označi notifikaciju kao obrađenu
-        $wpdb->update(
-            $wpdb->prefix . 'dexpress_statuses',
-            array('is_processed' => 1),
-            array('id' => $notification_id)
-        );
-
-        // Dohvatanje narudžbine
-        $order = wc_get_order($shipment->order_id);
-        if ($order) {
-            // Dodavanje napomene o promeni statusa
-            $order->add_order_note(
-                sprintf(
-                    __('D Express status ažuriran: %s', 'd-express-woo'),
-                    dexpress_get_status_name($notification->status_id)
-                )
-            );
-
-            // Obrada specifičnih statusa - isporučeno, neisporučeno itd.
-            $this->process_status_notification($notification, $shipment, $order);
-        }
-
-        dexpress_log('Notifikacija ID: ' . $notification_id . ' uspešno obrađena', 'debug');
+        $webhook_handler = new D_Express_Webhook_Handler();
+        $webhook_handler->process_notification($notification_id);
     }
 
     /**

@@ -96,7 +96,7 @@ class D_Express_Webhook_Handler
     }
 
     /**
-     * Obrada webhook notifikacije
+     * Obrada webhook notifikacije - AŽURIRANO za package tracking
      * 
      * @param WP_REST_Request $request Request objekat
      * @return WP_REST_Response Odgovor
@@ -125,42 +125,39 @@ class D_Express_Webhook_Handler
 
         // Parametri
         $notification_id = sanitize_text_field($data['nID']);
-        $shipment_code = sanitize_text_field($data['code']);    // Tracking number
+        $shipment_code = sanitize_text_field($data['code']);    // Tracking number (package_code)
         $reference_id = sanitize_text_field($data['rID']);
         $status_id = sanitize_text_field($data['sID']);        // Status ID
         $date_str = sanitize_text_field($data['dt']);
 
         // Dodatna validacija datuma (format yyyyMMddHHmmss)
-        $date_str = sanitize_text_field($data['dt']);
         if (!preg_match('/^\d{14}$/', $date_str)) {
             dexpress_log('Webhook: Neispravan format datuma: ' . $date_str, 'warning');
-            // Iako je format neispravan, vraćamo OK da ne bismo dobijali retries po API specifikaciji
             return new WP_REST_Response('OK', 200);
         }
 
-        $status_date = $this->format_date($date_str);
-
         // Provera da li već imamo ovaj nID (duplikat)
-        $table_name = $wpdb->prefix . 'dexpress_statuses';
-
         $existing_notification = $wpdb->get_var($wpdb->prepare(
-            "SELECT id FROM $table_name WHERE notification_id = %s",
+            "SELECT id FROM {$wpdb->prefix}dexpress_statuses WHERE notification_id = %s",
             $notification_id
         ));
 
         if ($existing_notification) {
-            // Ako je duplikat, vraćamo OK (prema specifikaciji API-ja)
             dexpress_log('Webhook: Duplikat notifikacije ' . $notification_id . ', vraćam OK', 'info');
             return new WP_REST_Response('OK', 200);
         }
 
         try {
-            // Ubacivanje u bazu podataka
+            // NOVO: Pronađi paket po package_code
+            $db = new D_Express_DB();
+            $package = $db->get_package_by_code($shipment_code);
+
+            // Ubacivanje u bazu podataka sa package_id
             $status_data = [
                 'notification_id' => $notification_id,
-                'shipment_code' => $shipment_code,    // ovo je tracking number
-                'reference_id' => $reference_id,
-                'status_id' => $status_id,            // ovo je D Express status kod
+                'shipment_code' => $shipment_code,    // package_code
+                'package_id' => $package ? $package->id : null, // NOVO
+                'status_id' => $status_id,
                 'status_date' => $this->format_date($date_str),
                 'raw_data' => json_encode($data),
                 'is_processed' => 0,
@@ -170,7 +167,7 @@ class D_Express_Webhook_Handler
             $inserted = $wpdb->insert(
                 $wpdb->prefix . 'dexpress_statuses',
                 $status_data,
-                ['%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s']
+                ['%s', '%s', '%d', '%s', '%s', '%s', '%d', '%s'] // AŽURIRANI format
             );
 
             if ($inserted === false) {
@@ -181,17 +178,15 @@ class D_Express_Webhook_Handler
             $insert_id = $wpdb->insert_id;
             dexpress_log('Webhook: Uspešno upisana notifikacija ' . $notification_id . ' (ID: ' . $insert_id . ')', 'info');
 
-            // Pozivanje asinhronog procesa za obradu notifikacije (ne blokiramo odgovor)
+            // Pozivanje asinhronog procesa za obradu notifikacije
             $this->schedule_notification_processing($insert_id);
 
-            // Prema dokumentaciji, vraćamo OK ako je sve prošlo u redu
             return new WP_REST_Response('OK', 200);
         } catch (Exception $e) {
             dexpress_log('Webhook: Exception u webhook handleru: ' . $e->getMessage(), 'error');
             return new WP_REST_Response('ERROR: ' . $e->getMessage(), 500);
         }
     }
-
     /**
      * Formatiranje datuma iz D Express formata u MySQL format
      * 

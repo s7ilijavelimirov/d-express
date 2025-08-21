@@ -168,7 +168,7 @@ class D_Express_Admin_Actions
         }
 
         dexpress_log('Manual CRON test pokrenuo admin user', 'info');
-        D_Express_Cron_Manager::run_daily_updates();
+        D_Express_Cron_Manager::manual_test(); // PROMENI OVO
 
         wp_redirect(add_query_arg([
             'page' => 'dexpress-settings',
@@ -187,8 +187,7 @@ class D_Express_Admin_Actions
             wp_die(__('Nemate dozvolu za pristup ovoj stranici.', 'd-express-woo'));
         }
 
-        D_Express_Cron_Manager::clear_all_cron_jobs();
-        D_Express_Cron_Manager::init_cron_jobs();
+        D_Express_Cron_Manager::reset_cron_system(); // PROMENI OVO
 
         dexpress_log('CRON sistem resetovan od strane admin user-a', 'info');
 

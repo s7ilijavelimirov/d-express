@@ -310,7 +310,7 @@ class D_Express_Shipment_Service
             if (is_numeric($shipment_id)) {
                 $shipment = $this->db->get_shipment($shipment_id);
             } else {
-                $shipment = $this->db->get_shipment_by_tracking($shipment_id);
+                $shipment = $this->db->get_shipment_by_package_code($shipment_id);
             }
 
             if (!$shipment) {
