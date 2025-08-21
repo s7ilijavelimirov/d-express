@@ -1210,13 +1210,13 @@ class D_Express_API
         $shipment_data['PackageList'] = array(
             array(
                 'Code' => $package_code,
+                'ReferenceID' => $reference_id . '_PKG_1',
                 'Mass' => $weight_grams,
                 'Content' => $package_content,
                 'DimX' => null,
                 'DimY' => null,
                 'DimZ' => null,
-                'VMass' => null,
-                'ReferenceID' => null
+                'VMass' => null
             )
         );
         // Finalna validacija BuyOut vs API limiti

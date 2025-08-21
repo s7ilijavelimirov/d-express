@@ -345,6 +345,7 @@ class D_Express_DB
                 '%s', // notification_id
                 '%s', // shipment_code
                 '%d', // package_id
+                '%s', // reference_id
                 '%s', // status_id
                 '%s', // status_date
                 '%s', // raw_data

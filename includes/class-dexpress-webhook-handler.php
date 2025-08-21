@@ -11,6 +11,119 @@ defined('ABSPATH') || exit;
 class D_Express_Webhook_Handler
 {
 
+
+    /**
+     * Obrada notifikacije - jednostavna verzija
+     */
+    public function process_notification($notification_id)
+    {
+        global $wpdb;
+
+        try {
+            // Dobij notifikaciju
+            $notification = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM {$wpdb->prefix}dexpress_statuses WHERE id = %d AND is_processed = 0",
+                $notification_id
+            ));
+
+            if (!$notification) {
+                dexpress_log('Notifikacija ' . $notification_id . ' nije pronađena ili je već obrađena', 'warning');
+                return;
+            }
+
+            // Pronađi paket i pošiljku
+            if ($notification->package_id) {
+                $package = $wpdb->get_row($wpdb->prepare(
+                    "SELECT * FROM {$wpdb->prefix}dexpress_packages WHERE id = %d",
+                    $notification->package_id
+                ));
+            } else {
+                // Fallback - pronađi preko shipment_code (package_code)
+                $package = $wpdb->get_row($wpdb->prepare(
+                    "SELECT * FROM {$wpdb->prefix}dexpress_packages WHERE package_code = %s",
+                    $notification->shipment_code
+                ));
+            }
+
+            if (!$package) {
+                dexpress_log('Paket nije pronađen za notifikaciju ' . $notification_id, 'warning');
+                // Označi kao obrađeno da se ne pokušava ponovo
+                $wpdb->update(
+                    $wpdb->prefix . 'dexpress_statuses',
+                    ['is_processed' => 1],
+                    ['id' => $notification_id]
+                );
+                return;
+            }
+
+            // Dobij pošiljku
+            $shipment = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM {$wpdb->prefix}dexpress_shipments WHERE id = %d",
+                $package->shipment_id
+            ));
+
+            if (!$shipment) {
+                dexpress_log('Pošiljka nije pronađena za paket ' . $package->package_code, 'warning');
+                $wpdb->update(
+                    $wpdb->prefix . 'dexpress_statuses',
+                    ['is_processed' => 1],
+                    ['id' => $notification_id]
+                );
+                return;
+            }
+
+            // Ažuriraj package status
+            $wpdb->update(
+                $wpdb->prefix . 'dexpress_packages',
+                [
+                    'current_status_id' => $notification->status_id,
+                    'current_status_name' => dexpress_get_status_name($notification->status_id),
+                    'status_updated_at' => $notification->status_date,
+                    'updated_at' => current_time('mysql')
+                ],
+                ['id' => $package->id]
+            );
+
+            // Ažuriraj shipment status
+            $wpdb->update(
+                $wpdb->prefix . 'dexpress_shipments',
+                [
+                    'status_code' => $notification->status_id,
+                    'status_description' => dexpress_get_status_name($notification->status_id),
+                    'updated_at' => current_time('mysql')
+                ],
+                ['id' => $shipment->id]
+            );
+
+            // Dodaj napomenu u narudžbinu
+            $order = wc_get_order($shipment->order_id);
+            if ($order) {
+                $status_name = dexpress_get_status_name($notification->status_id);
+                $note = sprintf(
+                    'D Express: %s - %s',
+                    $status_name,
+                    $package->package_code
+                );
+                $order->add_order_note($note);
+
+                // Automatski promeni status narudžbine ako je potrebno
+                if ($notification->status_id == '1' && in_array($order->get_status(), ['processing', 'on-hold'])) {
+                    $order->update_status('completed', 'D Express paket isporučen');
+                }
+            }
+
+            // Označi kao obrađeno
+            $wpdb->update(
+                $wpdb->prefix . 'dexpress_statuses',
+                ['is_processed' => 1],
+                ['id' => $notification_id]
+            );
+
+            dexpress_log('Uspešno obrađena notifikacija ' . $notification_id, 'info');
+        } catch (Exception $e) {
+            dexpress_log('Greška pri obradi notifikacije ' . $notification_id . ': ' . $e->getMessage(), 'error');
+        }
+    }
     /**
      * Provera dozvole za pristup webhook-u
      * 
@@ -148,15 +261,58 @@ class D_Express_Webhook_Handler
         }
 
         try {
-            // NOVO: Pronađi paket po package_code
-            $db = new D_Express_DB();
-            $package = $db->get_package_by_code($shipment_code);
+            // NOVO: Pokušaj pronaći paket po package_code ili preko reference_id
+            $package = null;
+            $shipment = null;
 
-            // Ubacivanje u bazu podataka sa package_id
+            // 1. Prvo pokušaj preko package_code (code parametar)
+            if (!empty($shipment_code)) {
+                $package = $wpdb->get_row($wpdb->prepare(
+                    "SELECT * FROM {$wpdb->prefix}dexpress_packages WHERE package_code = %s",
+                    $shipment_code
+                ));
+
+                if ($package) {
+                    $shipment = $wpdb->get_row($wpdb->prepare(
+                        "SELECT * FROM {$wpdb->prefix}dexpress_shipments WHERE id = %d",
+                        $package->shipment_id
+                    ));
+                    dexpress_log('Webhook: Pronađen paket po package_code: ' . $shipment_code, 'debug');
+                }
+            }
+
+            // 2. Fallback - pokušaj preko reference_id ako paket nije pronađen
+            if (!$package && !empty($reference_id)) {
+                $shipment = $wpdb->get_row($wpdb->prepare(
+                    "SELECT * FROM {$wpdb->prefix}dexpress_shipments WHERE reference_id = %s",
+                    $reference_id
+                ));
+
+                if ($shipment) {
+                    // Uzmi bilo koji paket iz te pošiljke (obično prvi)
+                    $package = $wpdb->get_row($wpdb->prepare(
+                        "SELECT * FROM {$wpdb->prefix}dexpress_packages WHERE shipment_id = %d ORDER BY package_index ASC LIMIT 1",
+                        $shipment->id
+                    ));
+                    dexpress_log('Webhook: Pronađena pošiljka po reference_id: ' . $reference_id, 'debug');
+                }
+            }
+
+            if (!$package || !$shipment) {
+                dexpress_log('Webhook: Paket/pošiljka nije pronađena. Code: ' . $shipment_code . ', rID: ' . $reference_id, 'warning');
+                // Ipak sačuvaj notifikaciju za kasnije povezivanje
+                $package_id = null;
+            } else {
+                $package_id = $package->id;
+                dexpress_log('Webhook: Povezujem sa paket ID: ' . $package_id, 'debug');
+            }
+
+            // Ubacivanje u bazu podataka sa reference_id kolumnom
             $status_data = [
                 'notification_id' => $notification_id,
-                'shipment_code' => $shipment_code,    // package_code
-                'package_id' => $package ? $package->id : null, // NOVO
+                'shipment_code' => $shipment_code,
+                'package_id' => $package_id,
+                'reference_id' => $reference_id, 
                 'status_id' => $status_id,
                 'status_date' => $this->format_date($date_str),
                 'raw_data' => json_encode($data),
@@ -167,7 +323,7 @@ class D_Express_Webhook_Handler
             $inserted = $wpdb->insert(
                 $wpdb->prefix . 'dexpress_statuses',
                 $status_data,
-                ['%s', '%s', '%d', '%s', '%s', '%s', '%d', '%s'] // AŽURIRANI format
+                ['%s', '%s', '%d', '%s', '%s', '%s', '%s', '%d', '%s']
             );
 
             if ($inserted === false) {

@@ -3,3 +3,21 @@
 {"timestamp":"2025-08-21 10:22:27","context":"general","level":"info","message":"CRON: Pokretanje u 12:22:27 (dan u nedelji: 4, dan u mesecu: 21)"}
 {"timestamp":"2025-08-21 10:22:27","context":"general","level":"info","message":"CRON: Ažurirano 250 paketomata"}
 {"timestamp":"2025-08-21 10:22:27","context":"general","level":"info","message":"CRON: Završeno - Paketomati"}
+{"timestamp":"2025-08-21 12:06:20","context":"general","level":"info","message":"[CONTENT] Original: \"Accessories\" -> Sanitized: \"Accessories\""}
+{"timestamp":"2025-08-21 12:06:20","context":"general","level":"info","message":"[FIXED] Lokacija 1: 2 paketa, masa 200g, ref 1249"}
+{"timestamp":"2025-08-21 12:11:54","context":"general","level":"info","message":"[CONTENT] Original: \"Music, Accessories\" -> Sanitized: \"Music, Accessories\""}
+{"timestamp":"2025-08-21 12:11:54","context":"general","level":"info","message":"[FIXED] Lokacija 1: 1 paketa, masa 16500g, ref 1248-L1"}
+{"timestamp":"2025-08-21 12:11:54","context":"general","level":"info","message":"[CONTENT] Original: \"Accessories\" -> Sanitized: \"Accessories\""}
+{"timestamp":"2025-08-21 12:11:54","context":"general","level":"info","message":"[FIXED] Lokacija 2: 2 paketa, masa 300g, ref 1248-L2"}
+{"timestamp":"2025-08-21 12:16:18","context":"general","level":"info","message":"[CONTENT] Original: \"Music\" -> Sanitized: \"Music\""}
+{"timestamp":"2025-08-21 12:16:18","context":"general","level":"info","message":"[FIXED] Lokacija 1: 1 paketa, masa 5000g, ref 1247-L1"}
+{"timestamp":"2025-08-21 12:16:19","context":"general","level":"info","message":"[CONTENT] Original: \"Accessories\" -> Sanitized: \"Accessories\""}
+{"timestamp":"2025-08-21 12:16:19","context":"general","level":"info","message":"[FIXED] Lokacija 2: 1 paketa, masa 100g, ref 1247-L2"}
+{"timestamp":"2025-08-21 12:17:46","context":"general","level":"info","message":"[CONTENT] Original: \"Music, Accessories\" -> Sanitized: \"Music, Accessories\""}
+{"timestamp":"2025-08-21 12:17:46","context":"general","level":"info","message":"[FIXED] Lokacija 1: 2 paketa, masa 7000g, ref 1245"}
+{"timestamp":"2025-08-21 12:20:15","context":"general","level":"info","message":"[CONTENT] Original: \"Accessories, Music\" -> Sanitized: \"Accessories, Music\""}
+{"timestamp":"2025-08-21 12:20:15","context":"general","level":"info","message":"[FIXED] Lokacija 1: 2 paketa, masa 7000g, ref 1244"}
+{"timestamp":"2025-08-21 12:20:45","context":"general","level":"info","message":"[CONTENT] Original: \"Music, Accessories\" -> Sanitized: \"Music, Accessories\""}
+{"timestamp":"2025-08-21 12:20:45","context":"general","level":"info","message":"[FIXED] Lokacija 1: 2 paketa, masa 7000g, ref 1243-L1"}
+{"timestamp":"2025-08-21 12:20:45","context":"general","level":"info","message":"[CONTENT] Original: \"Music, Accessories\" -> Sanitized: \"Music, Accessories\""}
+{"timestamp":"2025-08-21 12:20:45","context":"general","level":"info","message":"[FIXED] Lokacija 2: 1 paketa, masa 7000g, ref 1243-L2"}

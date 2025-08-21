@@ -470,33 +470,42 @@ class D_Express_Order_Timeline
         ));
 
         if (!$shipment || !$shipment->is_test) {
+            dexpress_log('[SIMULATION] Pošiljka nije test ili ne postoji. ID: ' . $shipment_id, 'debug');
             return false;
         }
 
         $created_time = strtotime($shipment->created_at);
         $current_time = time();
         $elapsed_hours = ($current_time - $created_time) / 3600;
+
+        dexpress_log('[SIMULATION] Pošiljka kreirana: ' . $shipment->created_at . ', Prošlo sati: ' . $elapsed_hours, 'debug');
+
         $statuses_added = false;
 
-        // ISPRAVKA: Koristi stvarne D Express status kodove
         $simulation_statuses = [
-            ['hours' => 0, 'id' => '0', 'name' => 'Čeka na preuzimanje'],
-            ['hours' => 2, 'id' => '3', 'name' => 'Pošiljka preuzeta od pošiljaoca'],
-            ['hours' => 4, 'id' => '4', 'name' => 'Pošiljka zadužena za isporuku'],
-            ['hours' => 6, 'id' => '1', 'name' => 'Pošiljka isporučena primaocu']
+            ['hours' => 0.01, 'id' => '0', 'name' => 'Čeka na preuzimanje'],      // 36 sekundi
+            ['hours' => 0.02, 'id' => '3', 'name' => 'Pošiljka preuzeta'],        // 72 sekunde
+            ['hours' => 0.03, 'id' => '4', 'name' => 'Pošiljka zadužena'],        // 108 sekundi
+            ['hours' => 0.04, 'id' => '1', 'name' => 'Pošiljka isporučena']       // 144 sekunde
         ];
 
         foreach ($simulation_statuses as $sim_status) {
+            dexpress_log('[SIMULATION] Proveravam status: ' . $sim_status['id'] . ', potrebno sati: ' . $sim_status['hours'], 'debug');
+
             if ($elapsed_hours >= $sim_status['hours'] && !$this->status_exists($shipment, $sim_status['id'])) {
+                dexpress_log('[SIMULATION] Dodajem status: ' . $sim_status['id'], 'debug');
                 $this->add_simulated_status(
                     $shipment,
                     $sim_status['id'],
                     date('Y-m-d H:i:s', $created_time + ($sim_status['hours'] * 3600))
                 );
                 $statuses_added = true;
+            } else {
+                dexpress_log('[SIMULATION] Preskačem status: ' . $sim_status['id'] . ' (vreme ili već postoji)', 'debug');
             }
         }
 
+        dexpress_log('[SIMULATION] Statusi dodani: ' . ($statuses_added ? 'Da' : 'Ne'), 'debug');
         return $statuses_added;
     }
 
@@ -508,12 +517,10 @@ class D_Express_Order_Timeline
         global $wpdb;
 
         $count = $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM {$wpdb->prefix}dexpress_statuses 
-        WHERE (shipment_code IN (SELECT package_code FROM {$wpdb->prefix}dexpress_packages WHERE shipment_id = %d) 
-               OR reference_id = %s) 
-        AND status_id = %s",
+            "SELECT COUNT(*) FROM {$wpdb->prefix}dexpress_statuses s
+         INNER JOIN {$wpdb->prefix}dexpress_packages p ON s.package_id = p.id
+         WHERE p.shipment_id = %d AND s.status_id = %s",
             $shipment->id,
-            $shipment->reference_id,
             $status_id
         ));
 
@@ -535,76 +542,87 @@ class D_Express_Order_Timeline
         }
     }
 
-    /**
-     * Dodavanje simuliranog statusa u bazu
-     */
-    /**
-     * Dodavanje simuliranog statusa u bazu - ažurirano za package tracking
-     */
     private function add_simulated_status($shipment, $status_id, $status_date)
     {
         global $wpdb;
 
-        // Dobij prvi paket za shipment
-        $package = $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM {$wpdb->prefix}dexpress_packages WHERE shipment_id = %d LIMIT 1",
+        // Dobij pakete za pošiljku
+        $packages = $wpdb->get_results($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}dexpress_packages WHERE shipment_id = %d",
             $shipment->id
         ));
 
-        $webhook_data = array(
-            'cc' => get_option('dexpress_webhook_secret', 'test_secret'),
-            'nID' => 'SIM_' . time() . '_' . rand(1000, 9999),
-            'code' => $this->get_tracking_identifier($shipment),
-            'rID' => $shipment->reference_id,
-            'sID' => $status_id,
-            'dt' => date('YmdHis', strtotime($status_date))
-        );
-
-        // Status podaci sa package_id
-        $status_data = array(
-            'notification_id' => $webhook_data['nID'],
-            'shipment_code' => $webhook_data['code'],
-            'package_id' => $package ? $package->id : null,
-            'status_id' => $webhook_data['sID'],
-            'status_date' => $status_date,
-            'raw_data' => json_encode($webhook_data),
-            'is_processed' => 1,
-            'created_at' => current_time('mysql')
-        );
-
-        $wpdb->insert(
-            $wpdb->prefix . 'dexpress_statuses',
-            $status_data,
-            ['%s', '%s', '%d', '%s', '%s', '%s', '%d', '%s']
-        );
-
-        // Ažuriraj package status ako postoji
-        if ($package) {
-            $db = new D_Express_DB();
-            $db->update_package_status($package->id, $status_id, dexpress_get_status_name($status_id));
+        if (empty($packages)) {
+            return;
         }
 
-        // Ažuriraj shipment status
+        // Dodaj status za svaki paket
+        foreach ($packages as $package) {
+
+            // Proveri da li status već postoji
+            $existing = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}dexpress_statuses 
+             WHERE package_id = %d AND status_id = %s",
+                $package->id,
+                $status_id
+            ));
+
+            if ($existing) {
+                continue;
+            }
+
+            // Dodaj novi status
+            $status_data = [
+                'notification_id' => 'SIM_' . time() . '_' . rand(1000, 9999) . '_' . $package->id,
+                'shipment_code' => $package->package_code,
+                'package_id' => $package->id,
+                'reference_id' => $shipment->reference_id,
+                'status_id' => $status_id,
+                'status_date' => $status_date,
+                'raw_data' => json_encode(['simulated' => true]),
+                'is_processed' => 1,
+                'created_at' => current_time('mysql')
+            ];
+
+            $wpdb->insert(
+                $wpdb->prefix . 'dexpress_statuses',
+                $status_data,
+                ['%s', '%s', '%d', '%s', '%s', '%s', '%s', '%d', '%s']
+            );
+
+            // Ažuriraj package
+            $wpdb->update(
+                $wpdb->prefix . 'dexpress_packages',
+                [
+                    'current_status_id' => $status_id,
+                    'current_status_name' => dexpress_get_status_name($status_id),
+                    'status_updated_at' => $status_date,
+                    'updated_at' => current_time('mysql')
+                ],
+                ['id' => $package->id]
+            );
+        }
+
+        // Ažuriraj shipment
         $wpdb->update(
             $wpdb->prefix . 'dexpress_shipments',
-            array(
+            [
                 'status_code' => $status_id,
                 'status_description' => dexpress_get_status_name($status_id),
                 'updated_at' => current_time('mysql')
-            ),
-            array('id' => $shipment->id)
+            ],
+            ['id' => $shipment->id]
         );
 
         // Dodaj napomenu u narudžbinu
         $order = wc_get_order($shipment->order_id);
         if ($order) {
-            $note = sprintf('D Express status ažuriran: %s (simulirano)', dexpress_get_status_name($status_id));
-            if ($package) {
-                $note .= sprintf(' - Paket: %s', $package->package_code);
-            }
+            $note = sprintf(
+                'D Express status ažuriran: %s (simulirano za %d paketa)',
+                dexpress_get_status_name($status_id),
+                count($packages)
+            );
             $order->add_order_note($note);
         }
-
-        dexpress_log('[SIMULATION] Dodat status ' . $status_id . ' za pošiljku ' . $this->get_tracking_identifier($shipment), 'debug');
     }
 }

@@ -19,15 +19,6 @@ class D_Express_DB_Installer
 
         $this->create_tables();
         $this->migrate_sender_data();
-
-        // Dodaj indekse za optimizaciju performansi
-        global $wpdb;
-        $statuses_index_exists = $wpdb->get_results("SHOW INDEX FROM {$wpdb->prefix}dexpress_statuses WHERE Key_name = 'idx_shipment_code'");
-
-        if (empty($statuses_index_exists)) {
-            $wpdb->query("CREATE INDEX idx_shipment_code ON {$wpdb->prefix}dexpress_statuses(shipment_code)");
-            $wpdb->query("CREATE INDEX idx_reference_id ON {$wpdb->prefix}dexpress_statuses(reference_id)");
-        }
     }
     /**
      * DODAJ ovu novu metodu u klasu
@@ -137,16 +128,16 @@ class D_Express_DB_Installer
            PRIMARY KEY (id),
             UNIQUE KEY package_code (package_code),
             KEY shipment_id (shipment_id),
-            KEY current_status_id (current_status_id),
-            FOREIGN KEY (shipment_id) REFERENCES {$wpdb->prefix}dexpress_shipments(id) ON DELETE CASCADE
+            KEY current_status_id (current_status_id)
         ) $charset_collate;";
 
         // 3. Tabela za statuse pošiljki
-       $tables[] = "CREATE TABLE {$wpdb->prefix}dexpress_statuses (
+        $tables[] = "CREATE TABLE {$wpdb->prefix}dexpress_statuses (
             id bigint(20) NOT NULL AUTO_INCREMENT,
             notification_id varchar(100) NOT NULL,
             shipment_code varchar(50) NOT NULL,
             package_id bigint(20) DEFAULT NULL,
+            reference_id varchar(100) DEFAULT NULL,
             status_id varchar(20) DEFAULT NULL,
             status_date datetime DEFAULT NULL,
             raw_data longtext DEFAULT NULL,
@@ -156,6 +147,7 @@ class D_Express_DB_Installer
             UNIQUE KEY notification_id (notification_id),
             KEY shipment_code (shipment_code),
             KEY package_id (package_id),
+            KEY reference_id (reference_id),
             KEY status_id (status_id)
         ) $charset_collate;";
 

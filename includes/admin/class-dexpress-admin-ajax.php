@@ -515,13 +515,13 @@ class D_Express_Admin_Ajax
                     // Dodaj split kao jedan paket
                     $package_list[] = array(
                         'Code' => $package_code,
+                        'ReferenceID' => $shipment_data['ReferenceID'] . '_PKG_' . count($package_list) + 1,
                         'Mass' => $split_mass,
                         'Content' => $split_content,
                         'DimX' => null,
                         'DimY' => null,
                         'DimZ' => null,
                         'VMass' => null,
-                        'ReferenceID' => null
                     );
 
                     if (!in_array($split_content, $content_parts)) {
@@ -627,6 +627,7 @@ class D_Express_Admin_Ajax
                         $package_data = array(
                             'shipment_id' => $shipment_id,
                             'package_code' => $package['Code'],
+                            'package_reference_id' => isset($package['ReferenceID']) ? $package['ReferenceID'] : null,
                             'package_index' => $package_index,
                             'total_packages' => $total_packages,
                             'mass' => $package['Mass'],
