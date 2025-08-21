@@ -350,19 +350,16 @@ function dexpress_get_streets_for_town($town_id)
  * @param string $status_code Kod statusa
  * @return string Tekst statusa
  */
-function dexpress_get_status_name($status_code)
+function dexpress_get_status_name($status_id)
 {
-    if (empty($status_code)) {
-        return __('U obradi', 'd-express-woo');
-    }
+    global $wpdb;
 
-    // Prvo proveriti da li postoji u mapi svih statusa
-    $all_statuses = dexpress_get_all_status_codes();
-    if (isset($all_statuses[$status_code])) {
-        return $all_statuses[$status_code]['name'];
-    }
+    $status_name = $wpdb->get_var($wpdb->prepare(
+        "SELECT name FROM {$wpdb->prefix}dexpress_statuses_index WHERE id = %d",
+        $status_id
+    ));
 
-    return __('Nepoznat status', 'd-express-woo');
+    return $status_name ? $status_name : "Status #" . $status_id . " (nepoznat)";
 }
 /**
  * Vraća CSS klasu za status pošiljke
@@ -790,4 +787,3 @@ function dexpress_generate_shipment_content($order)
 
     return $content;
 }
-

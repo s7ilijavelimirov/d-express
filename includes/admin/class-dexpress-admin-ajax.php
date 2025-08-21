@@ -49,6 +49,8 @@ class D_Express_Admin_Ajax
         add_action('wp_ajax_dexpress_delete_shipment', array($this, 'ajax_delete_shipment'));
 
         add_action('wp_ajax_dexpress_generate_split_content', array($this, 'ajax_generate_split_content'));
+
+        add_action('wp_ajax_dexpress_refresh_shipment_status', array($this, 'ajax_refresh_shipment_status'));
     }
 
     /**
@@ -812,6 +814,43 @@ class D_Express_Admin_Ajax
             wp_send_json_success(array('message' => 'Pošiljka je uspešno obrisana.'));
         } else {
             wp_send_json_error(array('message' => 'Greška pri brisanju pošiljke.'));
+        }
+    }
+    /**
+     * AJAX: Osvežavanje statusa pošiljke
+     */
+    public function ajax_refresh_shipment_status()
+    {
+        // Provera nonce-a
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'dexpress-refresh-status')) {
+            wp_send_json_error(['message' => 'Sigurnosna provera nije uspela.']);
+            return;
+        }
+
+        // Provera dozvola
+        if (!current_user_can('manage_woocommerce')) {
+            wp_send_json_error(['message' => 'Nemate dozvolu za ovu akciju.']);
+            return;
+        }
+
+        $shipment_id = intval($_POST['shipment_id']);
+        if (!$shipment_id) {
+            wp_send_json_error(['message' => 'ID pošiljke je obavezan.']);
+            return;
+        }
+
+        try {
+            // Pozovi timeline klasu
+            $timeline = new D_Express_Order_Timeline();
+            $result = $timeline->manually_trigger_simulation($shipment_id);
+
+            if (is_wp_error($result)) {
+                wp_send_json_error(['message' => $result->get_error_message()]);
+            } else {
+                wp_send_json_success($result);
+            }
+        } catch (Exception $e) {
+            wp_send_json_error(['message' => 'Greška: ' . $e->getMessage()]);
         }
     }
 }

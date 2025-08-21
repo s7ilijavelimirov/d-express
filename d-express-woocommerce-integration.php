@@ -151,34 +151,32 @@ class D_Express_WooCommerce
         add_action('plugins_loaded', array($this, 'init'), 20);
 
         // Dodaj hook za simulaciju
-        add_action('init', array($this, 'auto_simulate_test_statuses'));
+        //add_action('init', array($this, 'auto_simulate_test_statuses'));
 
-        // Registrujemo česte provere statusa
-        //add_action('init', array($this, 'register_frequent_status_checks'));
+        if (dexpress_is_test_mode()) {
+            add_action('init', array($this, 'register_frequent_status_checks_test_only'));
+        }
     }
-    /**
-     * Registracija češćih provera statusa
-     */
-    // public function register_frequent_status_checks()
-    // {
-    //     // SAMO registruj schedule, ne pokusavaj da schedulе event
-    //     add_filter('cron_schedules', function ($schedules) {
-    //         $schedules['five_minutes'] = array(
-    //             'interval' => 300,
-    //             'display'  => __('Svakih 5 minuta', 'd-express-woo')
-    //         );
-    //         return $schedules;
-    //     });
+    public function register_frequent_status_checks_test_only()
+    {
+        if (!dexpress_is_test_mode()) {
+            wp_clear_scheduled_hook('dexpress_test_simulation');
+            return;
+        }
+        add_filter('cron_schedules', function ($schedules) {
+            $schedules['thirty_minutes'] = array(
+                'interval' => 1800, // 30 minuta
+                'display'  => __('Svakih 30 minuta', 'd-express-woo')
+            );
+            return $schedules;
+        });
 
-    //     // ZAKOMENTARIŠI SCHEDULING DEO:
-    //     /*
-    // if (!wp_next_scheduled('dexpress_check_pending_statuses')) {
-    //     wp_schedule_event(time(), 'five_minutes', 'dexpress_check_pending_statuses');
-    // }
-    // */
+        if (!wp_next_scheduled('dexpress_test_simulation')) {
+            wp_schedule_event(time(), 'thirty_minutes', 'dexpress_test_simulation');
+        }
 
-    //     add_action('dexpress_check_pending_statuses', array($this, 'check_pending_statuses'));
-    // }
+        add_action('dexpress_test_simulation', array($this, 'auto_simulate_test_statuses'));
+    }
     public function on_woocommerce_deactivated($plugin, $network_deactivating)
     {
         // Proveri da li je deaktiviran WooCommerce
@@ -361,6 +359,7 @@ class D_Express_WooCommerce
         }
         wp_clear_scheduled_hook('dexpress_check_pending_statuses');
         wp_clear_scheduled_hook('dexpress_daily_update_indexes');
+        wp_clear_scheduled_hook('dexpress_test_simulation'); // OK za deaktivaciju
 
         flush_rewrite_rules();
     }
@@ -423,7 +422,6 @@ class D_Express_WooCommerce
 
                 if (class_exists('D_Express_Admin_Ajax')) {
                     $admin_ajax = new D_Express_Admin_Ajax();
-                    add_action('wp_ajax_dexpress_delete_shipment', array($admin_ajax, 'ajax_delete_shipment'));
                 }
             }
 
@@ -449,10 +447,6 @@ class D_Express_WooCommerce
             }
         }
     }
-    private function ensure_woocommerce_active()
-    {
-        return class_exists('WooCommerce') && function_exists('wc_get_order');
-    }
     /**
      * Postavlja podrazumevane opcije plugin-a
      */
@@ -469,7 +463,6 @@ class D_Express_WooCommerce
             'dexpress_auto_create_shipment' => 'no',
             'dexpress_auto_create_on_status' => 'processing',
             'dexpress_webhook_secret' => wp_generate_password(32, false),
-            // AŽURIRANE DEFAULT VREDNOSTI:
             'dexpress_payment_by' => '0',        // 0 = Nalogodavac (umesto Pošiljalac)
             'dexpress_shipment_type' => '2',     // 2 = Redovna isporuka (jedina opcija)
             'dexpress_payment_type' => '2',      // 2 = Faktura (default)
@@ -587,11 +580,6 @@ class D_Express_WooCommerce
             ) .
             '</p></div>';
     }
-    /**
-     * Obrada notifikacije - AŽURIRANO za package tracking
-     * 
-     * @param int $notification_id ID notifikacije
-     */
     /**
      * Obrada notifikacije - delegira webhook handler-u
      */
