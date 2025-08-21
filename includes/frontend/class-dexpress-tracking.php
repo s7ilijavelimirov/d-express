@@ -90,10 +90,16 @@ class D_Express_Tracking
 
             echo '<p><strong>' . esc_html__('Broj za praćenje:', 'd-express-woo') . '</strong> ';
             if ($shipment->is_test) {
-                echo esc_html($shipment->tracking_number) . ' <span class="dexpress-test-note">(' . esc_html__('Test', 'd-express-woo') . ')</span>';
+                global $wpdb;
+                $package_code = $wpdb->get_var($wpdb->prepare(
+                    "SELECT package_code FROM {$wpdb->prefix}dexpress_packages WHERE shipment_id = %d LIMIT 1",
+                    $shipment->id
+                ));
+                $tracking_display = $package_code ?: $shipment->reference_id;
+                echo esc_html($tracking_display) . ' <span class="dexpress-test-note">(' . esc_html__('Test', 'd-express-woo') . ')</span>';
             } else {
-                echo '<a href="https://www.dexpress.rs/rs/pracenje-posiljaka/' . esc_attr($shipment->tracking_number) .
-                    '" target="_blank">' . esc_html($shipment->tracking_number) . '</a>';
+                echo '<a href="https://www.dexpress.rs/rs/pracenje-posiljaka/' . esc_attr($tracking_display) .
+                    '" target="_blank">' . esc_html($tracking_display) . '</a>';
             }
             echo '</p>';
 
@@ -249,7 +255,10 @@ class D_Express_Tracking
         // Dobijanje podataka o pošiljci
         global $wpdb;
         $shipment = $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM {$wpdb->prefix}dexpress_shipments WHERE tracking_number = %s",
+            "SELECT s.* FROM {$wpdb->prefix}dexpress_shipments s 
+            JOIN {$wpdb->prefix}dexpress_packages p ON s.id = p.shipment_id 
+            WHERE p.package_code = %s OR s.reference_id = %s",
+            $tracking_number,
             $tracking_number
         ));
 

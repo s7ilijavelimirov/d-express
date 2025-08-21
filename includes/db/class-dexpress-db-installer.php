@@ -111,7 +111,7 @@ class D_Express_DB_Installer
             updated_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             
             PRIMARY KEY (id),
-            UNIQUE KEY reference_id (reference_id),
+            KEY reference_id (reference_id),
             KEY order_id (order_id),
             KEY sender_location_id (sender_location_id)
         ) $charset_collate;";

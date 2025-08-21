@@ -211,7 +211,7 @@ class D_Express_Order_Metabox
             $title = sprintf(__('Shipment #%s', 'd-express-woo'), $shipment->id);
             $subtitle = sprintf(__('%d paketa', 'd-express-woo'), $package_count);
         } else {
-            $title = $shipment->tracking_number ?: sprintf(__('Shipment #%s', 'd-express-woo'), $shipment->id);
+            $title = $shipment->reference_id ?: sprintf(__('Shipment #%s', 'd-express-woo'), $shipment->id);
             $subtitle = '';
         }
 
@@ -736,7 +736,7 @@ class D_Express_Order_Metabox
                             splits.push({
                                 location_id: locationId,
                                 items: selectedItems,
-                                custom_content: customContent 
+                                custom_content: customContent
                             });
                         }
                     });

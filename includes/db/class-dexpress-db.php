@@ -324,16 +324,16 @@ class D_Express_DB
      * @param string $shipment_id D Express ID pošiljke
      * @return array Lista statusa
      */
-    public function get_statuses_for_shipment($shipment_id)
+    public function get_statuses_for_shipment($shipment_code, $reference_id)
     {
         global $wpdb;
 
         return $wpdb->get_results($wpdb->prepare(
             "SELECT * FROM {$wpdb->prefix}dexpress_statuses 
-            WHERE shipment_code = %s OR shipment_id = %s 
-            ORDER BY status_date DESC",
-            $shipment_id,
-            $shipment_id
+        WHERE shipment_code = %s OR reference_id = %s 
+        ORDER BY status_date DESC",
+            $shipment_code,
+            $reference_id
         ));
     }
 
@@ -351,7 +351,6 @@ class D_Express_DB
             $wpdb->prefix . 'dexpress_statuses',
             $status_data,
             array(
-                '%s', // shipment_id
                 '%s', // notification_id
                 '%s', // reference_id
                 '%s', // shipment_code

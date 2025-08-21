@@ -1,0 +1,57 @@
+{"timestamp":"2025-08-21 07:09:09","context":"api","level":"debug","message":"Using address type: shipping"}
+{"timestamp":"2025-08-21 07:09:09","context":"api","level":"debug","message":"Street: Nikole Francuskog, Number: 54, City ID: 802158"}
+{"timestamp":"2025-08-21 07:09:09","context":"api","level":"debug","message":"Payment method: cod, Is COD: Yes"}
+{"timestamp":"2025-08-21 07:09:09","context":"api","level":"debug","message":"[BANK DEBUG] Original: 170-0010364556000-77, Digits: 170001036455600077, Length: 18"}
+{"timestamp":"2025-08-21 07:09:09","context":"api","level":"debug","message":"[BANK DEBUG] Formatted (16-18): 170-0010364556000-77"}
+{"timestamp":"2025-08-21 07:09:09","context":"api","level":"debug","message":"[COD DEBUG] Formatiran račun: 170-0010364556000-77"}
+{"timestamp":"2025-08-21 07:09:09","context":"api","level":"debug","message":"[BANK DEBUG] Original: 170-0010364556000-77, Digits: 170001036455600077, Length: 18"}
+{"timestamp":"2025-08-21 07:09:09","context":"api","level":"debug","message":"[BANK DEBUG] Formatted (16-18): 170-0010364556000-77"}
+{"timestamp":"2025-08-21 07:09:09","context":"api","level":"debug","message":"[WEIGHT DEBUG] Item 610: custom=kg, product=2kg, quantity=1, total=2kg"}
+{"timestamp":"2025-08-21 07:09:09","context":"api","level":"debug","message":"[WEIGHT DEBUG] Item 611: custom=kg, product=5kg, quantity=1, total=5kg"}
+{"timestamp":"2025-08-21 07:09:09","context":"api","level":"debug","message":"[WEIGHT DEBUG] Item 612: custom=kg, product=nonekg, quantity=1, total=0.1kg"}
+{"timestamp":"2025-08-21 07:09:09","context":"api","level":"debug","message":"[WEIGHT DEBUG] Finalna težina: 7.1kg = 7100g"}
+{"timestamp":"2025-08-21 07:09:09","context":"api","level":"debug","message":"[WEIGHT DEBUG] Težina iz calculate_order_weight: 7100 grama"}
+{"timestamp":"2025-08-21 07:09:09","context":"api","level":"debug","message":"[WEIGHT DEBUG] Težina nakon formatiranja za API: 7100 grama"}
+{"timestamp":"2025-08-21 07:09:09","context":"api","level":"debug","message":"Final BuyOut amount: 58800"}
+{"timestamp":"2025-08-21 07:09:09","context":"api","level":"debug","message":"Final BuyOutAccount: 170-0010364556000-77"}
+{"timestamp":"2025-08-21 07:09:09","context":"api","level":"debug","message":"Final RAddressNum: 54"}
+{"timestamp":"2025-08-21 07:09:09","context":"api","level":"debug","message":"Final RTownID: 802158"}
+{"timestamp":"2025-08-21 07:09:09","context":"api","level":"debug","message":"Final RCPhone: 381603995503"}
+{"timestamp":"2025-08-21 07:09:10","context":"api","level":"debug","message":"Using address type: shipping"}
+{"timestamp":"2025-08-21 07:09:10","context":"api","level":"debug","message":"Street: Nikole Francuskog, Number: 54, City ID: 802158"}
+{"timestamp":"2025-08-21 07:09:10","context":"api","level":"debug","message":"Payment method: cod, Is COD: Yes"}
+{"timestamp":"2025-08-21 07:09:10","context":"api","level":"debug","message":"[BANK DEBUG] Original: 170-0010364556000-77, Digits: 170001036455600077, Length: 18"}
+{"timestamp":"2025-08-21 07:09:10","context":"api","level":"debug","message":"[BANK DEBUG] Formatted (16-18): 170-0010364556000-77"}
+{"timestamp":"2025-08-21 07:09:10","context":"api","level":"debug","message":"[COD DEBUG] Formatiran račun: 170-0010364556000-77"}
+{"timestamp":"2025-08-21 07:09:10","context":"api","level":"debug","message":"[BANK DEBUG] Original: 170-0010364556000-77, Digits: 170001036455600077, Length: 18"}
+{"timestamp":"2025-08-21 07:09:10","context":"api","level":"debug","message":"[BANK DEBUG] Formatted (16-18): 170-0010364556000-77"}
+{"timestamp":"2025-08-21 07:09:10","context":"api","level":"debug","message":"[WEIGHT DEBUG] Item 610: custom=kg, product=2kg, quantity=1, total=2kg"}
+{"timestamp":"2025-08-21 07:09:10","context":"api","level":"debug","message":"[WEIGHT DEBUG] Item 611: custom=kg, product=5kg, quantity=1, total=5kg"}
+{"timestamp":"2025-08-21 07:09:10","context":"api","level":"debug","message":"[WEIGHT DEBUG] Item 612: custom=kg, product=nonekg, quantity=1, total=0.1kg"}
+{"timestamp":"2025-08-21 07:09:10","context":"api","level":"debug","message":"[WEIGHT DEBUG] Finalna težina: 7.1kg = 7100g"}
+{"timestamp":"2025-08-21 07:09:10","context":"api","level":"debug","message":"[WEIGHT DEBUG] Težina iz calculate_order_weight: 7100 grama"}
+{"timestamp":"2025-08-21 07:09:10","context":"api","level":"debug","message":"[WEIGHT DEBUG] Težina nakon formatiranja za API: 7100 grama"}
+{"timestamp":"2025-08-21 07:09:10","context":"api","level":"debug","message":"Final BuyOut amount: 58800"}
+{"timestamp":"2025-08-21 07:09:10","context":"api","level":"debug","message":"Final BuyOutAccount: 170-0010364556000-77"}
+{"timestamp":"2025-08-21 07:09:10","context":"api","level":"debug","message":"Final RAddressNum: 54"}
+{"timestamp":"2025-08-21 07:09:10","context":"api","level":"debug","message":"Final RTownID: 802158"}
+{"timestamp":"2025-08-21 07:09:10","context":"api","level":"debug","message":"Final RCPhone: 381603995503"}
+{"timestamp":"2025-08-21 07:10:08","context":"api","level":"debug","message":"Using address type: shipping"}
+{"timestamp":"2025-08-21 07:10:08","context":"api","level":"debug","message":"Street: Nikole Francuskog, Number: 54, City ID: 802158"}
+{"timestamp":"2025-08-21 07:10:08","context":"api","level":"debug","message":"Payment method: bacs, Is COD: Yes"}
+{"timestamp":"2025-08-21 07:10:08","context":"api","level":"debug","message":"[BANK DEBUG] Original: 170-0010364556000-77, Digits: 170001036455600077, Length: 18"}
+{"timestamp":"2025-08-21 07:10:08","context":"api","level":"debug","message":"[BANK DEBUG] Formatted (16-18): 170-0010364556000-77"}
+{"timestamp":"2025-08-21 07:10:08","context":"api","level":"debug","message":"[COD DEBUG] Formatiran račun: 170-0010364556000-77"}
+{"timestamp":"2025-08-21 07:10:08","context":"api","level":"debug","message":"[BANK DEBUG] Original: 170-0010364556000-77, Digits: 170001036455600077, Length: 18"}
+{"timestamp":"2025-08-21 07:10:08","context":"api","level":"debug","message":"[BANK DEBUG] Formatted (16-18): 170-0010364556000-77"}
+{"timestamp":"2025-08-21 07:10:08","context":"api","level":"debug","message":"[WEIGHT DEBUG] Item 614: custom=kg, product=11.5kg, quantity=1, total=11.5kg"}
+{"timestamp":"2025-08-21 07:10:09","context":"api","level":"debug","message":"[WEIGHT DEBUG] Item 615: custom=kg, product=2kg, quantity=1, total=2kg"}
+{"timestamp":"2025-08-21 07:10:09","context":"api","level":"debug","message":"[WEIGHT DEBUG] Item 616: custom=kg, product=nonekg, quantity=1, total=0.1kg"}
+{"timestamp":"2025-08-21 07:10:09","context":"api","level":"debug","message":"[WEIGHT DEBUG] Finalna težina: 13.6kg = 13600g"}
+{"timestamp":"2025-08-21 07:10:09","context":"api","level":"debug","message":"[WEIGHT DEBUG] Težina iz calculate_order_weight: 13600 grama"}
+{"timestamp":"2025-08-21 07:10:09","context":"api","level":"debug","message":"[WEIGHT DEBUG] Težina nakon formatiranja za API: 13600 grama"}
+{"timestamp":"2025-08-21 07:10:09","context":"api","level":"debug","message":"Final BuyOut amount: 109000"}
+{"timestamp":"2025-08-21 07:10:09","context":"api","level":"debug","message":"Final BuyOutAccount: 170-0010364556000-77"}
+{"timestamp":"2025-08-21 07:10:09","context":"api","level":"debug","message":"Final RAddressNum: 54"}
+{"timestamp":"2025-08-21 07:10:09","context":"api","level":"debug","message":"Final RTownID: 802158"}
+{"timestamp":"2025-08-21 07:10:09","context":"api","level":"debug","message":"Final RCPhone: 381603995503"}

@@ -55,7 +55,23 @@ class D_Express_Order_Timeline
             );
         }
     }
+    // Dodaj ovo posle linije 15
+    private function get_tracking_identifier($shipment)
+    {
+        // Prvo pokušaj package code
+        global $wpdb;
+        $package_code = $wpdb->get_var($wpdb->prepare(
+            "SELECT package_code FROM {$wpdb->prefix}dexpress_packages WHERE shipment_id = %d LIMIT 1",
+            $shipment->id
+        ));
 
+        if ($package_code) {
+            return $package_code;
+        }
+
+        // Fallback na reference_id
+        return $shipment->reference_id ?: ('REF' . $shipment->id);
+    }
     /**
      * Registracija stilova i skripti za timeline
      */
@@ -188,9 +204,10 @@ class D_Express_Order_Timeline
         // Postojeći kod za db_statuses, packages, itd...
         $db_statuses = $wpdb->get_results($wpdb->prepare(
             "SELECT * FROM {$wpdb->prefix}dexpress_statuses 
-        WHERE (shipment_code = %s OR reference_id = %s) 
-        ORDER BY status_date ASC",
-            $shipment->reference_id
+            WHERE (shipment_code = %s OR reference_id = %s) 
+            ORDER BY status_date ASC",
+            $this->get_tracking_identifier($shipment), // Prvi %s
+            $shipment->reference_id                    // Drugi %s
         ));
 
         $packages = $wpdb->get_results($wpdb->prepare(
@@ -204,10 +221,10 @@ class D_Express_Order_Timeline
         // Package info logic
         if ($package_count === 1 && $total_shipments === 1) {
             $package_info = __('1 paket', 'd-express-woo') . ' (' . $packages[0]->package_code . ')';
-            $tracking_display = $packages[0]->package_code;
+            $tracking_display = $this->get_tracking_identifier($shipment);
         } else if ($package_count === 1 && $total_shipments > 1) {
             $package_info = __('1 paket', 'd-express-woo');
-            $tracking_display = $packages[0]->package_code;
+            $tracking_display = $this->get_tracking_identifier($shipment);
         } else if ($package_count > 1) {
             $package_codes = array_map(function ($pkg) {
                 return $pkg->package_code;
@@ -216,7 +233,7 @@ class D_Express_Order_Timeline
             $tracking_display = sprintf(__('Shipment #%s', 'd-express-woo'), $shipment->id);
         } else {
             $package_info = __('Nema paketa', 'd-express-woo');
-            $tracking_display = $shipment->tracking_number ?: $shipment->reference_id;
+            $tracking_display = $this->get_tracking_identifier($shipment) ?: $shipment->reference_id;
         }
 
         // Predefined statuses
@@ -470,7 +487,7 @@ class D_Express_Order_Timeline
         ];
 
         foreach ($simulation_statuses as $sim_status) {
-            if ($elapsed_hours >= $sim_status['hours'] && !$this->status_exists($shipment->tracking_number, $sim_status['id'])) {
+            if ($elapsed_hours >= $sim_status['hours'] && !$this->status_exists($shipment, $sim_status['id'])) {
                 $this->add_simulated_status(
                     $shipment,
                     $sim_status['id'],
@@ -486,14 +503,17 @@ class D_Express_Order_Timeline
     /**
      * Provera da li postoji određeni status
      */
-    private function status_exists($tracking_number, $status_id)
+    private function status_exists($shipment, $status_id)
     {
         global $wpdb;
 
         $count = $wpdb->get_var($wpdb->prepare(
             "SELECT COUNT(*) FROM {$wpdb->prefix}dexpress_statuses 
-        WHERE shipment_code = %s AND status_id = %s",
-            $tracking_number, // ISPRAVKA: koristi tracking_number umesto shipment_id
+        WHERE (shipment_code IN (SELECT package_code FROM {$wpdb->prefix}dexpress_packages WHERE shipment_id = %d) 
+               OR reference_id = %s) 
+        AND status_id = %s",
+            $shipment->id,
+            $shipment->reference_id,
             $status_id
         ));
 
@@ -514,6 +534,7 @@ class D_Express_Order_Timeline
             return new WP_Error('simulation_failed', 'Simulacija nije uspela');
         }
     }
+
     /**
      * Dodavanje simuliranog statusa u bazu
      */
@@ -524,7 +545,7 @@ class D_Express_Order_Timeline
         // Dodaj status u tabelu statusa
         $status_data = array(
             'notification_id' => 'SIM' . time() . rand(1000, 9999),
-            'shipment_code' => $shipment->tracking_number, // ISPRAVKA: koristi tracking_number
+            'shipment_code' => $this->get_tracking_identifier($shipment), // ISPRAVKA: koristi tracking_number
             'reference_id' => $shipment->reference_id,
             'status_id' => $status_id,
             'status_date' => $status_date,
@@ -555,6 +576,6 @@ class D_Express_Order_Timeline
             ));
         }
 
-        dexpress_log('[SIMULATION] Dodat status ' . $status_id . ' za pošiljku ' . $shipment->tracking_number, 'debug');
+        dexpress_log('[SIMULATION] Dodat status ' . $status_id . ' za pošiljku ' . $this->get_tracking_identifier($shipment), 'debug');
     }
 }
