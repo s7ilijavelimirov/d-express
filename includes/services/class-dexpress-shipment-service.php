@@ -476,7 +476,7 @@ class D_Express_Shipment_Service
         $email_heading = $subject;
 
         // Popuni podatke za šablon
-        $tracking_number = $shipment->tracking_number;
+       // $tracking_number = $shipment->tracking_number;
         $reference_id = $shipment->reference_id;
         $shipment_date = $shipment->created_at;
         $is_test = $shipment->is_test;

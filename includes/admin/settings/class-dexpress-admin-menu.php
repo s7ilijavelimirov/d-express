@@ -116,18 +116,15 @@ class D_Express_Admin_Menu
     /**
      * Renderuje shipments stranicu
      */
+    /**
+     * Renderuje shipments stranicu
+     */
     public function render_shipments_page()
     {
         if (class_exists('D_Express_Shipments_List')) {
-            dexpress_shipments_list();
+            dexpress_render_enhanced_shipments_page();
         } else {
-            echo '<div class="wrap">';
-            echo '<h1>' . __('D Express Pošiljke', 'd-express-woo') . '</h1>';
-            echo '<p>' . __('Pregled svih D Express pošiljki.', 'd-express-woo') . '</p>';
-            echo '<div class="notice notice-info">';
-            echo '<p>' . __('Kompletna stranica za pregled pošiljki još nije implementirana.', 'd-express-woo') . '</p>';
-            echo '</div>';
-            echo '</div>';
+            echo '<div class="wrap"><h1>D Express Pošiljke</h1><p>Lista nije dostupna.</p></div>';
         }
     }
 

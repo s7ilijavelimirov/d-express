@@ -51,6 +51,8 @@ class D_Express_Admin_Ajax
         add_action('wp_ajax_dexpress_generate_split_content', array($this, 'ajax_generate_split_content'));
 
         add_action('wp_ajax_dexpress_refresh_shipment_status', array($this, 'ajax_refresh_shipment_status'));
+
+        add_action('wp_ajax_dexpress_mark_printed', array($this, 'ajax_mark_printed'));
     }
 
     /**
@@ -399,7 +401,6 @@ class D_Express_Admin_Ajax
 
     public function ajax_create_multiple_shipments()
     {
-        $split_index = 1;
         // Nonce i permisija provera
         if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'dexpress_admin_nonce')) {
             wp_send_json_error(array('message' => 'Sigurnosna provera nije uspela.'));
@@ -452,13 +453,16 @@ class D_Express_Admin_Ajax
             $created_shipments = array();
             $errors = array();
             $api = new D_Express_API();
+            $split_index = 1;
 
-            // ✅ NOVA LOGIKA: Jedan paket po split-u
+            // Kreiraj pošiljke po lokacijama
             foreach ($grouped_by_location as $location_id => $splits_for_location) {
                 $total_locations = count($grouped_by_location);
                 $shipment_data = $api->prepare_shipment_data_from_order($order, $location_id);
+
                 if (is_wp_error($shipment_data)) {
                     $errors[] = 'Lokacija ' . $location_id . ': ' . $shipment_data->get_error_message();
+                    $split_index++;
                     continue;
                 }
 
@@ -466,12 +470,12 @@ class D_Express_Admin_Ajax
                 $total_mass = 0;
                 $content_parts = array();
 
-                // ✅ Kreiraj jedan paket po split-u
+                // Kreiraj jedan paket po split-u
                 foreach ($splits_for_location as $split_data) {
                     $split_items = isset($split_data['items']) ? $split_data['items'] : array();
                     if (empty($split_items)) continue;
 
-                    // Generiši jedan kod za ceo split
+                    // Generiši kod za paket
                     try {
                         $package_code = dexpress_generate_package_code();
                     } catch (Exception $e) {
@@ -479,7 +483,7 @@ class D_Express_Admin_Ajax
                         continue;
                     }
 
-                    // Kalkuliši ukupnu masu split-a
+                    // Kalkuliši masu split-a
                     $split_mass = 0;
                     foreach ($split_items as $item_id) {
                         $item = $order->get_item($item_id);
@@ -499,12 +503,12 @@ class D_Express_Admin_Ajax
                         }
                     }
 
-                    // Minimum masa za paket
+                    // Minimum masa
                     if ($split_mass < 100) {
                         $split_mass = 100;
                     }
 
-                    // Dobij content za split
+                    // Generiši sadržaj split-a
                     $custom_split_content = isset($split_data['custom_content']) ? sanitize_text_field($split_data['custom_content']) : null;
                     if (!empty($custom_split_content)) {
                         $split_content = $custom_split_content;
@@ -514,10 +518,10 @@ class D_Express_Admin_Ajax
                         $split_content = $metabox_instance->generate_content_by_type($order, $content_type, $split_items);
                     }
 
-                    // Dodaj split kao jedan paket
+                    // Dodaj paket u listu
                     $package_list[] = array(
                         'Code' => $package_code,
-                        'ReferenceID' => $shipment_data['ReferenceID'] . '_PKG_' . count($package_list) + 1,
+                        'ReferenceID' => $shipment_data['ReferenceID'] . '_PKG_' . (count($package_list) + 1),
                         'Mass' => $split_mass,
                         'Content' => $split_content,
                         'DimX' => null,
@@ -532,32 +536,27 @@ class D_Express_Admin_Ajax
                     $total_mass += $split_mass;
                 }
 
-                // Ako nema validnih paketa, preskoči
+                // Proveri da li postoje validni paketi
                 if (empty($package_list)) {
                     $errors[] = 'Lokacija ' . $location_id . ': Nema validnih paketa za kreiranje';
+                    $split_index++;
                     continue;
                 }
 
-                // Pripremi shipment podatke
+                // Postavka shipment podataka
                 $shipment_data['PackageList'] = $package_list;
                 $shipment_data['Mass'] = $total_mass;
 
-                // Kombinuj content delove (unique values)
+                // Kombinuj i sanitizuj content
                 $combined_content = implode(', ', array_unique($content_parts));
-
-                // Sanitize content za API regex pattern
                 $safe_content = preg_replace('/[^a-zA-Zžćčđš\s,\-\(\)\/\.0-9]/u', '', $combined_content);
                 $safe_content = preg_replace('/\s+/', ' ', trim($safe_content));
 
-                // Proveri dužinu (max 50 karaktera)
                 if (strlen($safe_content) > 50) {
                     $safe_content = substr($safe_content, 0, 47) . '...';
                 }
 
                 $shipment_data['Content'] = $safe_content;
-
-                // Debug log
-                dexpress_log('[CONTENT] Original: "' . $combined_content . '" -> Sanitized: "' . $safe_content . '"', 'info');
 
                 // ReferenceID logika
                 if (count($grouped_by_location) > 1) {
@@ -566,35 +565,53 @@ class D_Express_Admin_Ajax
                     $shipment_data['ReferenceID'] = (string)$order_id;
                 }
 
-                // COD logika
+                // COD i Value logika
                 if ($order->get_payment_method() === 'cod') {
                     $all_items_for_location = array();
                     foreach ($splits_for_location as $split_data) {
                         $all_items_for_location = array_merge($all_items_for_location, $split_data['items']);
                     }
-                    $split_cod = $this->calculate_combined_split_cod($order, $all_items_for_location);
+
+                    $split_cod = $this->calculate_combined_split_cod($order, $all_items_for_location, $split_index, count($grouped_by_location));
                     $shipment_data['BuyOut'] = $split_cod;
-                    $shipment_data['Value'] = $split_cod;
+
+                    // Value logika za COD orders
+                    if ($split_index === 1) {
+                        // Prvi split dobija vrednost sve robe
+                        $items_total = 0;
+                        foreach ($order->get_items() as $item) {
+                            if ($item instanceof WC_Order_Item_Product) {
+                                $items_total += ($item->get_total() + $item->get_total_tax());
+                            }
+                        }
+                        $shipment_data['Value'] = intval($items_total * 100); // u parama
+                    } else {
+                        // Ostali splitovi nemaju Value
+                        $shipment_data['Value'] = 0;
+                    }
                 }
+                // Za non-COD orders, Value se postavlja u prepare_shipment_data_from_order
 
                 dexpress_log(sprintf(
-                    '[FIXED] Lokacija %d: %d paketa, masa %dg, ref %s',
+                    '[SHIPMENT] Lokacija %d: %d paketa, masa %dg, ref %s, COD: %d',
                     $location_id,
                     count($package_list),
                     $total_mass,
-                    $shipment_data['ReferenceID']
+                    $shipment_data['ReferenceID'],
+                    $shipment_data['BuyOut']
                 ), 'info');
 
-                // API poziv za sve pakete ove lokacije
+                // Pošalji API zahtev
                 $response = $api->add_shipment($shipment_data);
                 if (is_wp_error($response)) {
                     $errors[] = 'Lokacija ' . $location_id . ': ' . $response->get_error_message();
+                    $split_index++;
                     continue;
                 }
 
-                // Provera za API greške u JSON formatu
                 if (is_array($response) && isset($response['Message'])) {
                     $errors[] = 'Lokacija ' . $location_id . ': ' . $response['Message'];
+                    $split_index++;
                     continue;
                 }
 
@@ -621,11 +638,11 @@ class D_Express_Admin_Ajax
                 $shipment_id = $db->add_shipment($shipment_record);
 
                 if ($shipment_id) {
-                    // Sačuvaj SVE pakete u packages tabelu
-                    $total_packages = count($package_list); // DODAJ OVU LINIJU
-                    $package_index = 1; // DODAJ OVU LINIJU
+                    // Sačuvaj pakete
+                    $total_packages = count($package_list);
+                    $package_index = 1;
 
-                    foreach ($package_list as $index => $package) {
+                    foreach ($package_list as $package) {
                         $package_data = array(
                             'shipment_id' => $shipment_id,
                             'package_code' => $package['Code'],
@@ -665,8 +682,9 @@ class D_Express_Admin_Ajax
                         'tracking_numbers' => array_column($package_list, 'Code'),
                         'main_tracking' => $package_list[0]['Code']
                     );
-                    $split_index++;
                 }
+
+                $split_index++;
             }
 
             // Sačuvaj meta podatke
@@ -675,7 +693,7 @@ class D_Express_Admin_Ajax
                 update_post_meta($order_id, '_dexpress_multiple_shipments', count($created_shipments));
             }
 
-            // Odgovor
+            // Pošalji odgovor
             if (!empty($errors)) {
                 wp_send_json_error(array(
                     'message' => 'Greške pri kreiranju pošiljki: ' . implode(', ', $errors),
@@ -715,20 +733,24 @@ class D_Express_Admin_Ajax
     /**
      * Kalkuliše COD za kombinovane artikle
      */
-    private function calculate_combined_split_cod($order, $combined_items)
+    /**
+     * Kalkuliše COD za kombinovane artikle - NOVA LOGIKA
+     */
+    private function calculate_combined_split_cod($order, $combined_items, $split_index = 1, $total_splits = 1)
     {
         if ($order->get_payment_method() !== 'cod') {
             return 0;
         }
 
-        $split_amount = 0;
-        foreach ($order->get_items() as $item_id => $item) {
-            if (in_array($item_id, $combined_items)) {
-                $split_amount += $item->get_total();
-            }
+        // NOVA LOGIKA: Cela dostava ide na prvi split
+        if ($split_index === 1) {
+            // Prvi split: ukupan iznos narudžbe (roba + dostava)
+            $total_amount = $order->get_total();
+            return intval($total_amount * 100);
+        } else {
+            // Ostali splitovi: bez COD-a
+            return 0;
         }
-
-        return intval($split_amount * 100); // Konvertuj u pare
     }
     /**
      * Generiše jedinstvene package kodove za multiple shipments
@@ -851,6 +873,33 @@ class D_Express_Admin_Ajax
             }
         } catch (Exception $e) {
             wp_send_json_error(['message' => 'Greška: ' . $e->getMessage()]);
+        }
+    }
+    /**
+     * AJAX akcija za označavanje pošiljke kao štampane
+     */
+    public function ajax_mark_printed()
+    {
+        check_ajax_referer('dexpress_admin_nonce', 'nonce');
+
+        if (!current_user_can('manage_woocommerce')) {
+            wp_send_json_error('Nemate dozvolu za ovu akciju');
+        }
+
+        $shipment_id = intval($_POST['shipment_id']);
+        global $wpdb;
+
+        $shipment = $wpdb->get_row($wpdb->prepare(
+            "SELECT order_id FROM {$wpdb->prefix}dexpress_shipments WHERE id = %d",
+            $shipment_id
+        ));
+
+        if ($shipment) {
+            update_post_meta($shipment->order_id, '_dexpress_label_printed', 'yes');
+            update_post_meta($shipment->order_id, '_dexpress_label_printed_date', current_time('mysql'));
+            wp_send_json_success('Pošiljka je označena kao štampana');
+        } else {
+            wp_send_json_error('Pošiljka nije pronađena');
         }
     }
 }

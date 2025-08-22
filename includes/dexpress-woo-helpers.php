@@ -19,117 +19,154 @@ function dexpress_get_all_status_codes()
     // Koristi keširanje da izbegneš ponavljanje upita
     if ($statuses === null) {
         global $wpdb;
-        $results = $wpdb->get_results("SELECT id, name FROM {$wpdb->prefix}dexpress_statuses_index ORDER BY id", ARRAY_A);
+        $results = $wpdb->get_results("SELECT id, name, description FROM {$wpdb->prefix}dexpress_statuses_index ORDER BY CAST(id AS SIGNED)", ARRAY_A);
 
         $statuses = array();
         if (!empty($results)) {
             foreach ($results as $row) {
+                $status_id = $row['id'];
+
                 // Određivanje grupe statusa na osnovu ID-a
                 $group = 'transit'; // Default grupa
                 $icon = 'dashicons-airplane'; // Default ikona
                 $css_class = 'dexpress-status-transit'; // Default CSS klasa
 
-                // Mapiranje statusa na grupe
-                if (in_array($row['id'], ['1', '831', '843'])) {
-                    $group = 'delivered';
-                    $icon = 'dashicons-yes-alt';
-                    $css_class = 'dexpress-status-delivered';
-                } elseif (in_array($row['id'], ['-13', '-12', '-11', '5'])) {
-                    $group = 'failed';
-                    $icon = 'dashicons-no-alt';
-                    $css_class = 'dexpress-status-failed';
-                } elseif (in_array($row['id'], ['20'])) {
-                    $group = 'returned';
-                    $icon = 'dashicons-undo';
-                    $css_class = 'dexpress-status-returned';
-                } elseif (in_array($row['id'], ['21', '23'])) {
-                    $group = 'returning';
-                    $icon = 'dashicons-undo';
-                    $css_class = 'dexpress-status-returning';
-                } elseif (in_array($row['id'], ['8', '9', '10', '11', '19', '25', '108', '109', '110', '111', '119', '125', '822', '841'])) {
-                    $group = 'problem';
-                    $icon = 'dashicons-warning';
-                    $css_class = 'dexpress-status-problem';
-                } elseif (in_array($row['id'], ['6', '7', '12', '17', '106', '107', '112'])) {
-                    $group = 'delayed';
-                    $icon = 'dashicons-clock';
-                    $css_class = 'dexpress-status-delayed';
-                } elseif (in_array($row['id'], ['18', '118', '830', '842'])) {
-                    $group = 'pending_pickup';
-                    $icon = 'dashicons-location';
-                    $css_class = 'dexpress-status-pending-pickup';
-                } elseif (in_array($row['id'], ['3', '4', '30', '820', '840'])) {
-                    $group = 'transit';
-                    $icon = 'dashicons-airplane';
-                    $css_class = 'dexpress-status-transit';
-                } elseif (in_array($row['id'], ['0', '105', '123'])) {
-                    $group = 'pending';
-                    $icon = 'dashicons-clock';
-                    $css_class = 'dexpress-status-pending';
-                } elseif (in_array($row['id'], ['-1', '-2'])) {
-                    $group = 'cancelled';
-                    $icon = 'dashicons-dismiss';
-                    $css_class = 'dexpress-status-cancelled';
+                // Switch je efikasniji od in_array za ovo
+                switch ($status_id) {
+                    // DELIVERED grupa - stvarno isporučeno
+                    case '1':   // Pošiljka je isporučena primaocu
+                    case '831': // Paket izvađen iz paketomata
+                    case '843': // Pošiljka iznešena iz paket šopa
+                        $group = 'delivered';
+                        $icon = 'dashicons-yes-alt';
+                        $css_class = 'dexpress-status-delivered';
+                        break;
+
+                    // FAILED grupa - neuspešno trajno
+                    case '-13': // Nepovratno izgubljena
+                    case '-12': // Totalno oštećena
+                    case '-11': // Zaplenjena od strane inspekcije
+                    case '5':   // Pošiljka je odbijena od strane primaoca
+                        $group = 'failed';
+                        $icon = 'dashicons-no-alt';
+                        $css_class = 'dexpress-status-failed';
+                        break;
+
+                    // CANCELLED grupa - otkazano
+                    case '-2':  // Obrisana pošiljka
+                    case '-1':  // Storno isporuke
+                        $group = 'cancelled';
+                        $icon = 'dashicons-dismiss';
+                        $css_class = 'dexpress-status-cancelled';
+                        break;
+
+                    // RETURNED grupa - vraćeno pošiljaocu
+                    case '20':  // Pošiljka je vraćena pošiljaocu
+                        $group = 'returned';
+                        $icon = 'dashicons-undo';
+                        $css_class = 'dexpress-status-returned';
+                        break;
+
+                    // RETURNING grupa - u procesu vraćanja
+                    case '21':  // Pošiljka se vraća pošiljaocu
+                    case '23':  // Zahtevan povrat po nalogu pošiljaoca
+                    case '123': // Zahtevan povrat po nalogu pošiljaoca (duplikat u bazi)
+                        $group = 'returning';
+                        $icon = 'dashicons-undo';
+                        $css_class = 'dexpress-status-returning';
+                        break;
+
+                    // OUT_FOR_DELIVERY grupa - na putu za isporuku
+                    case '4':   // Pošiljka zadužena za isporuku
+                        $group = 'out_for_delivery';
+                        $icon = 'dashicons-arrow-right-alt';
+                        $css_class = 'dexpress-status-out-for-delivery';
+                        break;
+
+                    // PROBLEM grupa - problemi koji zahtevaju akciju
+                    case '8':   // Pokušana isporuka, netačna je adresa primaoca
+                    case '9':   // Pokušana isporuka, primalac nema novac
+                    case '10':  // Sadržaj pošiljke nije odgovarajući
+                    case '11':  // Pošiljka je oštećena-reklamacioni postupak
+                    case '19':  // Telefon primaoca netačan
+                    case '25':  // Primalac se ne javlja na telefonski poziv
+                    case '108': // Ponovni pokušaj isporuke, netačna adresa primaoca
+                    case '109': // Ponovni pokušaj isporuke, primalac nema novac
+                    case '110': // Sadržaj pošiljke nije odgovarajući (ponovni pokušaj)
+                    case '111': // Pošiljka je oštećena-reklamacioni postupak (ponovni pokušaj)
+                    case '119': // Telefon primaoca netačan (ponovni pokušaj)
+                    case '125': // Primalac se ne javlja na telefonski poziv (ponovni pokušaj)
+                    case '822': // Pošiljka ne može biti ispručena putem paketomata
+                    case '841': // Pošiljka ne može biti ispručena putem paket šopa
+                        $group = 'problem';
+                        $icon = 'dashicons-warning';
+                        $css_class = 'dexpress-status-problem';
+                        break;
+
+                    // DELAYED grupa - odloženo ali će pokušati ponovo
+                    case '6':   // Pokušana isporuka, nema nikoga na adresi
+                    case '7':   // Pokušana isporuka, primalac je na godišnjem odmoru
+                    case '12':  // Isporuka odložena u dogovoru sa primaocem
+                    case '17':  // Isporuka samo određenim danima
+                    case '106': // Ponovni pokušaj isporuke, nema nikoga na adresi
+                    case '107': // Ponovni pokušaj isporuke, primalac je na odmoru
+                    case '112': // Isporuka odložena u dogovoru sa primaocem (ponovni pokušaj)
+                        $group = 'delayed';
+                        $icon = 'dashicons-clock';
+                        $css_class = 'dexpress-status-delayed';
+                        break;
+
+                    // PENDING_PICKUP grupa - čeka preuzimanje na lokaciji
+                    case '18':  // Primalac će doći po paket u magacin
+                    case '118': // Primalac će doći po paket u magacin (ponovni pokušaj)
+                    case '830': // Paket ostavljen u paketomatu
+                    case '842': // Pošiljka ostavljena u paket šopu
+                        $group = 'pending_pickup';
+                        $icon = 'dashicons-location';
+                        $css_class = 'dexpress-status-pending-pickup';
+                        break;
+
+                    // TRANSIT grupa - u tranzitu/transportu
+                    case '3':   // Pošiljka je preuzeta od pošiljaoca
+                    case '22':  // Ukinut povrat pošiljke
+                    case '30':  // Međunarodna pošiljka - u tranzitu
+                    case '820': // Preusmerena na paketomat
+                    case '840': // Preusmerena na paket šop
+                        $group = 'transit';
+                        $icon = 'dashicons-airplane';
+                        $css_class = 'dexpress-status-transit';
+                        break;
+
+                    // PENDING grupa - čeka početak obrade
+                    case '0':   // Čeka na preuzimanje
+                        $group = 'pending';
+                        $icon = 'dashicons-clock';
+                        $css_class = 'dexpress-status-pending';
+                        break;
+
+                    // GREŠKA u tvojoj bazi - status 105 je duplikat
+                    case '105': // U bazi piše "Pošiljka je odbijena od strane primaoca" - TREBALO BI BITI FAILED
+                        $group = 'failed';  // ISPRAVKA - ovo treba biti failed, ne pending
+                        $icon = 'dashicons-no-alt';
+                        $css_class = 'dexpress-status-failed';
+                        break;
+
+                    // Default za nepoznate statuse
+                    default:
+                        $group = 'transit';
+                        $icon = 'dashicons-airplane';
+                        $css_class = 'dexpress-status-transit';
+                        break;
                 }
 
-                $statuses[$row['id']] = [
+                $statuses[$status_id] = [
                     'name' => $row['name'],
+                    'description' => isset($row['description']) ? $row['description'] : '',
                     'group' => $group,
                     'icon' => $icon,
                     'css_class' => $css_class
                 ];
             }
-        } else {
-            // Fallback na hardkodirane vrednosti ako iz nekog razloga nema podataka u bazi
-            // Samo koristimo ID-jeve koje si dobio iz dokumentacije
-            $statuses = [
-                '-13' => ['name' => 'Nepovratno izgubljena', 'group' => 'failed', 'icon' => 'dashicons-no-alt', 'css_class' => 'dexpress-status-failed'],
-                '-12' => ['name' => 'Totalno oštećena', 'group' => 'failed', 'icon' => 'dashicons-no-alt', 'css_class' => 'dexpress-status-failed'],
-                '-11' => ['name' => 'Zaplenjena od strane inspekcije', 'group' => 'failed', 'icon' => 'dashicons-no-alt', 'css_class' => 'dexpress-status-failed'],
-                '-2' => ['name' => 'Obrisana pošiljka', 'group' => 'cancelled', 'icon' => 'dashicons-dismiss', 'css_class' => 'dexpress-status-cancelled'],
-                '-1' => ['name' => 'Storno isporuke', 'group' => 'cancelled', 'icon' => 'dashicons-dismiss', 'css_class' => 'dexpress-status-cancelled'],
-                '0' => ['name' => 'Čeka na preuzimanje', 'group' => 'pending', 'icon' => 'dashicons-clock', 'css_class' => 'dexpress-status-pending'],
-                '1' => ['name' => 'Pošiljka je isporučena primaocu', 'group' => 'delivered', 'icon' => 'dashicons-yes-alt', 'css_class' => 'dexpress-status-delivered'],
-                '3' => ['name' => 'Pošiljka je preuzeta od pošiljaoca', 'group' => 'transit', 'icon' => 'dashicons-airplane', 'css_class' => 'dexpress-status-transit'],
-                '4' => ['name' => 'Pošiljka zadužena za isporuku', 'group' => 'out_for_delivery', 'icon' => 'dashicons-arrow-right-alt', 'css_class' => 'dexpress-status-out-for-delivery'],
-                '5' => ['name' => 'Pošiljka je odbijena od strane primaoca', 'group' => 'failed', 'icon' => 'dashicons-no-alt', 'css_class' => 'dexpress-status-failed'],
-                '6' => ['name' => 'Pokušana isporuka, nema nikoga na adresi', 'group' => 'delayed', 'icon' => 'dashicons-clock', 'css_class' => 'dexpress-status-delayed'],
-                '7' => ['name' => 'Pokušana isporuka, primalac je na godišnjem odmoru', 'group' => 'delayed', 'icon' => 'dashicons-clock', 'css_class' => 'dexpress-status-delayed'],
-                '8' => ['name' => 'Pokušana isporuka, netačna je adresa primaoca', 'group' => 'problem', 'icon' => 'dashicons-warning', 'css_class' => 'dexpress-status-problem'],
-                '9' => ['name' => 'Pokušana isporuka, primalac nema novac', 'group' => 'problem', 'icon' => 'dashicons-warning', 'css_class' => 'dexpress-status-problem'],
-                '10' => ['name' => 'Sadržaj pošiljke nije odgovarajući', 'group' => 'problem', 'icon' => 'dashicons-warning', 'css_class' => 'dexpress-status-problem'],
-                '11' => ['name' => 'Pošiljka je oštećena-reklamacioni postupak', 'group' => 'problem', 'icon' => 'dashicons-warning', 'css_class' => 'dexpress-status-problem'],
-                '12' => ['name' => 'Isporuka odložena u dogovoru sa primaocem', 'group' => 'delayed', 'icon' => 'dashicons-clock', 'css_class' => 'dexpress-status-delayed'],
-                '17' => ['name' => 'Isporuka samo određenim danima', 'group' => 'delayed', 'icon' => 'dashicons-clock', 'css_class' => 'dexpress-status-delayed'],
-                '18' => ['name' => 'Primalac će doći po paket u magacin', 'group' => 'pending_pickup', 'icon' => 'dashicons-location', 'css_class' => 'dexpress-status-pending-pickup'],
-                '19' => ['name' => 'Telefon primaoca netačan', 'group' => 'problem', 'icon' => 'dashicons-warning', 'css_class' => 'dexpress-status-problem'],
-                '20' => ['name' => 'Pošiljka je vraćena pošiljaocu', 'group' => 'returned', 'icon' => 'dashicons-undo', 'css_class' => 'dexpress-status-returned'],
-                '21' => ['name' => 'Pošiljka se vraća pošiljaocu', 'group' => 'returning', 'icon' => 'dashicons-undo', 'css_class' => 'dexpress-status-returning'],
-                '22' => ['name' => 'Ukinut povrat pošiljke', 'group' => 'transit', 'icon' => 'dashicons-airplane', 'css_class' => 'dexpress-status-transit'],
-                '23' => ['name' => 'Zahtevan povrat po nalogu pošiljaoca', 'group' => 'returning', 'icon' => 'dashicons-undo', 'css_class' => 'dexpress-status-returning'],
-                '25' => ['name' => 'Primalac se ne javlja na telefonski poziv', 'group' => 'problem', 'icon' => 'dashicons-warning', 'css_class' => 'dexpress-status-problem'],
-                '30' => ['name' => 'Međunarodna pošiljka - u tranzitu', 'group' => 'transit', 'icon' => 'dashicons-airplane', 'css_class' => 'dexpress-status-transit'],
-                '105' => ['name' => 'Čeka na preuzimanje', 'group' => 'pending', 'icon' => 'dashicons-clock', 'css_class' => 'dexpress-status-pending'],
-                '106' => ['name' => 'Odložena isporuka', 'group' => 'delayed', 'icon' => 'dashicons-clock', 'css_class' => 'dexpress-status-delayed'],
-                '107' => ['name' => 'Odložena isporuka - godišnji odmor', 'group' => 'delayed', 'icon' => 'dashicons-clock', 'css_class' => 'dexpress-status-delayed'],
-                '108' => ['name' => 'Netačna adresa', 'group' => 'problem', 'icon' => 'dashicons-warning', 'css_class' => 'dexpress-status-problem'],
-                '109' => ['name' => 'Nema novca za otkupninu', 'group' => 'problem', 'icon' => 'dashicons-warning', 'css_class' => 'dexpress-status-problem'],
-                '110' => ['name' => 'Neodgovarajući sadržaj', 'group' => 'problem', 'icon' => 'dashicons-warning', 'css_class' => 'dexpress-status-problem'],
-                '111' => ['name' => 'Oštećena pošiljka', 'group' => 'problem', 'icon' => 'dashicons-warning', 'css_class' => 'dexpress-status-problem'],
-                '112' => ['name' => 'Isporuka odložena - dogovor', 'group' => 'delayed', 'icon' => 'dashicons-clock', 'css_class' => 'dexpress-status-delayed'],
-                '118' => ['name' => 'Paket za preuzimanje u magacinu', 'group' => 'pending_pickup', 'icon' => 'dashicons-location', 'css_class' => 'dexpress-status-pending-pickup'],
-                '119' => ['name' => 'Netačan telefon', 'group' => 'problem', 'icon' => 'dashicons-warning', 'css_class' => 'dexpress-status-problem'],
-                '123' => ['name' => 'Isporuka u toku', 'group' => 'pending', 'icon' => 'dashicons-clock', 'css_class' => 'dexpress-status-pending'],
-                '125' => ['name' => 'Primalac se ne javlja', 'group' => 'problem', 'icon' => 'dashicons-warning', 'css_class' => 'dexpress-status-problem'],
-                '820' => ['name' => 'Preusmerena na paketomat', 'group' => 'transit', 'icon' => 'dashicons-airplane', 'css_class' => 'dexpress-status-transit'],
-                '822' => ['name' => 'Pošiljka ne može biti ispručena putem paketomata', 'group' => 'problem', 'icon' => 'dashicons-warning', 'css_class' => 'dexpress-status-problem'],
-                '830' => ['name' => 'Paket ostavljen u paketomatu', 'group' => 'pending_pickup', 'icon' => 'dashicons-location', 'css_class' => 'dexpress-status-pending-pickup'],
-                '831' => ['name' => 'Paket izvađen iz paketomata', 'group' => 'delivered', 'icon' => 'dashicons-yes-alt', 'css_class' => 'dexpress-status-delivered'],
-                '840' => ['name' => 'Preusmerena na paket šop', 'group' => 'transit', 'icon' => 'dashicons-airplane', 'css_class' => 'dexpress-status-transit'],
-                '841' => ['name' => 'Pošiljka ne može biti ispručena putem paket šopa', 'group' => 'problem', 'icon' => 'dashicons-warning', 'css_class' => 'dexpress-status-problem'],
-                '842' => ['name' => 'Pošiljka ostavljena u paket šopu', 'group' => 'pending_pickup', 'icon' => 'dashicons-location', 'css_class' => 'dexpress-status-pending-pickup'],
-                '843' => ['name' => 'Pošiljka iznešena iz paket šopa', 'group' => 'delivered', 'icon' => 'dashicons-yes-alt', 'css_class' => 'dexpress-status-delivered'],
-            ];
         }
     }
 
@@ -352,15 +389,10 @@ function dexpress_get_streets_for_town($town_id)
  */
 function dexpress_get_status_name($status_id)
 {
-    global $wpdb;
-
-    $status_name = $wpdb->get_var($wpdb->prepare(
-        "SELECT name FROM {$wpdb->prefix}dexpress_statuses_index WHERE id = %d",
-        $status_id
-    ));
-
-    return $status_name ? $status_name : "Status #" . $status_id . " (nepoznat)";
+    $statuses = dexpress_get_all_status_codes();
+    return isset($statuses[$status_id]) ? $statuses[$status_id]['name'] : "Status #" . $status_id . " (nepoznat)";
 }
+
 /**
  * Vraća CSS klasu za status pošiljke
  *

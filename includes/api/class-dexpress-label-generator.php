@@ -304,51 +304,31 @@ class D_Express_Label_Generator
         </body>
         </html>';
     }
-
     /**
-     * Izračunava COD iznos za shipment (bez dostave)
+     * Izračunava COD iznos za shipment
      */
     private function calculate_split_cod_amount($order, $shipment)
     {
-        // Ako je split shipment, kalkuliši samo za artikle iz tog split-a
+        if ($order->get_payment_method() !== 'cod') {
+            return 0;
+        }
+
+        // Za split shipment sa više pošiljki
         if (!empty($shipment->split_index) && !empty($shipment->total_splits) && $shipment->total_splits > 1) {
-            $shipment_splits = get_post_meta($order->get_id(), '_dexpress_shipment_splits', true);
-
-            if (!empty($shipment_splits) && isset($shipment_splits[$shipment->split_index - 1])) {
-                $split_data = $shipment_splits[$shipment->split_index - 1];
-                $selected_items = isset($split_data['items']) ? $split_data['items'] : [];
-
-                if (!empty($selected_items)) {
-                    $split_value = 0;
-
-                    foreach ($order->get_items() as $item_id => $item) {
-                        if (in_array($item_id, $selected_items)) {
-                            if (!($item instanceof WC_Order_Item_Product)) {
-                                continue;
-                            }
-                            $split_value += ($item->get_total() + $item->get_total_tax());
-                        }
-                    }
-
-                    return $split_value > 0 ? $split_value : 0;
-                }
+            // Prvi split dobija ceo COD, ostali 0
+            if ($shipment->split_index == 1) {
+                return $order->get_total(); // Cela narudžba
+            } else {
+                return 0; // Ostali splitovi bez COD-a
             }
         }
 
-        // Fallback: Izračunaj vrednost svih proizvoda (bez dostave)
-        $total_items_value = 0;
-        foreach ($order->get_items() as $item) {
-            if (!($item instanceof WC_Order_Item_Product)) {
-                continue;
-            }
-            $total_items_value += ($item->get_total() + $item->get_total_tax());
-        }
-
-        return $total_items_value;
+        // Za obične shipments (bez split-a)
+        return $order->get_total();
     }
 
     /**
-     * AJAX akcija za masovno štampanje nalepnica - REFAKTORISANA
+     * AJAX akcija za masovno štampanje nalepnica - ENHANCED
      */
     public function ajax_bulk_print_labels()
     {
@@ -362,20 +342,56 @@ class D_Express_Label_Generator
             wp_die(__('Nemate dozvolu za ovu akciju.', 'd-express-woo'));
         }
 
-        // Provera ID-jeva pošiljki
-        if (!isset($_REQUEST['shipment_ids']) || empty($_REQUEST['shipment_ids'])) {
-            wp_die(__('Nisu odabrane pošiljke za štampanje.', 'd-express-woo'));
-        }
-
-        $shipment_ids = explode(',', sanitize_text_field($_REQUEST['shipment_ids']));
-        $shipment_ids = array_map('intval', $shipment_ids);
-
-        if (empty($shipment_ids)) {
-            wp_die(__('Nisu odabrane pošiljke za štampanje.', 'd-express-woo'));
-        }
-
-        // Dobavljanje podataka o pošiljkama
         global $wpdb;
+        $shipment_ids = [];
+
+        // NOVO: Proverava da li se koristi date_filter umesto direktnih shipment_ids
+        if (isset($_REQUEST['date_filter']) && !empty($_REQUEST['date_filter'])) {
+            $date_filter = sanitize_key($_REQUEST['date_filter']);
+
+            // Generiši shipment_ids na osnovu date filter-a
+            switch ($date_filter) {
+                case 'today':
+                    $condition = "AND DATE(s.created_at) = CURDATE()";
+                    break;
+                case 'yesterday':
+                    $condition = "AND DATE(s.created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)";
+                    break;
+                case 'last_3_days':
+                    $condition = "AND DATE(s.created_at) >= DATE_SUB(CURDATE(), INTERVAL 3 DAY)";
+                    break;
+                case 'unprinted':
+                    $condition = "AND s.order_id NOT IN (
+                    SELECT post_id FROM {$wpdb->postmeta} 
+                    WHERE meta_key = '_dexpress_label_printed' AND meta_value = 'yes'
+                )";
+                    break;
+                default:
+                    $condition = "";
+            }
+
+            $shipment_ids = $wpdb->get_col(
+                "SELECT s.id FROM {$wpdb->prefix}dexpress_shipments s WHERE 1=1 $condition ORDER BY s.created_at DESC"
+            );
+
+            if (empty($shipment_ids)) {
+                wp_die(__('Nema pošiljki za štampanje sa odabranim filterom.', 'd-express-woo'));
+            }
+        } else {
+            // Postojeća logika za direktne shipment_ids
+            if (!isset($_REQUEST['shipment_ids']) || empty($_REQUEST['shipment_ids'])) {
+                wp_die(__('Nisu odabrane pošiljke za štampanje.', 'd-express-woo'));
+            }
+
+            $shipment_ids = explode(',', sanitize_text_field($_REQUEST['shipment_ids']));
+            $shipment_ids = array_map('intval', $shipment_ids);
+
+            if (empty($shipment_ids)) {
+                wp_die(__('Nisu odabrane pošiljke za štampanje.', 'd-express-woo'));
+            }
+        }
+
+        // Ostatak funkcije ostaje isti...
         $placeholders = implode(',', array_fill(0, count($shipment_ids), '%d'));
 
         $shipments = $wpdb->get_results(
@@ -391,28 +407,23 @@ class D_Express_Label_Generator
 
         $total_shipments = count($shipments);
         $content = '';
-        $shipment_index = 1;
 
         foreach ($shipments as $shipment) {
             $order = wc_get_order($shipment->order_id);
 
             if ($order) {
-                // Dobij pakete za ovaj shipment
-                global $wpdb;
                 $packages = $wpdb->get_results($wpdb->prepare(
                     "SELECT * FROM {$wpdb->prefix}dexpress_packages WHERE shipment_id = %d ORDER BY package_index ASC",
                     $shipment->id
                 ));
 
                 if (!empty($packages)) {
-                    // Generiši nalepnicu za svaki paket sa pravilnim package_code
                     foreach ($packages as $package) {
                         ob_start();
                         $this->generate_compact_label($shipment, $order, $package);
                         $content .= ob_get_clean();
                     }
                 } else {
-                    // Fallback - ako nema paketa u bazi, koristi generički pristup
                     ob_start();
                     $this->generate_compact_label($shipment, $order, null);
                     $content .= ob_get_clean();
@@ -423,6 +434,7 @@ class D_Express_Label_Generator
                 update_post_meta($order->get_id(), '_dexpress_label_printed_date', current_time('mysql'));
             }
         }
+
         $total_labels = substr_count($content, 'class="label-container"');
         echo $this->generate_html_wrapper($content, 'D Express nalepnice za štampanje', $total_labels);
         exit;

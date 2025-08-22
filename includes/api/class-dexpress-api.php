@@ -838,49 +838,30 @@ class D_Express_API
         return $account_number; // Vrati original ako ne možemo formatirati
     }
     /**
-     * Izračunava BuyOut na osnovu metode plaćanja i besplatne dostave
-     * 
-     * @param WC_Order $order
-     * @return int BuyOut iznos u para
+     * Izračunava BuyOut iznos (ukupan iznos narudžbe)
      */
     private function calculate_buyout_amount($order)
     {
-        // Cena proizvoda u para (bez dostave)
-        $items_value_para = $this->calculate_items_value($order);
-
-        // Ko plaća dostavu određuje BuyOut logiku
-        $payment_by = intval(get_option('dexpress_payment_by', 0));
-
-        // Cena dostave
-        $shipping_cost = 0;
-        foreach ($order->get_shipping_methods() as $method) {
-            $shipping_cost = floatval($method->get_total());
-            break;
+        if ($order->get_payment_method() !== 'cod') {
+            return 0;
         }
 
-        $shipping_para = dexpress_convert_price_to_para($shipping_cost);
-
-        switch ($payment_by) {
-            case 0: // Sender (TI plaćaš transport)
-                // Kupac plaća samo proizvode + dostavu (ako nije besplatna)
-                if ($shipping_cost > 0) {
-                    return $items_value_para + $shipping_para; // Proizvodi + dostava
-                } else {
-                    return $items_value_para; // Samo proizvodi (besplatna dostava)
-                }
-
-            case 1: // Pickup location plaća transport  
-                // Isto kao Sender
-                return $items_value_para + ($shipping_cost > 0 ? $shipping_para : 0);
-
-            case 2: // Recipient (KUPAC plaća i proizvode i transport)
-                // Kupac plaća SVE - proizvode + dostavu uvek
-                return $items_value_para + $shipping_para;
-
-            default:
-                // Fallback na Sender logiku
-                return $items_value_para + ($shipping_cost > 0 ? $shipping_para : 0);
+        // UVEK ukupan iznos narudžbe (roba + dostava + takse)
+        $total_amount = $order->get_total();
+        return intval($total_amount * 100); // Konvertuj u pare
+    }
+    /**
+     * Izračunava Value iznos (samo vrednost proizvoda)
+     */
+    private function calculate_value_amount($order)
+    {
+        // Samo vrednost proizvoda (bez dostave)
+        $items_total = 0;
+        foreach ($order->get_items() as $item) {
+            if (!($item instanceof WC_Order_Item_Product)) continue;
+            $items_total += ($item->get_total() + $item->get_total_tax());
         }
+        return intval($items_total * 100); // u parama
     }
     /**
      * Izračunavanje težine narudžbine sa custom težinама iz metabox-a
@@ -1177,7 +1158,7 @@ class D_Express_API
             'PaymentType' => $payment_type,
 
             // Vrednost i masa
-            'Value' => $this->calculate_items_value($order),
+            'Value' => $this->calculate_value_amount($order),
             'Content' => $content,
             'Mass' => $weight_grams,
 
@@ -1234,9 +1215,6 @@ class D_Express_API
                 __('Value ne može biti veći od 10.000.000 RSD prema API dokumentaciji.', 'd-express-woo')
             );
         }
-        // Loguj generisani kod
-        dexpress_log("[PACKAGE CODE] Generisan kod: {$package_code} za order #{$order_id}", 'info');
-
         // Ako koristimo paketomat, postavimo adresu paketomata umesto adrese kupca
         if ($is_dispenser && $dispenser) {
             // Provere za paketomat prema dokumentaciji
