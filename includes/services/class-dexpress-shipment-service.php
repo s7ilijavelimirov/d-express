@@ -28,7 +28,6 @@ class D_Express_Shipment_Service
     {
         $this->api = new D_Express_API();
         $this->db = new D_Express_DB();
-        add_action('dexpress_after_shipment_created', array($this, 'send_tracking_email'), 10, 2);
     }
 
     /**
@@ -219,9 +218,7 @@ class D_Express_Shipment_Service
             );
             $order->add_order_note($note);
 
-            // Hook za dodatne akcije nakon kreiranja pošiljke
             do_action('dexpress_after_shipment_created', $insert_id, $order);
-
             // Povratne informacije
             $result = array(
                 'shipment_id' => $insert_id,
@@ -240,57 +237,6 @@ class D_Express_Shipment_Service
             dexpress_log('[SHIPPING] Exception pri kreiranju pošiljke: ' . $e->getMessage(), 'error');
             return new WP_Error('exception', $e->getMessage());
         }
-    }
-
-    /**
-     * Šalje email obaveštenje o promeni statusa pošiljke
-     * 
-     * @param object $shipment Podaci o pošiljci
-     * @param WC_Order $order WooCommerce narudžbina
-     * @param string $status_type Tip statusa (delivered, failed, itd.)
-     * @return void
-     */
-    private function send_status_email($shipment, $order, $status_type)
-    {
-        $mailer = WC()->mailer();
-
-        // Dobavljanje emaila kupca
-        $recipient = $order->get_billing_email();
-
-        // Naslov emaila zavisi od tipa statusa
-        switch ($status_type) {
-            case 'delivered':
-                $subject = sprintf(__('Vaša porudžbina #%s je isporučena', 'd-express-woo'), $order->get_order_number());
-                $template = 'shipment-delivered.php';
-                break;
-            case 'failed':
-                $subject = sprintf(__('Problem sa isporukom porudžbine #%s', 'd-express-woo'), $order->get_order_number());
-                $template = 'shipment-failed.php';
-                break;
-            default:
-                $subject = sprintf(__('Ažuriranje statusa pošiljke za porudžbinu #%s', 'd-express-woo'), $order->get_order_number());
-                $template = 'shipment-status-change.php';
-        }
-
-        $email_heading = $subject;
-
-        // Pripremamo podatke za šablon
-        $tracking_number = $shipment->tracking_number;
-        $status_name = dexpress_get_status_name($shipment->status_code);
-
-        // Kreiramo email objekat
-        $email = new WC_Email();
-
-        // Učitavanje sadržaja emaila iz šablona
-        ob_start();
-        include DEXPRESS_WOO_PLUGIN_DIR . 'templates/emails/' . $template;
-        $email_content = ob_get_clean();
-
-        // Slanje emaila
-        $headers = "Content-Type: text/html\r\n";
-        $mailer->send($recipient, $subject, $email_content, $headers);
-
-        dexpress_log('[EMAIL] Poslat email o promeni statusa na: ' . $recipient, 'debug');
     }
     /**
      * Sinhronizacija statusa pošiljke koristeći lokalne podatke o statusima
@@ -338,13 +284,7 @@ class D_Express_Shipment_Service
                     // Dobavi narudžbinu i dodaj napomenu
                     $order = wc_get_order($shipment->order_id);
                     if ($order) {
-                        $order->add_order_note(sprintf(
-                            __('D Express status ažuriran: %s (simulirano za test pošiljku)', 'd-express-woo'),
-                            dexpress_get_status_name('1')
-                        ));
-
-                        // Pošalji email o isporuci
-                        $this->send_status_email($shipment, $order, 'delivered');
+                        do_action('dexpress_shipment_status_updated', $shipment, '1', dexpress_get_status_name('1'), $order);
                     }
                 }
 
@@ -417,13 +357,6 @@ class D_Express_Shipment_Service
                     $all_statuses = dexpress_get_all_status_codes();
                     $status_group = isset($all_statuses[$latest_status->status_id]) ? $all_statuses[$latest_status->status_id]['group'] : 'transit';
 
-                    // Slanje email notifikacije kupcima za određene grupe statusa
-                    if ($status_group === 'delivered') {
-                        $this->send_status_email($shipment, $order, 'delivered');
-                    } elseif ($status_group === 'failed') {
-                        $this->send_status_email($shipment, $order, 'failed');
-                    }
-
                     // Izvršiti hook za custom akcije nakon promene statusa
                     do_action('dexpress_shipment_status_updated', $shipment, $latest_status->status_id, $status_description, $order);
                 }
@@ -437,70 +370,5 @@ class D_Express_Shipment_Service
             dexpress_log('[STATUS] Exception pri sinhronizaciji statusa: ' . $e->getMessage(), 'error');
             return new WP_Error('exception', $e->getMessage());
         }
-    }
-
-    public function send_tracking_email($shipment_id, $order)
-    {
-        // Provera da li je već poslat email
-        $email_sent = get_post_meta($order->get_id(), '_dexpress_tracking_email_sent', true);
-        if ($email_sent) {
-            return;
-        }
-
-        $mailer = WC()->mailer();
-        $shipment = $this->db->get_shipment($shipment_id);
-
-        if (!$shipment) {
-            return;
-        }
-
-        // Dobavljanje email-a kupca
-        $recipient = $order->get_billing_email();
-
-        // Provera da li je dostava preko paketomata
-        $dispenser_id = get_post_meta($order->get_id(), '_dexpress_dispenser_id', true);
-        $is_dispenser = !empty($dispenser_id);
-        $dispenser = null;
-
-        if ($is_dispenser) {
-            // Dohvati podatke o paketomatu
-            global $wpdb;
-            $dispenser = $wpdb->get_row($wpdb->prepare(
-                "SELECT * FROM {$wpdb->prefix}dexpress_dispensers WHERE id = %d",
-                intval($dispenser_id)
-            ));
-        }
-
-        // Naslov email-a
-        $subject = sprintf(__('Praćenje pošiljke za narudžbinu #%s', 'd-express-woo'), $order->get_order_number());
-        $email_heading = $subject;
-
-        // Popuni podatke za šablon
-       // $tracking_number = $shipment->tracking_number;
-        $reference_id = $shipment->reference_id;
-        $shipment_date = $shipment->created_at;
-        $is_test = $shipment->is_test;
-
-        // Kreiramo email objekat
-        $email = new WC_Email();
-
-        // Učitavanje sadržaja email-a iz šablona
-        // Koristimo različite šablone zavisno od toga da li je paketomat ili ne
-        if ($is_dispenser && $dispenser) {
-            ob_start();
-            include DEXPRESS_WOO_PLUGIN_DIR . 'templates/emails/shipment-created-dispenser.php';
-            $email_content = ob_get_clean();
-        } else {
-            ob_start();
-            include DEXPRESS_WOO_PLUGIN_DIR . 'templates/emails/shipment-created.php';
-            $email_content = ob_get_clean();
-        }
-
-        // Slanje email-a
-        $headers = "Content-Type: text/html\r\n";
-        $mailer->send($recipient, $subject, $email_content, $headers);
-
-        // Označava da je email poslat
-        update_post_meta($order->get_id(), '_dexpress_tracking_email_sent', 'yes');
     }
 }

@@ -68,8 +68,10 @@ class D_Express_Order_Timeline
 
         $screen = get_current_screen();
 
-        if (!$screen || !in_array($hook, $allowed_screens) || 
-           ($screen->post_type !== 'shop_order' && $screen->id !== 'woocommerce_page_wc-orders')) {
+        if (
+            !$screen || !in_array($hook, $allowed_screens) ||
+            ($screen->post_type !== 'shop_order' && $screen->id !== 'woocommerce_page_wc-orders')
+        ) {
             return;
         }
 
@@ -158,8 +160,8 @@ class D_Express_Order_Timeline
         }
 
         if (!$order || is_wp_error($order)) {
-            echo '<div class="notice notice-error inline"><p>' . 
-                 esc_html__('Narudžbina nije pronađena.', 'd-express-woo') . '</p></div>';
+            echo '<div class="notice notice-error inline"><p>' .
+                esc_html__('Narudžbina nije pronađena.', 'd-express-woo') . '</p></div>';
             return;
         }
 
@@ -206,7 +208,7 @@ class D_Express_Order_Timeline
         $is_multiple = $total_shipments > 1;
 
         echo '<div class="dexpress-multiple-shipments-container">';
-        
+
         // Header
         echo '<div class="dexpress-shipments-header">';
         if ($is_multiple) {
@@ -264,7 +266,7 @@ class D_Express_Order_Timeline
 
         // Timeline statusi
         $timeline_statuses = $this->get_timeline_statuses();
-        
+
         // ISPRAVLJEN current_phase calculation
         $current_phase = 0;
         if (!empty($db_statuses)) {
@@ -287,8 +289,12 @@ class D_Express_Order_Timeline
         } elseif ($package_count > 1) {
             $package_codes = array_slice(array_column($packages, 'package_code'), 0, 3);
             $more = $package_count > 3 ? '...' : '';
-            $package_info = sprintf(__('%d paketa (%s%s)', 'd-express-woo'), 
-                $package_count, implode(', ', $package_codes), $more);
+            $package_info = sprintf(
+                __('%d paketa (%s%s)', 'd-express-woo'),
+                $package_count,
+                implode(', ', $package_codes),
+                $more
+            );
         } else {
             $package_info = __('Nema paketa', 'd-express-woo');
         }
@@ -296,19 +302,36 @@ class D_Express_Order_Timeline
         // Location info
         $location_name = $shipment->location_name ?: '';
 
-        $this->render_shipment_html($shipment, $shipment_number, $is_multiple, $location_name, 
-                                    $tracking_display, $package_info, $packages, $timeline_statuses, 
-                                    $status_map, $current_phase);
+        $this->render_shipment_html(
+            $shipment,
+            $shipment_number,
+            $is_multiple,
+            $location_name,
+            $tracking_display,
+            $package_info,
+            $packages,
+            $timeline_statuses,
+            $status_map,
+            $current_phase
+        );
     }
 
     /**
      * HTML renderovanje pošiljke
      */
-    private function render_shipment_html($shipment, $shipment_number, $is_multiple, $location_name,
-                                         $tracking_display, $package_info, $packages, $timeline_statuses,
-                                         $status_map, $current_phase)
-    {
-        ?>
+    private function render_shipment_html(
+        $shipment,
+        $shipment_number,
+        $is_multiple,
+        $location_name,
+        $tracking_display,
+        $package_info,
+        $packages,
+        $timeline_statuses,
+        $status_map,
+        $current_phase
+    ) {
+?>
         <div class="dexpress-single-shipment-timeline <?php echo $is_multiple ? 'is-multiple' : 'is-single'; ?>">
 
             <?php if ($is_multiple): ?>
@@ -352,14 +375,14 @@ class D_Express_Order_Timeline
                             <span class="dashicons dashicons-update"></span>
                             <?php esc_html_e('Osveži', 'd-express-woo'); ?>
                         </button>
-                        
+
                         <?php if (dexpress_is_test_mode() && $shipment->is_test): ?>
-                        <button type="button" class="button button-secondary dexpress-test-simulation"
-                            data-shipment-id="<?php echo esc_attr($shipment->id); ?>"
-                            data-nonce="<?php echo esc_attr(wp_create_nonce('dexpress-test-simulation')); ?>">
-                            <span class="dashicons dashicons-admin-tools"></span>
-                            <?php esc_html_e('Test simulacija', 'd-express-woo'); ?>
-                        </button>
+                            <button type="button" class="button button-secondary dexpress-test-simulation"
+                                data-shipment-id="<?php echo esc_attr($shipment->id); ?>"
+                                data-nonce="<?php echo esc_attr(wp_create_nonce('dexpress-test-simulation')); ?>">
+                                <span class="dashicons dashicons-admin-tools"></span>
+                                <?php esc_html_e('Test simulacija', 'd-express-woo'); ?>
+                            </button>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -368,8 +391,8 @@ class D_Express_Order_Timeline
             <!-- Timeline -->
             <div class="dexpress-timeline-wrapper">
                 <div class="dexpress-progress-track">
-                    <div class="dexpress-progress-bar" 
-                         style="width: <?php echo esc_attr(min(100, ($current_phase / (count($timeline_statuses) - 1)) * 100)); ?>%">
+                    <div class="dexpress-progress-bar"
+                        style="width: <?php echo esc_attr(min(100, ($current_phase / (count($timeline_statuses) - 1)) * 100)); ?>%">
                     </div>
                 </div>
 
@@ -379,11 +402,11 @@ class D_Express_Order_Timeline
                         $is_current = ($i == $current_phase);
                         $status_class = $is_reached ? 'dexpress-step-reached' : 'dexpress-step-pending';
                         if ($is_current) $status_class .= ' dexpress-step-current';
-                        
+
                         $status_date = '';
                         if (isset($status_map[$status['id']])) {
                             $status_date = date_i18n(
-                                get_option('date_format') . ' ' . get_option('time_format'), 
+                                get_option('date_format') . ' ' . get_option('time_format'),
                                 strtotime($status_map[$status['id']]['date'])
                             );
                         }
@@ -423,7 +446,7 @@ class D_Express_Order_Timeline
             <?php endif; ?>
 
         </div>
-        <?php
+<?php
     }
 
     /**
@@ -450,7 +473,7 @@ class D_Express_Order_Timeline
         }
 
         global $wpdb;
-        
+
         $shipment = $wpdb->get_row($wpdb->prepare(
             "SELECT * FROM {$wpdb->prefix}dexpress_shipments WHERE id = %d AND is_test = 1",
             $shipment_id
@@ -485,11 +508,13 @@ class D_Express_Order_Timeline
         $statuses_added = 0;
 
         foreach ($simulation_timeline as $sim) {
-            if ($elapsed_minutes >= $sim['minutes'] && 
-                !$this->status_exists_for_shipment($shipment->id, $sim['status'])) {
-                
+            if (
+                $elapsed_minutes >= $sim['minutes'] &&
+                !$this->status_exists_for_shipment($shipment->id, $sim['status'])
+            ) {
+
                 $status_date = date('Y-m-d H:i:s', $created_time + ($sim['minutes'] * 60));
-                
+
                 // Dodaj status direktno u bazu za svaki paket
                 foreach ($packages as $package) {
                     $result = $wpdb->insert(
@@ -510,7 +535,7 @@ class D_Express_Order_Timeline
 
                     if ($result) {
                         $statuses_added++;
-                        
+
                         // Ažuriraj package
                         $wpdb->update(
                             $wpdb->prefix . 'dexpress_packages',
@@ -522,11 +547,11 @@ class D_Express_Order_Timeline
                             ],
                             ['id' => $package->id]
                         );
-                        
+
                         dexpress_log('[SIMULATION] Status ' . $sim['status'] . ' dodat za paket ' . $package->package_code, 'debug');
                     }
                 }
-                
+
                 // Ažuriraj shipment
                 $wpdb->update(
                     $wpdb->prefix . 'dexpress_shipments',
@@ -537,12 +562,12 @@ class D_Express_Order_Timeline
                     ],
                     ['id' => $shipment->id]
                 );
-                
+
                 // Dodaj napomenu u narudžbinu
                 $order = wc_get_order($shipment->order_id);
                 if ($order) {
-                    $note = sprintf('D Express status ažuriran: %s (simulacija)', dexpress_get_status_name($sim['status']));
-                    $order->add_order_note($note);
+                    // Pozovi hook koji će email manager obraditi
+                    do_action('dexpress_shipment_status_updated', $shipment, $sim['status'], dexpress_get_status_name($sim['status']), $order);
                 }
             }
         }
@@ -574,9 +599,6 @@ class D_Express_Order_Timeline
         return ($count > 0);
     }
 
-    /**
-     * STARA SIMULACIJA - zadržana za kompatibilnost
-     */
     public function simulate_test_mode_statuses($shipment_id)
     {
         // Pozovi novu webhook simulaciju

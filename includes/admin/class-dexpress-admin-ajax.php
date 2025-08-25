@@ -575,22 +575,35 @@ class D_Express_Admin_Ajax
                     $split_cod = $this->calculate_combined_split_cod($order, $all_items_for_location, $split_index, count($grouped_by_location));
                     $shipment_data['BuyOut'] = $split_cod;
 
-                    // Value logika za COD orders
-                    if ($split_index === 1) {
-                        // Prvi split dobija vrednost sve robe
-                        $items_total = 0;
-                        foreach ($order->get_items() as $item) {
-                            if ($item instanceof WC_Order_Item_Product) {
-                                $items_total += ($item->get_total() + $item->get_total_tax());
-                            }
+                    // ✅ ISPRAVKA: Value logika - SVAKI split dobija svoju Value
+                    // Izračunaj Value na osnovu artikala u ovoj lokaciji/split-u
+                    $location_items_value = 0;
+                    foreach ($all_items_for_location as $item_id) {
+                        $item = $order->get_item($item_id);
+                        if ($item instanceof WC_Order_Item_Product) {
+                            $location_items_value += ($item->get_total() + $item->get_total_tax());
                         }
-                        $shipment_data['Value'] = intval($items_total * 100); // u parama
-                    } else {
-                        // Ostali splitovi nemaju Value
-                        $shipment_data['Value'] = 0;
                     }
+                    $shipment_data['Value'] = intval($location_items_value * 100); // u parama
                 }
-                // Za non-COD orders, Value se postavlja u prepare_shipment_data_from_order
+                // ✅ DODANO: Value za non-COD orders
+                if ($order->get_payment_method() !== 'cod') {
+                    // Za non-COD orders, Value se takođe računa po artiklima u split-u
+                    $all_items_for_location = array();
+                    foreach ($splits_for_location as $split_data) {
+                        $all_items_for_location = array_merge($all_items_for_location, $split_data['items']);
+                    }
+
+                    $location_items_value = 0;
+                    foreach ($all_items_for_location as $item_id) {
+                        $item = $order->get_item($item_id);
+                        if ($item instanceof WC_Order_Item_Product) {
+                            $location_items_value += ($item->get_total() + $item->get_total_tax());
+                        }
+                    }
+                    $shipment_data['Value'] = intval($location_items_value * 100); // u parama
+                    $shipment_data['BuyOut'] = 0; // Non-COD nema BuyOut
+                }
 
                 dexpress_log(sprintf(
                     '[SHIPMENT] Lokacija %d: %d paketa, masa %dg, ref %s, COD: %d',
@@ -673,7 +686,9 @@ class D_Express_Admin_Ajax
                     );
 
                     $order->add_order_note($note);
-
+                    if ($split_index === 1) {
+                        do_action('dexpress_after_shipment_created', $shipment_id, $order);
+                    }
                     $created_shipments[] = array(
                         'shipment_id' => $shipment_id,
                         'location_id' => $location_id,

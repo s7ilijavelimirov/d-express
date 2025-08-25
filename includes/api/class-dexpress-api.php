@@ -1290,16 +1290,6 @@ class D_Express_API
         // Omogućavanje filtiranja podataka za dodatna prilagođavanja
         return apply_filters('dexpress_prepare_shipment_data', $shipment_data, $order);
     }
-
-    /**
-     * Generiše package code koristeći centralizovanu funkciju
-     */
-    // private function generate_package_code()
-    // {
-    //     // Koristi helper funkciju umesto lokalne logike
-    //     return dexpress_generate_package_code();
-    // }
-
     /**
      * Izračunavanje težine narudžbine u gramima
      */

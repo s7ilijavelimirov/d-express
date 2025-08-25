@@ -57,7 +57,7 @@ class D_Express_Settings_Handler
 
         if ($extend_range_end > 0) {
             $validation_result = $this->validate_range_extension($extend_range_end, $current_range_end);
-            
+
             if ($validation_result['success']) {
                 $this->execute_range_extension($extend_range_end, $current_range_end);
             } else {
@@ -152,7 +152,7 @@ class D_Express_Settings_Handler
     {
         $code_prefix = isset($_POST['dexpress_code_prefix']) ? sanitize_text_field($_POST['dexpress_code_prefix']) : '';
         $code_range_start = isset($_POST['dexpress_code_range_start']) ? intval($_POST['dexpress_code_range_start']) : '';
-        
+
         // code_range_end se čuva kroz extension handling
         if (!isset($_POST['_range_extended'])) {
             $code_range_end = isset($_POST['dexpress_code_range_end']) ? intval($_POST['dexpress_code_range_end']) : '';
@@ -195,6 +195,17 @@ class D_Express_Settings_Handler
         update_option('dexpress_return_doc', $return_doc);
         update_option('dexpress_default_content', $default_content);
         update_option('dexpress_content_type', $content_type);
+        if ($payment_by == '0') {
+            $buyout_account = get_option('dexpress_buyout_account', '');
+            if (empty($buyout_account)) {
+                add_settings_error(
+                    'dexpress_settings',
+                    'missing_buyout_account_warning',
+                    __('Upozorenje: Niste podesili bankovni račun za otkupninu. COD narudžbine neće moći da se kreiraju bez validnog računa.', 'd-express-woo'),
+                    'warning'
+                );
+            }
+        }
     }
 
     /**

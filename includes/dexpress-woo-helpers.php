@@ -389,6 +389,12 @@ function dexpress_get_streets_for_town($town_id)
  */
 function dexpress_get_status_name($status_id)
 {
+    // '0' je valjan status, ne tretiraj kao prazan
+    if ($status_id === '' || $status_id === null || $status_id === false) {
+        dexpress_log('[STATUS] Stvarno prazan status_id: ' . var_export($status_id, true), 'warning');
+        return "Status nepoznat";
+    }
+    
     $statuses = dexpress_get_all_status_codes();
     return isset($statuses[$status_id]) ? $statuses[$status_id]['name'] : "Status #" . $status_id . " (nepoznat)";
 }

@@ -95,16 +95,11 @@ class D_Express_Webhook_Handler
                 ['id' => $shipment->id]
             );
 
-            // Dodaj napomenu u narudžbinu
+            // Pozovi hook za email i order note
             $order = wc_get_order($shipment->order_id);
             if ($order) {
-                $status_name = dexpress_get_status_name($notification->status_id);
-                $note = sprintf(
-                    'D Express: %s - %s',
-                    $status_name,
-                    $package->package_code
-                );
-                $order->add_order_note($note);
+                // Hook koji će obraditi email manager
+                do_action('dexpress_shipment_status_updated', $shipment, $notification->status_id, dexpress_get_status_name($notification->status_id), $order);
 
                 // Automatski promeni status narudžbine ako je potrebno
                 if ($notification->status_id == '1' && in_array($order->get_status(), ['processing', 'on-hold'])) {
@@ -312,7 +307,7 @@ class D_Express_Webhook_Handler
                 'notification_id' => $notification_id,
                 'shipment_code' => $shipment_code,
                 'package_id' => $package_id,
-                'reference_id' => $reference_id, 
+                'reference_id' => $reference_id,
                 'status_id' => $status_id,
                 'status_date' => $this->format_date($date_str),
                 'raw_data' => json_encode($data),
