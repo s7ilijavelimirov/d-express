@@ -80,6 +80,7 @@ class D_Express_Admin_Ajax
                 'town_id' => intval($_POST['town_id']),
                 'contact_name' => sanitize_text_field($_POST['contact_name']),
                 'contact_phone' => sanitize_text_field($_POST['contact_phone']),
+                'address_description' => sanitize_text_field($_POST['address_description'] ?? ''),
                 'is_default' => !empty($_POST['is_default']) ? 1 : 0
             ];
 
@@ -130,6 +131,7 @@ class D_Express_Admin_Ajax
                 'town_id' => intval($_POST['town_id']),
                 'contact_name' => sanitize_text_field($_POST['contact_name']),
                 'contact_phone' => sanitize_text_field($_POST['contact_phone']),
+                'address_description' => sanitize_text_field($_POST['address_description'] ?? ''),
                 'is_default' => !empty($_POST['is_default']) ? 1 : 0
             ];
 
@@ -459,7 +461,11 @@ class D_Express_Admin_Ajax
             foreach ($grouped_by_location as $location_id => $splits_for_location) {
                 $total_locations = count($grouped_by_location);
                 $shipment_data = $api->prepare_shipment_data_from_order($order, $location_id);
-
+                $shipment_data['RClientID'] = '';
+                $sender_location = D_Express_Sender_Locations::get_instance()->get_location($location_id);
+                if ($sender_location && !empty($sender_location->address_description)) {
+                    $shipment_data['PuAddressDesc'] = $sender_location->address_description;
+                }
                 if (is_wp_error($shipment_data)) {
                     $errors[] = 'Lokacija ' . $location_id . ': ' . $shipment_data->get_error_message();
                     $split_index++;

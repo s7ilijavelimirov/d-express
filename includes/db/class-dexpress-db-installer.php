@@ -282,13 +282,31 @@ class D_Express_DB_Installer
             PRIMARY KEY (id),
             KEY town_id (town_id)
         ) $charset_collate;";
-
-        // 12. Tabela za lokacije pošiljaoca
+        // Tabela za payments
+        $tables[] = "CREATE TABLE {$wpdb->prefix}dexpress_payments (
+            id int(11) NOT NULL AUTO_INCREMENT,
+            payment_reference varchar(100) NOT NULL COMMENT 'Referenca sa bankovnog izvoda',
+            shipment_code varchar(50) NOT NULL COMMENT 'D Express kod pošiljke',
+            buyout_amount int(11) NOT NULL COMMENT 'Iznos otkupnine u parama',
+            reference_id varchar(50) NOT NULL COMMENT 'Naš order ID',
+            receiver_name varchar(255) DEFAULT NULL COMMENT 'Ime primaoca',
+            receiver_address varchar(255) DEFAULT NULL COMMENT 'Adresa primaoca', 
+            receiver_town varchar(100) DEFAULT NULL COMMENT 'Grad primaoca',
+            payment_date date NOT NULL COMMENT 'Datum plaćanja',
+            imported_at datetime DEFAULT CURRENT_TIMESTAMP COMMENT 'Kada je uvezeno',
+            processed tinyint(1) DEFAULT 0 COMMENT 'Da li je obrađeno',
+            PRIMARY KEY (id),
+            KEY idx_payment_reference (payment_reference),
+            KEY idx_reference_id (reference_id),
+            KEY idx_payment_date (payment_date)
+        ) $charset_collate;";
+        // 13. Tabela za lokacije pošiljaoca
         $tables[] = "CREATE TABLE {$wpdb->prefix}dexpress_sender_locations (
             id int(11) NOT NULL AUTO_INCREMENT,
             name varchar(255) NOT NULL COMMENT 'Naziv lokacije/prodavnice',
             address varchar(255) NOT NULL COMMENT 'Naziv ulice',
             address_num varchar(20) NOT NULL COMMENT 'Kućni broj',
+            address_description varchar(50) DEFAULT '' COMMENT 'Dodatni opis adrese',
             town_id int(11) NOT NULL COMMENT 'ID grada iz dexpress_towns',
             town_name varchar(100) DEFAULT NULL COMMENT 'Naziv grada',
             town_postal_code varchar(20) DEFAULT NULL COMMENT 'Poštanski kod',

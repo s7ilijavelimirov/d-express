@@ -27,7 +27,7 @@ class D_Express_Settings_Tabs
             'api' => __('API Podešavanja', 'd-express-woo'),
             'codes' => __('Kodovi pošiljki', 'd-express-woo'),
             'auto' => __('Kreiranje pošiljki', 'd-express-woo'),
-            'sender' => __('Lokacije pošiljaoca', 'd-express-woo'),
+            'sender' => __('Magacini pošiljaoca', 'd-express-woo'),
             'shipment' => __('Podešavanja pošiljke', 'd-express-woo'),
             'webhook' => __('Webhook podešavanja', 'd-express-woo'),
             'cron' => __('Automatsko ažuriranje', 'd-express-woo'),

@@ -557,7 +557,7 @@ class D_Express_Settings_Renderer
      */
     private function render_sender_tab()
     {
-        D_Express_Settings_Tabs::render_tab_start('sender', $this->active_tab, __('Lokacije pošiljaoca', 'd-express-woo'));
+        D_Express_Settings_Tabs::render_tab_start('sender', $this->active_tab, __('Magacini pošiljaoca', 'd-express-woo'));
 
         // Globalni bankovni račun
         $buyout_account = get_option('dexpress_buyout_account', '');
@@ -588,7 +588,7 @@ class D_Express_Settings_Renderer
 
         // Lista postojećih lokacija
         echo '<div class="dexpress-locations-list">';
-        echo '<h3>' . __('Postojeće lokacije', 'd-express-woo') . '</h3>';
+        echo '<h3>' . __('Postojeći magacini', 'd-express-woo') . '</h3>';
 
         if (!empty($locations)) {
             echo '<table class="wp-list-table widefat fixed striped">';
@@ -668,7 +668,7 @@ class D_Express_Settings_Renderer
         // Dugme za dodavanje nove lokacije
         echo '<div class="dexpress-add-location-section" style="margin-top: 20px;">';
         echo '<button type="button" id="dexpress-add-location-btn" class="button button-primary">';
-        echo __('+ Dodaj novu lokaciju', 'd-express-woo');
+        echo __('+ Dodaj nov magacin', 'd-express-woo');
         echo '</button>';
         echo '</div>';
     }
@@ -1144,7 +1144,7 @@ class D_Express_Settings_Renderer
 
         // Modal header
         echo '<div class="dexpress-modal-header">';
-        echo '<h3 id="dexpress-modal-title">' . __('Dodaj novu lokaciju', 'd-express-woo') . '</h3>';
+        echo '<h3 id="dexpress-modal-title">' . __('Dodaj nov magacin', 'd-express-woo') . '</h3>';
         echo '<span class="dexpress-modal-close">&times;</span>';
         echo '</div>';
 
@@ -1156,7 +1156,7 @@ class D_Express_Settings_Renderer
 
         // Naziv lokacije
         echo '<tr>';
-        echo '<th scope="row"><label for="location-name">' . __('Naziv lokacije *', 'd-express-woo') . '</label></th>';
+        echo '<th scope="row"><label for="location-name">' . __('Naziv magacina *', 'd-express-woo') . '</label></th>';
         echo '<td>';
         echo '<input type="text" id="location-name" name="name" class="regular-text" data-required="true">';
         echo '<p class="description">' . __('Naziv prodavnice/lokacije', 'd-express-woo') . '</p>';
@@ -1176,6 +1176,15 @@ class D_Express_Settings_Renderer
         echo '<th scope="row"><label for="location-address-num">' . __('Broj *', 'd-express-woo') . '</label></th>';
         echo '<td>';
         echo '<input type="text" id="location-address-num" name="address_num" class="small-text" data-required="true">';
+        echo '</td>';
+        echo '</tr>';
+
+        // Adress desc
+        echo '<tr>';
+        echo '<th scope="row"><label for="location-address-desc">' . __('Dodatni opis adrese', 'd-express-woo') . '</label></th>';
+        echo '<td>';
+        echo '<input type="text" id="location-address-desc" name="address_description" class="regular-text" maxlength="50" placeholder="Stan 12, 3. sprat, kancelarija">';
+        echo '<p class="description">' . __('Dodatne informacije za kurira (stan, sprat, kancelarija) - maksimalno 50 karaktera', 'd-express-woo') . '</p>';
         echo '</td>';
         echo '</tr>';
 
@@ -1214,7 +1223,7 @@ class D_Express_Settings_Renderer
         echo '<td>';
         echo '<label>';
         echo '<input type="checkbox" id="location-is-default" name="is_default" value="1">';
-        echo __('Postavi kao glavnu lokaciju', 'd-express-woo');
+        echo __('Postavi kao glavni magacin', 'd-express-woo');
         echo '</label>';
         echo '</td>';
         echo '</tr>';
@@ -1224,7 +1233,7 @@ class D_Express_Settings_Renderer
         // Modal footer
         echo '<div class="dexpress-modal-footer">';
         echo '<button type="button" class="button" id="dexpress-cancel-location">' . __('Otkaži', 'd-express-woo') . '</button>';
-        echo '<button type="submit" class="button button-primary" id="dexpress-save-location">' . __('Sačuvaj lokaciju', 'd-express-woo') . '</button>';
+        echo '<button type="submit" class="button button-primary" id="dexpress-save-location">' . __('Sačuvaj magacin', 'd-express-woo') . '</button>';
         echo '</div>';
 
         echo '</form>';

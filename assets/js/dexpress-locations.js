@@ -130,12 +130,13 @@ jQuery(document).ready(function ($) {
             $('#location-town').val(locationData.town_id);
             $('#location-contact-name').val(locationData.contact_name);
             $('#location-contact-phone').val(locationData.contact_phone);
+            $('#location-address-desc').val(locationData.address_description || '');
             $('#location-is-default').prop('checked', locationData.is_default == 1);
-            $('#dexpress-save-location').text('Ažuriraj lokaciju');
+            $('#dexpress-save-location').text('Ažuriraj magacin');
         } else {
             // Dodavanje nove lokacije
-            $('#dexpress-modal-title').text('Dodaj novu lokaciju');
-            $('#dexpress-save-location').text('Sačuvaj lokaciju');
+            $('#dexpress-modal-title').text('Dodaj nov magacin');
+            $('#dexpress-save-location').text('Sačuvaj magacin');
         }
 
         // Prikaži modal
@@ -207,6 +208,7 @@ jQuery(document).ready(function ($) {
             town_id: $('#location-town').val(),
             contact_name: $('#location-contact-name').val().trim(),
             contact_phone: $('#location-contact-phone').val().trim(),
+            address_description: $('#location-address-desc').val().trim(),
             is_default: $('#location-is-default').is(':checked') ? 1 : 0
         };
 

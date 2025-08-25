@@ -86,15 +86,26 @@ class D_Express_API
         if ($data !== null && in_array($method, array('POST', 'PUT'))) {
             $args['body'] = json_encode($data);
         }
-
         // Logovanje zahteva u test modu
         if ($this->test_mode) {
+            dexpress_raw_log("=== D EXPRESS API DEBUG ===", 'info', 'api');
             dexpress_raw_log("API Zahtev: {$url}", 'info', 'api');
             dexpress_raw_log("Metod: {$method}", 'info', 'api');
+            dexpress_raw_log("Headers: " . json_encode($args['headers'], JSON_PRETTY_PRINT), 'info', 'api');
+            dexpress_raw_log("Authorization: [MASKED - " . strlen($args['headers']['Authorization']) . " chars]", 'info', 'api');
 
             if (!empty($data)) {
                 $formatted_json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                dexpress_raw_log("Request Body Size: " . strlen($args['body']) . " bytes", 'info', 'api');
                 dexpress_raw_log("Podaci za API:\n{$formatted_json}", 'info', 'api');
+
+                // Debug specifičnih polja
+                if (isset($data['RClientID'])) {
+                    dexpress_raw_log("RClientID: '" . $data['RClientID'] . "' (length: " . strlen($data['RClientID']) . ")", 'info', 'api');
+                }
+                if (isset($data['PuAddressDesc'])) {
+                    dexpress_raw_log("PuAddressDesc: '" . $data['PuAddressDesc'] . "' (length: " . strlen($data['PuAddressDesc']) . ")", 'info', 'api');
+                }
             } else {
                 dexpress_raw_log("Podaci: nema", 'info', 'api');
             }
@@ -116,21 +127,27 @@ class D_Express_API
         $body = wp_remote_retrieve_body($response);
 
         // Logovanje odgovora u test modu
+        // Logovanje odgovora u test modu
         if ($this->test_mode) {
-            dexpress_raw_log("API Odgovor kod: {$response_code}", 'info', 'api');
+            $response_headers = wp_remote_retrieve_headers($response);
+            dexpress_raw_log("=== API RESPONSE DEBUG ===", 'info', 'api');
+            dexpress_raw_log("HTTP Status: {$response_code}", 'info', 'api');
+            dexpress_raw_log("Response Size: " . strlen($body) . " bytes", 'info', 'api');
 
             if (!empty($body)) {
-                // Pokušaj formatirati JSON odgovor
                 $decoded_body = json_decode($body, true);
                 if (json_last_error() === JSON_ERROR_NONE) {
                     $formatted_response = json_encode($decoded_body, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-                    dexpress_raw_log("API Odgovor:\n{$formatted_response}", 'info', 'api');
+                    dexpress_raw_log("API Odgovor (JSON):\n{$formatted_response}", 'info', 'api');
                 } else {
-                    dexpress_raw_log("API Odgovor (text): {$body}", 'info', 'api');
+                    dexpress_raw_log("API Odgovor (Raw Text): {$body}", 'info', 'api');
                 }
+            } else {
+                dexpress_raw_log("API Odgovor: [PRAZAN]", 'info', 'api');
             }
 
             dexpress_raw_log("--- ZAVRŠEN ZAHTEV ---", 'info', 'api');
+            dexpress_raw_log("", 'info', 'api'); // Prazan red
         }
 
         if ($response_code < 200 || $response_code >= 600) {
@@ -1017,7 +1034,7 @@ class D_Express_API
 
         // Prepoznavanje metode plaćanja
         $payment_method = $order->get_payment_method();
-        $is_cod = ($payment_method === 'cod' || $payment_method === 'bacs' || $payment_method === 'cheque');
+        $is_cod = ($payment_method === 'cod');
         dexpress_log("Payment method: {$payment_method}, Is COD: " . ($is_cod ? 'Yes' : 'No'), 'debug');
 
         if (!empty($buyout_account)) {
@@ -1120,6 +1137,9 @@ class D_Express_API
                 )
             );
         }
+        if (!empty($location->address_description)) {
+            $description_location = $location->address_description;
+        }
         // Osnovni podaci o pošiljci
         $shipment_data = array(
 
@@ -1138,6 +1158,7 @@ class D_Express_API
             'PuName' => $location->name,
             'PuAddress' => $location->address,
             'PuAddressNum' => $location->address_num,
+            'PuAddressDesc' => $description_location,
             'PuTownID' => intval($location->town_id),
             'PuCName' => $location->contact_name,
             'PuCPhone' => D_Express_Validator::format_phone($location->contact_phone),
@@ -1150,6 +1171,7 @@ class D_Express_API
             'RTownID' => (int)$city_id,
             'RCName' => $order->get_shipping_first_name() . ' ' . $order->get_shipping_last_name(),
             'RCPhone' => $phone,
+            'RClientID' => '',
             'Note' => $delivery_note,
 
             // Tip pošiljke i plaćanje
@@ -1355,5 +1377,31 @@ class D_Express_API
         }
 
         return 0;
+    }
+    /**
+     * Dohvata plaćanja po referenci bankovnog izvoda
+     * 
+     * @param string $payment_reference Referenca sa bankovnog izvoda
+     * @return array|WP_Error Lista plaćanja ili greška
+     */
+    public function get_payments_by_reference($payment_reference)
+    {
+        if (empty($payment_reference)) {
+            return new WP_Error('empty_reference', __('Payment reference je obavezan', 'd-express-woo'));
+        }
+
+        $endpoint = 'data/viewpayments?PaymentReference=' . urlencode($payment_reference);
+
+        dexpress_log("[PAYMENTS API] Pozivam API za referencu: " . $payment_reference, 'info');
+
+        $response = $this->api_request($endpoint, 'GET');
+
+        if (is_wp_error($response)) {
+            dexpress_log("[PAYMENTS API] Greška: " . $response->get_error_message(), 'error');
+            return $response;
+        }
+
+        dexpress_log("[PAYMENTS API] Dobio " . count($response) . " plaćanja", 'info');
+        return $response;
     }
 }

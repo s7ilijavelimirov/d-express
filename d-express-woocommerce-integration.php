@@ -107,7 +107,9 @@ class D_Express_WooCommerce
             require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/admin/class-dexpress-shipments-list.php';
             require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/admin/class-dexpress-reports.php';
             require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/admin/class-dexpress-diagnostics.php';
-
+            require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/services/class-dexpress-payments-service.php';
+            require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/admin/class-dexpress-payments-admin.php';
+               new D_Express_Payments_Admin();
             // Dashboard widget - samo ako je WooCommerce aktivan
             if (function_exists('wc_get_order')) {
                 require_once DEXPRESS_WOO_PLUGIN_DIR . 'includes/admin/class-dexpress-dashboard-widget.php';
