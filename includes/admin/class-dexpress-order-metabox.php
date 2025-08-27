@@ -303,6 +303,11 @@ class D_Express_Order_Metabox
                                     </span> kg</strong>
                             </td>
                         </tr>
+                        <?php
+                        if ($total_weight > 34) {
+                            echo '<div class="notice notice-warning"><p>⚠️ Ukupna težina (' . $total_weight . 'kg) prelazi D Express limit od 34kg po paketu!</p></div>';
+                        }
+                        ?>
                     <?php endforeach; ?>
                 </tbody>
                 <tfoot>
@@ -315,7 +320,14 @@ class D_Express_Order_Metabox
                         </td>
                     </tr>
                 </tfoot>
+
             </table>
+            <div style="margin-top: 10px; text-align: center;">
+                <button type="button" id="dexpress-save-weights" class="button button-primary">
+                    Sačuvaj izmenjene težine
+                </button>
+                <div id="dexpress-weight-status" style="margin-top: 5px; font-size: 12px;"></div>
+            </div>
         </div>
     <?php
     }
@@ -783,6 +795,43 @@ class D_Express_Order_Metabox
                 function showError(message) {
                     $('#dexpress-response').html('<div class="notice notice-error"><p>Greška: ' + message + '</p></div>');
                 }
+                $('#dexpress-save-weights').on('click', function() {
+                    var button = $(this);
+                    var status = $('#dexpress-weight-status');
+
+                    button.prop('disabled', true).text('Čuvam...');
+                    status.html('');
+
+                    var weights = {};
+                    $('.dexpress-item-weight-input').each(function() {
+                        var itemId = $(this).data('item-id');
+                        var weight = parseFloat($(this).val()) || 0;
+                        weights[itemId] = weight;
+                    });
+
+                    $.ajax({
+                        url: ajaxurl,
+                        method: 'POST',
+                        data: {
+                            action: 'dexpress_save_custom_weights',
+                            order_id: woocommerce_admin_meta_boxes.post_id,
+                            weights: weights,
+                            nonce: $('#dexpress_meta_box_nonce').val()
+                        },
+                        success: function(response) {
+                            if (response.success) {
+                                status.html('<span style="color: green;">✓ Težine sačuvane</span>');
+                                // Ažuriraj ukupnu težinu
+                                $('#dexpress-grand-total-weight').text(response.data.total_weight);
+                            } else {
+                                status.html('<span style="color: red;">Greška: ' + response.data + '</span>');
+                            }
+                        },
+                        complete: function() {
+                            button.prop('disabled', false).text('Sačuvaj izmenjene težine');
+                        }
+                    });
+                });
             });
         </script>
 <?php

@@ -352,7 +352,7 @@ class D_Express_API
                 dexpress_log("[PAKETOMAT DEBUG] Kreiranje pošiljke za paketomat ID: " . $shipment_data['DispenserID'], 'info');
                 dexpress_log("[PAKETOMAT DEBUG] Kompletan zahtev: " . print_r($shipment_data, true), 'info');
             }
-            $payment_type = intval(get_option('dexpress_payment_type', 2));
+            $payment_type = 2; // Uvek faktura (po dogovoru sa sastanka)
             dexpress_log("[PAYMENT] Vrednost dexpress_payment_type iz opcija: " . $payment_type, 'info');
 
             // Dodavanje ClientID ako nije uključen u podatke
@@ -859,13 +859,18 @@ class D_Express_API
      */
     private function calculate_buyout_amount($order)
     {
+        // Samo za COD narudžbine
         if ($order->get_payment_method() !== 'cod') {
             return 0;
         }
 
-        // UVEK ukupan iznos narudžbe (roba + dostava + takse)
+        // Za COD: kurir naplaćuje CELI iznos (roba + dostava + takse)
         $total_amount = $order->get_total();
-        return intval($total_amount * 100); // Konvertuj u pare
+
+        dexpress_log("[COD CALCULATION] Order total: " . $total_amount . " RSD", 'debug');
+        dexpress_log("[COD CALCULATION] BuyOut amount: " . intval($total_amount * 100) . " para", 'debug');
+
+        return intval($total_amount * 100); // Konvertuj u pare (100 para = 1 RSD)
     }
     /**
      * Izračunava Value iznos (samo vrednost proizvoda)
@@ -945,7 +950,15 @@ class D_Express_API
 
         // Dohvatamo sačuvani API format telefona ako postoji
         $phone = get_post_meta($order_id, '_billing_phone_api_format', true);
+        $payment_method = $order->get_payment_method();
+        $is_cod = ($payment_method === 'cod');
+        dexpress_log("Payment method: {$payment_method}, Is COD: " . ($is_cod ? 'Yes' : 'No'), 'debug');
+
+        // PaymentType zavisi od metode plaćanja
         $payment_type = intval(get_option('dexpress_payment_type', 2));
+
+
+        dexpress_log("[PAYMENT TYPE] Set to: {$payment_type} (" . ($is_cod ? 'COD' : 'Faktura/Avans') . ")", 'debug');
 
         // Provera da li je izabran paketomat
         $dispenser_id = get_post_meta($order->get_id(), '_dexpress_dispenser_id', true);
@@ -1140,6 +1153,9 @@ class D_Express_API
         if (!empty($location->address_description)) {
             $description_location = $location->address_description;
         }
+        $payment_by = 0;
+        dexpress_log("[PAYMENT BY] Set to: {$payment_by} (" .
+            ($payment_by === 0 ? 'Sender' : ($payment_by === 1 ? 'Pickup' : 'Recipient')) . ")", 'debug');
         // Osnovni podaci o pošiljci
         $shipment_data = array(
 
@@ -1176,7 +1192,7 @@ class D_Express_API
 
             // Tip pošiljke i plaćanje
             'DlTypeID' => intval(get_option('dexpress_shipment_type', 2)),
-            'PaymentBy' => intval(get_option('dexpress_payment_by', 0)),
+            'PaymentBy' => $payment_by,
             'PaymentType' => $payment_type,
 
             // Vrednost i masa
@@ -1189,13 +1205,16 @@ class D_Express_API
             'ReturnDoc' => intval(get_option('dexpress_return_doc', 0)),
 
             // Otkupnina - postavljeno na osnovu metode plaćanja
-            'BuyOut' => $buyout_amount,
+            'BuyOut' => $is_cod ? $buyout_amount : 0,
             'BuyOutFor' => intval(get_option('dexpress_buyout_for', 0)),
-            'BuyOutAccount' => ($buyout_amount > 0) ? $buyout_account : '',
+            'BuyOutAccount' => ($is_cod && $buyout_amount > 0) ? $buyout_account : '',
 
             // SelfDropOff - nova opcija
             'SelfDropOff' => intval(get_option('dexpress_self_drop_off', 0)),
         );
+        dexpress_log("[BUYOUT DEBUG] Is COD: " . ($is_cod ? 'Yes' : 'No'), 'debug');
+        dexpress_log("[BUYOUT DEBUG] BuyOut amount: " . ($is_cod ? $buyout_amount : 0), 'debug');
+        dexpress_log("[BUYOUT DEBUG] BuyOutAccount: " . (($is_cod && $buyout_amount > 0) ? $buyout_account : 'empty'), 'debug');
         dexpress_log("[WEIGHT DEBUG] Težina nakon formatiranja za API: {$shipment_data['Mass']} grama", 'debug');
 
         // VALIDACIJA: Proveri da paket ne prelazi 34kg

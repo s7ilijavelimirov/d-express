@@ -195,15 +195,30 @@ class D_Express_Settings_Handler
         update_option('dexpress_return_doc', $return_doc);
         update_option('dexpress_default_content', $default_content);
         update_option('dexpress_content_type', $content_type);
-        if ($payment_by == '0') {
+        // Validation za COD narudžbine
+        if ($payment_by == '0') { // Nalogodavac plaća transport
             $buyout_account = get_option('dexpress_buyout_account', '');
             if (empty($buyout_account)) {
                 add_settings_error(
                     'dexpress_settings',
                     'missing_buyout_account_warning',
-                    __('Upozorenje: Niste podesili bankovni račun za otkupninu. COD narudžbine neće moći da se kreiraju bez validnog računa.', 'd-express-woo'),
+                    '<strong>UPOZORENJE:</strong> Niste podesili bankovni račun za COD narudžbine! ' .
+                        'COD pošiljke neće moći da se kreiraju bez validnog računa. ' .
+                        'Dodajte račun u "Basic Settings" tabu.',
                     'warning'
                 );
+            } else {
+                // Proveri format računa
+                $account_digits = preg_replace('/[^0-9]/', '', $buyout_account);
+                if (strlen($account_digits) < 15 || strlen($account_digits) > 18) {
+                    add_settings_error(
+                        'dexpress_settings',
+                        'invalid_buyout_account_format',
+                        '<strong>UPOZORENJE:</strong> Format bankovnog računa možda nije ispravan. ' .
+                            'Očekivani format: 170-0010364556000-77 (15-18 cifara)',
+                        'warning'
+                    );
+                }
             }
         }
     }

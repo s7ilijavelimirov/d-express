@@ -21,7 +21,27 @@ class D_Express_Payments_Service
 
         if (dexpress_is_test_mode()) {
             $payments_data = $this->simulate_test_payments($payment_reference);
-            dexpress_log("[PAYMENTS] Test simulacija vratila: " . print_r($payments_data, true), 'info');
+
+            dexpress_log("[PAYMENTS] Test simulacija vratila:", 'info');
+
+            // Ako je WP_Error
+            if (is_wp_error($payments_data)) {
+                foreach ($payments_data->get_error_messages() as $msg) {
+                    dexpress_log(" - " . $msg, 'info');
+                }
+            }
+            // Ako je array
+            elseif (is_array($payments_data)) {
+                foreach ($payments_data as $i => $payment) {
+                    dexpress_log("Payment #" . ($i + 1), 'info');
+                    foreach ($payment as $key => $value) {
+                        dexpress_log("   $key: $value", 'info');
+                    }
+                    dexpress_log("------------------------", 'info');
+                }
+            } else {
+                dexpress_log(print_r($payments_data, true), 'info');
+            }
         } else {
             $payments_data = $this->api->get_payments_by_reference($payment_reference);
         }
@@ -29,6 +49,7 @@ class D_Express_Payments_Service
         if (is_wp_error($payments_data)) {
             return $payments_data;
         }
+
 
         $imported_count = 0;
         $table_name = $wpdb->prefix . 'dexpress_payments';
@@ -156,5 +177,66 @@ class D_Express_Payments_Service
                     'Nepoznata test referenca. Dostupne: TEST-20250125-001, TEST-20250125-002, ALL-TEST, EMPTY-TEST'
                 );
         }
+    }
+    /**
+     * Validira payment logiku pre slanja API zahteva
+     * 
+     * @param WC_Order $order WooCommerce narudžbina
+     * @param array $shipment_data Podaci za API
+     * @return bool|WP_Error True ako je validno, WP_Error ako nije
+     */
+    public function validate_payment_logic($order, $shipment_data)
+    {
+        $payment_method = $order->get_payment_method();
+        $is_cod = ($payment_method === 'cod');
+
+        // Validacija COD logike
+        if ($is_cod) {
+            // COD mora imati BuyOut > 0
+            if ($shipment_data['BuyOut'] <= 0) {
+                return new WP_Error(
+                    'cod_validation_error',
+                    'COD narudžbina mora imati BuyOut > 0. Trenutno: ' . $shipment_data['BuyOut']
+                );
+            }
+
+            // COD mora imati PaymentType = 1
+            if ($shipment_data['PaymentType'] != 1) {
+                return new WP_Error(
+                    'cod_payment_type_error',
+                    'COD narudžbina mora imati PaymentType = 1. Trenutno: ' . $shipment_data['PaymentType']
+                );
+            }
+
+            // COD mora imati bankovni račun
+            if (empty($shipment_data['BuyOutAccount'])) {
+                return new WP_Error(
+                    'cod_account_missing',
+                    'COD narudžbina mora imati BuyOutAccount. Dodajte bankovni račun u podešavanja.'
+                );
+            }
+
+            dexpress_log("[PAYMENT VALIDATION] COD prošao validaciju - BuyOut: {$shipment_data['BuyOut']}", 'info');
+        } else {
+            // Non-COD mora imati BuyOut = 0
+            if ($shipment_data['BuyOut'] > 0) {
+                return new WP_Error(
+                    'non_cod_validation_error',
+                    'Plaćena narudžbina ne sme imati BuyOut > 0. Trenutno: ' . $shipment_data['BuyOut']
+                );
+            }
+
+            // Non-COD mora imati PaymentType != 1
+            if ($shipment_data['PaymentType'] == 1) {
+                return new WP_Error(
+                    'non_cod_payment_type_error',
+                    'Plaćena narudžbina ne sme imati PaymentType = 1. Trenutno: ' . $shipment_data['PaymentType']
+                );
+            }
+
+            dexpress_log("[PAYMENT VALIDATION] Non-COD prošao validaciju - BuyOut: 0", 'info');
+        }
+
+        return true;
     }
 }
