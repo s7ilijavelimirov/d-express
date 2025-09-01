@@ -187,54 +187,37 @@ class D_Express_Payments_Service
      */
     public function validate_payment_logic($order, $shipment_data)
     {
-        $payment_method = $order->get_payment_method();
-        $is_cod = ($payment_method === 'cod');
+        $is_cod = ($order->get_payment_method() === 'cod');
 
-        // Validacija COD logike
+        // ✅ NOVA LOGIKA: Svi moraju imati PaymentType = 2 (faktura)
+        if ($shipment_data['PaymentType'] !== 2) {
+            return new WP_Error(
+                'payment_type_error',
+                'PaymentType mora biti 2 (Faktura). Trenutno: ' . $shipment_data['PaymentType']
+            );
+        }
+
+        // PaymentBy mora biti 0 (nalogodavac)
+        if ($shipment_data['PaymentBy'] !== 0) {
+            return new WP_Error(
+                'payment_by_error',
+                'PaymentBy mora biti 0 (Nalogodavac). Trenutno: ' . $shipment_data['PaymentBy']
+            );
+        }
+
+        // COD validacija - samo za BuyOut i račun
         if ($is_cod) {
-            // COD mora imati BuyOut > 0
             if ($shipment_data['BuyOut'] <= 0) {
-                return new WP_Error(
-                    'cod_validation_error',
-                    'COD narudžbina mora imati BuyOut > 0. Trenutno: ' . $shipment_data['BuyOut']
-                );
+                return new WP_Error('cod_buyout_error', 'COD mora imati BuyOut > 0');
             }
 
-            // COD mora imati PaymentType = 1
-            if ($shipment_data['PaymentType'] != 1) {
-                return new WP_Error(
-                    'cod_payment_type_error',
-                    'COD narudžbina mora imati PaymentType = 1. Trenutno: ' . $shipment_data['PaymentType']
-                );
-            }
-
-            // COD mora imati bankovni račun
             if (empty($shipment_data['BuyOutAccount'])) {
-                return new WP_Error(
-                    'cod_account_missing',
-                    'COD narudžbina mora imati BuyOutAccount. Dodajte bankovni račun u podešavanja.'
-                );
+                return new WP_Error('cod_account_error', 'COD mora imati bankovni račun');
             }
-
-            dexpress_log("[PAYMENT VALIDATION] COD prošao validaciju - BuyOut: {$shipment_data['BuyOut']}", 'info');
         } else {
-            // Non-COD mora imati BuyOut = 0
-            if ($shipment_data['BuyOut'] > 0) {
-                return new WP_Error(
-                    'non_cod_validation_error',
-                    'Plaćena narudžbina ne sme imati BuyOut > 0. Trenutno: ' . $shipment_data['BuyOut']
-                );
+            if ($shipment_data['BuyOut'] !== 0) {
+                return new WP_Error('card_buyout_error', 'Kartične narudžbine moraju imati BuyOut = 0');
             }
-
-            // Non-COD mora imati PaymentType != 1
-            if ($shipment_data['PaymentType'] == 1) {
-                return new WP_Error(
-                    'non_cod_payment_type_error',
-                    'Plaćena narudžbina ne sme imati PaymentType = 1. Trenutno: ' . $shipment_data['PaymentType']
-                );
-            }
-
-            dexpress_log("[PAYMENT VALIDATION] Non-COD prošao validaciju - BuyOut: 0", 'info');
         }
 
         return true;

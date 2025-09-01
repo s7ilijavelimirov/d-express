@@ -1,0 +1,9 @@
+{"timestamp":"2025-08-29 10:41:20","context":"checkout","level":"debug","message":"Čuvam billing_number: '54'"}
+{"timestamp":"2025-08-29 10:41:20","context":"checkout","level":"debug","message":"Sačuvao _billing_street: 'Nikole Francuskog'"}
+{"timestamp":"2025-08-29 10:41:20","context":"checkout","level":"debug","message":"Sačuvao _billing_street_id: 'Nikole Francuskog'"}
+{"timestamp":"2025-08-29 10:41:20","context":"checkout","level":"debug","message":"Sačuvao _billing_number: '54'"}
+{"timestamp":"2025-08-29 10:41:20","context":"checkout","level":"debug","message":"Sačuvao _billing_address_desc: 'besplatna dostava'"}
+{"timestamp":"2025-08-29 10:41:20","context":"checkout","level":"debug","message":"Sačuvao _billing_city: 'Kikinda'"}
+{"timestamp":"2025-08-29 10:41:20","context":"checkout","level":"debug","message":"Sačuvao _billing_city_id: '802158'"}
+{"timestamp":"2025-08-29 10:41:20","context":"checkout","level":"debug","message":"Sačuvao _billing_postcode: '23300'"}
+{"timestamp":"2025-08-29 10:41:20","context":"checkout","level":"debug","message":"Konvertovan telefon u API format: '381603995503'"}

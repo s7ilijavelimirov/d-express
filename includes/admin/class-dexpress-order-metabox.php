@@ -19,6 +19,10 @@ class D_Express_Order_Metabox
         add_action('admin_enqueue_scripts', array($this, 'enqueue_metabox_assets'));
         add_action('woocommerce_process_shop_order_meta', array($this, 'save_weight_data'), 10, 1);
         add_action('woocommerce_update_order', array($this, 'save_weight_data'), 10, 1);
+
+        // NOVI AJAX callbacks za poboljšano iskustvo
+        add_action('wp_ajax_dexpress_update_item_weight', array($this, 'ajax_update_item_weight'));
+        add_action('wp_ajax_dexpress_create_package_simple', array($this, 'ajax_create_package_simple'));
     }
 
     /**
@@ -84,6 +88,7 @@ class D_Express_Order_Metabox
         // Renderuj sadržaj
         $this->render_metabox_content($order, $shipments, $locations, $selected_location_id, $is_dispenser);
     }
+
     /**
      * Generiše content za split shipment (fallback za label generator)
      */
@@ -93,6 +98,7 @@ class D_Express_Order_Metabox
         $content_type = $this->get_content_type_setting();
         return $this->generate_content_by_type($order, $content_type);
     }
+
     /**
      * Renderovanje glavnog sadržaja metabox-a
      */
@@ -100,7 +106,7 @@ class D_Express_Order_Metabox
     {
         $order_id = $order->get_id();
 ?>
-        <div class="dexpress-order-metabox">
+        <div class="dexpress-order-metabox" data-order-id="<?php echo $order_id; ?>">
 
             <?php if (!empty($shipments)): ?>
                 <!-- Postojeće pošiljke -->
@@ -111,7 +117,7 @@ class D_Express_Order_Metabox
                 <div class="dexpress-create-section" id="dexpress-create-section">
                     <h4><?php _e('Kreiranje D Express pošiljke', 'd-express-woo'); ?></h4>
 
-                    <!-- Artikli sa težinама -->
+                    <!-- Artikli sa težinama - POBOLJŠANO -->
                     <?php $this->render_order_items($order); ?>
 
                     <!-- Forma za kreiranje -->
@@ -250,21 +256,26 @@ class D_Express_Order_Metabox
     }
 
     /**
-     * Renderovanje artikala sa težinама
+     * POBOLJŠANO: Renderovanje artikala sa inline edit težinama
      */
     private function render_order_items($order)
     {
     ?>
-        <div class="dexpress-items-section" style="margin-bottom: 20px;">
-            <h5><?php _e('Proizvodi i težine', 'd-express-woo'); ?></h5>
+        <div class="dexpress-weight-section" style="margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <h5 style="margin: 0;">Težine proizvoda</h5>
+                <button type="button" class="button button-small" id="dexpress-toggle-weights">
+                    📝 Uredi
+                </button>
+            </div>
 
-            <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+            <table class="widefat dexpress-weights-table" style="font-size: 12px;">
                 <thead>
-                    <tr style="background: #f5f5f5;">
-                        <th style="padding: 6px; text-align: left; border: 1px solid #ddd;"><?php _e('Proizvod', 'd-express-woo'); ?></th>
-                        <th style="padding: 6px; text-align: center; border: 1px solid #ddd;"><?php _e('Kol.', 'd-express-woo'); ?></th>
-                        <th style="padding: 6px; text-align: center; border: 1px solid #ddd;"><?php _e('Težina (kg)', 'd-express-woo'); ?></th>
-                        <th style="padding: 6px; text-align: center; border: 1px solid #ddd;"><?php _e('Ukupno', 'd-express-woo'); ?></th>
+                    <tr>
+                        <th style="width: 50%; padding: 8px;">Proizvod</th>
+                        <th style="width: 20%; text-align: center;">Kol.</th>
+                        <th style="width: 20%; text-align: center;">Težina/kom</th>
+                        <th style="width: 10%; text-align: center;">Ukupno</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -279,54 +290,49 @@ class D_Express_Order_Metabox
                         $item_total = $weight * $quantity;
                         $total_weight += $item_total;
                     ?>
-                        <tr>
-                            <td style="padding: 6px; border: 1px solid #ddd;">
-                                <strong><?php echo esc_html(mb_substr($item->get_name(), 0, 30)); ?></strong>
+                        <tr data-item-id="<?php echo $item_id; ?>">
+                            <td style="padding: 8px;">
+                                <strong><?php echo esc_html(mb_substr($item->get_name(), 0, 25)); ?></strong>
                                 <?php if ($product && $product->get_sku()): ?>
                                     <br><small style="color: #666;">SKU: <?php echo esc_html($product->get_sku()); ?></small>
                                 <?php endif; ?>
                             </td>
-                            <td style="padding: 6px; text-align: center; border: 1px solid #ddd;">
-                                <strong><?php echo esc_html($quantity); ?></strong>
+                            <td style="padding: 8px; text-align: center;">
+                                <strong><?php echo $quantity; ?>x</strong>
                             </td>
-                            <td style="padding: 6px; text-align: center; border: 1px solid #ddd;">
-                                <input type="number" name="dexpress_item_weight[<?php echo $item_id; ?>]"
+                            <td style="padding: 8px; text-align: center;">
+                                <span class="weight-display"><?php echo number_format($weight, 2); ?> kg</span>
+                                <input type="number" class="weight-input"
                                     value="<?php echo esc_attr($weight); ?>"
-                                    step="0.01" min="0" style="width: 60px; text-align: center;"
-                                    class="dexpress-item-weight-input"
+                                    step="0.01" min="0.01" max="50"
                                     data-item-id="<?php echo $item_id; ?>"
-                                    data-quantity="<?php echo $quantity; ?>">
+                                    data-quantity="<?php echo $quantity; ?>"
+                                    style="display: none; width: 70px; text-align: center;">
                             </td>
-                            <td style="padding: 6px; text-align: center; border: 1px solid #ddd;">
-                                <strong><span class="dexpress-total-item-weight" data-item-id="<?php echo $item_id; ?>">
-                                        <?php echo number_format($item_total, 2); ?>
-                                    </span> kg</strong>
+                            <td style="padding: 8px; text-align: center;">
+                                <strong class="item-total-weight"><?php echo number_format($item_total, 2); ?> kg</strong>
                             </td>
                         </tr>
-                        <?php
-                        if ($total_weight > 34) {
-                            echo '<div class="notice notice-warning"><p>⚠️ Ukupna težina (' . $total_weight . 'kg) prelazi D Express limit od 34kg po paketu!</p></div>';
-                        }
-                        ?>
                     <?php endforeach; ?>
                 </tbody>
                 <tfoot>
-                    <tr style="background: #e8f4f8; font-weight: bold;">
-                        <td colspan="3" style="padding: 8px; border: 1px solid #ddd; text-align: right;">
-                            <?php _e('UKUPNA TEŽINA:', 'd-express-woo'); ?>
-                        </td>
-                        <td style="padding: 8px; text-align: center; border: 1px solid #ddd; color: #2563eb;">
-                            <span id="dexpress-grand-total-weight"><?php echo number_format($total_weight, 2); ?></span> kg
+                    <tr style="background: #f0f8ff; font-weight: bold;">
+                        <td colspan="3" style="padding: 8px; text-align: right;">UKUPNO:</td>
+                        <td style="padding: 8px; text-align: center;">
+                            <span id="total-order-weight"><?php echo number_format($total_weight, 2); ?></span> kg
                         </td>
                     </tr>
                 </tfoot>
-
             </table>
-            <div style="margin-top: 10px; text-align: center;">
-                <button type="button" id="dexpress-save-weights" class="button button-primary">
-                    Sačuvaj izmenjene težine
+
+            <div id="weight-edit-controls" style="display: none; margin-top: 10px; text-align: center;">
+                <button type="button" class="button button-primary" id="save-weight-changes">
+                    Sačuvaj promene
                 </button>
-                <div id="dexpress-weight-status" style="margin-top: 5px; font-size: 12px;"></div>
+                <button type="button" class="button" id="cancel-weight-changes">
+                    Otkaži
+                </button>
+                <div id="weight-save-status" style="margin-top: 5px; font-size: 11px;"></div>
             </div>
         </div>
     <?php
@@ -353,7 +359,6 @@ class D_Express_Order_Metabox
             </select>
         </div>
 
-        <!-- Sadržaj pošiljke -->
         <!-- Sadržaj pošiljke -->
         <div style="margin-bottom: 15px;">
             <label for="dexpress_content" style="display: block; font-weight: bold; margin-bottom: 5px;">
@@ -408,6 +413,7 @@ class D_Express_Order_Metabox
         <?php endif; ?>
     <?php
     }
+
     public function get_content_type_setting()
     {
         return get_option('dexpress_content_type', 'category');
@@ -431,7 +437,6 @@ class D_Express_Order_Metabox
     {
         $categories = [];
         foreach ($order->get_items() as $item_id => $item) {
-            // ✅ KLJUČNO: Filtriraj po selected_items
             if ($selected_items && !in_array($item_id, $selected_items)) continue;
 
             $product = $item->get_product();
@@ -461,8 +466,9 @@ class D_Express_Order_Metabox
         }
         return !empty($names) ? implode(', ', array_slice($names, 0, 3)) : 'Razni proizvodi';
     }
+
     /**
-     * Renderovanje JavaScript-a
+     * POBOLJŠAN: JavaScript sa novim funkcionalnostima
      */
     private function render_javascript($locations, $order)
     {
@@ -473,7 +479,121 @@ class D_Express_Order_Metabox
                 var orderItems = <?php echo json_encode($order_items); ?>;
                 var locations = <?php echo json_encode($locations); ?>;
 
-                // Ažuriranje težine
+                // NOVO: Inline edit funkcionalnost za težine
+                $('#dexpress-toggle-weights').on('click', function() {
+                    var isEditing = $('.weight-input:visible').length > 0;
+
+                    if (isEditing) {
+                        // Odustani od edit mode
+                        $('.weight-display').show();
+                        $('.weight-input').hide();
+                        $('#weight-edit-controls').hide();
+                        $(this).text('📝 Uredi');
+                    } else {
+                        // Uđi u edit mode
+                        $('.weight-display').hide();
+                        $('.weight-input').show();
+                        $('#weight-edit-controls').show();
+                        $(this).text('❌ Odustani');
+                    }
+                });
+
+                // NOVO: Auto-update računanja kada se menjaju težine
+                $('.weight-input').on('input', function() {
+                    var itemId = $(this).data('item-id');
+                    var quantity = $(this).data('quantity');
+                    var newWeight = parseFloat($(this).val()) || 0;
+                    var itemTotal = newWeight * quantity;
+
+                    // Ažuriraj item total
+                    $('tr[data-item-id="' + itemId + '"] .item-total-weight').text(itemTotal.toFixed(2) + ' kg');
+
+                    // Ažuriraj ukupnu težinu
+                    updateTotalWeight();
+                });
+
+                function updateTotalWeight() {
+                    var total = 0;
+                    $('.weight-input').each(function() {
+                        var weight = parseFloat($(this).val()) || 0;
+                        var quantity = $(this).data('quantity');
+                        total += (weight * quantity);
+                    });
+                    $('#total-order-weight').text(total.toFixed(2));
+                }
+
+                // NOVO: Čuvanje promena težine
+                $('#save-weight-changes').on('click', function() {
+                    var button = $(this);
+                    var status = $('#weight-save-status');
+                    var weights = {};
+                    var hasChanges = false;
+
+                    // Sakupi sve težine
+                    $('.weight-input').each(function() {
+                        var itemId = $(this).data('item-id');
+                        var newWeight = parseFloat($(this).val()) || 0;
+                        var originalWeight = parseFloat($(this).closest('tr').find('.weight-display').text()) || 0;
+
+                        weights[itemId] = newWeight;
+                        if (Math.abs(newWeight - originalWeight) > 0.01) {
+                            hasChanges = true;
+                        }
+                    });
+
+                    if (!hasChanges) {
+                        status.html('<span style="color: orange;">Nema promena za čuvanje</span>');
+                        return;
+                    }
+
+                    button.prop('disabled', true).text('Čuvam...');
+                    status.html('');
+
+                    $.ajax({
+                        url: ajaxurl,
+                        method: 'POST',
+                        data: {
+                            action: 'dexpress_save_custom_weights',
+                            order_id: $('.dexpress-order-metabox').data('order-id'),
+                            weights: weights,
+                            nonce: $('#dexpress_meta_box_nonce').val()
+                        },
+                        success: function(response) {
+                            if (response.success) {
+                                status.html('<span style="color: green;">✓ Težine sačuvane</span>');
+
+                                // Ažuriraj prikaz
+                                $('.weight-input').each(function() {
+                                    var newWeight = parseFloat($(this).val());
+                                    $(this).closest('tr').find('.weight-display').text(newWeight.toFixed(2) + ' kg');
+                                });
+
+                                // Izađi iz edit mode
+                                setTimeout(function() {
+                                    $('#dexpress-toggle-weights').trigger('click');
+                                }, 1500);
+
+                            } else {
+                                status.html('<span style="color: red;">Greška: ' + (response.data || 'Nepoznata greška') + '</span>');
+                            }
+                        },
+                        error: function() {
+                            status.html('<span style="color: red;">Greška u komunikaciji</span>');
+                        },
+                        complete: function() {
+                            button.prop('disabled', false).text('Sačuvaj promene');
+                        }
+                    });
+                });
+
+                $('#cancel-weight-changes').on('click', function() {
+                    $('#dexpress-toggle-weights').trigger('click');
+                    $('#weight-save-status').html('');
+                });
+
+                // POSTOJEĆA FUNKCIONALNOST (bez izmena)
+
+                // Ažuriranje težine (staro)
                 $('.dexpress-item-weight-input').on('input', function() {
                     updateWeights();
                 });
@@ -544,7 +664,6 @@ class D_Express_Order_Metabox
                     sendAjaxRequest('dexpress_create_shipment', data, function(response) {
                         if (response.success) {
                             showSuccess(response.data.message);
-                            // ✅ DODAJ OVU LINIJU:
                             $('#dexpress-create-section').hide();
                             setTimeout(() => location.reload(), 2000);
                         } else {
@@ -555,6 +674,7 @@ class D_Express_Order_Metabox
 
                 function createMultipleShipments() {
                     var splits = collectSplitData();
+                    console.log('Collected splits data:', splits);
                     if (splits.length === 0) {
                         alert('Morate definisati barem jedan paket!');
                         return;
@@ -608,81 +728,278 @@ class D_Express_Order_Metabox
                     });
                     html += '</select></div>';
 
-                    // Content input za svaki paket - dodaj posle location selector-a
+                    // Content input
                     html += '<div style="margin-bottom: 15px;">';
                     html += '<label style="display: block; font-weight: bold; margin-bottom: 5px;">Sadržaj paketa:</label>';
                     html += '<input type="text" name="split_content[]" class="split-content-input" ';
                     html += 'style="width: 100%;" maxlength="50" placeholder="Automatski će se generisati...">';
                     html += '<p style="margin-top: 3px; font-size: 11px; color: #666;">Automatski se ažurira na osnovu izabranih artikala</p>';
                     html += '</div>';
-                    // Items selector
+
+                    // POBOLJŠANI Items selector sa checkbox-ima
                     html += '<div style="margin-bottom: 15px;">';
-                    html += '<label style="display: block; font-weight: bold; margin-bottom: 5px;">Artikli:</label>';
+                    html += '<label style="display: block; font-weight: bold; margin-bottom: 5px;">Odaberite artikle:</label>';
                     html += '<div style="margin-bottom: 8px;">';
-                    html += '<button type="button" class="button button-small select-all-items" data-split="' + index + '">Sve</button> ';
-                    html += '<button type="button" class="button button-small deselect-all-items" data-split="' + index + '">Ništa</button>';
+                    html += '<button type="button" class="button button-small select-all-package-items" data-split="' + index + '">Sve</button> ';
+                    html += '<button type="button" class="button button-small deselect-all-package-items" data-split="' + index + '">Ništa</button>';
                     html += '</div>';
 
-                    html += '<div class="items-container" style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; background: #fff;">';
+                    html += '<div class="split-items-container" style="max-height: 250px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; background: #fff;">';
+
+                    // Generiši checkbox za svaki pojedinačni komad
                     orderItems.forEach(function(item) {
                         for (var i = 1; i <= item.quantity; i++) {
-                            html += '<label style="display: block; margin-bottom: 5px; padding: 5px; cursor: pointer;">';
-                            html += '<input type="checkbox" name="split_items_' + index + '[]" value="' + item.id + '" style="margin-right: 8px;">';
-                            html += '<strong>' + item.name + '</strong> (' + item.weight + 'kg) - komad ' + i;
+                            html += '<label style="display: block; margin-bottom: 6px; padding: 8px; cursor: pointer; border: 1px solid #eee; border-radius: 3px;" class="split-item-label">';
+                            html += '<input type="checkbox" class="split-item-checkbox" ';
+                            html += 'data-item-id="' + item.id + '" ';
+                            html += 'data-weight="' + item.weight + '" ';
+                            html += 'data-name="' + item.name + '" ';
+                            html += 'data-split="' + index + '" ';
+                            html += 'value="' + item.id + '_' + i + '" ';
+                            html += 'style="margin-right: 8px;">';
+                            html += '<strong>' + item.name + '</strong> ';
+                            html += '(' + item.weight + 'kg) - komad ' + i;
                             html += '</label>';
                         }
                     });
                     html += '</div></div>';
 
-                    // Weight summary
-                    html += '<div style="background: #f0f0f0; padding: 10px; font-size: 13px;">';
-                    html += '<strong>Težina paketa: <span class="split-total-weight" data-split="' + index + '">0.00 kg</span></strong>';
-                    html += '</div></div>';
+                    // POBOLJŠANA Weight summary sa inline edit
+                    html += '<div class="split-weight-section" style="background: #f0f8ff; padding: 12px; border-radius: 4px; margin-bottom: 15px;">';
+                    html += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">';
+                    html += '<span><strong>Automatska težina:</strong> <span class="split-auto-weight" data-split="' + index + '">0.00 kg</span></span>';
+                    html += '<button type="button" class="button button-small toggle-custom-weight" data-split="' + index + '">Prilagodi težinu</button>';
+                    html += '</div>';
 
+                    html += '<div class="custom-weight-controls" data-split="' + index + '" style="display: none;">';
+                    html += '<div style="display: flex; align-items: center; gap: 10px;">';
+                    html += '<label>Prilagođena težina:</label>';
+                    html += '<input type="number" class="split-custom-weight" data-split="' + index + '" step="0.01" min="0.1" max="34" style="width: 80px;" placeholder="0.00"> kg';
+                    html += '<button type="button" class="button button-small apply-custom-weight" data-split="' + index + '">Primeni</button>';
+                    html += '<button type="button" class="button button-small reset-auto-weight" data-split="' + index + '">Resetuj</button>';
+                    html += '</div>';
+                    html += '<p style="margin: 5px 0 0 0; font-size: 11px; color: #666;">Maksimalno 34kg po paketu</p>';
+                    html += '</div>';
+
+                    html += '<div style="margin-top: 8px; font-size: 14px;">';
+                    html += '<strong>Finalna težina: <span class="split-final-weight" data-split="' + index + '">0.00 kg</span></strong>';
+                    html += '</div>';
+                    html += '</div>';
+
+                    html += '</div>';
                     return html;
                 }
 
                 function attachSplitEventListeners(index) {
-                    // Select/deselect all
-                    $('.select-all-items[data-split="' + index + '"]').on('click', function() {
-                        $('input[name="split_items_' + index + '[]"]').prop('checked', true);
-                        updateSplitWeight(index);
+                    // Checkbox listeners
+                    $('.split-item-checkbox[data-split="' + index + '"]').on('change', function() {
+                        updateSplitCalculations(index);
+                        updateSplitHighlights(index);
                     });
 
-                    $('.deselect-all-items[data-split="' + index + '"]').on('click', function() {
-                        $('input[name="split_items_' + index + '[]"]').prop('checked', false);
-                        updateSplitWeight(index);
+                    // Select/Deselect all buttons
+                    $('.select-all-package-items[data-split="' + index + '"]').on('click', function() {
+                        $('.split-item-checkbox[data-split="' + index + '"]').prop('checked', true);
+                        updateSplitCalculations(index);
+                        updateSplitHighlights(index);
                     });
 
-                    // Update weight on change
-                    $('input[name="split_items_' + index + '[]"]').on('change', function() {
-                        updateSplitWeight(index);
+                    $('.deselect-all-package-items[data-split="' + index + '"]').on('click', function() {
+                        $('.split-item-checkbox[data-split="' + index + '"]').prop('checked', false);
+                        updateSplitCalculations(index);
+                        updateSplitHighlights(index);
                     });
-                }
 
-                function updateSplitWeight(index) {
-                    var totalWeight = 0;
-                    var selectedItemIds = [];
+                    // Weight controls
+                    $('.toggle-custom-weight[data-split="' + index + '"]').on('click', function() {
+                        var controls = $('.custom-weight-controls[data-split="' + index + '"]');
+                        var button = $(this);
 
-                    $('input[name="split_items_' + index + '[]"]:checked').each(function() {
-                        var itemId = $(this).val();
-                        selectedItemIds.push(itemId);
-                        var item = orderItems.find(function(item) {
-                            return item.id == itemId;
-                        });
-                        if (item) {
-                            totalWeight += parseFloat(item.weight) || 0;
+                        if (controls.is(':visible')) {
+                            controls.hide();
+                            button.text('Prilagodi težinu');
+                        } else {
+                            controls.show();
+                            button.text('Sakrij kontrole');
+                            // Set current auto weight as placeholder
+                            var autoWeight = parseFloat($('.split-auto-weight[data-split="' + index + '"]').text());
+                            $('.split-custom-weight[data-split="' + index + '"]').attr('placeholder', autoWeight.toFixed(2));
                         }
                     });
 
-                    $('.split-total-weight[data-split="' + index + '"]').text(totalWeight.toFixed(2) + ' kg');
+                    function updateSplitCalculations(splitIndex) {
+                        var totalWeight = 0;
+                        var selectedItems = [];
 
-                    // ✅ DODAJ: Auto-update sadržaja
-                    if (selectedItemIds.length > 0) {
-                        generateSplitContent(index, selectedItemIds);
-                    } else {
-                        $('.dexpress-split-form[data-split-index="' + index + '"] .split-content-input').val('');
+                        $('.split-item-checkbox[data-split="' + splitIndex + '"]:checked').each(function() {
+                            var weight = parseFloat($(this).data('weight')) || 0;
+                            var itemName = $(this).data('name');
+                            totalWeight += weight;
+                            selectedItems.push(itemName);
+                        });
+
+                        // Update auto weight
+                        $('.split-auto-weight[data-split="' + splitIndex + '"]').text(totalWeight.toFixed(2) + ' kg');
+
+                        // Update final weight if not custom
+                        var hasCustomWeight = $('.split-custom-weight[data-split="' + splitIndex + '"]').val();
+                        if (!hasCustomWeight) {
+                            $('.split-final-weight[data-split="' + splitIndex + '"]').text(totalWeight.toFixed(2) + ' kg');
+                        }
+
+                        // Update content
+                        updateSplitContent(splitIndex, selectedItems);
+
+                        // Validate weight
+                        if (totalWeight > 34) {
+                            showWeightStatus(splitIndex, 'UPOZORENJE: Težina prelazi 34kg limit!', 'error');
+                        } else if (totalWeight === 0) {
+                            showWeightStatus(splitIndex, '', '');
+                        } else {
+                            showWeightStatus(splitIndex, 'Težina je u redu', 'success');
+                        }
                     }
+
+                    function updateSplitContent(splitIndex, selectedItems) {
+                        var content = '';
+                        if (selectedItems.length > 0) {
+                            var uniqueItems = [...new Set(selectedItems)]; // Remove duplicates
+                            content = uniqueItems.slice(0, 3).join(', '); // Max 3 items
+                            if (uniqueItems.length > 3) {
+                                content += '...';
+                            }
+                            if (content.length > 47) {
+                                content = content.substring(0, 47) + '...';
+                            }
+                        }
+                        $('.dexpress-split-form[data-split-index="' + splitIndex + '"] .split-content-input').val(content);
+                    }
+
+                    function updateSplitHighlights(splitIndex) {
+                        $('.split-item-checkbox[data-split="' + splitIndex + '"]').each(function() {
+                            var label = $(this).closest('label');
+                            if ($(this).is(':checked')) {
+                                label.css({
+                                    'background-color': '#e8f4fd',
+                                    'border-color': '#0073aa',
+                                    'font-weight': 'bold'
+                                });
+                            } else {
+                                label.css({
+                                    'background-color': '',
+                                    'border-color': '#eee',
+                                    'font-weight': 'normal'
+                                });
+                            }
+                        });
+                    }
+
+                    function showWeightStatus(splitIndex, message, type) {
+                        var statusId = 'weight-status-' + splitIndex;
+                        var existingStatus = $('#' + statusId);
+
+                        if (existingStatus.length === 0 && message) {
+                            var statusHtml = '<div id="' + statusId + '" style="margin-top: 5px; padding: 3px 8px; border-radius: 3px; font-size: 11px;"></div>';
+                            $('.split-weight-section .split-final-weight[data-split="' + splitIndex + '"]').parent().after(statusHtml);
+                            existingStatus = $('#' + statusId);
+                        }
+
+                        if (message) {
+                            var colors = {
+                                'success': {
+                                    bg: '#d4edda',
+                                    color: '#155724',
+                                    border: '#c3e6cb'
+                                },
+                                'error': {
+                                    bg: '#f8d7da',
+                                    color: '#721c24',
+                                    border: '#f5c6cb'
+                                },
+                                'warning': {
+                                    bg: '#fff3cd',
+                                    color: '#856404',
+                                    border: '#ffeaa7'
+                                }
+                            };
+
+                            var style = colors[type] || colors.success;
+                            existingStatus.text(message).css({
+                                'background-color': style.bg,
+                                'color': style.color,
+                                'border': '1px solid ' + style.border
+                            }).show();
+                        } else {
+                            existingStatus.hide();
+                        }
+                    }
+
+                    $('.apply-custom-weight[data-split="' + index + '"]').on('click', function() {
+                        var customWeight = parseFloat($('.split-custom-weight[data-split="' + index + '"]').val());
+                        if (customWeight && customWeight > 0 && customWeight <= 34) {
+                            $('.split-final-weight[data-split="' + index + '"]').text(customWeight.toFixed(2) + ' kg');
+                            showWeightStatus(index, 'Prilagođena težina primenjena', 'success');
+                        } else {
+                            showWeightStatus(index, 'Unesite važeću težinu (0.1-34 kg)', 'error');
+                        }
+                    });
+
+                    $('.reset-auto-weight[data-split="' + index + '"]').on('click', function() {
+                        var autoWeight = parseFloat($('.split-auto-weight[data-split="' + index + '"]').text());
+                        $('.split-final-weight[data-split="' + index + '"]').text(autoWeight.toFixed(2) + ' kg');
+                        $('.split-custom-weight[data-split="' + index + '"]').val('');
+                        showWeightStatus(index, 'Vraćeno na automatsku težinu', 'success');
+                    });
+
+                    $('.split-custom-weight[data-split="' + index + '"]').on('input', function() {
+                        var weight = parseFloat($(this).val());
+                        if (weight > 34) {
+                            $(this).val(34);
+                            showWeightStatus(index, 'Maksimalna težina je 34kg', 'warning');
+                        }
+                    });
+                }
+
+                function updatePackageContent(index) {
+                    var parts = [];
+                    $('input[name^="split_item_qty_' + index + '"]').each(function() {
+                        var qty = parseInt($(this).val()) || 0;
+                        if (qty > 0) {
+                            var itemId = $(this).data('item-id');
+                            var item = orderItems.find(function(item) {
+                                return item.id == itemId;
+                            });
+                            if (item) parts.push(qty > 1 ? qty + 'x ' + item.name : item.name);
+                        }
+                    });
+                    var content = parts.join(', ');
+                    if (content.length > 50) content = content.substring(0, 47) + '...';
+                    $('.dexpress-split-form[data-split-index="' + index + '"] .split-content-input').val(content);
+                }
+
+                function updatePackageWeight(index) {
+                    var totalWeight = 0;
+                    $('input[name^="split_item_qty_' + index + '"]').each(function() {
+                        var qty = parseInt($(this).val()) || 0;
+                        if (qty > 0) {
+                            var itemId = $(this).data('item-id');
+                            var item = orderItems.find(function(item) {
+                                return item.id == itemId;
+                            });
+                            if (item) totalWeight += (qty * parseFloat(item.weight));
+                        }
+                    });
+                    $('.split-auto-weight[data-split="' + index + '"]').text(totalWeight.toFixed(2) + ' kg');
+                    updateFinalWeight(index);
+                }
+
+                function updateFinalWeight(index) {
+                    var customWeight = parseFloat($('.split-custom-weight[data-split="' + index + '"]').val());
+                    var autoWeight = parseFloat($('.split-auto-weight[data-split="' + index + '"]').text());
+                    var isCustomVisible = $('.custom-weight-controls[data-split="' + index + '"]').is(':visible');
+
+                    var finalWeight = isCustomVisible && !isNaN(customWeight) ? customWeight : autoWeight;
+                    $('.split-final-weight[data-split="' + index + '"]').text(finalWeight.toFixed(2) + ' kg');
                 }
 
                 // Remove split form
@@ -738,17 +1055,24 @@ class D_Express_Order_Metabox
                         var splitIndex = index + 1;
                         var locationId = $(this).find('select[name="split_locations[]"]').val();
                         var customContent = $(this).find('.split-content-input').val();
-                        var selectedItems = [];
+                        var finalWeight = parseFloat($('.split-final-weight[data-split="' + splitIndex + '"]').text()) || 0;
 
-                        $(this).find('input[name="split_items_' + splitIndex + '[]"]:checked').each(function() {
-                            selectedItems.push($(this).val());
+                        // Collect selected items with their individual IDs
+                        var selectedItemsData = {};
+                        $('.split-item-checkbox[data-split="' + splitIndex + '"]:checked').each(function() {
+                            var itemId = $(this).data('item-id');
+                            if (!selectedItemsData[itemId]) {
+                                selectedItemsData[itemId] = 0;
+                            }
+                            selectedItemsData[itemId]++;
                         });
 
-                        if (locationId && selectedItems.length > 0) {
+                        if (locationId && Object.keys(selectedItemsData).length > 0) {
                             splits.push({
                                 location_id: locationId,
-                                items: selectedItems,
-                                custom_content: customContent
+                                items: selectedItemsData,
+                                custom_content: customContent,
+                                final_weight: finalWeight
                             });
                         }
                     });
@@ -795,6 +1119,8 @@ class D_Express_Order_Metabox
                 function showError(message) {
                     $('#dexpress-response').html('<div class="notice notice-error"><p>Greška: ' + message + '</p></div>');
                 }
+
+                // LEGACY: Staro čuvanje težina (za kompatibilnost)
                 $('#dexpress-save-weights').on('click', function() {
                     var button = $(this);
                     var status = $('#dexpress-weight-status');
@@ -821,7 +1147,6 @@ class D_Express_Order_Metabox
                         success: function(response) {
                             if (response.success) {
                                 status.html('<span style="color: green;">✓ Težine sačuvane</span>');
-                                // Ažuriraj ukupnu težinu
                                 $('#dexpress-grand-total-weight').text(response.data.total_weight);
                             } else {
                                 status.html('<span style="color: red;">Greška: ' + response.data + '</span>');
@@ -998,6 +1323,105 @@ class D_Express_Order_Metabox
                     delete_post_meta($order_id, '_dexpress_item_weight_' . $item_id);
                 }
             }
+        }
+    }
+
+    /**
+     * NOVO: AJAX: Ažuriranje težine artikla
+     */
+    public function ajax_update_item_weight()
+    {
+        check_ajax_referer('dexpress_meta_box', 'nonce');
+
+        if (!current_user_can('manage_woocommerce')) {
+            wp_send_json_error('Nemate dozvolu');
+        }
+
+        $order_id = intval($_POST['order_id']);
+        $item_id = intval($_POST['item_id']);
+        $new_weight = floatval($_POST['weight']);
+
+        if ($order_id <= 0 || $item_id <= 0 || $new_weight <= 0) {
+            wp_send_json_error('Nevalidni podaci');
+        }
+
+        // Sačuvaj novu težinu
+        update_post_meta($order_id, '_dexpress_item_weight_' . $item_id, $new_weight);
+
+        // Izračunaj ukupnu težinu
+        $order = wc_get_order($order_id);
+        $total_weight = 0;
+
+        foreach ($order->get_items() as $check_item_id => $item) {
+            if (!($item instanceof WC_Order_Item_Product)) continue;
+
+            $product = $item->get_product();
+            $weight = $this->get_item_weight($order_id, $check_item_id, $product);
+            $total_weight += ($weight * $item->get_quantity());
+        }
+
+        wp_send_json_success([
+            'item_total' => number_format($new_weight * $order->get_item($item_id)->get_quantity(), 2),
+            'order_total' => number_format($total_weight, 2),
+            'message' => 'Težina ažurirana'
+        ]);
+    }
+
+    /**
+     * NOVO: AJAX: Kreiranje jednostavnog paketa
+     */
+    public function ajax_create_package_simple()
+    {
+        check_ajax_referer('dexpress_meta_box', 'nonce');
+
+        if (!current_user_can('manage_woocommerce')) {
+            wp_send_json_error('Nemate dozvolu');
+        }
+
+        $order_id = intval($_POST['order_id']);
+        $location_id = intval($_POST['location_id']);
+        $selected_items = isset($_POST['selected_items']) ? $_POST['selected_items'] : array();
+        $custom_weight = isset($_POST['custom_weight']) ? floatval($_POST['custom_weight']) : 0;
+        $custom_content = isset($_POST['content']) ? sanitize_text_field($_POST['content']) : '';
+
+        $order = wc_get_order($order_id);
+        if (!$order) {
+            wp_send_json_error('Narudžbina nije pronađena');
+        }
+
+        if (empty($selected_items)) {
+            wp_send_json_error('Morate odabrati barem jedan proizvod');
+        }
+
+        if (!$location_id) {
+            wp_send_json_error('Morate odabrati lokaciju');
+        }
+
+        try {
+            // Koristimo postojeći shipment service
+            $shipment_service = new D_Express_Shipment_Service();
+
+            // Ako je custom weight postavljena, sačuvaj je privremeno
+            if ($custom_weight > 0) {
+                update_post_meta($order_id, '_temp_custom_package_weight', $custom_weight);
+            }
+
+            $result = $shipment_service->create_shipment($order, $location_id, null, $custom_content);
+
+            // Ukloni privremenu težinu
+            delete_post_meta($order_id, '_temp_custom_package_weight');
+
+            if (is_wp_error($result)) {
+                wp_send_json_error($result->get_error_message());
+            }
+
+            wp_send_json_success([
+                'message' => 'Paket uspešno kreiran',
+                'shipment_id' => $result['shipment_id'],
+                'tracking_number' => $result['tracking_number']
+            ]);
+        } catch (Exception $e) {
+            wp_send_json_error('Greška: ' . $e->getMessage());
         }
     }
 

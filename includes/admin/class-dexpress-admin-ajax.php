@@ -457,7 +457,18 @@ class D_Express_Admin_Ajax
                 $location_id = intval($split_data['location_id']);
                 $selected_items = isset($split_data['items']) ? $split_data['items'] : array();
 
-                if ($location_id && !empty($selected_items)) {
+                // Proveri da li ima validnih količina
+                $has_items = false;
+                if (is_array($selected_items)) {
+                    foreach ($selected_items as $item_id => $quantity) {
+                        if (intval($quantity) > 0) {
+                            $has_items = true;
+                            break;
+                        }
+                    }
+                }
+
+                if ($location_id && $has_items) {
                     if (!isset($grouped_by_location[$location_id])) {
                         $grouped_by_location[$location_id] = array();
                     }
@@ -475,10 +486,12 @@ class D_Express_Admin_Ajax
                 $total_locations = count($grouped_by_location);
                 $shipment_data = $api->prepare_shipment_data_from_order($order, $location_id);
                 $shipment_data['RClientID'] = '';
+
                 $sender_location = D_Express_Sender_Locations::get_instance()->get_location($location_id);
                 if ($sender_location && !empty($sender_location->address_description)) {
                     $shipment_data['PuAddressDesc'] = $sender_location->address_description;
                 }
+
                 if (is_wp_error($shipment_data)) {
                     $errors[] = 'Lokacija ' . $location_id . ': ' . $shipment_data->get_error_message();
                     $split_index++;
@@ -502,9 +515,12 @@ class D_Express_Admin_Ajax
                         continue;
                     }
 
-                    // Kalkuliši masu split-a
+                    // Kalkuliši masu split-a koristeći quantities
                     $split_mass = 0;
-                    foreach ($split_items as $item_id) {
+                    foreach ($split_items as $item_id => $quantity) {
+                        $qty = intval($quantity);
+                        if ($qty <= 0) continue;
+
                         $item = $order->get_item($item_id);
                         if (!$item || !($item instanceof WC_Order_Item_Product)) continue;
 
@@ -514,11 +530,11 @@ class D_Express_Admin_Ajax
                         $custom_weight = get_post_meta($order_id, '_dexpress_item_weight_' . $item_id, true);
 
                         if ($custom_weight && $custom_weight > 0) {
-                            $split_mass += ($custom_weight * $item->get_quantity() * 1000);
+                            $split_mass += ($custom_weight * $qty * 1000); // qty umesto $item->get_quantity()
                         } else if ($product->has_weight()) {
-                            $split_mass += ($product->get_weight() * $item->get_quantity() * 1000);
+                            $split_mass += ($product->get_weight() * $qty * 1000);
                         } else {
-                            $split_mass += 100; // 100g default
+                            $split_mass += 100 * $qty; // 100g per quantity
                         }
                     }
 
@@ -526,15 +542,27 @@ class D_Express_Admin_Ajax
                     if ($split_mass < 100) {
                         $split_mass = 100;
                     }
-
+                    $custom_split_weight = isset($split_data['final_weight']) ? floatval($split_data['final_weight']) : 0;
+                    if ($custom_split_weight > 0) {
+                        $split_mass = intval($custom_split_weight * 1000); // Konvertuj kg u grame
+                        dexpress_log("[CUSTOM WEIGHT] Koristi custom weight: {$custom_split_weight}kg za paket", 'info');
+                    }
                     // Generiši sadržaj split-a
                     $custom_split_content = isset($split_data['custom_content']) ? sanitize_text_field($split_data['custom_content']) : null;
                     if (!empty($custom_split_content)) {
                         $split_content = $custom_split_content;
                     } else {
+                        // Kreiraj item ID array za content generation
+                        $item_ids_for_content = array();
+                        foreach ($split_items as $item_id => $quantity) {
+                            if (intval($quantity) > 0) {
+                                $item_ids_for_content[] = $item_id;
+                            }
+                        }
+
                         $metabox_instance = new D_Express_Order_Metabox();
                         $content_type = $metabox_instance->get_content_type_setting();
-                        $split_content = $metabox_instance->generate_content_by_type($order, $content_type, $split_items);
+                        $split_content = $metabox_instance->generate_content_by_type($order, $content_type, $item_ids_for_content);
                     }
 
                     // Dodaj paket u listu
@@ -584,40 +612,42 @@ class D_Express_Admin_Ajax
                     $shipment_data['ReferenceID'] = (string)$order_id;
                 }
 
+                // Kalkuliši sve artikle za ovu lokaciju (za Value i COD)
+                $all_items_for_location = array();
+                foreach ($splits_for_location as $split_data) {
+                    foreach ($split_data['items'] as $item_id => $quantity) {
+                        if (intval($quantity) > 0) {
+                            if (!isset($all_items_for_location[$item_id])) {
+                                $all_items_for_location[$item_id] = 0;
+                            }
+                            $all_items_for_location[$item_id] += intval($quantity);
+                        }
+                    }
+                }
+
                 // COD i Value logika
                 if ($order->get_payment_method() === 'cod') {
-                    $all_items_for_location = array();
-                    foreach ($splits_for_location as $split_data) {
-                        $all_items_for_location = array_merge($all_items_for_location, $split_data['items']);
-                    }
-
-                    $split_cod = $this->calculate_combined_split_cod($order, $all_items_for_location, $split_index, count($grouped_by_location));
+                    $split_cod = $this->calculate_quantity_based_split_cod($order, $all_items_for_location, $split_index, count($grouped_by_location));
                     $shipment_data['BuyOut'] = $split_cod;
 
-                    // ✅ ISPRAVKA: Value logika - SVAKI split dobija svoju Value
-                    // Izračunaj Value na osnovu artikala u ovoj lokaciji/split-u
+                    // Izračunaj Value na osnovu artikala u ovoj lokaciji
                     $location_items_value = 0;
-                    foreach ($all_items_for_location as $item_id) {
+                    foreach ($all_items_for_location as $item_id => $quantity) {
                         $item = $order->get_item($item_id);
                         if ($item instanceof WC_Order_Item_Product) {
-                            $location_items_value += ($item->get_total() + $item->get_total_tax());
+                            $item_price = ($item->get_total() + $item->get_total_tax()) / $item->get_quantity();
+                            $location_items_value += ($item_price * $quantity);
                         }
                     }
                     $shipment_data['Value'] = intval($location_items_value * 100); // u parama
-                }
-                // ✅ DODANO: Value za non-COD orders
-                if ($order->get_payment_method() !== 'cod') {
-                    // Za non-COD orders, Value se takođe računa po artiklima u split-u
-                    $all_items_for_location = array();
-                    foreach ($splits_for_location as $split_data) {
-                        $all_items_for_location = array_merge($all_items_for_location, $split_data['items']);
-                    }
-
+                } else {
+                    // Non-COD orders
                     $location_items_value = 0;
-                    foreach ($all_items_for_location as $item_id) {
+                    foreach ($all_items_for_location as $item_id => $quantity) {
                         $item = $order->get_item($item_id);
                         if ($item instanceof WC_Order_Item_Product) {
-                            $location_items_value += ($item->get_total() + $item->get_total_tax());
+                            $item_price = ($item->get_total() + $item->get_total_tax()) / $item->get_quantity();
+                            $location_items_value += ($item_price * $quantity);
                         }
                     }
                     $shipment_data['Value'] = intval($location_items_value * 100); // u parama
@@ -637,7 +667,7 @@ class D_Express_Admin_Ajax
                 $validation = $payment_service->validate_payment_logic($order, $shipment_data);
                 if (is_wp_error($validation)) {
                     $errors[] = 'Lokacija ' . $location_id . ': Payment validation greška - ' . $validation->get_error_message();
-                    continue; // Preskoči ovu pošiljku
+                    continue;
                 }
 
                 dexpress_log("[VALIDATION] Payment logic validated for location {$location_id}", 'debug');
@@ -716,6 +746,7 @@ class D_Express_Admin_Ajax
                     if ($split_index === 1) {
                         do_action('dexpress_after_shipment_created', $shipment_id, $order);
                     }
+
                     $created_shipments[] = array(
                         'shipment_id' => $shipment_id,
                         'location_id' => $location_id,
@@ -814,6 +845,39 @@ class D_Express_Admin_Ajax
         ), 'debug');
 
         return $split_cod;
+    }
+    /**
+     * Kalkuliše COD za quantity-based artikle
+     */
+    private function calculate_quantity_based_split_cod($order, $quantity_items, $split_index = 1, $total_splits = 1)
+    {
+        if ($order->get_payment_method() !== 'cod') {
+            return 0;
+        }
+
+        // Izračunaj vrednost artikala u ovom split-u na osnovu quantities
+        $split_value = 0;
+        foreach ($quantity_items as $item_id => $quantity) {
+            $item = $order->get_item($item_id);
+            if ($item instanceof WC_Order_Item_Product) {
+                $item_price = ($item->get_total() + $item->get_total_tax()) / $item->get_quantity();
+                $split_value += ($item_price * $quantity);
+            }
+        }
+
+        // SAMO prvi split dobija dostavu
+        if ($split_index === 1) {
+            $split_value += $order->get_shipping_total();
+            $split_value += $order->get_shipping_tax();
+
+            // Dodaj i ostale fees ako postoje
+            foreach ($order->get_fees() as $fee) {
+                $split_value += $fee->get_total();
+                $split_value += $fee->get_total_tax();
+            }
+        }
+
+        return intval($split_value * 100); // u parama
     }
     /**
      * Generiše jedinstvene package kodove za multiple shipments
@@ -969,38 +1033,41 @@ class D_Express_Admin_Ajax
      * AJAX: Čuvanje custom težina
      */
     public function ajax_save_custom_weights()
-    {
-        check_ajax_referer('dexpress_meta_box', 'nonce');
+{
+    check_ajax_referer('dexpress_meta_box', 'nonce');
 
-        if (!current_user_can('manage_woocommerce')) {
-            wp_send_json_error('Nemate dozvolu');
-        }
-
-        $order_id = intval($_POST['order_id']);
-        $weights = $_POST['weights'];
-
-        if (!$order_id || !is_array($weights)) {
-            wp_send_json_error('Nevalidni podaci');
-        }
-
-        $total_weight = 0;
-        $order = wc_get_order($order_id);
-
-        foreach ($weights as $item_id => $weight) {
-            $weight = floatval($weight);
-            $item = $order->get_item($item_id);
-
-            if ($weight > 0 && $item) {
-                update_post_meta($order_id, '_dexpress_item_weight_' . $item_id, $weight);
-                $total_weight += ($weight * $item->get_quantity());
-            } else {
-                delete_post_meta($order_id, '_dexpress_item_weight_' . $item_id);
-            }
-        }
-
-        wp_send_json_success([
-            'total_weight' => number_format($total_weight, 2) . ' kg',
-            'message' => 'Težine sačuvane za pošiljku'
-        ]);
+    if (!current_user_can('manage_woocommerce')) {
+        wp_send_json_error('Nemate dozvolu');
     }
+
+    $order_id = intval($_POST['order_id']);
+    $weights = $_POST['weights'];
+
+    if (!$order_id || !is_array($weights)) {
+        wp_send_json_error('Nevalidni podaci');
+    }
+
+    $total_weight = 0;
+    $order = wc_get_order($order_id);
+    $updated_count = 0; // DODAJ OVO
+
+    foreach ($weights as $item_id => $weight) {
+        $weight = floatval($weight);
+        $item = $order->get_item($item_id);
+
+        if ($weight > 0 && $item) {
+            update_post_meta($order_id, '_dexpress_item_weight_' . $item_id, $weight);
+            $total_weight += ($weight * $item->get_quantity());
+            $updated_count++; // DODAJ OVO
+        } else {
+            delete_post_meta($order_id, '_dexpress_item_weight_' . $item_id);
+        }
+    }
+
+    wp_send_json_success([
+        'total_weight' => number_format($total_weight, 2) . ' kg',
+        'updated_count' => $updated_count, // DODAJ OVO
+        'message' => "Ažurirano {$updated_count} proizvoda" // IZMENI OVO
+    ]);
+}
 }

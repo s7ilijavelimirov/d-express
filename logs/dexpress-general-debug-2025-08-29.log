@@ -1,0 +1,3 @@
+{"timestamp":"2025-08-29 10:41:20","context":"general","level":"debug","message":"Checkout order processed: 1275"}
+{"timestamp":"2025-08-29 10:41:20","context":"general","level":"debug","message":"Has D Express shipping: Yes"}
+{"timestamp":"2025-08-29 10:41:20","context":"general","level":"debug","message":"Order processed - manual shipment creation required: 1275"}
