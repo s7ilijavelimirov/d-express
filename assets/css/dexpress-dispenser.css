@@ -124,8 +124,8 @@
     background: #E90000;
     border: none;
     color: white;
-    width: 40px;
-    height: 40px;
+    /* width: 40px; */
+    /* height: 40px; */
     border-radius: 8px;
     cursor: pointer;
     display: flex;
@@ -141,24 +141,6 @@
     align-items: center;
     padding: 24px;
     border-top: 1px solid silver;
-}
-
-/* .dexpress-modal-close:hover {
-    background: rgba(255, 255, 255, 0.25);
-    transform: scale(1.1);
-} */
-.dexpress-modal-footer .dexpress-modal-close {
-    width: auto;
-    padding: 2px 10px;
-}
-
-/* CSS X ikonica */
-.dexpress-modal-footer .dexpress-modal-close::before {
-    content: '';
-    width: 18px;
-    height: 18px;
-    background: white;
-    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor'%3E%3Cline x1='18' y1='6' x2='6' y2='18'/%3E%3Cline x1='6' y1='6' x2='18' y2='18'/%3E%3C/svg%3E") center/contain no-repeat;
 }
 
 /* === BODY === */
@@ -886,7 +868,7 @@
 @media (max-width: 768px) {
     .dexpress-modal-content {
         width: 98%;
-        height: 95vh;
+        height: 80vh;
         margin: 2vh auto;
     }
 

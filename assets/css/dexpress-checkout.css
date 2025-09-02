@@ -21,66 +21,38 @@
 /* ========== LOADING INDIKATORI ========== */
 
 /* Minimalan loading spinner - koristi theme boje */
-/* Loader sa z-index koji se jasno vidi */
-.dexpress-loading {
+.woocommerce-input-wrapper.dexpress-loading {
     position: relative;
-    background-image: url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="2" opacity="0.3"/><path d="M10 2a8 8 0 0 1 8 8" fill="none" stroke="currentColor" stroke-width="2"><animateTransform attributeName="transform" type="rotate" values="0 10 10;360 10 10" dur="1s" repeatCount="indefinite"/></path></svg>');
-    background-repeat: no-repeat;
-    background-position: right 12px center;
-    background-size: 18px 18px;
-    padding-right: 40px !important;
-    /* Ostavi prostor za loader */
+    display: inline-block;
+    width: 100%;
 }
 
-/* Overlay loader za jasnije označavanje */
-.dexpress-loading::after {
-    content: '';
+.woocommerce-input-wrapper.dexpress-loading::after {
+    content: "";
     position: absolute;
     top: 50%;
     right: 12px;
     width: 18px;
     height: 18px;
     margin-top: -9px;
-    background: url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><circle cx="10" cy="10" r="8" fill="none" stroke="%23007cba" stroke-width="2" opacity="0.3"/><path d="M10 2a8 8 0 0 1 8 8" fill="none" stroke="%23007cba" stroke-width="2"><animateTransform attributeName="transform" type="rotate" values="0 10 10;360 10 10" dur="1s" repeatCount="indefinite"/></path></svg>') no-repeat center;
-    background-size: 18px 18px;
-    z-index: 10;
+    border: 2px solid red;
+    border-top: 2px solid transparent;
+    border-radius: 50%;
+    animation: dexpress-spin 0.8s linear infinite;
     pointer-events: none;
 }
 
-/* Loader text indicator */
-.dexpress-loading-text {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    font-size: 11px;
-    color: var(--wc-primary-color, #007cba);
-    text-align: center;
-    margin-top: 2px;
-    z-index: 11;
-    pointer-events: none;
-    opacity: 0;
-    animation: fadeInOut 2s ease-in-out infinite;
-}
-
-@keyframes fadeInOut {
-    0%, 100% {
-        opacity: 0;
+@keyframes dexpress-spin {
+    from {
+        transform: rotate(0deg);
     }
 
-    50% {
-        opacity: 0.8;
+    to {
+        transform: rotate(360deg);
     }
 }
 
-/* Različiti loading stilovi za različite akcije */
-.dexpress-loading-streets::after {
-    background: url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><circle cx="10" cy="10" r="8" fill="none" stroke="%23dc3545" stroke-width="2" opacity="0.3"/><path d="M10 2a8 8 0 0 1 8 8" fill="none" stroke="%23dc3545" stroke-width="2"><animateTransform attributeName="transform" type="rotate" values="0 10 10;360 10 10" dur="1s" repeatCount="indefinite"/></path></svg>') no-repeat center;
-}
 
-.dexpress-loading-cities::after {
-    background: url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><circle cx="10" cy="10" r="8" fill="none" stroke="%2328a745" stroke-width="2" opacity="0.3"/><path d="M10 2a8 8 0 0 1 8 8" fill="none" stroke="%2328a745" stroke-width="2"><animateTransform attributeName="transform" type="rotate" values="0 10 10;360 10 10" dur="1s" repeatCount="indefinite"/></path></svg>') no-repeat center;
-}
 
 /* ========== AUTOCOMPLETE DROPDOWN ========== */
 
@@ -104,6 +76,7 @@
     font-size: inherit;
     line-height: 2.2;
 }
+
 /* .ui-autocomplete .ui-menu-item:hover{
     border:none !important;
     outline: none !important;
@@ -119,8 +92,12 @@
     color: var(--wc-primary-text-color, #9c7f7f) !important;
 }
 
+.ui-menu .ui-menu-item-wrapper {
+    font-size: 1rem !important;
+}
+
 /* Custom street option (dodaj novu ulicu) */
-.ui-autocomplete .ui-menu-item.custom-street-option {
+/* .ui-autocomplete .ui-menu-item.custom-street-option {
     background-color: var(--wc-warning-background, #af9439) !important;
     color: var(--wc-warning-text, #856404) !important;
     font-weight: 500;
@@ -128,7 +105,7 @@
 
 .ui-autocomplete .ui-menu-item.custom-street-option:hover {
     background-color: var(--wc-warning-hover, #ffeaa7) !important;
-}
+} */
 
 /* ========== ERROR HANDLING ========== */
 
@@ -149,13 +126,13 @@
 }
 
 /* Error poruke */
-.dexpress-error-message {
+/* .dexpress-error-message {
     color: var(--wc-error-color, #e2401c);
     font-size: 0.875em;
     margin-top: 0.25em;
     display: block;
     line-height: 1.4;
-}
+} */
 
 /* Blaga animacija za error */
 .dexpress-error {
@@ -235,10 +212,14 @@
     padding: 1em;
 }
 
+/* input#custom-street-input:focus {
+    border-color: #E90000 !important;
+} */
+
 /* Modal content */
 .dexpress-modal-content {
     background: var(--wc-background-color, #ffffff);
-    padding: 1.5em;
+    padding: 0em;
     border-radius: 8px;
     max-width: 500px;
     width: 100%;
@@ -258,8 +239,8 @@
 
 .dexpress-modal-header h3 {
     margin: 0;
-    color: var(--wc-text-color, #333);
     font-size: 1.2em;
+    color:white;
 }
 
 .dexpress-modal-close {
@@ -268,9 +249,7 @@
     font-size: 1.5em;
     cursor: pointer;
     color: var(--wc-text-muted, #666);
-    padding: 0;
-    width: 30px;
-    height: 30px;
+    
     display: flex;
     align-items: center;
     justify-content: center;
@@ -306,11 +285,11 @@
     font-family: inherit !important;
 }
 
-.dexpress-modal-body input:focus {
+/* .dexpress-modal-body input:focus {
     border-color: var(--wc-primary-color, #0073aa) !important;
     box-shadow: 0 0 0 1px var(--wc-primary-color, #0073aa) !important;
     outline: none !important;
-}
+} */
 
 .dexpress-modal-body p {
     font-size: 0.875em;
@@ -370,15 +349,15 @@
 
     /* Veći touch targeti na mobilnom */
     .ui-autocomplete .ui-menu-item {
-      
+
         font-size: 16px;
         /* Sprečava zoom na iOS */
     }
 
     /* Modal na mobilnom */
     .dexpress-modal-content {
-        margin: 1em;
-        padding: 1em;
+        /* margin: 1em;
+        padding: 1em; */
     }
 
     .dexpress-modal-footer {
@@ -410,7 +389,7 @@
 
     .ui-autocomplete .ui-menu-item:hover,
     .ui-autocomplete .ui-menu-item:focus {
-        outline: 2px solid currentColor; 
+        outline: 2px solid currentColor;
     }
 }
 

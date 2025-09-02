@@ -723,6 +723,7 @@ class D_Express_Checkout
                 'required'    => true,
                 'class'       => ['form-row-wide', 'dexpress-street'],
                 'priority'    => 50,
+                'custom_attributes' => ['autocomplete' => 'off'],
             ],
             'street_id' => [
                 'type'     => 'hidden',
@@ -737,6 +738,7 @@ class D_Express_Checkout
                 'required'    => true,
                 'class'       => ['form-row-wide', 'dexpress-number'],
                 'priority'    => 55,
+                'custom_attributes' => ['autocomplete' => 'off'],
             ],
             'address_desc' => [
                 'type'        => 'text',
@@ -746,7 +748,10 @@ class D_Express_Checkout
                 'class'       => ['form-row-wide', 'dexpress-address-desc'],
                 'priority'    => 56,
                 'maxlength'   => 150,
-                'custom_attributes' => ['pattern' => '[-a-zA-Z0-9:,._\s]+'],
+                'custom_attributes' => [
+                    'pattern' => '[-a-zA-Z0-9:,._\s]+',
+                    'autocomplete' => 'off'
+                ],
             ],
             'city' => [
                 'type'        => 'text',
@@ -755,6 +760,7 @@ class D_Express_Checkout
                 'required'    => true,
                 'class'       => ['form-row-wide', 'dexpress-city'],
                 'priority'    => 60,
+                'custom_attributes' => ['autocomplete' => 'off'],
             ],
             'city_id' => [
                 'type'     => 'hidden',
@@ -768,7 +774,10 @@ class D_Express_Checkout
                 'required'    => true,
                 'class'       => ['form-row-wide', 'dexpress-postcode'],
                 'priority'    => 65,
-                'custom_attributes' => ['readonly' => 'readonly'],
+                'custom_attributes' => [
+                    'readonly' => 'readonly',
+                    'autocomplete' => 'off'
+                ],
             ],
         ];
 
@@ -778,7 +787,9 @@ class D_Express_Checkout
             }
         }
 
+        // Dodaj autocomplete="off" i za telefon
         if (isset($fields['billing']['billing_phone'])) {
+            $fields['billing']['billing_phone']['custom_attributes']['autocomplete'] = 'off';
             $fields['billing']['billing_phone']['custom_attributes']['data-validate'] = 'phone';
             $fields['billing']['billing_phone']['custom_attributes']['pattern'] = '\\+381[1-9][0-9]{7,8}';
             $fields['billing']['billing_phone']['placeholder'] = __('npr. +381(0) 60 123 4567', 'd-express-woo');
@@ -788,6 +799,7 @@ class D_Express_Checkout
             }
         }
 
+        // Ostalo ostaje isto...
         $hide_fields = ['address_1', 'address_2'];
 
         foreach (['billing', 'shipping'] as $type) {
@@ -838,8 +850,6 @@ class D_Express_Checkout
             return;
         }
 
-        dexpress_log("API poziv za grad {$town_id}, term: {$search}", 'debug');
-
         // POBOLJŠAN SQL sa boljim sortiranjem
         $streets = $wpdb->get_results($wpdb->prepare(
             "SELECT DISTINCT s.name, s.id
@@ -873,8 +883,6 @@ class D_Express_Checkout
 
         // ISPRAVKA: Kraći keš - 15 minuta umesto sat vremena
         set_transient($cache_key, $results, 15 * MINUTE_IN_SECONDS);
-
-        dexpress_log("Vraćam " . count($results) . " ulica za grad {$town_id}", 'debug');
         wp_send_json($results);
     }
 
