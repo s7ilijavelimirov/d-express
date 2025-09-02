@@ -736,7 +736,7 @@ class D_Express_Admin_Ajax
                     $location = $sender_locations_service->get_location($location_id);
 
                     $note = sprintf(
-                        'D Express pošiljka kreirana (%d paketa). Location: %s, Main Tracking: %s',
+                        'D Express pošiljka kreirana (%d paketa). Location: %s',
                         count($package_list),
                         $location ? $location->name : 'N/A',
                         $package_list[0]['Code']
