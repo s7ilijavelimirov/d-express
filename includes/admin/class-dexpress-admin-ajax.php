@@ -55,8 +55,30 @@ class D_Express_Admin_Ajax
         add_action('wp_ajax_dexpress_mark_printed', array($this, 'ajax_mark_printed'));
 
         add_action('wp_ajax_dexpress_save_custom_weights', array($this, 'ajax_save_custom_weights'));
-    }
 
+        add_action('wp_ajax_dexpress_generate_single_content', array($this, 'ajax_generate_single_content'));
+    }
+    public function ajax_generate_single_content()
+    {
+        check_ajax_referer('dexpress_admin_nonce', 'nonce');
+
+        if (!current_user_can('manage_woocommerce')) {
+            wp_send_json_error('Nemate dozvolu');
+        }
+
+        $order_id = intval($_POST['order_id']);
+        $order = wc_get_order($order_id);
+
+        if (!$order) {
+            wp_send_json_error('Narudžbina nije pronađena');
+        }
+
+        $content = function_exists('dexpress_generate_shipment_content')
+            ? dexpress_generate_shipment_content($order)
+            : 'Razni proizvodi';
+
+        wp_send_json_success(['content' => $content]);
+    }
     /**
      * AJAX: Kreiranje lokacije
      */
@@ -561,8 +583,10 @@ class D_Express_Admin_Ajax
                         }
 
                         $metabox_instance = new D_Express_Order_Metabox();
-                        $content_type = $metabox_instance->get_content_type_setting();
-                        $split_content = $metabox_instance->generate_content_by_type($order, $content_type, $item_ids_for_content);
+                        $content_type = get_option('dexpress_content_type', 'category');
+                        $split_content = function_exists('dexpress_generate_shipment_content')
+                            ? dexpress_generate_shipment_content($order, $item_ids_for_content)
+                            : 'Razni proizvodi';
                     }
 
                     // Dodaj paket u listu
@@ -798,8 +822,9 @@ class D_Express_Admin_Ajax
         }
 
         $content_type = get_option('dexpress_content_type', 'category');
-        $metabox = new D_Express_Order_Metabox();
-        $content = $metabox->generate_content_by_type($order, $content_type, $selected_items);
+        $content = function_exists('dexpress_generate_shipment_content')
+            ? dexpress_generate_shipment_content($order, $selected_items)
+            : 'Razni proizvodi';
 
         wp_send_json_success(['content' => $content]);
     }
@@ -1033,41 +1058,41 @@ class D_Express_Admin_Ajax
      * AJAX: Čuvanje custom težina
      */
     public function ajax_save_custom_weights()
-{
-    check_ajax_referer('dexpress_meta_box', 'nonce');
+    {
+        check_ajax_referer('dexpress_meta_box', 'nonce');
 
-    if (!current_user_can('manage_woocommerce')) {
-        wp_send_json_error('Nemate dozvolu');
-    }
-
-    $order_id = intval($_POST['order_id']);
-    $weights = $_POST['weights'];
-
-    if (!$order_id || !is_array($weights)) {
-        wp_send_json_error('Nevalidni podaci');
-    }
-
-    $total_weight = 0;
-    $order = wc_get_order($order_id);
-    $updated_count = 0; // DODAJ OVO
-
-    foreach ($weights as $item_id => $weight) {
-        $weight = floatval($weight);
-        $item = $order->get_item($item_id);
-
-        if ($weight > 0 && $item) {
-            update_post_meta($order_id, '_dexpress_item_weight_' . $item_id, $weight);
-            $total_weight += ($weight * $item->get_quantity());
-            $updated_count++; // DODAJ OVO
-        } else {
-            delete_post_meta($order_id, '_dexpress_item_weight_' . $item_id);
+        if (!current_user_can('manage_woocommerce')) {
+            wp_send_json_error('Nemate dozvolu');
         }
-    }
 
-    wp_send_json_success([
-        'total_weight' => number_format($total_weight, 2) . ' kg',
-        'updated_count' => $updated_count, // DODAJ OVO
-        'message' => "Ažurirano {$updated_count} proizvoda" // IZMENI OVO
-    ]);
-}
+        $order_id = intval($_POST['order_id']);
+        $weights = $_POST['weights'];
+
+        if (!$order_id || !is_array($weights)) {
+            wp_send_json_error('Nevalidni podaci');
+        }
+
+        $total_weight = 0;
+        $order = wc_get_order($order_id);
+        $updated_count = 0; // DODAJ OVO
+
+        foreach ($weights as $item_id => $weight) {
+            $weight = floatval($weight);
+            $item = $order->get_item($item_id);
+
+            if ($weight > 0 && $item) {
+                update_post_meta($order_id, '_dexpress_item_weight_' . $item_id, $weight);
+                $total_weight += ($weight * $item->get_quantity());
+                $updated_count++; // DODAJ OVO
+            } else {
+                delete_post_meta($order_id, '_dexpress_item_weight_' . $item_id);
+            }
+        }
+
+        wp_send_json_success([
+            'total_weight' => number_format($total_weight, 2) . ' kg',
+            'updated_count' => $updated_count, // DODAJ OVO
+            'message' => "Ažurirano {$updated_count} proizvoda" // IZMENI OVO
+        ]);
+    }
 }

@@ -1,0 +1,406 @@
+{"timestamp":"2025-09-03 09:40:05","context":"api","level":"info","message":"[API DEBUG] Inicijalna vrednost telefona iz WC: +381603995503"}
+{"timestamp":"2025-09-03 09:40:05","context":"api","level":"info","message":"[API DEBUG] Koristi se sačuvani API format telefona: 381603995503"}
+{"timestamp":"2025-09-03 09:40:05","context":"api","level":"info","message":"[PACKAGE DEBUG] custom_content: \"\", content: \"2x Accessories, Hoodies\""}
+{"timestamp":"2025-09-03 09:40:05","context":"api","level":"info","message":"[PACKAGE DEBUG] package_content: \"2x Accessories, Hoodies\""}
+{"timestamp":"2025-09-03 09:40:05","context":"api","level":"info","message":"[API DEBUG] Finalni RCPhone za API: 381603995503"}
+{"timestamp":"2025-09-03 09:40:05","context":"api","level":"info","message":"[API VALIDATION] PackageList struktura validna. Paketi: 1"}
+{"timestamp":"2025-09-03 09:40:05","context":"api","level":"info","message":"[PAYMENT] Vrednost dexpress_payment_type iz opcija: 2"}
+[2025-09-03 09:40:05] [info] === D EXPRESS API DEBUG ===
+[2025-09-03 09:40:05] [info] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/addshipment
+[2025-09-03 09:40:05] [info] Metod: POST
+[2025-09-03 09:40:05] [info] Headers: {
+    "Authorization": "Basic ZTc3ODUzMGMtZmVlNi00OTJhLWI4YmUtNGRhMGZkODUxYmE4OjhpNjMxeDJLN3Y=",
+    "Content-Type": "application\/json",
+    "Accept": "application\/json"
+}
+[2025-09-03 09:40:05] [info] Authorization: [MASKED - 70 chars]
+[2025-09-03 09:40:05] [info] Request Body Size: 917 bytes
+[2025-09-03 09:40:05] [info] Podaci za API:
+{
+    "CClientID": "UK16967",
+    "CName": "Ilija Velemirov",
+    "CAddress": "Cara Dusana",
+    "CAddressNum": "106",
+    "CTownID": 802824,
+    "CCName": "Ilija Velemirov",
+    "CCPhone": "381603995503",
+    "PuClientID": "UK16967",
+    "PuName": "S7 Code NS",
+    "PuAddress": "Cara Dusana",
+    "PuAddressNum": "106",
+    "PuAddressDesc": "iza coska merkatora",
+    "PuTownID": 802824,
+    "PuCName": "Ilija Velemirov",
+    "PuCPhone": "381603995503",
+    "RName": "TEST bugarski",
+    "RAddress": "Gagarinova",
+    "RAddressNum": "54",
+    "RAddressDesc": "besplatna dostava",
+    "RTownID": 802824,
+    "RCName": "TEST bugarski",
+    "RCPhone": "381603995503",
+    "RClientID": "",
+    "Note": "",
+    "DlTypeID": 2,
+    "PaymentBy": 0,
+    "PaymentType": 2,
+    "Value": 1800,
+    "Content": "teeest1",
+    "Mass": 1000,
+    "ReferenceID": "1309-L1",
+    "ReturnDoc": 0,
+    "BuyOut": 51800,
+    "BuyOutFor": 0,
+    "BuyOutAccount": "170-0010364556000-77",
+    "SelfDropOff": 0,
+    "PackageList": [
+        {
+            "Code": "TT0000000023",
+            "ReferenceID": "1309_PKG_1",
+            "Mass": 1000,
+            "Content": "teeest1",
+            "DimX": null,
+            "DimY": null,
+            "DimZ": null,
+            "VMass": null
+        }
+    ]
+}
+[2025-09-03 09:40:05] [info] RClientID: '' (length: 0)
+[2025-09-03 09:40:05] [info] PuAddressDesc: 'iza coska merkatora' (length: 19)
+[2025-09-03 09:40:05] [info] --- SLANJE ZAHTEVA ---
+[2025-09-03 09:40:05] [info] === API RESPONSE DEBUG ===
+[2025-09-03 09:40:05] [info] HTTP Status: 200
+[2025-09-03 09:40:05] [info] Response Size: 6 bytes
+[2025-09-03 09:40:05] [info] API Odgovor (JSON):
+"TEST"
+[2025-09-03 09:40:05] [info] --- ZAVRŠEN ZAHTEV ---
+[2025-09-03 09:40:05] [info] 
+{"timestamp":"2025-09-03 09:40:06","context":"api","level":"info","message":"[API DEBUG] Inicijalna vrednost telefona iz WC: +381603995503"}
+{"timestamp":"2025-09-03 09:40:06","context":"api","level":"info","message":"[API DEBUG] Koristi se sačuvani API format telefona: 381603995503"}
+{"timestamp":"2025-09-03 09:40:06","context":"api","level":"info","message":"[PACKAGE DEBUG] custom_content: \"\", content: \"2x Accessories, Hoodies\""}
+{"timestamp":"2025-09-03 09:40:06","context":"api","level":"info","message":"[PACKAGE DEBUG] package_content: \"2x Accessories, Hoodies\""}
+{"timestamp":"2025-09-03 09:40:06","context":"api","level":"info","message":"[API DEBUG] Finalni RCPhone za API: 381603995503"}
+{"timestamp":"2025-09-03 09:40:06","context":"api","level":"info","message":"[API VALIDATION] PackageList struktura validna. Paketi: 1"}
+{"timestamp":"2025-09-03 09:40:06","context":"api","level":"info","message":"[PAYMENT] Vrednost dexpress_payment_type iz opcija: 2"}
+[2025-09-03 09:40:06] [info] === D EXPRESS API DEBUG ===
+[2025-09-03 09:40:06] [info] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/addshipment
+[2025-09-03 09:40:06] [info] Metod: POST
+[2025-09-03 09:40:06] [info] Headers: {
+    "Authorization": "Basic ZTc3ODUzMGMtZmVlNi00OTJhLWI4YmUtNGRhMGZkODUxYmE4OjhpNjMxeDJLN3Y=",
+    "Content-Type": "application\/json",
+    "Accept": "application\/json"
+}
+[2025-09-03 09:40:06] [info] Authorization: [MASKED - 70 chars]
+[2025-09-03 09:40:06] [info] Request Body Size: 907 bytes
+[2025-09-03 09:40:06] [info] Podaci za API:
+{
+    "CClientID": "UK16967",
+    "CName": "Ilija Velemirov",
+    "CAddress": "Nemanjina",
+    "CAddressNum": "12",
+    "CTownID": 802158,
+    "CCName": "Ilija Velemirov",
+    "CCPhone": "381691125544",
+    "PuClientID": "UK16967",
+    "PuName": "S7 Code KI",
+    "PuAddress": "Nemanjina",
+    "PuAddressNum": "12",
+    "PuAddressDesc": "kancelarija 38",
+    "PuTownID": 802158,
+    "PuCName": "Ilija Velemirov",
+    "PuCPhone": "381691125544",
+    "RName": "TEST bugarski",
+    "RAddress": "Gagarinova",
+    "RAddressNum": "54",
+    "RAddressDesc": "besplatna dostava",
+    "RTownID": 802824,
+    "RCName": "TEST bugarski",
+    "RCPhone": "381603995503",
+    "RClientID": "",
+    "Note": "",
+    "DlTypeID": 2,
+    "PaymentBy": 0,
+    "PaymentType": 2,
+    "Value": 4500,
+    "Content": "teeest2",
+    "Mass": 22000,
+    "ReferenceID": "1309-L2",
+    "ReturnDoc": 0,
+    "BuyOut": 4500,
+    "BuyOutFor": 0,
+    "BuyOutAccount": "170-0010364556000-77",
+    "SelfDropOff": 0,
+    "PackageList": [
+        {
+            "Code": "TT0000000024",
+            "ReferenceID": "1309_PKG_1",
+            "Mass": 22000,
+            "Content": "teeest2",
+            "DimX": null,
+            "DimY": null,
+            "DimZ": null,
+            "VMass": null
+        }
+    ]
+}
+[2025-09-03 09:40:06] [info] RClientID: '' (length: 0)
+[2025-09-03 09:40:06] [info] PuAddressDesc: 'kancelarija 38' (length: 14)
+[2025-09-03 09:40:06] [info] --- SLANJE ZAHTEVA ---
+[2025-09-03 09:40:07] [info] === API RESPONSE DEBUG ===
+[2025-09-03 09:40:07] [info] HTTP Status: 200
+[2025-09-03 09:40:07] [info] Response Size: 6 bytes
+[2025-09-03 09:40:07] [info] API Odgovor (JSON):
+"TEST"
+[2025-09-03 09:40:07] [info] --- ZAVRŠEN ZAHTEV ---
+[2025-09-03 09:40:07] [info] 
+{"timestamp":"2025-09-03 09:41:29","context":"api","level":"info","message":"[API DEBUG] Inicijalna vrednost telefona iz WC: +381603995503"}
+{"timestamp":"2025-09-03 09:41:29","context":"api","level":"info","message":"[API DEBUG] Koristi se sačuvani API format telefona: 381603995503"}
+{"timestamp":"2025-09-03 09:41:29","context":"api","level":"info","message":"[PACKAGE DEBUG] custom_content: \"\", content: \"107x Accessories\""}
+{"timestamp":"2025-09-03 09:43:25","context":"api","level":"info","message":"[API DEBUG] Inicijalna vrednost telefona iz WC: +381603995503"}
+{"timestamp":"2025-09-03 09:43:25","context":"api","level":"info","message":"[API DEBUG] Koristi se sačuvani API format telefona: 381603995503"}
+{"timestamp":"2025-09-03 09:43:25","context":"api","level":"info","message":"[PACKAGE DEBUG] custom_content: \"\", content: \"107x Accessories\""}
+{"timestamp":"2025-09-03 09:58:16","context":"api","level":"info","message":"[API DEBUG] Inicijalna vrednost telefona iz WC: +381603995503"}
+{"timestamp":"2025-09-03 09:58:16","context":"api","level":"info","message":"[API DEBUG] Koristi se sačuvani API format telefona: 381603995503"}
+{"timestamp":"2025-09-03 09:58:16","context":"api","level":"info","message":"[PACKAGE DEBUG] custom_content: \"\", content: \"Accessories\""}
+{"timestamp":"2025-09-03 09:58:16","context":"api","level":"info","message":"[PACKAGE DEBUG] package_content: \"Accessories\""}
+{"timestamp":"2025-09-03 09:58:16","context":"api","level":"info","message":"[API DEBUG] Finalni RCPhone za API: 381603995503"}
+{"timestamp":"2025-09-03 09:58:16","context":"api","level":"info","message":"[API VALIDATION] PackageList struktura validna. Paketi: 2"}
+{"timestamp":"2025-09-03 09:58:16","context":"api","level":"info","message":"[PAYMENT] Vrednost dexpress_payment_type iz opcija: 2"}
+[2025-09-03 09:58:16] [info] === D EXPRESS API DEBUG ===
+[2025-09-03 09:58:16] [info] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/addshipment
+[2025-09-03 09:58:16] [info] Metod: POST
+[2025-09-03 09:58:16] [info] Headers: {
+    "Authorization": "Basic ZTc3ODUzMGMtZmVlNi00OTJhLWI4YmUtNGRhMGZkODUxYmE4OjhpNjMxeDJLN3Y=",
+    "Content-Type": "application\/json",
+    "Accept": "application\/json"
+}
+[2025-09-03 09:58:16] [info] Authorization: [MASKED - 70 chars]
+[2025-09-03 09:58:16] [info] Request Body Size: 1085 bytes
+[2025-09-03 09:58:16] [info] Podaci za API:
+{
+    "CClientID": "UK16967",
+    "CName": "Ilija Velemirov",
+    "CAddress": "Cara Dusana",
+    "CAddressNum": "106",
+    "CTownID": 802824,
+    "CCName": "Ilija Velemirov",
+    "CCPhone": "381603995503",
+    "PuClientID": "UK16967",
+    "PuName": "S7 Code NS",
+    "PuAddress": "Cara Dusana",
+    "PuAddressNum": "106",
+    "PuAddressDesc": "iza coska merkatora",
+    "PuTownID": 802824,
+    "PuCName": "Ilija Velemirov",
+    "PuCPhone": "381603995503",
+    "RName": "TEST bugarski",
+    "RAddress": "Gagarinova",
+    "RAddressNum": "54",
+    "RAddressDesc": "besplatna dostava",
+    "RTownID": 802824,
+    "RCName": "TEST bugarski",
+    "RCPhone": "381603995503",
+    "RClientID": "",
+    "Note": "Additional information",
+    "DlTypeID": 2,
+    "PaymentBy": 0,
+    "PaymentType": 2,
+    "Value": 98000,
+    "Content": "Accessories",
+    "Mass": 23000,
+    "ReferenceID": "1315",
+    "ReturnDoc": 0,
+    "BuyOut": 148000,
+    "BuyOutFor": 0,
+    "BuyOutAccount": "170-0010364556000-77",
+    "SelfDropOff": 0,
+    "PackageList": [
+        {
+            "Code": "TT0000000025",
+            "ReferenceID": "1315_PKG_1",
+            "Mass": 11500,
+            "Content": "Accessories",
+            "DimX": null,
+            "DimY": null,
+            "DimZ": null,
+            "VMass": null
+        },
+        {
+            "Code": "TT0000000026",
+            "ReferenceID": "1315_PKG_2",
+            "Mass": 11500,
+            "Content": "Accessories",
+            "DimX": null,
+            "DimY": null,
+            "DimZ": null,
+            "VMass": null
+        }
+    ]
+}
+[2025-09-03 09:58:16] [info] RClientID: '' (length: 0)
+[2025-09-03 09:58:16] [info] PuAddressDesc: 'iza coska merkatora' (length: 19)
+[2025-09-03 09:58:16] [info] --- SLANJE ZAHTEVA ---
+[2025-09-03 09:58:16] [info] === API RESPONSE DEBUG ===
+[2025-09-03 09:58:16] [info] HTTP Status: 200
+[2025-09-03 09:58:16] [info] Response Size: 6 bytes
+[2025-09-03 09:58:16] [info] API Odgovor (JSON):
+"TEST"
+[2025-09-03 09:58:16] [info] --- ZAVRŠEN ZAHTEV ---
+[2025-09-03 09:58:16] [info] 
+{"timestamp":"2025-09-03 10:00:56","context":"api","level":"info","message":"[API DEBUG] Inicijalna vrednost telefona iz WC: +381603995503"}
+{"timestamp":"2025-09-03 10:00:56","context":"api","level":"info","message":"[API DEBUG] Koristi se sačuvani API format telefona: 381603995503"}
+{"timestamp":"2025-09-03 10:00:56","context":"api","level":"info","message":"[PACKAGE DEBUG] custom_content: \"\", content: \"2x Accessories, Hoodies\""}
+{"timestamp":"2025-09-03 10:00:56","context":"api","level":"info","message":"[PACKAGE DEBUG] package_content: \"2x Accessories, Hoodies\""}
+{"timestamp":"2025-09-03 10:00:56","context":"api","level":"info","message":"[API DEBUG] Finalni RCPhone za API: 381603995503"}
+{"timestamp":"2025-09-03 10:00:56","context":"api","level":"info","message":"[API VALIDATION] PackageList struktura validna. Paketi: 1"}
+{"timestamp":"2025-09-03 10:00:56","context":"api","level":"info","message":"[PAYMENT] Vrednost dexpress_payment_type iz opcija: 2"}
+[2025-09-03 10:00:56] [info] === D EXPRESS API DEBUG ===
+[2025-09-03 10:00:56] [info] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/addshipment
+[2025-09-03 10:00:56] [info] Metod: POST
+[2025-09-03 10:00:56] [info] Headers: {
+    "Authorization": "Basic ZTc3ODUzMGMtZmVlNi00OTJhLWI4YmUtNGRhMGZkODUxYmE4OjhpNjMxeDJLN3Y=",
+    "Content-Type": "application\/json",
+    "Accept": "application\/json"
+}
+[2025-09-03 10:00:56] [info] Authorization: [MASKED - 70 chars]
+[2025-09-03 10:00:56] [info] Request Body Size: 916 bytes
+[2025-09-03 10:00:56] [info] Podaci za API:
+{
+    "CClientID": "UK16967",
+    "CName": "Ilija Velemirov",
+    "CAddress": "Cara Dusana",
+    "CAddressNum": "106",
+    "CTownID": 802824,
+    "CCName": "Ilija Velemirov",
+    "CCPhone": "381603995503",
+    "PuClientID": "UK16967",
+    "PuName": "S7 Code NS",
+    "PuAddress": "Cara Dusana",
+    "PuAddressNum": "106",
+    "PuAddressDesc": "iza coska merkatora",
+    "PuTownID": 802824,
+    "PuCName": "Ilija Velemirov",
+    "PuCPhone": "381603995503",
+    "RName": "TEST bugarski",
+    "RAddress": "Nikole Francuskog",
+    "RAddressNum": "54",
+    "RAddressDesc": "besplatna dostava",
+    "RTownID": 802158,
+    "RCName": "TEST bugarski",
+    "RCPhone": "381603995503",
+    "RClientID": "",
+    "Note": "",
+    "DlTypeID": 2,
+    "PaymentBy": 0,
+    "PaymentType": 2,
+    "Value": 4500,
+    "Content": "asd1",
+    "Mass": 100,
+    "ReferenceID": "1316-L1",
+    "ReturnDoc": 0,
+    "BuyOut": 54500,
+    "BuyOutFor": 0,
+    "BuyOutAccount": "170-0010364556000-77",
+    "SelfDropOff": 0,
+    "PackageList": [
+        {
+            "Code": "TT0000000027",
+            "ReferenceID": "1316_PKG_1",
+            "Mass": 100,
+            "Content": "asd1",
+            "DimX": null,
+            "DimY": null,
+            "DimZ": null,
+            "VMass": null
+        }
+    ]
+}
+[2025-09-03 10:00:56] [info] RClientID: '' (length: 0)
+[2025-09-03 10:00:56] [info] PuAddressDesc: 'iza coska merkatora' (length: 19)
+[2025-09-03 10:00:56] [info] --- SLANJE ZAHTEVA ---
+[2025-09-03 10:00:56] [info] === API RESPONSE DEBUG ===
+[2025-09-03 10:00:56] [info] HTTP Status: 200
+[2025-09-03 10:00:56] [info] Response Size: 6 bytes
+[2025-09-03 10:00:56] [info] API Odgovor (JSON):
+"TEST"
+[2025-09-03 10:00:56] [info] --- ZAVRŠEN ZAHTEV ---
+[2025-09-03 10:00:56] [info] 
+{"timestamp":"2025-09-03 10:00:58","context":"api","level":"info","message":"[API DEBUG] Inicijalna vrednost telefona iz WC: +381603995503"}
+{"timestamp":"2025-09-03 10:00:58","context":"api","level":"info","message":"[API DEBUG] Koristi se sačuvani API format telefona: 381603995503"}
+{"timestamp":"2025-09-03 10:00:58","context":"api","level":"info","message":"[PACKAGE DEBUG] custom_content: \"\", content: \"2x Accessories, Hoodies\""}
+{"timestamp":"2025-09-03 10:00:58","context":"api","level":"info","message":"[PACKAGE DEBUG] package_content: \"2x Accessories, Hoodies\""}
+{"timestamp":"2025-09-03 10:00:58","context":"api","level":"info","message":"[API DEBUG] Finalni RCPhone za API: 381603995503"}
+{"timestamp":"2025-09-03 10:00:58","context":"api","level":"info","message":"[API VALIDATION] PackageList struktura validna. Paketi: 1"}
+{"timestamp":"2025-09-03 10:00:58","context":"api","level":"info","message":"[PAYMENT] Vrednost dexpress_payment_type iz opcija: 2"}
+[2025-09-03 10:00:58] [info] === D EXPRESS API DEBUG ===
+[2025-09-03 10:00:58] [info] API Zahtev: https://usersupport.dexpress.rs/ExternalApi/data/addshipment
+[2025-09-03 10:00:58] [info] Metod: POST
+[2025-09-03 10:00:58] [info] Headers: {
+    "Authorization": "Basic ZTc3ODUzMGMtZmVlNi00OTJhLWI4YmUtNGRhMGZkODUxYmE4OjhpNjMxeDJLN3Y=",
+    "Content-Type": "application\/json",
+    "Accept": "application\/json"
+}
+[2025-09-03 10:00:58] [info] Authorization: [MASKED - 70 chars]
+[2025-09-03 10:00:58] [info] Request Body Size: 946 bytes
+[2025-09-03 10:00:58] [info] Podaci za API:
+{
+    "CClientID": "UK16967",
+    "CName": "Ilija Velemirov",
+    "CAddress": "Nemanjina",
+    "CAddressNum": "12",
+    "CTownID": 802158,
+    "CCName": "Ilija Velemirov",
+    "CCPhone": "381691125544",
+    "PuClientID": "UK16967",
+    "PuName": "S7 Code KI",
+    "PuAddress": "Nemanjina",
+    "PuAddressNum": "12",
+    "PuAddressDesc": "kancelarija 38",
+    "PuTownID": 802158,
+    "PuCName": "Ilija Velemirov",
+    "PuCPhone": "381691125544",
+    "RName": "TEST bugarski",
+    "RAddress": "Nikole Francuskog",
+    "RAddressNum": "54",
+    "RAddressDesc": "besplatna dostava",
+    "RTownID": 802158,
+    "RCName": "TEST bugarski",
+    "RCPhone": "381603995503",
+    "RClientID": "",
+    "Note": "",
+    "DlTypeID": 2,
+    "PaymentBy": 0,
+    "PaymentType": 2,
+    "Value": 49000,
+    "Content": "2x Accessories, Hoodies",
+    "Mass": 1000,
+    "ReferenceID": "1316-L2",
+    "ReturnDoc": 0,
+    "BuyOut": 49000,
+    "BuyOutFor": 0,
+    "BuyOutAccount": "170-0010364556000-77",
+    "SelfDropOff": 0,
+    "PackageList": [
+        {
+            "Code": "TT0000000028",
+            "ReferenceID": "1316_PKG_1",
+            "Mass": 1000,
+            "Content": "2x Accessories, Hoodies",
+            "DimX": null,
+            "DimY": null,
+            "DimZ": null,
+            "VMass": null
+        }
+    ]
+}
+[2025-09-03 10:00:58] [info] RClientID: '' (length: 0)
+[2025-09-03 10:00:58] [info] PuAddressDesc: 'kancelarija 38' (length: 14)
+[2025-09-03 10:00:58] [info] --- SLANJE ZAHTEVA ---
+[2025-09-03 10:00:59] [info] === API RESPONSE DEBUG ===
+[2025-09-03 10:00:59] [info] HTTP Status: 200
+[2025-09-03 10:00:59] [info] Response Size: 6 bytes
+[2025-09-03 10:00:59] [info] API Odgovor (JSON):
+"TEST"
+[2025-09-03 10:00:59] [info] --- ZAVRŠEN ZAHTEV ---
+[2025-09-03 10:00:59] [info] 

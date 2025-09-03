@@ -1276,3 +1276,512 @@ form#dexpress-location-form {
     font-size: 11px;
     padding: 4px 8px;
 }
+
+
+/* Modern D Express Metabox Styles */
+
+/* ===== MAIN WORKFLOW CONTAINER ===== */
+.dexpress-workflow {
+    position: relative;
+}
+
+.dexpress-step {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.3s ease;
+}
+
+.dexpress-step-active {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* ===== STEP HEADERS ===== */
+.dexpress-step-header {
+    margin-bottom: 24px;
+    text-align: center;
+    position: relative;
+}
+
+.dexpress-step-header h3 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #1d2327;
+    margin: 0 0 8px 0;
+}
+
+.dexpress-step-header p {
+    color: #646970;
+    font-size: 14px;
+    margin: 0;
+}
+
+.dexpress-step-nav {
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+.dexpress-btn-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: transparent;
+    border: 1px solid #dcdcde;
+    border-radius: 6px;
+    color: #2271b1;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.dexpress-btn-back:hover {
+    background: #f6f7f7;
+    border-color: #2271b1;
+}
+
+/* ===== PACKAGE OPTIONS SELECTION ===== */
+.dexpress-package-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-top: 32px;
+}
+
+.dexpress-package-option {
+    background: #fff;
+    border: 2px solid #dcdcde;
+    border-radius: 12px;
+    padding: 32px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.dexpress-package-option:hover {
+    border-color: #2271b1;
+    box-shadow: 0 4px 20px rgba(34, 113, 177, 0.1);
+    transform: translateY(-2px);
+}
+
+.dexpress-package-option.selected {
+    border-color: #2271b1;
+    background: linear-gradient(135deg, #f0f6ff 0%, #e6f3ff 100%);
+}
+
+.dexpress-option-icon {
+    margin-bottom: 16px;
+    color: #646970;
+    transition: color 0.3s ease;
+}
+
+.dexpress-package-option:hover .dexpress-option-icon,
+.dexpress-package-option.selected .dexpress-option-icon {
+    color: #2271b1;
+}
+
+.dexpress-package-option h4 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1d2327;
+    margin: 0 0 8px 0;
+}
+
+.dexpress-package-option p {
+    color: #646970;
+    font-size: 14px;
+    margin: 0;
+}
+
+/* ===== CARDS ===== */
+.dexpress-card {
+    background: #fff;
+    border: 1px solid #dcdcde;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.dexpress-card-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #dcdcde;
+    background: #f9f9f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.dexpress-card-header h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1d2327;
+    margin: 0;
+}
+
+.dexpress-card-body {
+    padding: 20px;
+}
+
+/* ===== FORM ELEMENTS ===== */
+.dexpress-form-group {
+    margin-bottom: 16px;
+}
+
+.dexpress-form-group label {
+    display: block;
+    font-weight: 600;
+    color: #1d2327;
+    margin-bottom: 6px;
+    font-size: 14px;
+}
+
+.dexpress-input,
+.dexpress-select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #8c8f94;
+    border-radius: 4px;
+    font-size: 14px;
+    background: #fff;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.dexpress-input:focus,
+.dexpress-select:focus {
+    border-color: #2271b1;
+    box-shadow: 0 0 0 1px #2271b1;
+    outline: none;
+}
+
+.dexpress-form-help {
+    display: block;
+    color: #646970;
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+.dexpress-settings-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+/* ===== CHECKBOXES ===== */
+.dexpress-checkbox {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    margin-bottom: 8px;
+}
+
+.dexpress-checkbox input[type="checkbox"] {
+    opacity: 0;
+    position: absolute;
+}
+
+.dexpress-checkbox-mark {
+    width: 18px;
+    height: 18px;
+    border: 2px solid #8c8f94;
+    border-radius: 3px;
+    margin-right: 10px;
+    position: relative;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dexpress-checkbox input:checked + .dexpress-checkbox-mark {
+    background: #2271b1;
+    border-color: #2271b1;
+}
+
+.dexpress-checkbox input:checked + .dexpress-checkbox-mark::after {
+    content: '✓';
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+/* ===== BUTTONS ===== */
+.dexpress-btn-primary {
+    background: #2271b1;
+    color: #fff;
+    border: 1px solid #2271b1;
+    border-radius: 6px;
+    padding: 12px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.dexpress-btn-primary:hover {
+    background: #135e96;
+    border-color: #135e96;
+    color: #fff;
+}
+
+.dexpress-btn-secondary {
+    background: #f6f7f7;
+    color: #2271b1;
+    border: 1px solid #dcdcde;
+    border-radius: 6px;
+    padding: 12px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.dexpress-btn-secondary:hover {
+    background: #fff;
+    border-color: #2271b1;
+}
+
+.dexpress-btn-sm {
+    padding: 6px 12px;
+    font-size: 13px;
+}
+
+.dexpress-btn-lg {
+    padding: 16px 32px;
+    font-size: 16px;
+}
+
+/* ===== WEIGHT TABLE ===== */
+.dexpress-weight-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.dexpress-weight-table th {
+    padding: 12px 8px;
+    text-align: left;
+    font-weight: 600;
+    color: #1d2327;
+    border-bottom: 2px solid #dcdcde;
+    background: #f9f9f9;
+}
+
+.dexpress-weight-table td {
+    padding: 12px 8px;
+    border-bottom: 1px solid #f0f0f1;
+}
+
+.dexpress-product-info strong {
+    display: block;
+    color: #1d2327;
+}
+
+.dexpress-product-info small {
+    color: #646970;
+    font-size: 11px;
+}
+
+.dexpress-quantity {
+    background: #f0f6ff;
+    padding: 4px 8px;
+    border-radius: 4px;
+    color: #2271b1;
+    font-weight: 600;
+}
+
+.dexpress-weight-control {
+    position: relative;
+}
+
+.dexpress-total-row {
+    background: #f9f9f9;
+    border-top: 2px solid #dcdcde;
+}
+
+.dexpress-total-row td {
+    padding: 16px 8px;
+    font-weight: 600;
+    border-bottom: none;
+}
+
+.dexpress-weight-controls {
+    margin-top: 16px;
+    text-align: center;
+    padding: 16px;
+    background: #f6f7f7;
+    border-radius: 6px;
+}
+
+.dexpress-status-message {
+    margin-top: 8px;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+/* ===== STEP ACTIONS ===== */
+.dexpress-step-actions {
+    text-align: center;
+    margin-top: 32px;
+}
+
+/* ===== PACKAGE COUNTER ===== */
+.dexpress-package-counter {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.dexpress-package-counter input {
+    width: 60px;
+}
+
+/* ===== SPLITS CONTAINER ===== */
+.dexpress-splits-container {
+    display: grid;
+    gap: 20px;
+}
+
+.dexpress-split-form {
+    border: 1px solid #dcdcde;
+    border-radius: 8px;
+    padding: 20px;
+    background: #f9f9f9;
+}
+
+.dexpress-split-form .dexpress-card-header {
+    background: transparent;
+    border: none;
+    padding: 0 0 15px 0;
+}
+
+/* ===== EXISTING SHIPMENTS ===== */
+.dexpress-shipments-grid {
+    display: grid;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.dexpress-shipment-card {
+    background: #fff;
+    border: 1px solid #dcdcde;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.dexpress-shipment-info h4 {
+    margin: 0 0 4px 0;
+    color: #1d2327;
+    font-size: 16px;
+}
+
+.dexpress-shipment-info small {
+    color: #646970;
+    font-size: 12px;
+}
+
+.dexpress-status-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    background: #f0f6ff;
+    color: #2271b1;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.dexpress-packages-info {
+    margin-bottom: 12px;
+}
+
+.dexpress-package-codes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.dexpress-package-codes code {
+    background: #f6f7f7;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 11px;
+    color: #1d2327;
+}
+
+.dexpress-shipment-actions {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.dexpress-shipment-meta {
+    color: #646970;
+    font-size: 12px;
+}
+
+/* ===== RESPONSE MESSAGES ===== */
+.dexpress-response {
+    margin-top: 20px;
+}
+
+.dexpress-response .notice {
+    padding: 12px 16px;
+    border-radius: 6px;
+    border-left: 4px solid;
+    margin: 0;
+}
+
+.dexpress-response .notice-success {
+    background: #f0f8ff;
+    border-left-color: #00a32a;
+    color: #1d2327;
+}
+
+.dexpress-response .notice-error {
+    background: #fff5f5;
+    border-left-color: #d63638;
+    color: #1d2327;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 782px) {
+    .dexpress-package-options {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+    
+    .dexpress-package-option {
+        padding: 24px 20px;
+    }
+    
+    .dexpress-settings-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+    
+    .dexpress-step-nav {
+        position: static;
+        margin-bottom: 16px;
+    }
+    
+    .dexpress-step-header {
+        text-align: left;
+    }
+    
+    .dexpress-package-counter {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+}
