@@ -21,8 +21,20 @@
         normalizeInput: function (str) {
             return str
                 .toLowerCase()
-                .replace(/dj/g, "đ"); // dj → đ
-            // Ako želiš i više mapiranja (č → c, š → s), dodaćemo kasnije
+                .replace(/dj/g, "đ")
+                .replace(/nj/g, "nj")
+                .replace(/lj/g, "lj")
+                .replace(/dž/g, "dz")
+                .replace(/dz/g, "dž")
+
+                .replace(/č/g, "c")
+                .replace(/ć/g, "c")
+                .replace(/š/g, "s")
+                .replace(/ž/g, "z")
+
+                .replace(/\bc\b/g, "č")
+                .replace(/\bs\b/g, "š")
+                .replace(/\bz\b/g, "ž");
         },
         /**
          * Initialize the checkout functionality
@@ -180,7 +192,7 @@
          * Handle city search with smart caching
          */
         handleCitySearch: function (type, term, callback) {
-            // Priority 1: If we have prepared towns for selected street
+            // Priority 1: Gradovi za izabranu ulicu
             if (this.townsForStreet[type] && this.townsForStreet[type].length > 0) {
                 const filtered = this.townsForStreet[type].filter(town => {
                     const searchIn = (town.display_text || '').toLowerCase();
@@ -192,7 +204,7 @@
 
             if (!term || term.length < 1) return callback([]);
 
-            // Priority 2: Search all towns
+            // Priority 2: Pretraži sve gradove
             const cached = this.getCachedData('towns', term);
             if (cached) {
                 callback(cached);
@@ -202,7 +214,7 @@
         },
 
         /**
-         * Handle street selection
+         * Handle street selection - FLEKSIBILNA VERZIJA
          */
         handleStreetSelect: function (type, item) {
             if (!item) return false;
@@ -220,7 +232,10 @@
             this.selectedStreet[type] = item.value || '';
             this.clearFieldError($street);
 
-            // Load towns for street if city not selected
+            // DODAJ OVO - očisti cache gradova kada se bira nova ulica
+            this.clearTownCacheForStreet(type);
+
+            // Loadaj gradove za izabranu ulicu (samo ako grad nije već izabran)
             if (!this.selectedTown[type] || !this.selectedTown[type].id) {
                 if (item.value) {
                     this.loadTownsForStreet(type, item.value);
@@ -230,9 +245,8 @@
             this.updateStandardAddressField(type);
             return false;
         },
-
         /**
-         * Handle city selection
+         * Handle city selection - POBOLJŠANA VERZIJA
          */
         handleCitySelect: function (type, item) {
             if (!item) return false;
@@ -249,19 +263,13 @@
             $city.data('validSelection', true);
             this.clearFieldError($city);
 
-            const oldTownId = this.selectedTown[type] ? this.selectedTown[type].id : null;
-            const newTownId = item.town_id || '';
-
             this.selectedTown[type] = {
-                id: newTownId,
+                id: item.town_id || '',
                 name: cleanCityName
             };
 
-            // If city changed, clear street and update autocomplete
-            if (oldTownId && oldTownId !== newTownId) {
-                this.clearStreetField(type);
-                this.updateStreetAutocomplete(type);
-            }
+            // Ažuriraj street autocomplete da pretraži samo ulice u ovom gradu
+            this.updateStreetAutocomplete(type);
 
             this.updateStandardAddressField(type);
             return false;
@@ -270,6 +278,9 @@
         /**
          * Handle street input changes
          */
+        /**
+  * Handle street input - DODAJ CLEAR CACHE
+  */
         handleStreetInput: function (type, $field) {
             this.clearFieldError($field);
             const $streetId = $('#' + type + '_street_id');
@@ -277,29 +288,31 @@
             if (!$field.val()) {
                 $streetId.val('');
                 this.selectedStreet[type] = null;
-                this.resetCityAutocomplete(type);
+                // DODAJ OVO - očisti cache kad se briše ulica
+                this.clearTownCacheForStreet(type);
                 return;
+            }
+
+            // Ako se menja ulica, očisti cache
+            if (this.selectedStreet[type] && this.selectedStreet[type] !== $field.val()) {
+                this.clearTownCacheForStreet(type);
             }
 
             $streetId.val('');
             this.selectedStreet[type] = null;
 
-            // NOVO: Pokaži loader dok kuca
             clearTimeout(this.inputTimeout);
             this.inputTimeout = setTimeout(() => {
                 if ($field.val().length >= 1 && $field.is(':focus')) {
-                    this.showLoading($field, 'streets', 'Pretražujem...');
+                    this.showLoading($field);
                 }
             }, 200);
         },
-
-
         /**
          * Handle city input changes
          */
         handleCityInput: function (type, $field) {
-            this.unlockCityField(type);
-
+      
             const $cityId = $('#' + type + '_city_id');
             const $postcode = $('#' + type + '_postcode');
             const currentVal = $field.val();
@@ -395,34 +408,7 @@
             });
         },
 
-        /**
-         * Force unlock city field if it gets "locked"
-         */
-        unlockCityField: function (type) {
-            const $city = $('#' + type + '_city');
 
-            // Remove all blocking classes and attributes
-            $city.removeClass('disabled readonly')
-                .prop('disabled', false)
-                .attr('readonly', false)
-                .css({
-                    'pointer-events': 'auto',
-                    'cursor': 'text',
-                    'user-select': 'text',
-                    'background-color': '',
-                    'opacity': '1'
-                });
-
-            // Re-enable autocomplete
-            if ($city.hasClass('ui-autocomplete-input')) {
-                $city.autocomplete('enable');
-            }
-
-            // Clear any data that might block input
-            $city.removeData('locked blocked disabled');
-
-            console.log('City field unlocked:', type);
-        },
         /**
          * Handle phone input with real-time validation
          */
@@ -517,7 +503,7 @@
                 const serbianPhonePattern = /^381([1-3][0-9]{6,7}|[456][0-9]{7,8}|7[0-9]{7,8}|60[0-9]{6,7}|61[0-9]{6,7}|62[0-9]{6,7}|63[0-9]{6,7}|64[0-9]{6,7}|65[0-9]{6,7}|66[0-9]{6,7}|67[0-9]{6,7}|68[0-9]{6,7}|69[0-9]{6,7})$/;
 
                 if (!serbianPhonePattern.test(apiFormat)) {
-                    this.showPhoneError('Neispravan srpski broj. Primer: +381 60 123 4567');
+                    this.showPhoneError('Neispravan broj. Primer: +381601234567');
                     $phone.addClass('dexpress-error woocommerce-invalid');
                     $('#dexpress_phone_api').remove();
                     return false;
@@ -553,6 +539,14 @@
             const type = $('#ship-to-different-address-checkbox').is(':checked') ? 'shipping' : 'billing';
             let isValid = true;
             const errorMessages = [];
+            if (!this.forceDropdownSelection(type, 'street')) {
+                isValid = false;
+                errorMessages.push('<strong>Ulica</strong> mora biti izabrana iz padajućeg menija.');
+            }
+            if (!this.forceDropdownSelection(type, 'city')) {
+                isValid = false;
+                errorMessages.push('<strong>Grad</strong> mora biti izabran iz padajuće liste.');
+            }
 
             // Validate street
             if (!this.validateStreetField(type)) {
@@ -688,7 +682,7 @@
             // Proveri cache PRVO
             const cached = this.getCachedData('streets', term);
             if (cached) {
-                console.log('Using cached streets for:', term);
+
                 callback(cached);
                 return;
             }
@@ -697,7 +691,7 @@
             const $streetFields = $('#billing_street, #shipping_street');
             this.showLoading($streetFields);
 
-            console.log('Starting AJAX search for streets:', term);
+
 
             this.activeRequests['streets_' + term] = $.get(dexpressCheckout.ajaxUrl, {
                 action: 'dexpress_search_streets',
@@ -705,14 +699,14 @@
                 nonce: dexpressCheckout.nonce
             })
                 .done(data => {
-                    console.log('Streets search completed for:', term, 'Found:', data.length);
+
                     this.hideLoading($streetFields);
                     this.setCachedData('streets', term, data || []);
                     callback(data || []);
                     delete this.activeRequests['streets_' + term];
                 })
                 .fail(xhr => {
-                    console.log('Streets search failed:', xhr.statusText);
+
                     this.hideLoading($streetFields);
                     if (xhr.statusText !== 'abort') callback([]);
                     delete this.activeRequests['streets_' + term];
@@ -730,7 +724,7 @@
             // Proveri cache PRVO
             const cached = this.getCachedData('towns', term);
             if (cached) {
-                console.log('Using cached towns for:', term);
+
                 callback(this.formatTownsData(cached));
                 return;
             }
@@ -739,7 +733,7 @@
             const $cityFields = $('#billing_city, #shipping_city');
             this.showLoading($cityFields);
 
-            console.log('Starting AJAX search for towns:', term);
+
 
             this.activeRequests['towns_' + term] = $.get(dexpressCheckout.ajaxUrl, {
                 action: 'dexpress_search_all_towns',
@@ -747,7 +741,7 @@
                 nonce: dexpressCheckout.nonce
             })
                 .done(data => {
-                    console.log('Towns search completed for:', term, 'Found:', data.length);
+
                     this.hideLoading($cityFields);
                     const formattedData = this.formatTownsData(data || []);
                     this.setCachedData('towns', term, formattedData);
@@ -755,7 +749,7 @@
                     delete this.activeRequests['towns_' + term];
                 })
                 .fail(xhr => {
-                    console.log('Towns search failed:', xhr.statusText);
+
                     this.hideLoading($cityFields);
                     if (xhr.statusText !== 'abort') callback([]);
                     delete this.activeRequests['towns_' + term];
@@ -812,6 +806,8 @@
             const loadKey = type + '_' + streetName;
             if (this.loadingTowns[loadKey]) return;
 
+
+
             this.loadingTowns[loadKey] = true;
 
             $.post(dexpressCheckout.ajaxUrl, {
@@ -820,12 +816,17 @@
                 nonce: dexpressCheckout.nonce
             })
                 .done(response => {
+
+
                     if (response && response.success && response.data && response.data.towns) {
                         const formattedTowns = this.formatTownsData(response.data.towns);
+
+                        // ISPRAVKA - postavi fresh podatke
                         this.townsForStreet[type] = formattedTowns;
                         this.updateCityAutocomplete(type);
 
-                        // Auto-open dropdown if city field is focused
+
+
                         const $city = $('#' + type + '_city');
                         if ($city.is(':focus')) {
                             setTimeout(() => {
@@ -837,6 +838,7 @@
                     delete this.loadingTowns[loadKey];
                 })
                 .fail(() => {
+
                     delete this.loadingTowns[loadKey];
                 });
         },
@@ -919,17 +921,6 @@
             });
         },
 
-        /**
-         * Reset city autocomplete to search all towns
-         */
-        resetCityAutocomplete: function (type) {
-            if (!this.selectedTown[type] || !this.selectedTown[type].id) {
-                if (this.townsForStreet[type]) {
-                    this.townsForStreet[type] = null;
-                }
-                this.updateCityAutocomplete(type);
-            }
-        },
 
         // ========== UI HELPER METHODS ==========
 
@@ -1041,13 +1032,39 @@
             const $street = $('#' + type + '_street');
             const $streetId = $('#' + type + '_street_id');
 
+            // ISPRAVKA - postavi custom ulicu pravilno
             $street.val(streetName);
             $streetId.val('custom_' + streetName);
-            this.selectedStreet[type] = streetName;
+            this.selectedStreet[type] = streetName; // POSTAVI SELECTED STREET!
             this.clearFieldError($street);
+
+            // Očisti cache
+            this.clearTownCacheForStreet(type);
+
+            // Za custom ulicu - omogući pretragu svih gradova
+            this.townsForStreet[type] = null;
+
+            const $city = $('#' + type + '_city');
+            if (!this.selectedTown[type] || !this.selectedTown[type].id) {
+            }
+
+
             this.updateStandardAddressField(type);
         },
 
+        /**
+         * NOVA METODA - čisti cache gradova za ulicu
+         */
+        clearTownCacheForStreet: function (type) {
+            this.townsForStreet[type] = null;
+
+            // Jednostavnije čišćenje cache-a
+            Object.keys(this.cache).forEach(key => {
+                if (key.startsWith('towns_for_street_' + type)) {
+                    delete this.cache[key];
+                }
+            });
+        },
         /**
          * Render street autocomplete item
          */
@@ -1262,6 +1279,21 @@
             $(document).on('change', 'input.shipping_method', () => this.updatePhoneRequirement());
         },
 
+        /**
+         * Validation - dodaj missing forceDropdownSelection metodu
+         */
+        forceDropdownSelection: function (type, fieldType) {
+            const $field = $('#' + type + '_' + fieldType);
+            const $idField = $('#' + type + '_' + fieldType + '_id');
+
+            // Ako ima vrednost ali nema ID, nije izabrano iz dropdown-a
+            if ($field.val() && !$idField.val()) {
+                this.showFieldError($field, 'Morate izabrati iz padajuće liste');
+                return false;
+            }
+
+            return true;
+        },
         /**
          * Check if D Express shipping is selected
          */
