@@ -96,7 +96,7 @@
         /**
          * Initialize modern workflow
          */
-        init: function() {
+        init: function () {
             console.log('[DExpress] ModernWorkflow initializing');
             this.bindEvents();
             this.populateInitialContent();
@@ -105,18 +105,18 @@
         /**
          * Bind workflow events
          */
-        bindEvents: function() {
+        bindEvents: function () {
             $(document)
                 // Package type selection
                 .on('click', '#dexpress-select-single', this.selectSingle.bind(this))
                 .on('click', '#dexpress-select-multiple', this.selectMultiple.bind(this))
-                
+
                 // Navigation
                 .on('click', '#dexpress-back-to-selection', this.backToSelection.bind(this))
-                
+
                 // Create shipment
                 .on('click', '#dexpress-create-shipment', this.createShipment.bind(this))
-                
+
                 // Auto-populate content when single mode
                 .on('change', 'select[name="dexpress_sender_location_id"]', this.updateSingleContent.bind(this));
         },
@@ -124,10 +124,10 @@
         /**
          * Select single package option
          */
-        selectSingle: function(e) {
+        selectSingle: function (e) {
             e.preventDefault();
             console.log('[DExpress] Selected single package');
-            
+
             this.selectedPackageType = 'single';
             this.updatePackageSelection();
             this.goToStep(2);
@@ -137,10 +137,10 @@
         /**
          * Select multiple packages option
          */
-        selectMultiple: function(e) {
+        selectMultiple: function (e) {
             e.preventDefault();
             console.log('[DExpress] Selected multiple packages');
-            
+
             this.selectedPackageType = 'multiple';
             this.updatePackageSelection();
             this.goToStep(2);
@@ -150,9 +150,9 @@
         /**
          * Update visual selection of package type
          */
-        updatePackageSelection: function() {
+        updatePackageSelection: function () {
             $('.dexpress-package-option').removeClass('selected');
-            
+
             if (this.selectedPackageType === 'single') {
                 $('#dexpress-select-single').addClass('selected');
             } else if (this.selectedPackageType === 'multiple') {
@@ -163,17 +163,17 @@
         /**
          * Go to specific step
          */
-        goToStep: function(stepNumber) {
+        goToStep: function (stepNumber) {
             console.log(`[DExpress] Moving to step ${stepNumber}`);
-            
+
             // Hide all steps
             $('.dexpress-step').removeClass('dexpress-step-active').hide();
-            
+
             // Show target step with animation
             setTimeout(() => {
                 $(`#dexpress-step-${this.getStepName(stepNumber)}`).show().addClass('dexpress-step-active');
             }, 150);
-            
+
             this.currentStep = stepNumber;
             this.updateStepHeader();
         },
@@ -181,7 +181,7 @@
         /**
          * Get step name by number
          */
-        getStepName: function(stepNumber) {
+        getStepName: function (stepNumber) {
             switch (stepNumber) {
                 case 1: return 'selection';
                 case 2: return 'config';
@@ -192,18 +192,18 @@
         /**
          * Update step header based on selection
          */
-        updateStepHeader: function() {
+        updateStepHeader: function () {
             if (this.currentStep === 2) {
-                const title = this.selectedPackageType === 'single' 
+                const title = this.selectedPackageType === 'single'
                     ? 'Konfiguracija jednog paketa'
                     : 'Konfiguracija više paketa';
-                    
+
                 $('#dexpress-config-title').text(title);
-                
+
                 const buttonText = this.selectedPackageType === 'single'
                     ? 'Kreiraj paket'
                     : 'Kreiraj sve pakete';
-                    
+
                 $('#dexpress-create-text').text(buttonText);
             }
         },
@@ -211,10 +211,10 @@
         /**
          * Back to package selection
          */
-        backToSelection: function(e) {
+        backToSelection: function (e) {
             e.preventDefault();
             console.log('[DExpress] Going back to selection');
-            
+
             this.selectedPackageType = null;
             this.updatePackageSelection();
             this.goToStep(1);
@@ -224,10 +224,10 @@
         /**
          * Show single package configuration
          */
-        showSingleConfig: function() {
+        showSingleConfig: function () {
             $('#dexpress-single-config').show();
             $('#dexpress-multiple-config').hide();
-            
+
             // Populate content immediately
             this.updateSingleContent();
         },
@@ -235,7 +235,7 @@
         /**
          * Show multiple packages configuration
          */
-        showMultipleConfig: function() {
+        showMultipleConfig: function () {
             $('#dexpress-single-config').hide();
             $('#dexpress-multiple-config').show();
         },
@@ -243,7 +243,7 @@
         /**
          * Hide both configurations
          */
-        hideBothConfigs: function() {
+        hideBothConfigs: function () {
             $('#dexpress-single-config').hide();
             $('#dexpress-multiple-config').hide();
         },
@@ -251,10 +251,10 @@
         /**
          * Create shipment based on selected type
          */
-        createShipment: function(e) {
+        createShipment: function (e) {
             e.preventDefault();
             console.log('[DExpress] Creating shipment, type:', this.selectedPackageType);
-            
+
             if (DExpressMetabox.state.isProcessing) {
                 console.log('[DExpress] Already processing');
                 return;
@@ -273,7 +273,7 @@
         /**
          * Create single shipment
          */
-        createSingleShipment: function() {
+        createSingleShipment: function () {
             const formData = {
                 order_id: DExpressMetabox.state.orderId,
                 sender_location_id: $('select[name="dexpress_sender_location_id"]').val(),
@@ -292,9 +292,9 @@
         /**
          * Create multiple shipments
          */
-        createMultipleShipments: function() {
+        createMultipleShipments: function () {
             const splits = SplitPackageManager.collectSplitData();
-            
+
             if (splits.length === 0) {
                 alert('Morate definisati barem jedan paket!');
                 return;
@@ -311,7 +311,7 @@
         /**
          * Validate shipment data
          */
-        validateShipmentData: function(data) {
+        validateShipmentData: function (data) {
             if (!data.sender_location_id) {
                 alert('Morate izabrati lokaciju pošiljaoca!');
                 $('select[name="dexpress_sender_location_id"]').focus();
@@ -323,9 +323,9 @@
         /**
          * Send shipment request
          */
-        sendShipmentRequest: function(action, data) {
+        sendShipmentRequest: function (action, data) {
             DExpressMetabox.state.isProcessing = true;
-            
+
             // Update button state
             $('#dexpress-create-shipment')
                 .prop('disabled', true)
@@ -334,7 +334,7 @@
             data.action = action;
             data.nonce = DExpressMetabox.config.nonces.admin;
 
-            console.log('[DExpress] Sending shipment request:', {action, data});
+            console.log('[DExpress] Sending shipment request:', { action, data });
 
             $.ajax({
                 url: DExpressMetabox.config.ajaxUrl,
@@ -342,7 +342,7 @@
                 data: data,
                 success: (response) => {
                     console.log('[DExpress] Shipment response:', response);
-                    
+
                     if (response.success) {
                         UIManager.showSuccess(response.data.message);
                         // Reload page after delay to show new shipments
@@ -352,12 +352,12 @@
                     }
                 },
                 error: (xhr, status, error) => {
-                    console.error('[DExpress] Shipment error:', {xhr, status, error});
+                    console.error('[DExpress] Shipment error:', { xhr, status, error });
                     UIManager.showError('Greška u komunikaciji sa serverom');
                 },
                 complete: () => {
                     DExpressMetabox.state.isProcessing = false;
-                    
+
                     // Reset button state
                     $('#dexpress-create-shipment')
                         .prop('disabled', false)
@@ -369,12 +369,12 @@
         /**
          * Update single package content automatically
          */
-        updateSingleContent: function() {
+        updateSingleContent: function () {
             if (this.selectedPackageType !== 'single') return;
-            
+
             // Use the helper function to generate content
             const orderId = DExpressMetabox.state.orderId;
-            
+
             $.ajax({
                 url: DExpressMetabox.config.ajaxUrl,
                 type: 'POST',
@@ -397,10 +397,10 @@
         /**
          * Populate initial content on page load
          */
-        populateInitialContent: function() {
+        populateInitialContent: function () {
             // This will be called when the page loads to set the default content
             const orderId = DExpressMetabox.state.orderId;
-            
+
             $.ajax({
                 url: DExpressMetabox.config.ajaxUrl,
                 type: 'POST',
@@ -714,31 +714,26 @@
             DExpressMetabox.elements.responseDiv.html('');
         }
     };
-
     // Label Management Module
     const LabelManager = {
         bind: function () {
-            console.log('[DExpress] LabelManager binding events');
-
-            $(document)
-                .on('click', '.dexpress-get-single-label', this.downloadSingleLabel.bind(this))
-                .on('click', '.dexpress-bulk-download-labels', this.downloadBulkLabels.bind(this));
-        },
-
-        downloadSingleLabel: function (e) {
-            e.preventDefault();
-            const shipmentId = $(e.currentTarget).data('shipment-id');
-            const nonce = DExpressMetabox.config.nonces?.downloadLabel;
-            const url = `${DExpressMetabox.config.ajaxUrl}?action=dexpress_download_label&shipment_id=${shipmentId}&nonce=${nonce}`;
-            window.open(url, '_blank');
+            $(document).on('click', '.dexpress-bulk-download-labels', this.downloadBulkLabels.bind(this));
         },
 
         downloadBulkLabels: function (e) {
             e.preventDefault();
             const shipmentIds = $(e.currentTarget).data('shipment-ids');
-            const nonce = DExpressMetabox.config.nonces?.bulkPrint;
-            const url = `${DExpressMetabox.config.ajaxUrl}?action=dexpress_bulk_print_labels&shipment_ids=${shipmentIds}&_wpnonce=${nonce}`;
-            window.open(url, '_blank');
+
+            $.post(DExpressMetabox.config.ajaxUrl, {
+                action: 'dexpress_get_fresh_nonce',
+                nonce: DExpressMetabox.config.nonces.admin
+            }, function (response) {
+                if (response.success) {
+                    const freshNonce = response.data.nonce;
+                    const url = `${DExpressMetabox.config.ajaxUrl}?action=dexpress_bulk_print_labels&shipment_ids=${shipmentIds}&_wpnonce=${freshNonce}`;
+                    window.open(url, '_blank');
+                }
+            });
         }
     };
 
@@ -1125,7 +1120,7 @@
 
             // Initialize main controller
             DExpressMetabox.init();
-            
+
             // Initialize modern workflow
             ModernWorkflow.init();
 

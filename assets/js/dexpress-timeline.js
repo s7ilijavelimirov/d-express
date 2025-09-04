@@ -1,7 +1,7 @@
 jQuery(document).ready(function ($) {
     'use strict';
 
-    // Refresh status functionality
+    // Refresh status functionality - SAMO OVO OSTAVI
     $('.dexpress-refresh-status').on('click', function (e) {
         e.preventDefault();
 
@@ -42,35 +42,6 @@ jQuery(document).ready(function ($) {
                 showNotification('error', 'Greška u komunikaciji sa serverom');
             }
         });
-    });
-
-    // Label download handlers
-    $('.dexpress-get-single-label').on('click', function (e) {
-        e.preventDefault();
-        var shipmentId = $(this).data('shipment-id');
-        var nonce = 'f326d5e081';
-
-        if (!shipmentId) {
-            alert('Greška: Nije definisan ID pošiljke');
-            return;
-        }
-
-        var url = ajaxurl + '?action=dexpress_download_label&shipment_id=' + shipmentId + '&nonce=' + nonce;
-        window.open(url, '_blank');
-    });
-
-    $('.dexpress-bulk-download-labels').on('click', function (e) {
-        e.preventDefault();
-        var shipmentIds = $(this).data('shipment-ids');
-        var nonce = 'fd0aa7aa93';
-
-        if (!shipmentIds) {
-            alert('Greška: Nisu definisani ID-jevi pošiljki');
-            return;
-        }
-
-        var url = ajaxurl + '?action=dexpress_bulk_print_labels&shipment_ids=' + shipmentIds + '&_wpnonce=' + nonce;
-        window.open(url, '_blank');
     });
 
     // Spinner animation

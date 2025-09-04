@@ -57,7 +57,10 @@ class D_Express_Admin_Ajax
         add_action('wp_ajax_dexpress_save_custom_weights', array($this, 'ajax_save_custom_weights'));
 
         add_action('wp_ajax_dexpress_generate_single_content', array($this, 'ajax_generate_single_content'));
+
+        add_action('wp_ajax_dexpress_get_fresh_nonce', array($this, 'ajax_get_fresh_nonce'));
     }
+
     public function ajax_generate_single_content()
     {
         check_ajax_referer('dexpress_admin_nonce', 'nonce');
@@ -404,11 +407,10 @@ class D_Express_Admin_Ajax
             wp_send_json_error(array('message' => __('Pošiljka nije pronađena.', 'd-express-woo')));
         }
 
-        // Kreiranje URL-a za download
         $download_url = admin_url('admin-ajax.php') . '?' . http_build_query(array(
             'action' => 'dexpress_download_label',
             'shipment_id' => $shipment_id,
-            'nonce' => wp_create_nonce('dexpress-download-label')  // ← ISPRAVKA!
+            'nonce' => wp_create_nonce('dexpress_admin_nonce')  // ← KORISTITI ISTI NONCE
         ));
 
         wp_send_json_success(array(
@@ -1094,5 +1096,10 @@ class D_Express_Admin_Ajax
             'updated_count' => $updated_count, // DODAJ OVO
             'message' => "Ažurirano {$updated_count} proizvoda" // IZMENI OVO
         ]);
+    }
+    public function ajax_get_fresh_nonce()
+    {
+        check_ajax_referer('dexpress_admin_nonce', 'nonce');
+        wp_send_json_success(['nonce' => wp_create_nonce('dexpress-bulk-print')]);
     }
 }

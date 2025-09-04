@@ -332,7 +332,6 @@ class D_Express_Label_Generator
      */
     public function ajax_bulk_print_labels()
     {
-        // Provera nonce-a
         if (!isset($_REQUEST['_wpnonce']) || !wp_verify_nonce($_REQUEST['_wpnonce'], 'dexpress-bulk-print')) {
             wp_die(__('Sigurnosna provera nije uspela.', 'd-express-woo'));
         }
@@ -855,9 +854,23 @@ class D_Express_Label_Generator
      */
     public function ajax_download_label()
     {
-        // Provera nonce-a
-        if (!isset($_GET['nonce']) || !wp_verify_nonce($_GET['nonce'], 'dexpress-download-label')) {
-            wp_die(__('Sigurnosna provera nije uspela.', 'd-express-woo'));
+        $nonce = $_GET['nonce'] ?? '';
+        $valid_nonces = [
+            'dexpress_admin_nonce',
+            'dexpress-bulk-print',
+            'dexpress-download-label'
+        ];
+
+        $nonce_valid = false;
+        foreach ($valid_nonces as $nonce_name) {
+            if (wp_verify_nonce($nonce, $nonce_name)) {
+                $nonce_valid = true;
+                break;
+            }
+        }
+
+        if (!$nonce_valid || !current_user_can('manage_woocommerce')) {
+            wp_die(__('Sigurnosna provera nije uspela1.', 'd-express-woo'));
         }
 
         // Provera dozvola

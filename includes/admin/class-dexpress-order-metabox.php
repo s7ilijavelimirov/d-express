@@ -127,28 +127,20 @@ class D_Express_Order_Metabox
                         <div class="dexpress-package-options">
                             <div class="dexpress-package-option" id="dexpress-select-single">
                                 <div class="dexpress-option-icon">
-                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
-                                        <polyline points="7.5,4.21 12,6.81 16.5,4.21" />
-                                        <polyline points="7.5,19.79 7.5,14.6 3,12" />
-                                        <polyline points="21,12 16.5,14.6 16.5,19.79" />
-                                    </svg>
+                                    <?php $icon_url = DEXPRESS_WOO_PLUGIN_URL . 'assets/images/package.svg'; ?>
+                                    <img src="<?php echo esc_url($icon_url); ?>">
                                 </div>
                                 <h4>Jedan paket</h4>
-                                <p>Sve stavke u jednom paketu</p>
+                                <p>Svi artikli jednom paketu</p>
                             </div>
 
                             <div class="dexpress-package-option" id="dexpress-select-multiple">
                                 <div class="dexpress-option-icon">
-                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <rect x="3" y="3" width="7" height="7" />
-                                        <rect x="14" y="3" width="7" height="7" />
-                                        <rect x="14" y="14" width="7" height="7" />
-                                        <rect x="3" y="14" width="7" height="7" />
-                                    </svg>
+                                    <?php $icon_url = DEXPRESS_WOO_PLUGIN_URL . 'assets/images/packages.svg'; ?>
+                                    <img src="<?php echo esc_url($icon_url); ?>">
                                 </div>
                                 <h4>Više paketa</h4>
-                                <p>Podelite stavke u različite pakete</p>
+                                <p>Podelite artikle u različite pakete <br>i sa vise adresa</p>
                             </div>
                         </div>
                     </div>
@@ -183,7 +175,7 @@ class D_Express_Order_Metabox
                         <!-- Location & Settings -->
                         <div class="dexpress-card">
                             <div class="dexpress-card-header">
-                                <h4>Lokacija i opcije</h4>
+                                <h4>Magacin i opcije</h4>
                             </div>
                             <div class="dexpress-card-body">
                                 <?php $this->render_settings_form_modern($order, $locations, $selected_location_id, $is_dispenser); ?>
@@ -411,8 +403,8 @@ class D_Express_Order_Metabox
 
             <div class="dexpress-shipment-actions">
                 <?php if (count($shipments) === 1): ?>
-                    <button type="button" class="dexpress-btn-primary dexpress-get-single-label"
-                        data-shipment-id="<?php echo esc_attr($shipments[0]->id); ?>">
+                    <button type="button" class="dexpress-btn-primary dexpress-bulk-download-labels"
+                        data-shipment-ids="<?php echo esc_attr($shipment->id); ?>">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="6,9 6,2 18,2 18,9" />
                             <path d="M6,18H4a2,2,0,0,1-2-2V11a2,2,0,0,1,2-2H20a2,2,0,0,1,2,2v5a2,2,0,0,1-2,2H18" />
