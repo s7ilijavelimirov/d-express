@@ -1030,7 +1030,8 @@ class D_Express_Admin_Ajax
         }
     }
     /**
-     * AJAX akcija za označavanje pošiljke kao štampane
+     * POPRAVKA: AJAX akcija za označavanje kao štampano
+     * Dodaj ovu izmenu u ajax_mark_printed metodu u class-dexpress-admin-ajax.php
      */
     public function ajax_mark_printed()
     {
@@ -1038,22 +1039,49 @@ class D_Express_Admin_Ajax
 
         if (!current_user_can('manage_woocommerce')) {
             wp_send_json_error('Nemate dozvolu za ovu akciju');
+            return;
         }
 
-        $shipment_id = intval($_POST['shipment_id']);
         global $wpdb;
 
-        $shipment = $wpdb->get_row($wpdb->prepare(
-            "SELECT order_id FROM {$wpdb->prefix}dexpress_shipments WHERE id = %d",
-            $shipment_id
-        ));
+        // Podrška za oba: shipment_id i order_id
+        if (isset($_POST['order_id'])) {
+            // Nova logika za order-based view
+            $order_id = intval($_POST['order_id']);
 
-        if ($shipment) {
-            update_post_meta($shipment->order_id, '_dexpress_label_printed', 'yes');
-            update_post_meta($shipment->order_id, '_dexpress_label_printed_date', current_time('mysql'));
-            wp_send_json_success('Pošiljka je označena kao štampana');
+            if (!$order_id) {
+                wp_send_json_error('Nevaljan order ID');
+                return;
+            }
+
+            // Označi order kao štampan
+            update_post_meta($order_id, '_dexpress_label_printed', 'yes');
+            update_post_meta($order_id, '_dexpress_label_printed_date', current_time('mysql'));
+
+            wp_send_json_success('Narudžbina je označena kao štampana');
+        } elseif (isset($_POST['shipment_id'])) {
+            // Postojeća logika za shipment-based view
+            $shipment_id = intval($_POST['shipment_id']);
+
+            if (!$shipment_id) {
+                wp_send_json_error('Nevaljan shipment ID');
+                return;
+            }
+
+            $shipment = $wpdb->get_row($wpdb->prepare(
+                "SELECT order_id FROM {$wpdb->prefix}dexpress_shipments WHERE id = %d",
+                $shipment_id
+            ));
+
+            if ($shipment) {
+                update_post_meta($shipment->order_id, '_dexpress_label_printed', 'yes');
+                update_post_meta($shipment->order_id, '_dexpress_label_printed_date', current_time('mysql'));
+                wp_send_json_success('Pošiljka je označena kao štampana');
+            } else {
+                wp_send_json_error('Pošiljka nije pronađena');
+            }
         } else {
-            wp_send_json_error('Pošiljka nije pronađena');
+            wp_send_json_error('Nedostaje shipment_id ili order_id parametar');
         }
     }
     /**

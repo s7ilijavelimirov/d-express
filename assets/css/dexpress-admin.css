@@ -1785,3 +1785,219 @@ form#dexpress-location-form {
         gap: 8px;
     }
 }
+/* Dodatni stilovi za D Express Shipments List - Grupisane pošiljke */
+
+/* Osnovni stilovi za tabelu */
+.dexpress-shipments-table {
+    margin-top: 15px;
+}
+
+.dexpress-shipments-table .column-order_info {
+    width: 200px;
+}
+
+.dexpress-shipments-table .column-shipments {
+    width: 150px;
+}
+
+.dexpress-shipments-table .column-tracking {
+    width: 200px;
+}
+
+.dexpress-shipments-table .column-status {
+    width: 120px;
+}
+
+.dexpress-shipments-table .column-created {
+    width: 130px;
+}
+
+.dexpress-shipments-table .column-actions {
+    width: 180px;
+    text-align: right;
+}
+
+/* Tracking kodovi */
+.dexpress-tracking-codes {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.dexpress-tracking-codes code {
+    font-family: "Courier New", monospace;
+    font-size: 11px;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 3px;
+    padding: 2px 4px;
+    display: inline-block;
+    margin-right: 4px;
+    font-weight: 500;
+    color: #495057;
+}
+
+.dexpress-tracking-more {
+    font-size: 10px;
+    color: #666;
+    font-style: italic;
+    margin-top: 2px;
+}
+
+/* Status badges - poboljšani */
+.dexpress-status-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.dexpress-status-delivered {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.dexpress-status-transit {
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
+.dexpress-status-failed,
+.dexpress-status-problem {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.dexpress-status-pending {
+    background-color: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+}
+
+/* Action buttons - poboljšani */
+.dexpress-shipments-table .button-small {
+    padding: 4px 8px;
+    font-size: 12px;
+    line-height: 1.2;
+    text-decoration: none;
+    margin-bottom: 3px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.dexpress-shipments-table .button-primary.button-small {
+    background: #2271b1;
+    border-color: #2271b1;
+    color: white;
+}
+
+.dexpress-shipments-table .button-primary.button-small:hover {
+    background: #135e96;
+    border-color: #135e96;
+}
+
+.dexpress-shipments-table .dashicons {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+}
+
+/* Oznake test/produkcija */
+.dexpress-mode-badge {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-weight: 500;
+    margin-top: 3px;
+    display: inline-block;
+}
+
+.dexpress-mode-test {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
+.dexpress-mode-production {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+/* Poboljšani prikaz kolone sa brojem pošiljki */
+.dexpress-shipment-summary {
+    line-height: 1.4;
+}
+
+.dexpress-shipment-summary strong {
+    display: block;
+    font-size: 13px;
+    margin-bottom: 2px;
+}
+
+.dexpress-shipment-summary small {
+    display: block;
+    font-size: 11px;
+    color: #666;
+    margin-bottom: 1px;
+}
+
+/* Print status indikatori */
+.dexpress-print-status {
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    margin-top: 3px;
+}
+
+.dexpress-print-status.printed {
+    color: #155724;
+}
+
+.dexpress-print-status.not-printed {
+    color: #856404;
+}
+
+/* Responsive improvements */
+@media screen and (max-width: 1200px) {
+    .dexpress-shipments-table .column-tracking {
+        width: 150px;
+    }
+    
+    .dexpress-shipments-table .column-order_info {
+        width: 160px;
+    }
+}
+
+@media screen and (max-width: 900px) {
+    .dexpress-shipments-table .column-actions {
+        width: 140px;
+    }
+    
+    .dexpress-shipments-table .button-small {
+        font-size: 11px;
+        padding: 3px 6px;
+    }
+}
+
+/* Bulk actions area */
+.dexpress-bulk-actions-notice {
+    background: #e7f3ff;
+    border-left: 4px solid #2271b1;
+    padding: 8px 12px;
+    margin: 10px 0;
+    border-radius: 0 3px 3px 0;
+}
+
+.dexpress-bulk-actions-notice p {
+    margin: 0;
+    font-size: 13px;
+}

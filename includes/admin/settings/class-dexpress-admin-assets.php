@@ -80,6 +80,14 @@ class D_Express_Admin_Assets
      */
     private function enqueue_dexpress_assets()
     {
+        if (isset($_GET['page']) && $_GET['page'] === 'dexpress-shipments') {
+            wp_enqueue_style(
+                'dexpress-shipments-css',
+                DEXPRESS_WOO_PLUGIN_URL . 'assets/css/dexpress-shipment-list.css',
+                array(),
+                DEXPRESS_WOO_VERSION
+            );
+        }
         // CSS
         wp_enqueue_style(
             'dexpress-admin-css',

@@ -382,7 +382,9 @@ class D_Express_Label_Generator
                 wp_die(__('Nisu odabrane pošiljke za štampanje.', 'd-express-woo'));
             }
 
-            $shipment_ids = explode(',', sanitize_text_field($_REQUEST['shipment_ids']));
+            // KONVERTUJ PIPE U COMMA
+            $ids_string = str_replace('|', ',', sanitize_text_field($_REQUEST['shipment_ids']));
+            $shipment_ids = explode(',', $ids_string);
             $shipment_ids = array_map('intval', $shipment_ids);
 
             if (empty($shipment_ids)) {

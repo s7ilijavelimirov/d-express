@@ -1,9 +1,9 @@
 <?php
 
 /**
- * ENHANCED D Express Shipments List
+ * REDESIGNED D Express Shipments List - Grouped by Orders
  * 
- * Klasa za prikazivanje liste pošiljki sa bulk operacijama za daily workflow
+ * Klasa za prikazivanje liste pošiljki grupovano po narudžbinama
  */
 
 defined('ABSPATH') || exit;
@@ -18,8 +18,8 @@ class D_Express_Shipments_List extends WP_List_Table
     public function __construct()
     {
         parent::__construct([
-            'singular' => 'shipment',
-            'plural'   => 'shipments',
+            'singular' => 'order_shipment',
+            'plural'   => 'order_shipments',
             'ajax'     => false
         ]);
     }
@@ -28,7 +28,7 @@ class D_Express_Shipments_List extends WP_List_Table
     {
         global $wpdb;
 
-        $per_page = 50; // Povećano za bolje bulk operacije
+        $per_page = 25;
         $current_page = $this->get_pagenum();
         $total_items = $this->record_count();
 
@@ -42,16 +42,16 @@ class D_Express_Shipments_List extends WP_List_Table
             $this->get_columns(),
             $this->get_hidden_columns(),
             $this->get_sortable_columns(),
-            'shipment_id'
+            'order_id'
         ];
 
-        $this->items = $this->get_shipments($per_page, $current_page);
+        $this->items = $this->get_order_shipments($per_page, $current_page);
     }
 
     /**
-     * ENHANCED: Dobavljanje pošiljki sa detaljnim podacima za bulk operacije
+     * Dobavljanje narudžbina sa pošiljkama - GRUPOVANO PO ORDER-U
      */
-    private function get_shipments($per_page, $page_number)
+    private function get_order_shipments($per_page, $page_number)
     {
         global $wpdb;
 
@@ -73,9 +73,7 @@ class D_Express_Shipments_List extends WP_List_Table
         $search_condition = '';
         if (!empty($search)) {
             $search_condition = $wpdb->prepare(
-                "AND (s.reference_id LIKE %s OR p.package_code LIKE %s OR s.id LIKE %s OR s.order_id LIKE %s)",
-                '%' . $wpdb->esc_like($search) . '%',
-                '%' . $wpdb->esc_like($search) . '%',
+                "AND (s.order_id LIKE %s OR o.post_excerpt LIKE %s)",
                 '%' . $wpdb->esc_like($search) . '%',
                 '%' . $wpdb->esc_like($search) . '%'
             );
@@ -88,24 +86,19 @@ class D_Express_Shipments_List extends WP_List_Table
         // Pagination
         $offset = ($page_number - 1) * $per_page;
 
-        // FIXED SQL - koristi towns tabelu za postal_code
+        // SQL Query - GRUPOVANO PO ORDER_ID
         $sql = "SELECT 
-                s.id as id,
-                s.id as shipment_id,
-                s.reference_id,
                 s.order_id,
-                s.status_code,
-                s.created_at,
-                s.is_test,
-                s.total_mass,
-                s.sender_location_id,
                 o.post_status as order_status,
-                sl.name as location_name,
-                sl.address as location_address,
-                t.postal_code as location_postal,
-                COUNT(p.id) as package_count,
-                GROUP_CONCAT(p.package_code ORDER BY p.package_index SEPARATOR '|') as tracking_codes,
-                SUM(p.mass) as total_package_mass,
+                MAX(s.created_at) as latest_shipment_date,
+                COUNT(DISTINCT s.id) as total_shipments,
+                COUNT(DISTINCT p.id) as total_packages,
+                SUM(DISTINCT s.total_mass) as total_mass,
+                GROUP_CONCAT(DISTINCT s.id ORDER BY s.created_at SEPARATOR '|') as shipment_ids,
+                GROUP_CONCAT(DISTINCT p.package_code ORDER BY s.created_at, p.package_index SEPARATOR '|') as all_tracking_codes,
+                GROUP_CONCAT(DISTINCT s.status_code ORDER BY s.created_at SEPARATOR '|') as all_statuses,
+                GROUP_CONCAT(DISTINCT sl.name ORDER BY s.created_at SEPARATOR '|') as all_locations,
+                MAX(s.is_test) as has_test_shipments,
                 MIN(p.package_code) as main_tracking_code
             FROM $table_name s
             LEFT JOIN {$wpdb->posts} o ON s.order_id = o.ID
@@ -113,8 +106,8 @@ class D_Express_Shipments_List extends WP_List_Table
             LEFT JOIN {$wpdb->prefix}dexpress_sender_locations sl ON s.sender_location_id = sl.id
             LEFT JOIN {$wpdb->prefix}dexpress_towns t ON sl.town_id = t.id
             WHERE 1=1 $date_filter $search_condition $status_condition
-            GROUP BY s.id
-            ORDER BY s.$orderby $order
+            GROUP BY s.order_id
+            ORDER BY MAX(s.$orderby) $order
             LIMIT $offset, $per_page";
 
         return $wpdb->get_results($sql, ARRAY_A);
@@ -139,7 +132,6 @@ class D_Express_Shipments_List extends WP_List_Table
             case 'this_week':
                 return "AND YEARWEEK(s.created_at) = YEARWEEK(CURDATE())";
             case 'unprinted':
-                // Pošiljke koje nisu štampane
                 return "AND s.order_id NOT IN (
                     SELECT post_id FROM {$wpdb->postmeta} 
                     WHERE meta_key = '_dexpress_label_printed' AND meta_value = 'yes'
@@ -167,16 +159,16 @@ class D_Express_Shipments_List extends WP_List_Table
         $search_condition = '';
         if (!empty($search)) {
             $search_condition = $wpdb->prepare(
-                "AND (s.reference_id LIKE %s OR p.package_code LIKE %s OR s.id LIKE %s OR s.order_id LIKE %s)",
-                '%' . $wpdb->esc_like($search) . '%',
-                '%' . $wpdb->esc_like($search) . '%',
+                "AND (s.order_id LIKE %s OR o.post_excerpt LIKE %s)",
                 '%' . $wpdb->esc_like($search) . '%',
                 '%' . $wpdb->esc_like($search) . '%'
             );
         }
 
-        $sql = "SELECT COUNT(DISTINCT s.id) 
+        // COUNT DISTINCT ORDER_ID
+        $sql = "SELECT COUNT(DISTINCT s.order_id) 
             FROM $table_name s
+            LEFT JOIN {$wpdb->posts} o ON s.order_id = o.ID
             LEFT JOIN $packages_table p ON s.id = p.shipment_id
             LEFT JOIN {$wpdb->prefix}dexpress_sender_locations sl ON s.sender_location_id = sl.id
             LEFT JOIN {$wpdb->prefix}dexpress_towns t ON sl.town_id = t.id
@@ -189,11 +181,11 @@ class D_Express_Shipments_List extends WP_List_Table
     {
         return [
             'cb'               => '<input type="checkbox" />',
-            'shipment_id'      => __('ID / Tracking', 'd-express-woo'),
             'order_info'       => __('Narudžbina', 'd-express-woo'),
-            'packages_info'    => __('Paketi & Masa', 'd-express-woo'),
-            'location_info'    => __('Lokacija', 'd-express-woo'),
-            'status_code'      => __('Status', 'd-express-woo'),
+            'shipments_summary' => __('Pošiljke & Paketi', 'd-express-woo'),
+            'tracking_codes'   => __('Tracking kodovi', 'd-express-woo'),
+            'location_info'    => __('Lokacije', 'd-express-woo'),
+            'status_summary'   => __('Status', 'd-express-woo'),
             'created_at'       => __('Datum', 'd-express-woo'),
             'actions'          => __('Akcije', 'd-express-woo'),
         ];
@@ -207,188 +199,212 @@ class D_Express_Shipments_List extends WP_List_Table
     public function get_sortable_columns()
     {
         return [
-            'shipment_id'     => ['id', false],
-            'order_info'      => ['order_id', false],
-            'created_at'      => ['created_at', true],
-            'packages_info'   => ['package_count', false],
+            'order_info'       => ['order_id', false],
+            'created_at'       => ['created_at', true],
+            'shipments_summary' => ['total_shipments', false],
         ];
     }
 
     public function get_bulk_actions()
     {
         return [
-            'bulk_print' => __('Štampaj nalepnice', 'd-express-woo'),
-            'mark_printed' => __('Označi kao štampano', 'd-express-woo'),
-            'delete' => __('Obriši', 'd-express-woo'),
+            'bulk_print_all' => __('Štampaj sve nalepnice', 'd-express-woo'),
+            'mark_all_printed' => __('Označi sve kao štampano', 'd-express-woo'),
+            'delete_all' => __('Obriši sve pošiljke', 'd-express-woo'),
         ];
     }
 
     public function column_cb($item)
     {
         return sprintf(
-            '<input type="checkbox" name="shipment[]" value="%s" />',
-            $item['id']
+            '<input type="checkbox" name="order[]" value="%s" data-shipments="%s" />',
+            $item['order_id'],
+            esc_attr($item['shipment_ids'])
         );
     }
 
     /**
-     * ENHANCED: Shipment ID kolona sa glavnim tracking kodom
-     */
-    public function column_shipment_id($item)
-    {
-        $main_tracking = !empty($item['main_tracking_code']) ? $item['main_tracking_code'] : '-';
-        $is_test = (bool) $item['is_test'];
-
-        $title = sprintf(
-            '<strong>Pošiljka #%s</strong><br>',
-            $item['shipment_id']
-        );
-
-        if ($is_test) {
-            $tracking_display = sprintf(
-                '<span class="dexpress-tracking" title="Test mod">%s <small>(TEST)</small></span>',
-                esc_html($main_tracking)
-            );
-        } else {
-            $tracking_display = sprintf(
-                '<a href="https://www.dexpress.rs/rs/pracenje-posiljaka/%s" target="_blank" class="dexpress-tracking">%s</a>',
-                esc_attr($main_tracking),
-                esc_html($main_tracking)
-            );
-        }
-
-        $actions = [
-            'view' => sprintf(
-                '<a href="%s">Pregled</a>',
-                admin_url(sprintf('post.php?post=%s&action=edit', $item['order_id']))
-            ),
-            'print' => sprintf(
-                '<a href="#" onclick="printSingleShipment(%d); return false;">Štampaj</a>',
-                $item['id']
-            ),
-        ];
-
-        return $title . $tracking_display . $this->row_actions($actions);
-    }
-
-    /**
-     * ENHANCED: Order info kolona
+     * Order info kolona
      */
     public function column_order_info($item)
     {
         $order = wc_get_order($item['order_id']);
 
         if (!$order) {
-            return sprintf('#%s <small>(Obrisana)</small>', $item['order_id']);
+            return sprintf('<div class="order-deleted">#%s <small>(Obrisana)</small></div>', $item['order_id']);
         }
 
         $customer_name = trim($order->get_billing_first_name() . ' ' . $order->get_billing_last_name());
         $total = $order->get_total();
 
-        $output = sprintf(
-            '<a href="%s"><strong>#%s</strong></a><br>',
+        $output = '<div class="order-info-wrapper">';
+        
+        $output .= sprintf(
+            '<div class="order-number"><a href="%s">#%s</a></div>',
             admin_url(sprintf('post.php?post=%s&action=edit', $item['order_id'])),
             $order->get_order_number()
         );
 
-        $output .= sprintf(
-            '<small>%s<br>%s RSD</small>',
-            esc_html($customer_name),
-            number_format($total, 2, ',', '.')
-        );
+        if (!empty($customer_name)) {
+            $output .= sprintf('<div class="customer-name">%s</div>', esc_html($customer_name));
+        }
 
-        // Status badge
+        if ($total > 0) {
+            $output .= sprintf('<div class="order-total">%s RSD</div>', number_format($total, 2, ',', '.'));
+        }
+
+        // Order status badge
         $status_name = wc_get_order_status_name($item['order_status']);
-        $output .= sprintf(
-            '<br><span class="order-status order-status-%s">%s</span>',
-            $item['order_status'],
-            $status_name
-        );
+        $output .= sprintf('<div class="order-status order-status-%s">%s</div>', $item['order_status'], $status_name);
 
-        return $output;
+        // Test mode indicator
+        if ($item['has_test_shipments']) {
+            $output .= '<div class="test-mode-badge">TEST</div>';
+        }
+
+        $output .= '</div>';
+
+        $actions = [
+            'view_order' => sprintf(
+                '<a href="%s">Pregled</a>',
+                admin_url(sprintf('post.php?post=%s&action=edit', $item['order_id']))
+            )
+        ];
+
+        return $output . $this->row_actions($actions);
     }
 
     /**
-     * ENHANCED: Packages & mass info kolona
+     * Shipments summary kolona
      */
-    public function column_packages_info($item)
+    public function column_shipments_summary($item)
     {
-        $package_count = intval($item['package_count']);
-        $total_mass = intval($item['total_package_mass'] ?: $item['total_mass']);
+        $shipment_count = intval($item['total_shipments']);
+        $package_count = intval($item['total_packages']);
+        $total_mass = intval($item['total_mass']);
 
-        $output = sprintf(
-            '<strong>%d %s</strong><br>',
+        $output = '<div class="shipments-summary">';
+        $output .= sprintf('<div class="shipment-count">%d %s</div>', 
+            $shipment_count,
+            $shipment_count == 1 ? 'pošiljka' : 'pošiljki'
+        );
+        $output .= sprintf('<div class="package-count">%d %s</div>', 
             $package_count,
             $package_count == 1 ? 'paket' : 'paketa'
         );
-
-        $output .= sprintf(
-            '<small>%s kg</small>',
+        $output .= sprintf('<div class="total-mass">%s kg</div>', 
             number_format($total_mass / 1000, 2, ',', '.')
         );
-
-        // Tracking codes ako ih ima više
-        if (!empty($item['tracking_codes']) && $package_count > 1) {
-            $codes = explode('|', $item['tracking_codes']);
-            $output .= sprintf(
-                '<br><small title="%s">%d tracking kodova</small>',
-                esc_attr(implode(', ', $codes)),
-                count($codes)
-            );
-        }
+        $output .= '</div>';
 
         return $output;
     }
 
     /**
-     * ENHANCED: Location info kolona
+     * Tracking codes kolona
+     */
+    public function column_tracking_codes($item)
+    {
+        if (empty($item['all_tracking_codes'])) {
+            return '<div class="no-tracking">-</div>';
+        }
+
+        $tracking_codes = array_filter(explode('|', $item['all_tracking_codes']));
+        $is_test = (bool) $item['has_test_shipments'];
+        
+        $output = '<div class="tracking-codes-list">';
+        
+        $display_codes = array_slice($tracking_codes, 0, 3);
+        
+        foreach ($display_codes as $code) {
+            if ($is_test) {
+                $output .= sprintf('<div class="tracking-code test">%s <span class="test-label">(TEST)</span></div>', esc_html($code));
+            } else {
+                $output .= sprintf(
+                    '<a href="https://www.dexpress.rs/rs/pracenje-posiljaka/%s" target="_blank" class="tracking-code">%s</a>',
+                    esc_attr($code),
+                    esc_html($code)
+                );
+            }
+        }
+        
+        $remaining = count($tracking_codes) - 3;
+        if ($remaining > 0) {
+            $output .= sprintf('<div class="tracking-more">+%d više</div>', $remaining);
+        }
+        
+        $output .= '</div>';
+
+        return $output;
+    }
+
+    /**
+     * Location info kolona - POBOLJŠANA
      */
     public function column_location_info($item)
     {
-        if (empty($item['location_name'])) {
-            return '<small>Nepoznata lokacija</small>';
+        if (empty($item['all_locations'])) {
+            return '<div class="no-location">Nepoznata</div>';
         }
 
-        $output = sprintf('<strong>%s</strong><br>', esc_html($item['location_name']));
-
-        if (!empty($item['location_address'])) {
-            $output .= sprintf('<small>%s</small>', esc_html($item['location_address']));
-
-            if (!empty($item['location_postal'])) {
-                $output .= sprintf('<br><small>%s</small>', esc_html($item['location_postal']));
+        $locations = array_filter(array_unique(explode('|', $item['all_locations'])));
+        
+        $output = '<div class="dexpress-locations-list">';
+        foreach ($locations as $i => $location) {
+            if ($i === 0) {
+                $output .= sprintf('<div class="primary-location">%s</div>', esc_html($location));
+            } else {
+                $output .= sprintf('<div class="secondary-location">%s</div>', esc_html($location));
             }
         }
-
+        $output .= '</div>';
+        
         return $output;
     }
 
     /**
-     * Status kolona sa boljim prikazom
+     * Status summary kolona - POBOLJŠANA
      */
-    public function column_status_code($item)
+    public function column_status_summary($item)
     {
-        $status_code = $item['status_code'];
-        if (empty($status_code)) {
-            return '<span class="dexpress-status-badge dexpress-status-pending">U obradi</span>';
+        if (empty($item['all_statuses'])) {
+            return '<div class="dexpress-status-badge dexpress-status-pending">U obradi</div>';
         }
 
-        $status_name = dexpress_get_status_name($status_code);
-        $status_class = dexpress_get_status_css_class($status_code);
+        $statuses = array_filter(explode('|', $item['all_statuses']));
+        $unique_statuses = array_unique($statuses);
 
-        return sprintf(
-            '<span class="dexpress-status-badge %s" title="Status kod: %s">%s</span>',
-            $status_class,
-            $status_code,
-            $status_name
-        );
+        // Ako su svi statusi isti
+        if (count($unique_statuses) === 1) {
+            $status_code = $unique_statuses[0];
+            $status_name = dexpress_get_status_name($status_code);
+            $status_class = dexpress_get_status_css_class($status_code);
+
+            return sprintf('<div class="dexpress-status-badge %s">%s</div>', $status_class, $status_name);
+        } else {
+            // Različiti statusi - prikaži najčešći + info da su različiti
+            $status_counts = array_count_values($statuses);
+            arsort($status_counts);
+            $most_common = key($status_counts);
+            
+            $status_name = dexpress_get_status_name($most_common);
+            $status_class = dexpress_get_status_css_class($most_common);
+
+            $output = '<div class="status-mixed">';
+            $output .= sprintf('<div class="dexpress-status-badge %s">%s</div>', $status_class, $status_name);
+            $output .= '<div class="mixed-status-note">Mešoviti statusi</div>';
+            $output .= '</div>';
+            
+            return $output;
+        }
     }
 
     /**
-     * Datum kolona sa relativnim vremenom
+     * Datum kolona
      */
     public function column_created_at($item)
     {
-        $date = new DateTime($item['created_at']);
+        $date = new DateTime($item['latest_shipment_date']);
         $now = new DateTime();
         $diff = $now->diff($date);
 
@@ -401,28 +417,29 @@ class D_Express_Shipments_List extends WP_List_Table
             $relative = $diff->days . ' dana';
         }
 
-        return sprintf(
-            '<strong>%s</strong><br><small>%s (%s)</small>',
-            $date->format('d.m.Y'),
-            $date->format('H:i'),
-            $relative
-        );
+        $output = '<div class="date-wrapper">';
+        $output .= sprintf('<div class="date-main">%s</div>', $date->format('d.m.Y'));
+        $output .= sprintf('<div class="date-details">%s (%s)</div>', $date->format('H:i'), $relative);
+        $output .= '</div>';
+
+        return $output;
     }
 
     /**
-     * Actions kolona sa bulk operacijama
+     * Actions kolona
      */
     public function column_actions($item)
     {
-        $actions = [];
+        $output = '<div class="actions-wrapper">';
 
-        // Print pojedinačno
-        $actions[] = sprintf(
-            '<a href="#" onclick="printSingleShipment(%d); return false;" class="button button-small">Štampaj</a>',
-            $item['id']
+        // Print all shipments za ovu narudžbinu
+        $output .= sprintf(
+            '<a href="#" onclick="printOrderShipments(%d, \'%s\'); return false;" class="button button-primary button-small dex-btn-print">Štampaj sve</a>',
+            $item['order_id'],
+            esc_js($item['shipment_ids'])
         );
 
-        // Označi kao štampano/neštampano
+        // Mark as printed
         global $wpdb;
         $is_printed = $wpdb->get_var($wpdb->prepare(
             "SELECT meta_value FROM {$wpdb->postmeta} WHERE post_id = %d AND meta_key = '_dexpress_label_printed'",
@@ -430,19 +447,21 @@ class D_Express_Shipments_List extends WP_List_Table
         )) === 'yes';
 
         if (!$is_printed) {
-            $actions[] = sprintf(
-                '<a href="#" onclick="markAsPrinted(%d); return false;" class="button button-small">Označи штампано</a>',
-                $item['id']
+            $output .= sprintf(
+                '<a href="#" onclick="markOrderAsPrinted(%d); return false;" class="button button-small dex-btn-mark">Označи štampano</a>',
+                $item['order_id']
             );
         } else {
-            $actions[] = '<small>✓ Štampano</small>';
+            $output .= '<div class="printed-status">✓ Štampano</div>';
         }
 
-        return implode('<br>', $actions);
+        $output .= '</div>';
+
+        return $output;
     }
 
     /**
-     * ENHANCED: Date & bulk action filters
+     * Date & bulk action filters
      */
     public function extra_tablenav($which)
     {
@@ -479,7 +498,7 @@ class D_Express_Shipments_List extends WP_List_Table
             echo '</div>';
 
             // QUICK ACTION BUTTONS
-            echo '<div class="alignright actions">';
+            echo '<div class="alignright actions dex-quick-actions">';
             echo '<button type="button" id="print-today-btn" class="button button-primary">Štampaj sve današnje</button> ';
             echo '<button type="button" id="print-unprinted-btn" class="button">Štampaj neštampano</button> ';
             echo '<button type="button" id="select-all-btn" class="button">Odaberi sve</button>';
@@ -489,23 +508,23 @@ class D_Express_Shipments_List extends WP_List_Table
 
     public function no_items()
     {
-        _e('Nema pronađenih pošiljki. Proverite filtere.', 'd-express-woo');
+        _e('Nema pronađenih narudžbina sa pošiljkama. Proverite filtere.', 'd-express-woo');
     }
 }
 
 /**
- * ENHANCED: Render function with enhanced JavaScript
+ * Render function 
  */
 function dexpress_render_enhanced_shipments_page()
 {
     $shipments_list = new D_Express_Shipments_List();
     $shipments_list->prepare_items();
 
-    // Statistics
+    // Statistics - po narudžbinama
     global $wpdb;
-    $today_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}dexpress_shipments WHERE DATE(created_at) = CURDATE()");
-    $unprinted_count = $wpdb->get_var("
-        SELECT COUNT(*) FROM {$wpdb->prefix}dexpress_shipments s 
+    $today_orders = $wpdb->get_var("SELECT COUNT(DISTINCT order_id) FROM {$wpdb->prefix}dexpress_shipments WHERE DATE(created_at) = CURDATE()");
+    $unprinted_orders = $wpdb->get_var("
+        SELECT COUNT(DISTINCT s.order_id) FROM {$wpdb->prefix}dexpress_shipments s 
         WHERE s.order_id NOT IN (
             SELECT post_id FROM {$wpdb->postmeta} 
             WHERE meta_key = '_dexpress_label_printed' AND meta_value = 'yes'
@@ -513,19 +532,68 @@ function dexpress_render_enhanced_shipments_page()
     ");
 
 ?>
-    <div class="wrap">
-        <h1 class="wp-heading-inline">D Express Pošiljke</h1>
+    <div class="wrap dexpress-shipments-wrap">
+        <h1 class="wp-heading-inline">D Express - Narudžbine sa pošiljkama</h1>
 
         <!-- Quick stats -->
         <div class="dexpress-quick-stats">
-            <span class="stat-item">Danas: <strong><?php echo $today_count; ?></strong></span>
-            <span class="stat-item">Neštampano: <strong><?php echo $unprinted_count; ?></strong></span>
+            <div class="stats-row">
+                <div class="stat-card stat-today">
+                    <div class="stat-icon">📦</div>
+                    <div class="stat-content">
+                        <div class="stat-number"><?php echo $today_orders; ?></div>
+                        <div class="stat-label">Danas narudžbina</div>
+                    </div>
+                </div>
+
+                <div class="stat-card stat-unprinted">
+                    <div class="stat-icon">🖨️</div>
+                    <div class="stat-content">
+                        <div class="stat-number"><?php echo $unprinted_orders; ?></div>
+                        <div class="stat-label">Neštampano</div>
+                    </div>
+                </div>
+
+                <?php
+                // Dodatne statistike
+                $total_orders = $wpdb->get_var("SELECT COUNT(DISTINCT order_id) FROM {$wpdb->prefix}dexpress_shipments");
+                $total_packages = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}dexpress_packages");
+                ?>
+
+                <div class="stat-card stat-total">
+                    <div class="stat-icon">📋</div>
+                    <div class="stat-content">
+                        <div class="stat-number"><?php echo $total_orders; ?></div>
+                        <div class="stat-label">Ukupno narudžbina</div>
+                    </div>
+                </div>
+
+                <div class="stat-card stat-packages">
+                    <div class="stat-icon">📄</div>
+                    <div class="stat-content">
+                        <div class="stat-number"><?php echo $total_packages; ?></div>
+                        <div class="stat-label">Ukupno paketa</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick actions row -->
+            <div class="stats-actions">
+                <a href="?page=dexpress-shipments&date_filter=today" class="stats-btn stats-btn-primary">
+                    Prikaži današnje
+                </a>
+                <a href="?page=dexpress-shipments&date_filter=unprinted" class="stats-btn stats-btn-secondary">
+                    Prikaži neštampano
+                </a>
+            </div>
         </div>
 
-        <form method="post" id="dexpress-shipments-form">
+        <form method="post" id="dexpress-shipments-form" class="dexpress-table-form">
             <input type="hidden" name="page" value="<?php echo $_REQUEST['page']; ?>" />
-            <?php $shipments_list->search_box('Pretraži pošiljke', 'dexpress_search'); ?>
-            <?php $shipments_list->display(); ?>
+            <?php $shipments_list->search_box('Pretraži narudžbine', 'dexpress_search'); ?>
+            <div class="dexpress-table-wrapper">
+                <?php $shipments_list->display(); ?>
+            </div>
         </form>
 
         <!-- Hidden form for bulk printing -->
@@ -536,62 +604,16 @@ function dexpress_render_enhanced_shipments_page()
         </form>
     </div>
 
-    <style>
-        .dexpress-quick-stats {
-            margin: 10px 0 20px 0;
-            padding: 10px;
-            background: #f1f1f1;
-            border-radius: 4px;
-        }
-
-        .stat-item {
-            margin-right: 20px;
-            font-size: 14px;
-        }
-
-        .dexpress-tracking {
-            font-family: monospace;
-            font-size: 12px;
-        }
-
-        .dexpress-status-badge {
-            padding: 2px 8px;
-            border-radius: 3px;
-            font-size: 11px;
-            font-weight: bold;
-        }
-
-        .dexpress-status-pending {
-            background: #ffa500;
-            color: white;
-        }
-
-        .dexpress-status-delivered {
-            background: #46b450;
-            color: white;
-        }
-
-        .dexpress-status-failed {
-            background: #dc3232;
-            color: white;
-        }
-
-        .dexpress-status-transit {
-            background: #00a0d2;
-            color: white;
-        }
-    </style>
-
     <script type="text/javascript">
         jQuery(document).ready(function($) {
-            // Print today's shipments
+            // Print today's orders
             $('#print-today-btn').on('click', function() {
-                if (confirm('Štampati sve današnje pošiljke?')) {
+                if (confirm('Štampati sve pošiljke za današnje narudžbine?')) {
                     window.open('<?php echo admin_url('admin-ajax.php?action=dexpress_bulk_print_labels&date_filter=today&_wpnonce=' . wp_create_nonce('dexpress-bulk-print')); ?>', '_blank');
                 }
             });
 
-            // Print unprinted shipments  
+            // Print unprinted orders
             $('#print-unprinted-btn').on('click', function() {
                 if (confirm('Štampati sve neštampane pošiljke?')) {
                     window.open('<?php echo admin_url('admin-ajax.php?action=dexpress_bulk_print_labels&date_filter=unprinted&_wpnonce=' . wp_create_nonce('dexpress-bulk-print')); ?>', '_blank');
@@ -600,26 +622,28 @@ function dexpress_render_enhanced_shipments_page()
 
             // Select all checkboxes
             $('#select-all-btn').on('click', function() {
-                $('input[name="shipment[]"]').prop('checked', true);
+                $('input[name="order[]"]').prop('checked', true);
             });
 
             // Handle bulk actions
             $('select[name="action"], select[name="action2"]').on('change', function() {
-                if ($(this).val() === 'bulk_print') {
+                var action = $(this).val();
+                if (action === 'bulk_print_all') {
                     $(this).closest('form').on('submit', function(e) {
                         e.preventDefault();
 
-                        var selectedIds = [];
-                        $('input[name="shipment[]"]:checked').each(function() {
-                            selectedIds.push($(this).val());
+                        var allShipmentIds = [];
+                        $('input[name="order[]"]:checked').each(function() {
+                            var shipmentIds = $(this).data('shipments').toString().split('|');
+                            allShipmentIds = allShipmentIds.concat(shipmentIds);
                         });
 
-                        if (selectedIds.length === 0) {
-                            alert('Molimo odaberite pošiljke za štampanje.');
+                        if (allShipmentIds.length === 0) {
+                            alert('Molimo odaberite narudžbine za štampanje.');
                             return false;
                         }
 
-                        $('#bulk_print_ids').val(selectedIds.join(','));
+                        $('#bulk_print_ids').val(allShipmentIds.join(','));
                         $('#bulk_print_form').submit();
                         return false;
                     });
@@ -627,17 +651,16 @@ function dexpress_render_enhanced_shipments_page()
             });
         });
 
-        // Global functions for individual actions
-        function printSingleShipment(shipmentId) {
+        // Global functions
+        function printOrderShipments(orderId, shipmentIds) {
             var nonce = '<?php echo wp_create_nonce('dexpress-bulk-print'); ?>';
-            window.open(ajaxurl + '?action=dexpress_bulk_print_labels&shipment_ids=' + shipmentId + '&_wpnonce=' + nonce, '_blank');
+            window.open(ajaxurl + '?action=dexpress_bulk_print_labels&shipment_ids=' + shipmentIds + '&_wpnonce=' + nonce, '_blank');
         }
 
-        function markAsPrinted(shipmentId) {
-            // AJAX call to mark as printed
+        function markOrderAsPrinted(orderId) {
             jQuery.post(ajaxurl, {
                 action: 'dexpress_mark_printed',
-                shipment_id: shipmentId,
+                order_id: orderId,
                 nonce: '<?php echo wp_create_nonce('dexpress_admin_nonce'); ?>'
             }, function(response) {
                 if (response.success) {

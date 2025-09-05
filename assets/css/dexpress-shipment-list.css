@@ -1,0 +1,301 @@
+/* ==========================================================================
+   D EXPRESS SHIPMENTS - ENHANCED QUICK STATS
+   ========================================================================== */
+
+/* Quick stats container */
+.dexpress-quick-stats {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 6px;
+    padding: 20px;
+    margin: 16px 0 24px 0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Stats grid */
+.stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+/* Individual stat cards */
+.stat-card {
+    display: flex;
+    align-items: center;
+    padding: 16px;
+    background: #f8f9fa;
+    border-radius: 4px;
+    border-left: 4px solid #ddd;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Card icons */
+.stat-icon {
+    font-size: 24px;
+    margin-right: 12px;
+    opacity: 0.8;
+}
+
+/* Stat content */
+.stat-content {
+    flex: 1;
+}
+
+.stat-number {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1d2327;
+    line-height: 1.2;
+}
+
+.stat-label {
+    font-size: 13px;
+    color: #646970;
+    margin-top: 2px;
+    font-weight: 500;
+}
+
+/* Specific card colors */
+.stat-today {
+    border-left-color: #2271b1;
+}
+
+.stat-today:hover {
+    background: #f0f6fc;
+}
+
+.stat-unprinted {
+    border-left-color: #dba617;
+}
+
+.stat-unprinted:hover {
+    background: #fffbee;
+}
+
+.stat-total {
+    border-left-color: #00a32a;
+}
+
+.stat-total:hover {
+    background: #f0f8f0;
+}
+
+.stat-packages {
+    border-left-color: #c9356e;
+}
+
+.stat-packages:hover {
+    background: #fdf2f6;
+}
+
+/* Stats actions */
+.stats-actions {
+    display: flex;
+    gap: 12px;
+    padding-top: 16px;
+    border-top: 1px solid #f0f0f1;
+}
+
+.stats-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    text-decoration: none;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.stats-btn-primary {
+    background: #2271b1;
+    color: #fff;
+    border: 1px solid #2271b1;
+}
+
+.stats-btn-primary:hover {
+    background: #135e96;
+    border-color: #135e96;
+    color: #fff;
+}
+
+.stats-btn-secondary {
+    background: #f6f7f7;
+    color: #50575e;
+    border: 1px solid #c3c4c7;
+}
+
+.stats-btn-secondary:hover {
+    background: #f0f0f1;
+    border-color: #8c8f94;
+    color: #1d2327;
+}
+
+/* Responsive design */
+@media screen and (max-width: 960px) {
+    .stats-row {
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 12px;
+    }
+    
+    .stat-card {
+        padding: 12px;
+    }
+    
+    .stat-number {
+        font-size: 20px;
+    }
+    
+    .stats-actions {
+        flex-direction: column;
+        gap: 8px;
+    }
+}
+
+@media screen and (max-width: 600px) {
+    .stats-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .dexpress-quick-stats {
+        padding: 16px;
+    }
+}
+
+/* ==========================================================================
+   OSTALI STILOVI (nepromenjeni)
+   ========================================================================== */
+
+/* Order info stilizovanje */
+.order-info-wrapper .order-number a {
+    font-weight: 600;
+}
+
+.customer-name {
+    color: #646970;
+    font-size: 13px;
+}
+
+.order-total {
+    color: #00a32a;
+    font-weight: 500;
+}
+
+.test-mode-badge {
+    background: #fff3cd;
+    color: #856404;
+    padding: 2px 4px;
+    border-radius: 2px;
+    font-size: 10px;
+    font-weight: 500;
+}
+
+/* Shipments summary */
+.shipments-summary .shipment-count {
+    font-weight: 600;
+}
+
+.shipments-summary .package-count,
+.shipments-summary .total-mass {
+    color: #646970;
+    font-size: 12px;
+}
+
+/* Tracking codes */
+.tracking-codes-list {
+    font-family: Monaco, Consolas, monospace;
+    font-size: 11px;
+}
+
+.tracking-code {
+    display: block;
+    color: #2271b1;
+    text-decoration: none;
+    margin-bottom: 1px;
+}
+
+.tracking-code:hover {
+    text-decoration: underline;
+}
+
+.tracking-code.test {
+    color: #646970;
+}
+
+.test-label {
+    color: #856404;
+    font-size: 9px;
+}
+
+/* Locations */
+.dexpress-locations-list .primary-location {
+    font-weight: 600;
+    color: #1d2327;
+}
+
+.dexpress-locations-list .secondary-location {
+    color: #646970;
+    font-size: 12px;
+}
+
+/* Status badges - blagi stil */
+.dexpress-status-badge {
+    padding: 3px 6px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.dexpress-status-pending { background: #fcf9e8; color: #8a6914; }
+.dexpress-status-delivered { background: #edfaef; color: #1e5b26; }
+.dexpress-status-failed { background: #fcf0f1; color: #8a2424; }
+.dexpress-status-transit { background: #e7f5fe; color: #0f4c75; }
+
+.mixed-status-note {
+    color: #646970;
+    font-size: 10px;
+    font-style: italic;
+}
+
+/* Date wrapper */
+.date-wrapper .date-main {
+    font-weight: 600;
+}
+
+.date-wrapper .date-details {
+    color: #646970;
+    font-size: 12px;
+}
+
+/* Actions - samo minimalne izmene */
+.actions-wrapper .button {
+    margin-bottom: 4px;
+    font-size: 11px;
+}
+
+.printed-status {
+    color: #00a32a;
+    font-weight: 500;
+    font-size: 12px;
+}
+
+/* Responsive - sakrivanje kolona na manjim ekranima */
+@media screen and (max-width: 1200px) {
+    .wp-list-table .column-tracking_codes,
+    .wp-list-table .column-location_info {
+        display: none;
+    }
+}
+
+@media screen and (max-width: 960px) {
+    .wp-list-table .column-status_summary {
+        display: none;
+    }
+}
